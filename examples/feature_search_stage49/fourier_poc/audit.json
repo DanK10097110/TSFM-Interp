@@ -1,0 +1,14 @@
+{
+  "bolt": {
+    "max_relative_input_reconstruction": 7.196043597709808e-08,
+    "max_forecast_telescoping": 2.220446049250313e-16,
+    "native_identity_exact": true,
+    "finite_bound_forecasts": true
+  },
+  "timesfm": {
+    "max_relative_input_reconstruction": 7.196043597709808e-08,
+    "max_forecast_telescoping": 2.914335439641036e-16,
+    "native_identity_exact": true,
+    "finite_bound_forecasts": true
+  }
+}

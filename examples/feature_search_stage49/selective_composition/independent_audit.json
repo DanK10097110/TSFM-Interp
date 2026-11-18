@@ -1,0 +1,9 @@
+{
+  "geometry": 7092,
+  "stability": 16128,
+  "losses": 28672,
+  "selectors": 672,
+  "passed": true,
+  "scope": "Replayed saved hidden states and forecasts; forecast-local-sensitivity rows lack raw +/- forecast arrays and are instrumented diagnostics, not independently replayed here",
+  "source_sha256": "a27833d7673d16c6e996eb266b454cc29d0372cc57870169b7f69377aeb1aa8b"
+}

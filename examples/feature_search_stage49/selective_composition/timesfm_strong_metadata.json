@@ -1,0 +1,449 @@
+[
+  {
+    "row": 132,
+    "source": "monash_electricity_hourly:T000241",
+    "domain": "monash_electricity_hourly",
+    "accepted": 1,
+    "details": [
+      {
+        "frequency": 6.660784084960392,
+        "coefficients": [
+          6.520784905688108,
+          4.482715673873454
+        ],
+        "stability": 0.8802697893216447,
+        "explained": 0.9689940607175502,
+        "prominence": 11198.824781287127,
+        "confidence": 0.8665155381351815
+      }
+    ]
+  },
+  {
+    "row": 133,
+    "source": "monash_electricity_hourly:T000068",
+    "domain": "monash_electricity_hourly",
+    "accepted": 1,
+    "details": [
+      {
+        "frequency": 6.6752147815340805,
+        "coefficients": [
+          6.408536245806597,
+          4.81281931199636
+        ],
+        "stability": 0.8848899951915633,
+        "explained": 0.9695737573904618,
+        "prominence": 3741.4200837310927,
+        "confidence": 0.8713240692202135
+      }
+    ]
+  },
+  {
+    "row": 134,
+    "source": "monash_electricity_hourly:T000129",
+    "domain": "monash_electricity_hourly",
+    "accepted": 1,
+    "details": [
+      {
+        "frequency": 6.680834295186341,
+        "coefficients": [
+          6.551522499270154,
+          4.904906407184478
+        ],
+        "stability": 0.9457806623335208,
+        "explained": 0.971430068796184,
+        "prominence": 8840.70529977918,
+        "confidence": 0.9321723164000049
+      }
+    ]
+  },
+  {
+    "row": 135,
+    "source": "monash_electricity_hourly:T000140",
+    "domain": "monash_electricity_hourly",
+    "accepted": 3,
+    "details": [
+      {
+        "frequency": 6.654195779018933,
+        "coefficients": [
+          6.626222025023147,
+          4.338164314004699
+        ],
+        "stability": 0.8919039210819885,
+        "explained": 0.9693680470162861,
+        "prominence": 13785.55483120537,
+        "confidence": 0.8781372970004657
+      },
+      {
+        "frequency": 5.242429407351124,
+        "coefficients": [
+          -0.39907210429837947,
+          0.9995929126651408
+        ],
+        "stability": 0.6517675042458406,
+        "explained": 0.6064737098522327,
+        "prominence": 622.5314856805655,
+        "confidence": 0.5075732118561377
+      },
+      {
+        "frequency": 10.51416146561594,
+        "coefficients": [
+          0.17259384861063723,
+          -0.3493724401967934
+        ],
+        "stability": 0.9445707990362531,
+        "explained": 0.19961106261699113,
+        "prominence": 53.93075189377107,
+        "confidence": 0.4220139612647127
+      }
+    ]
+  },
+  {
+    "row": 140,
+    "source": "m4_hourly:T000235",
+    "domain": "m4_hourly",
+    "accepted": 2,
+    "details": [
+      {
+        "frequency": 6.662472590957357,
+        "coefficients": [
+          6.398110526298008,
+          4.545887720925265
+        ],
+        "stability": 0.8686811341105145,
+        "explained": 0.9691836038866901,
+        "prominence": 29937.35731488958,
+        "confidence": 0.85519158510014
+      },
+      {
+        "frequency": 5.34126773849511,
+        "coefficients": [
+          -0.1372966162301521,
+          1.3462589318466462
+        ],
+        "stability": 0.8934449861839613,
+        "explained": 0.9426192080773427,
+        "prominence": 1804.171473464291,
+        "confidence": 0.8674330370242432
+      }
+    ]
+  },
+  {
+    "row": 141,
+    "source": "m4_hourly:T000066",
+    "domain": "m4_hourly",
+    "accepted": 3,
+    "details": [
+      {
+        "frequency": 6.667802263908042,
+        "coefficients": [
+          6.414167701196311,
+          4.768823654573643
+        ],
+        "stability": 0.8641646723558901,
+        "explained": 0.9701616745685956,
+        "prominence": 20018.677275707385,
+        "confidence": 0.8511744233397667
+      },
+      {
+        "frequency": 5.411781241851573,
+        "coefficients": [
+          -0.03844671998471297,
+          1.303641480800507
+        ],
+        "stability": 0.9021872754358781,
+        "explained": 0.8741724404000156,
+        "prominence": 606.8816633275428,
+        "confidence": 0.843519744610061
+      },
+      {
+        "frequency": 6.763124260606079,
+        "coefficients": [
+          0.2266493348394559,
+          -0.08924210121309586
+        ],
+        "stability": 0.6887080075465607,
+        "explained": 0.25139223914286746,
+        "prominence": 838.3208724601201,
+        "confidence": 0.3453115187803501
+      }
+    ]
+  },
+  {
+    "row": 142,
+    "source": "m4_hourly:T000212",
+    "domain": "m4_hourly",
+    "accepted": 3,
+    "details": [
+      {
+        "frequency": 6.659026283229873,
+        "coefficients": [
+          6.44696365529625,
+          4.2545991445042315
+        ],
+        "stability": 0.8888196602509383,
+        "explained": 0.9682264557618897,
+        "prominence": 31418.999197270892,
+        "confidence": 0.8745852023434296
+      },
+      {
+        "frequency": 5.312742766472247,
+        "coefficients": [
+          -0.9660594807643648,
+          0.9034565646696828
+        ],
+        "stability": 0.8862354755630459,
+        "explained": 0.93236268653512,
+        "prominence": 6605.606058059514,
+        "confidence": 0.8557394880146029
+      },
+      {
+        "frequency": 6.82690295255734,
+        "coefficients": [
+          0.1719036570379377,
+          0.23772750526139413
+        ],
+        "stability": 0.7590102089159749,
+        "explained": 0.6526545079485759,
+        "prominence": 2168.556202118905,
+        "confidence": 0.6131818457327349
+      }
+    ]
+  },
+  {
+    "row": 143,
+    "source": "m4_hourly:T000262",
+    "domain": "m4_hourly",
+    "accepted": 2,
+    "details": [
+      {
+        "frequency": 6.662100844208645,
+        "coefficients": [
+          6.400074609425771,
+          4.503496732349204
+        ],
+        "stability": 0.8730935125896138,
+        "explained": 0.9689286086240824,
+        "prominence": 32557.166512648375,
+        "confidence": 0.8594223640898101
+      },
+      {
+        "frequency": 5.331421825178391,
+        "coefficients": [
+          -0.2588420931812013,
+          1.3189463754643027
+        ],
+        "stability": 0.890779295795102,
+        "explained": 0.9316785316990183,
+        "prominence": 1573.7937275137685,
+        "confidence": 0.8598113196495947
+      }
+    ]
+  },
+  {
+    "row": 148,
+    "source": "monash_pedestrian_counts:T000034",
+    "domain": "monash_pedestrian_counts",
+    "accepted": 2,
+    "details": [
+      {
+        "frequency": 6.637922774596931,
+        "coefficients": [
+          6.699168919063162,
+          3.8743099026870813
+        ],
+        "stability": 0.9211983736426832,
+        "explained": 0.9708842411338646,
+        "prominence": 6631.597735990454,
+        "confidence": 0.9076886156704634
+      },
+      {
+        "frequency": 5.193721596617901,
+        "coefficients": [
+          -0.047444639236871256,
+          1.1452715013953214
+        ],
+        "stability": 0.7156993428581587,
+        "explained": 0.751016614139541,
+        "prominence": 684.4025067714497,
+        "confidence": 0.620233744455928
+      }
+    ]
+  },
+  {
+    "row": 149,
+    "source": "monash_pedestrian_counts:T000019",
+    "domain": "monash_pedestrian_counts",
+    "accepted": 3,
+    "details": [
+      {
+        "frequency": 6.654866221218096,
+        "coefficients": [
+          6.442435531126522,
+          4.357838875697871
+        ],
+        "stability": 0.8743926511264046,
+        "explained": 0.969536529299403,
+        "prominence": 7425.233250716127,
+        "confidence": 0.8609711265612536
+      },
+      {
+        "frequency": 5.382766532609499,
+        "coefficients": [
+          -0.52121286790515,
+          1.0948167137192304
+        ],
+        "stability": 0.8226894124084752,
+        "explained": 0.7869627033258193,
+        "prominence": 380.98915052932495,
+        "confidence": 0.7298153328581787
+      },
+      {
+        "frequency": 10.66572517636446,
+        "coefficients": [
+          -0.20029483473411835,
+          0.21458058891963286
+        ],
+        "stability": 0.6944165300792071,
+        "explained": 0.2208523844531336,
+        "prominence": 23.54120790571835,
+        "confidence": 0.3263405916852732
+      }
+    ]
+  },
+  {
+    "row": 150,
+    "source": "monash_pedestrian_counts:T000050",
+    "domain": "monash_pedestrian_counts",
+    "accepted": 2,
+    "details": [
+      {
+        "frequency": 6.656973036135925,
+        "coefficients": [
+          6.525385662044044,
+          4.285821535876438
+        ],
+        "stability": 0.868624799134701,
+        "explained": 0.9684934404654381,
+        "prominence": 9302.61566579769,
+        "confidence": 0.8548315960649804
+      },
+      {
+        "frequency": 5.307667611735284,
+        "coefficients": [
+          -0.5195831332083439,
+          1.1307177485779492
+        ],
+        "stability": 0.8659335957422806,
+        "explained": 0.8028138741019918,
+        "prominence": 432.6791400110546,
+        "confidence": 0.7758754745039868
+      }
+    ]
+  },
+  {
+    "row": 151,
+    "source": "monash_pedestrian_counts:T000013",
+    "domain": "monash_pedestrian_counts",
+    "accepted": 1,
+    "details": [
+      {
+        "frequency": 6.659173128011039,
+        "coefficients": [
+          6.269284493163783,
+          4.274059891967522
+        ],
+        "stability": 0.891192332514538,
+        "explained": 0.9690873654614741,
+        "prominence": 2081.6804219415944,
+        "confidence": 0.8773096513088622
+      }
+    ]
+  },
+  {
+    "row": 156,
+    "source": "monash_traffic:T000026",
+    "domain": "monash_traffic",
+    "accepted": 1,
+    "details": [
+      {
+        "frequency": 6.636164202549349,
+        "coefficients": [
+          6.837580341294636,
+          3.9994432336364723
+        ],
+        "stability": 0.9409394520717729,
+        "explained": 0.9721298601531627,
+        "prominence": 5059.931891956586,
+        "confidence": 0.9277347405897566
+      }
+    ]
+  },
+  {
+    "row": 157,
+    "source": "monash_traffic:T000784",
+    "domain": "monash_traffic",
+    "accepted": 1,
+    "details": [
+      {
+        "frequency": 6.648196292402956,
+        "coefficients": [
+          6.66376998997686,
+          4.154681726173704
+        ],
+        "stability": 0.9022020901217026,
+        "explained": 0.9695585201679945,
+        "prominence": 8971.045702461886,
+        "confidence": 0.8883637781627199
+      }
+    ]
+  },
+  {
+    "row": 158,
+    "source": "monash_traffic:T000772",
+    "domain": "monash_traffic",
+    "accepted": 1,
+    "details": [
+      {
+        "frequency": 6.656437803312842,
+        "coefficients": [
+          6.553099791320091,
+          4.407673999982943
+        ],
+        "stability": 0.8824284214338665,
+        "explained": 0.9693194284981828,
+        "prominence": 20902.24548728858,
+        "confidence": 0.86878626486827
+      }
+    ]
+  },
+  {
+    "row": 159,
+    "source": "monash_traffic:T000600",
+    "domain": "monash_traffic",
+    "accepted": 2,
+    "details": [
+      {
+        "frequency": 6.652313057821994,
+        "coefficients": [
+          6.534533120775247,
+          4.2728998989922715
+        ],
+        "stability": 0.8836699006485204,
+        "explained": 0.96934683643985,
+        "prominence": 16914.989135142936,
+        "confidence": 0.8700208509311981
+      },
+      {
+        "frequency": 5.3592965786397615,
+        "coefficients": [
+          -0.8551680877972359,
+          0.937802261014947
+        ],
+        "stability": 0.688786227425021,
+        "explained": 0.8619295666844784,
+        "prominence": 1091.7831481021717,
+        "confidence": 0.6394702488801729
+      }
+    ]
+  }
+]

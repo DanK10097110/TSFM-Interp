@@ -1,0 +1,58 @@
+{
+  "decisions": {
+    "2": {
+      "qualifying_models": [],
+      "decision": "stop this screen",
+      "all_models_completed": true
+    },
+    "3": {
+      "qualifying_models": [],
+      "decision": "stop this screen",
+      "all_models_completed": true
+    },
+    "4": {
+      "qualifying_models": [],
+      "decision": "stop this screen",
+      "all_models_completed": true
+    },
+    "5": {
+      "qualifying_models": [],
+      "decision": "stop this screen",
+      "all_models_completed": true
+    },
+    "6": {
+      "qualifying_models": [],
+      "decision": "stop this screen",
+      "all_models_completed": true
+    }
+  },
+  "execution": {
+    "bolt": {
+      "returncode": 0,
+      "peak_observed_rss": 1083756544,
+      "elapsed_seconds": 25.226434530050028,
+      "failure": null,
+      "valid": true
+    },
+    "timesfm": {
+      "returncode": 0,
+      "peak_observed_rss": 1788338176,
+      "elapsed_seconds": 63.65477888402529,
+      "failure": null,
+      "valid": true
+    }
+  },
+  "paired_timesfm_minus_bolt_response_error": {
+    "plus": {
+      "monash_electricity_hourly": -0.49433112279580105,
+      "m4_hourly": 0.0035281352404468013,
+      "monash_pedestrian_counts": 0.020572521065959772
+    },
+    "minus": {
+      "monash_electricity_hourly": 0.18811374905319,
+      "m4_hourly": 0.012930136711035704,
+      "monash_pedestrian_counts": 0.03340601617922794
+    }
+  },
+  "inference": "No p-values. Full family 5 experiments x2 models retained; dataset means screen allocation only, not confirmation."
+}

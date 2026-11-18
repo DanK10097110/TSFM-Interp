@@ -1,0 +1,31 @@
+{
+  "out": "runs/steering_e02_topk",
+  "train": 512,
+  "calibration": 16,
+  "test": 24,
+  "seed": 5170000,
+  "dictionary": 512,
+  "k": 16,
+  "steps": 600,
+  "sae_kind": "topk",
+  "horizon": 32,
+  "threads": 2,
+  "ridge": 0.001,
+  "radius": 0.2,
+  "budgets": [
+    1,
+    16,
+    64
+  ],
+  "doses": [
+    0.05,
+    0.2
+  ],
+  "shifted": false,
+  "evidence": "causal within-model; exploratory fresh synthetic seeds; not sealed confirmation",
+  "intervention": "native decoder head input; original hidden + signed decoder combination",
+  "test_selection": "no test-based selection; all methods and doses reported",
+  "success": "full requested change relative RMS error < 0.1; no crossing postprocessing",
+  "scope": "width is not calibration; seasonal prior is an external desired edit",
+  "source_sha256": "0704aa321704f90d5478b310cebaae81780ddabacbca50fa0ff40191d0c13c4d"
+}

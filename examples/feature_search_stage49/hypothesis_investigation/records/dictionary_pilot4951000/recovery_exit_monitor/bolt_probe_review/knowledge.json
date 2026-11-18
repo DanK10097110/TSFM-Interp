@@ -1,0 +1,21 @@
+{
+  "question": "Does native-vs-rotated few-feature predictive selectivity show a stable basis advantage?",
+  "exact_results": {
+    "table": "six_coefficient_summary.json",
+    "rows": 44,
+    "test_sources": 16,
+    "domain": "synthetic",
+    "aggregation": "Equal mean over six declared history-SD-normalized spectral coefficient targets; code_mean pooling"
+  },
+  "controls": [
+    "Budgets1/4; k8/16; FIT-only probe selection; matched metadata baseline",
+    "Original phase slices and all other domains remain in each full results.json"
+  ],
+  "limitations": [
+    "Descriptive post-hoc arithmetic aggregation, not a registered significance test",
+    "Sparse-code mean pooling; not unrestricted raw-neuron decoding",
+    "No fresh crossed phase, random-initialization or FFN evidence"
+  ],
+  "next_step": "Finish TimesFM and review per-target/per-domain/phase/causal endpoints jointly.",
+  "status": "descriptive_review"
+}

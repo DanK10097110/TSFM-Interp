@@ -1,0 +1,301 @@
+{
+  "results": {
+    "ranks": {
+      "1": {
+        "valid_all16": true,
+        "recovery": 0.39338273758107306,
+        "mean_loss": 0.29508030518868866,
+        "random_advantage": 0.11234093405117283,
+        "mean_only_advantage": -0.011733258431846435,
+        "passed": false
+      },
+      "2": {
+        "valid_all16": true,
+        "recovery": 0.6278424263167613,
+        "mean_loss": 0.1952377910849517,
+        "random_advantage": 0.1775108330567401,
+        "mean_only_advantage": 0.08810925567189057,
+        "passed": false
+      },
+      "4": {
+        "valid_all16": true,
+        "recovery": 0.7609936198600142,
+        "mean_loss": 0.1385365731017681,
+        "random_advantage": 0.23509182549852548,
+        "mean_only_advantage": 0.14481047365507416,
+        "passed": false
+      }
+    },
+    "smallest_passing_rank": null,
+    "full_edit_mean_improvement": 0.4258408541021809,
+    "mean_only_mean_loss": 0.28334704675684225,
+    "scope": "Exploratory reused16 screen only; no p-values, confirmation, deployable repair or canonical feature",
+    "source_hashes": {
+      "protocol.json": "a807f4e5c59e8bbc194086f76a7b9aeb20939acbf5e4436c30fcf5bb348559b1",
+      "captured.npz": "e8b33aa0cbd722542b773b68521020b0cff4c3040e634f8f0027ccc7f7f1ac12",
+      "capture_checks.json": "26d26c00174a19a8076324277eef359153bda6a936ca28540a410cde413bbcd4",
+      "projections.npz": "cedd1a19d9ccdf1d945da5210d98f6667a906c4304b026b284bc4de18d1ccfd6",
+      "fit.json": "5814ee4a4aade2a65464f691b4055a86184aa9dd73346eb9e01accd2c4b85afa",
+      "projected_forecasts.npz": "eb37bd5a5bd6bace7ac17df7941ee90bbcfc62d73c3f8de21ee02f9c923b8682"
+    },
+    "execution_phases": {
+      "capture": {
+        "returncode": 0,
+        "maximum_simultaneous_RSS": 1555922944,
+        "conservative_peak_sum": 1557913600
+      },
+      "fit": {
+        "returncode": 0,
+        "maximum_simultaneous_RSS": 131645440,
+        "conservative_peak_sum": 132726784
+      },
+      "evaluate": {
+        "returncode": 0,
+        "maximum_simultaneous_RSS": 849039360,
+        "conservative_peak_sum": 849039360
+      },
+      "summarize": {
+        "returncode": 0,
+        "maximum_simultaneous_RSS": 60973056,
+        "conservative_peak_sum": 61304832
+      }
+    },
+    "total_wall_seconds": 14.950945419986965,
+    "controller_peak_bytes": 20856832,
+    "execution_valid": true,
+    "status": "complete",
+    "execution_scope": "Reused16 exploratory screen;not new scientific confirmation"
+  },
+  "protocol": {
+    "seed_ids": [
+      3600000,
+      3600001,
+      3600002,
+      3600003,
+      3600004,
+      3600005,
+      3600006,
+      3600007,
+      3600008,
+      3600009,
+      3600010,
+      3600011,
+      3600012,
+      3600013,
+      3600014,
+      3600015
+    ],
+    "ranks": [
+      1,
+      2,
+      4
+    ],
+    "cut": 15,
+    "cut_index": 14,
+    "forbidden_depth_search": true,
+    "folds": "Generatingseed parity:fit8opposite/apply8;all4tokenrows weighted1/4 perseed,not independent tokens",
+    "projector": "UNCENTERED FP64 SVD;shared channel basis,per-token application;no truth/forecast in fit",
+    "numerical_rank": "max(training_matrix.shape)*eps64*s_max;null-vector ranks unscorable;not semantic stability",
+    "mean_control": "Trainingfold channel mean delta,broadcast to all tokens;does not exclude every position template",
+    "random_controls": 2,
+    "random_key": "SeedSequence([3800173,generating_seed,rank])",
+    "random_scope": "Existing norm/radial/editGram-matched helper;not matched-rank/capacity equivalent",
+    "gates": {
+      "recovery": 0.8,
+      "mean_loss": 0.06,
+      "random_advantage": 0.05,
+      "mean_only_advantage": 0.05
+    },
+    "no_statistics": "No p-values/confirmation on inspected16;smallestpassingrank only nominates separatefreshcheck",
+    "identity_RMS": 1e-05,
+    "all16_geometry_per_rank": true,
+    "cpu_threads": 1,
+    "runtime_seconds": 180,
+    "resident_limit_bytes": 1610612736,
+    "checkpoint": "/common/home/djk255/.cache/huggingface/hub/models--google--timesfm-2.5-200m-pytorch/snapshots/1d952420fba87f3c6dee4f240de0f1a0fbc790e3/model.safetensors",
+    "checkpoint_sha256": "2f776efe6245e42b24bc4153ffdf61810140210e4bd3b01fb21f7aa779ab6ce8",
+    "installed_sources": {
+      "timesfm.timesfm_2p5.timesfm_2p5_torch": "07e135cbf3f5099e60469f7c2bb0781426f7109d62c51634775b6be470608371",
+      "timesfm.torch.transformer": "744a0e1e41c1262150998fbc621bb7e4bb2fb9c79b0fe46e70dea744511962bb",
+      "timesfm.torch.dense": "28894985384eaa3dda7b1b882d5bb8426d8b274b2d9a01cb14c4651c0584ec1d",
+      "timesfm.torch.normalization": "c37b56afd198aebf5ef71ee04ef244a63318da2e4a0497ec9b319088f6cc5154",
+      "timesfm.torch.util": "c700a82459e115a1c6c9797058e6e3272aa79e8705a11d48d83489b67766e917"
+    },
+    "helper": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/composition_restoration.py",
+    "helper_sha256": "3f56b33f06a8d454d19ba5eb89f402d222c4a4c8927495155ed08f3bae7c8bc3",
+    "loader": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/homogeneous_normalizer.py",
+    "loader_sha256": "2670effb2dfc0b631d368a69cab4263a8d2a90eb1208acc93d246a5c0ef55051",
+    "discovery": "tsfm_lens/runs/feature_search_stage49_restoration3600000_memorysafe",
+    "discovery_bindings": {
+      "protocol.json": "d4be08607442fbc25f1d99dd948850a31cf876053369de86cbf6c2a3c9003826",
+      "results.json": "17976a6424a843397196908121fb292c2ccaa2f222d92256b44dbafafeff4515",
+      "corpus.npz": "707d3039b6ca7c8864bdf2eab309453ac3629acb20caa40cdb312d680a7ea0dc",
+      "metadata.json": "d3f26fcf5015f08ca03601c1547c097b04803ec708142f231982a55e61fd1bd8",
+      "forecast_waveforms.npz": "6904f952eff0d61dd3d379d417749f23880f5acb12fc42df7bb63ce80ff56da0"
+    },
+    "driver_sha256": "4b0f68d06770b26746bf503eb07d31671827bec50623f8682b2e0ec3f55ee0c8"
+  },
+  "independent_audit": {
+    "status": "independent_audit_passed_screen_closed",
+    "scope": "Reused16 exploratory compactness screen; no p-values, new models, new samples or experiment expansion.",
+    "hashes": {
+      "protocol.json": "a807f4e5c59e8bbc194086f76a7b9aeb20939acbf5e4436c30fcf5bb348559b1",
+      "results.json": "7b04a693fc940e89e7a5ff00789ac6bc9ce72b53512815ac205ab05615f8bfa5",
+      "captured.npz": "e8b33aa0cbd722542b773b68521020b0cff4c3040e634f8f0027ccc7f7f1ac12",
+      "fit.json": "5814ee4a4aade2a65464f691b4055a86184aa9dd73346eb9e01accd2c4b85afa",
+      "projections.npz": "cedd1a19d9ccdf1d945da5210d98f6667a906c4304b026b284bc4de18d1ccfd6",
+      "evaluation.json": "3555efc88c8459b56bb49956b498ec87f7ed2188b3cca7c27d6577b2e16f4c7e",
+      "projected_forecasts.npz": "eb37bd5a5bd6bace7ac17df7941ee90bbcfc62d73c3f8de21ee02f9c923b8682"
+    },
+    "all16_ids_verified": true,
+    "folds": [
+      {
+        "training_ids": [
+          3600001,
+          3600003,
+          3600005,
+          3600007,
+          3600009,
+          3600011,
+          3600013,
+          3600015
+        ],
+        "evaluation_ids": [
+          3600000,
+          3600002,
+          3600004,
+          3600006,
+          3600008,
+          3600010,
+          3600012,
+          3600014
+        ],
+        "numerical_rank": 32,
+        "shared_channel_basis_verified": true
+      },
+      {
+        "training_ids": [
+          3600000,
+          3600002,
+          3600004,
+          3600006,
+          3600008,
+          3600010,
+          3600012,
+          3600014
+        ],
+        "evaluation_ids": [
+          3600001,
+          3600003,
+          3600005,
+          3600007,
+          3600009,
+          3600011,
+          3600013,
+          3600015
+        ],
+        "numerical_rank": 32,
+        "shared_channel_basis_verified": true
+      }
+    ],
+    "heldout_projectors_recomputed": true,
+    "max_projection_errors": {
+      "1": 0.0,
+      "2": 0.0,
+      "4": 0.0
+    },
+    "mean_only_delta_recomputed": true,
+    "all96_keyed_random_controls_bitwise_reproduced": true,
+    "geometry_max": {
+      "float64": {
+        "edit_gram": 3.273374522575701e-15,
+        "receiver_cross": 2.6783754335966618e-15,
+        "final_token_gram": 2.421305778781515e-15,
+        "per_token_energy": 2.9122903902521907e-15,
+        "per_token_radial": 1.874819843140084e-15
+      },
+      "injected_float32": {
+        "edit_gram": 6.329577139750564e-07,
+        "receiver_cross": 7.382534982095533e-07,
+        "final_token_gram": 1.3531595864561486e-07,
+        "per_token_energy": 6.329608036122281e-07,
+        "per_token_radial": 7.382556173212253e-07
+      }
+    },
+    "native_and_full_forecasts_bitwise_match_discovery": true,
+    "mean_native_loss": 0.4625987461492669,
+    "mean_full_edit_loss": 0.036757892047086,
+    "mean_only_loss": 0.28334704675684225,
+    "full_edit_mean_improvement": 0.4258408541021809,
+    "ranks": {
+      "1": {
+        "valid_all16": true,
+        "mean_loss": 0.29508030518868866,
+        "recovery": 0.39338273758107306,
+        "random_advantage": 0.11234093405117283,
+        "mean_only_advantage": -0.011733258431846435,
+        "passed": false,
+        "failed_point_gates": [
+          "mean_loss<=.06",
+          "recovery>=.8",
+          "mean_only_advantage>=.05"
+        ]
+      },
+      "2": {
+        "valid_all16": true,
+        "mean_loss": 0.1952377910849517,
+        "recovery": 0.6278424263167613,
+        "random_advantage": 0.1775108330567401,
+        "mean_only_advantage": 0.08810925567189057,
+        "passed": false,
+        "failed_point_gates": [
+          "mean_loss<=.06",
+          "recovery>=.8"
+        ]
+      },
+      "4": {
+        "valid_all16": true,
+        "mean_loss": 0.1385365731017681,
+        "recovery": 0.7609936198600142,
+        "random_advantage": 0.23509182549852548,
+        "mean_only_advantage": 0.14481047365507416,
+        "passed": false,
+        "failed_point_gates": [
+          "mean_loss<=.06",
+          "recovery>=.8"
+        ]
+      }
+    },
+    "smallest_passing_rank": null,
+    "resource_phases": {
+      "capture": {
+        "worker_high_water": 1537056768,
+        "conservative_worker_plus_controller": 1557913600,
+        "observed_max_simultaneous": 1555922944
+      },
+      "fit": {
+        "worker_high_water": 111869952,
+        "conservative_worker_plus_controller": 132726784,
+        "observed_max_simultaneous": 131645440
+      },
+      "evaluate": {
+        "worker_high_water": 828182528,
+        "conservative_worker_plus_controller": 849039360,
+        "observed_max_simultaneous": 849039360
+      },
+      "summarize": {
+        "worker_high_water": 40448000,
+        "conservative_worker_plus_controller": 61304832,
+        "observed_max_simultaneous": 60973056
+      }
+    },
+    "total_wall_seconds": 14.950945419986965,
+    "limitations": [
+      "This only closes the fixed uncentered ranks1/2/4 construction and gates,not every low-dimensional repair.",
+      "The held-out edit itself uses separated natural components;compression is not mixture-only forecasting.",
+      "Repeated patches and a broadcast mean control do not establish canonical semantic features.",
+      "Forecast values were audited from saved outputs;native model inference was not repeated."
+    ],
+    "audit_seconds": 1.0548839260009117
+  }
+}

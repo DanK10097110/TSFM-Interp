@@ -70,3 +70,7 @@ benchmark_out/
 !examples/**/
 !examples/**/*.json
 !examples/**/*.parquet
+# Compact synthetic inputs and forecasts for the offline interference example.
+!examples/feature_interference/*.npz
+# Compact native forecasts for reproducible dynamic-steering experiments.
+!examples/dynamic_steering/**/*.npz

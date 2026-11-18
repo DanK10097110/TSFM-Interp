@@ -1,0 +1,514 @@
+{
+  "status": "replay_eligible_for_outcome_blind_amendment",
+  "question": "Does exact original batch membership/order/row-position replay isolate the failed historical comparator to changed batch geometry?",
+  "design": {
+    "question": "Does exact original batch membership/order/row-position replay isolate the failed historical comparator to changed batch geometry?",
+    "parent": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_horizon4954600",
+    "parent_protocol_sha256": "18717795e5eb1fb1293ec28bf9a3f4e89416f539718fb446bda611b9fcb6f4e8",
+    "cases": [
+      {
+        "key": "FIT_weak19.2_phase0",
+        "cohort": "FIT",
+        "source": "syn:4954000",
+        "source_id": 0,
+        "kind": "weak19.2_phase0",
+        "original_ids": [
+          16,
+          17,
+          18,
+          19
+        ],
+        "original_row": 2,
+        "mixed_ids": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "mixed_row": 1,
+        "original_query_hash": "f90ff28aec8588368859485a2f9f1bcb89b7514de705052df2ef7240bd7340b8",
+        "mixed_query_hash": "bd89c5525c3dfab7d6e30d4c9379428d7d84b21410bc584f4bb3bd786a586e78",
+        "target_query_hash": "33ae405a61c3a31daaf95a9c205be328717b5e49fc63c798f25924499705e6fd"
+      },
+      {
+        "key": "FIT_base",
+        "cohort": "FIT",
+        "source": "syn:4954001",
+        "source_id": 1,
+        "kind": "base",
+        "original_ids": [
+          165,
+          166,
+          167,
+          168
+        ],
+        "original_row": 0,
+        "mixed_ids": [
+          17,
+          18,
+          19,
+          20
+        ],
+        "mixed_row": 0,
+        "original_query_hash": "396f0c9e3f32815357846897781a129fbcf3cd1638f1bc4ca6b598dd273dc634",
+        "mixed_query_hash": "ce7e20c8b4bdec013cd948521a0e054dc35d2ce9f00c4df1c8c637b28422f221",
+        "target_query_hash": "d373c3d1b46ab8f637c339953a9345ceb5834cdc2e60bc4008c5ae38f0ceb4dc"
+      },
+      {
+        "key": "TEST_weak19.2_phase0",
+        "cohort": "TEST",
+        "source": "syn:4954300",
+        "source_id": 0,
+        "kind": "weak19.2_phase0",
+        "original_ids": [
+          16,
+          17,
+          18,
+          19
+        ],
+        "original_row": 1,
+        "mixed_ids": [
+          272,
+          273,
+          274,
+          275
+        ],
+        "mixed_row": 1,
+        "original_query_hash": "a9fcad6d2a261f7e84667c5541530fe9da9adc2f0bb6fcb2da01b687d7d36b8c",
+        "mixed_query_hash": "929633501456d0aee8a51706f57b2373aab10bdb0cc304878046d123f2f1820e",
+        "target_query_hash": "970700e2ace6c101071bdd96f274b81c6b15688d991a734fdfad2ad8bf1a5b9d"
+      },
+      {
+        "key": "TEST_base",
+        "cohort": "TEST",
+        "source": "syn:4954301",
+        "source_id": 1,
+        "kind": "base",
+        "original_ids": [
+          25,
+          26,
+          27,
+          28
+        ],
+        "original_row": 0,
+        "mixed_ids": [
+          289,
+          290,
+          291,
+          292
+        ],
+        "mixed_row": 0,
+        "original_query_hash": "4b574ce809f729f5b5d52c36852273b57ac64f36634cc902f658578520850bb5",
+        "mixed_query_hash": "198b1f1057bb60e35c84020dde4a53d6f0639b91342965d1ddc718e45452ddd6",
+        "target_query_hash": "7da49f0d57eb4c2bd89ac0bd607223da8f4fae87c0629cb47da673887c61d007"
+      }
+    ],
+    "ordering": "Exactly frozen focused/transfer workers: filter nodes by source preserving list order; chunk every4. Preserve entire original query and selected row, not merely batch size.",
+    "sequence": [
+      "original",
+      "mixed",
+      "original_repeat",
+      "mixed_repeat"
+    ],
+    "gates": "All original32 rows must equal saved historical32 bit-for-bit; repeat originals/mixed bit-for-bit; every current64 prefix equals current32; one forward per horizon request. At least one mixed selected-row mismatch must reproduce. No tolerance. Otherwise stop with no recovery child.",
+    "inference": "No frequency fitting or TEST performance evaluation. TEST cases are instrumentation-only replay comparisons. Four cases cannot establish an architecture-wide cause.",
+    "persistence": "Save every raw32/64 forecast, call counts, query hashes and difference array before deciding eligibility. Original failed batch values remain unavailable.",
+    "cpu_threads": 1,
+    "worker_cap": 3221225472,
+    "seconds_per_model": 60,
+    "checkpoints": {
+      "bolt": {
+        "repo": "amazon/chronos-bolt-small",
+        "path": "/common/home/djk255/.cache/huggingface/hub/models--amazon--chronos-bolt-small/snapshots/772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "revision": "772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "weights": {
+          "model.safetensors": "06a6a19bbe74bc10a9cd193bd4bf2bf638ae07f7e0d51653ae7ab8ea968a21dd"
+        }
+      }
+    },
+    "source_hashes": {
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_transfer.py": "a3e17fcd057a2ca92698d5a71d070e4b3b77a9037bbc05f10b4d538eacabad2c",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tests/test_response_phase_transfer.py": "b14de4d33859f8d696cae13c95a4462096196152d74b65757a95cd91e03f03c3",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_transfer_plants.py": "8daed827a1e205ba25ff6563d409e586367f2c31a9ac9bc56bb9d943d0a5150d",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_transfer_audit.py": "29b0f96aa022005a3a0bbd1650ed80c493dfd225b50a3edcb90e483bfa4499ec",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_study.py": "baa8f5a94890b89411df99e108e9ab01e906e8419c1696002cc9a6d6f8a48187",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_surface_focused.py": "758b73564af323796355c51c16b8332f7710fef57fe748ecdfd2c9bc1b907b1e",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_surface_crossed.py": "4882c7aeda3269bb48bc6675196fbd984f6db12b98617d2a8f2fba2b6979d41d",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/selective_study.py": "d87ed477e46d72604fa6824fcc5b146880142a730fc52f0f70bf933b652604eb",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/coherence_study.py": "e9bd4dc10d57cfbc30cb4b01cfafe96789cccb6d34fe85616699ecfef799aec7",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/real_background_poc.py": "c88868ab339608f52afa8041d89cf3b48aa4260e87fb497b64fa7bf058b3eda6",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/homogeneous_normalizer.py": "2670effb2dfc0b631d368a69cab4263a8d2a90eb1208acc93d246a5c0ef55051",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tsfm_lens/extraction/hooks.py": "6f161d02a472c246691caed21bd301a201d7219d3aeef90de2854baa7bdc4281",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_horizon.py": "c19575d7593d242db44d3175f70947769543e7e8b74bd06cb37187cab62c564d",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_horizon_analysis.py": "5ea68ab734bbf48f9a0b41e947784e182b4f18b29f8366b5876715c8e21214f2",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_horizon_audit.py": "c4336e51061c12132925673b0113c956a5a5bdd17f64f261fcce483e9285912b",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_horizon_plants.py": "efc940f5d90c080af05ba5bfbaa0285bf0b8ce77e82bc624bf67aca2ef42452c",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tests/test_response_phase_horizon.py": "a7dd267da68b6e7eafa786b446a1ff5f124e8b3e584fbf98e3064061f2440389",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/chronos/chronos_bolt.py": "572a3ffd23a7887c423d234fd0086a4dfa2bac0c3e34d4b7d42eb9cda2e3d1d4",
+      "/common/users/djk255/hf_cache_home/huggingface/hub/models--amazon--chronos-bolt-small/blobs/d8f9b65552d4d211e28d332ad5666484092bbf77": "9ca0ebbe049ccebacb0546361e8aa728f0cf104cd18d1838d78d296aa317bd21",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_replay_preflight.py": "fa46405cc024e7040e00c69b9bb3a9335dd91fef86db07b97f951318874dcfe2",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tests/test_response_phase_replay_preflight.py": "a36085a683dcbfccb01f298d61ccec0f9be1b9ac2cf1a3c4ca64b7a09c91fbdd",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_replay_preflight_plants.py": "ca6b00cecea34c24186082f93fab7355f4900adf3f5dd80302772e109d3fa2c8"
+    },
+    "hashes": {
+      "queries.npz": "e73c2d00737f1e3a7d361ed12e22bfcf6b9916f4a6209282ffdde51a731f14e5",
+      "cases.json": "a036aaaeea476c670b48f9b61bb97ea36e0ce16715c71d9e80c9957850287d34"
+    },
+    "prior_bindings": {
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_horizon4954600/protocol.json": "18717795e5eb1fb1293ec28bf9a3f4e89416f539718fb446bda611b9fcb6f4e8",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_horizon4954600/inputs.npy": "45f272955f04fc6774e65162b3eac68cc3ab0f009328ce23e530ead5934cc0f7",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_horizon4954600/nodes.json": "a0db0a163f4882ed0ee0ec3a8173853eaf1c17cf75f826ff6af5ae4ca0d023c9",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_horizon4954600/groups.json": "0f7149874c3e3a951038417a8488316281ec573453e0cb0ec397d18dfed9ff7d",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_horizon4954600/knowledge.json": "7e6532e1df9a04b356ed4cd87fa808660d4c99c66b59e2a06f05842fa235f7f3",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_horizon4954600/bolt.log": "0f48b0637004acc9ebbedd4a4e919226ba6267b4e034fe7bece649ea9eef46e2",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_horizon4954600/failure_bookkeeping_audit.json": "383d7c7f1eab9c4d304813f8de65940ba4034a5dd19dfa7f1b32ca2c86226de6",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_surface_focused4954100/inputs.npy": "30489820fe91db02fe81362cf835134f9507a418e7ad3c205eb2a387f9bb4692",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_surface_focused4954100/nodes.json": "ae5c34467ad4f04b0d8f59fdd8b719fd0a0b0ab483ee7bd93155a4875c4144a7",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_surface_focused4954100/bolt_native_forecast.npy": "03e2bc05a8fd3ffc50f13b0f6ecfc2b38ad64349f257bd14bfa3518234b4fbea",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_surface_focused4954100/bolt_worker.json": "9294b85d36af2e1a12220259dedbf067bf9eb9955656459c35e0e58faef6072a",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase4954200/groups.json": "9657f70716e4a0de241e3b75c39e6f6eea5f901c836ba781c0c2247c65224a25",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/inputs.npy": "d60f13fd2278e782be817f7a580fba6a9cebc8387a3c6fbb62363f3f588f6d0c",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/nodes.json": "7ada0a56374df284806b0388c2b30028c7b72e271979e709e8c03b2c40949a0b",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/bolt_native_forecast.npy": "3d736b5a1d63faaaafc2cb7d75dc2f8b1c1c284e2a4a8a21bf074ca0cb6b63cf",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/bolt_worker.json": "8c064d477e62c20e1694efdf9215cf7a596cd6402f1b913d6669c5ba616ba59a",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/groups.json": "ea5909cd07e132407b9cc9187c3961e7fc415386b5fdd0ad134cf533026911f2"
+    }
+  },
+  "exact_findings": {
+    "records": [
+      {
+        "key": "FIT_weak19.2_phase0",
+        "cohort": "FIT",
+        "source": "syn:4954000",
+        "source_id": 0,
+        "kind": "weak19.2_phase0",
+        "original_ids": [
+          16,
+          17,
+          18,
+          19
+        ],
+        "original_row": 2,
+        "mixed_ids": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "mixed_row": 1,
+        "original_query_hash": "f90ff28aec8588368859485a2f9f1bcb89b7514de705052df2ef7240bd7340b8",
+        "mixed_query_hash": "bd89c5525c3dfab7d6e30d4c9379428d7d84b21410bc584f4bb3bd786a586e78",
+        "target_query_hash": "33ae405a61c3a31daaf95a9c205be328717b5e49fc63c798f25924499705e6fd",
+        "same_geometry_exact": true,
+        "same_geometry_vs_historical": {
+          "exact": true,
+          "max_abs": 0.0,
+          "rms": 0.0,
+          "l2": 0.0,
+          "unequal_entries": 0
+        },
+        "mixed_target_vs_historical": {
+          "exact": false,
+          "max_abs": 2.384185791015625e-07,
+          "rms": 1.2404608382687167e-07,
+          "l2": 7.017106164289271e-07,
+          "unequal_entries": 25
+        },
+        "current_prefix_exact": true,
+        "single_forward": true,
+        "repeat_exact": true,
+        "target_query_identical": true,
+        "numerical_differences": {
+          "original": {
+            "exact": true,
+            "max_abs": 0.0,
+            "rms": 0.0,
+            "l2": 0.0,
+            "unequal_entries": 0
+          },
+          "mixed": {
+            "exact": true,
+            "max_abs": 0.0,
+            "rms": 0.0,
+            "l2": 0.0,
+            "unequal_entries": 0
+          },
+          "original_repeat": {
+            "exact": true,
+            "max_abs": 0.0,
+            "rms": 0.0,
+            "l2": 0.0,
+            "unequal_entries": 0
+          },
+          "mixed_repeat": {
+            "exact": true,
+            "max_abs": 0.0,
+            "rms": 0.0,
+            "l2": 0.0,
+            "unequal_entries": 0
+          }
+        },
+        "raw_sha256": "7e6278945a73d2eda6c5c837f48aef2a286fc08bb47390dbcf786b23bd4d3f23"
+      },
+      {
+        "key": "FIT_base",
+        "cohort": "FIT",
+        "source": "syn:4954001",
+        "source_id": 1,
+        "kind": "base",
+        "original_ids": [
+          165,
+          166,
+          167,
+          168
+        ],
+        "original_row": 0,
+        "mixed_ids": [
+          17,
+          18,
+          19,
+          20
+        ],
+        "mixed_row": 0,
+        "original_query_hash": "396f0c9e3f32815357846897781a129fbcf3cd1638f1bc4ca6b598dd273dc634",
+        "mixed_query_hash": "ce7e20c8b4bdec013cd948521a0e054dc35d2ce9f00c4df1c8c637b28422f221",
+        "target_query_hash": "d373c3d1b46ab8f637c339953a9345ceb5834cdc2e60bc4008c5ae38f0ceb4dc",
+        "same_geometry_exact": true,
+        "same_geometry_vs_historical": {
+          "exact": true,
+          "max_abs": 0.0,
+          "rms": 0.0,
+          "l2": 0.0,
+          "unequal_entries": 0
+        },
+        "mixed_target_vs_historical": {
+          "exact": true,
+          "max_abs": 0.0,
+          "rms": 0.0,
+          "l2": 0.0,
+          "unequal_entries": 0
+        },
+        "current_prefix_exact": true,
+        "single_forward": true,
+        "repeat_exact": true,
+        "target_query_identical": true,
+        "numerical_differences": {
+          "original": {
+            "exact": true,
+            "max_abs": 0.0,
+            "rms": 0.0,
+            "l2": 0.0,
+            "unequal_entries": 0
+          },
+          "mixed": {
+            "exact": true,
+            "max_abs": 0.0,
+            "rms": 0.0,
+            "l2": 0.0,
+            "unequal_entries": 0
+          },
+          "original_repeat": {
+            "exact": true,
+            "max_abs": 0.0,
+            "rms": 0.0,
+            "l2": 0.0,
+            "unequal_entries": 0
+          },
+          "mixed_repeat": {
+            "exact": true,
+            "max_abs": 0.0,
+            "rms": 0.0,
+            "l2": 0.0,
+            "unequal_entries": 0
+          }
+        },
+        "raw_sha256": "de04d91e965ef9fa261ed5879879207f4c4393ccc8c4d0419fce91939f468142"
+      },
+      {
+        "key": "TEST_weak19.2_phase0",
+        "cohort": "TEST",
+        "source": "syn:4954300",
+        "source_id": 0,
+        "kind": "weak19.2_phase0",
+        "original_ids": [
+          16,
+          17,
+          18,
+          19
+        ],
+        "original_row": 1,
+        "mixed_ids": [
+          272,
+          273,
+          274,
+          275
+        ],
+        "mixed_row": 1,
+        "original_query_hash": "a9fcad6d2a261f7e84667c5541530fe9da9adc2f0bb6fcb2da01b687d7d36b8c",
+        "mixed_query_hash": "929633501456d0aee8a51706f57b2373aab10bdb0cc304878046d123f2f1820e",
+        "target_query_hash": "970700e2ace6c101071bdd96f274b81c6b15688d991a734fdfad2ad8bf1a5b9d",
+        "same_geometry_exact": true,
+        "same_geometry_vs_historical": {
+          "exact": true,
+          "max_abs": 0.0,
+          "rms": 0.0,
+          "l2": 0.0,
+          "unequal_entries": 0
+        },
+        "mixed_target_vs_historical": {
+          "exact": true,
+          "max_abs": 0.0,
+          "rms": 0.0,
+          "l2": 0.0,
+          "unequal_entries": 0
+        },
+        "current_prefix_exact": true,
+        "single_forward": true,
+        "repeat_exact": true,
+        "target_query_identical": true,
+        "numerical_differences": {
+          "original": {
+            "exact": true,
+            "max_abs": 0.0,
+            "rms": 0.0,
+            "l2": 0.0,
+            "unequal_entries": 0
+          },
+          "mixed": {
+            "exact": true,
+            "max_abs": 0.0,
+            "rms": 0.0,
+            "l2": 0.0,
+            "unequal_entries": 0
+          },
+          "original_repeat": {
+            "exact": true,
+            "max_abs": 0.0,
+            "rms": 0.0,
+            "l2": 0.0,
+            "unequal_entries": 0
+          },
+          "mixed_repeat": {
+            "exact": true,
+            "max_abs": 0.0,
+            "rms": 0.0,
+            "l2": 0.0,
+            "unequal_entries": 0
+          }
+        },
+        "raw_sha256": "1258529668cf1348b9f4f38aa441077312400c67afda70ba2cdf3e409b5ff765"
+      },
+      {
+        "key": "TEST_base",
+        "cohort": "TEST",
+        "source": "syn:4954301",
+        "source_id": 1,
+        "kind": "base",
+        "original_ids": [
+          25,
+          26,
+          27,
+          28
+        ],
+        "original_row": 0,
+        "mixed_ids": [
+          289,
+          290,
+          291,
+          292
+        ],
+        "mixed_row": 0,
+        "original_query_hash": "4b574ce809f729f5b5d52c36852273b57ac64f36634cc902f658578520850bb5",
+        "mixed_query_hash": "198b1f1057bb60e35c84020dde4a53d6f0639b91342965d1ddc718e45452ddd6",
+        "target_query_hash": "7da49f0d57eb4c2bd89ac0bd607223da8f4fae87c0629cb47da673887c61d007",
+        "same_geometry_exact": true,
+        "same_geometry_vs_historical": {
+          "exact": true,
+          "max_abs": 0.0,
+          "rms": 0.0,
+          "l2": 0.0,
+          "unequal_entries": 0
+        },
+        "mixed_target_vs_historical": {
+          "exact": true,
+          "max_abs": 0.0,
+          "rms": 0.0,
+          "l2": 0.0,
+          "unequal_entries": 0
+        },
+        "current_prefix_exact": true,
+        "single_forward": true,
+        "repeat_exact": true,
+        "target_query_identical": true,
+        "numerical_differences": {
+          "original": {
+            "exact": true,
+            "max_abs": 0.0,
+            "rms": 0.0,
+            "l2": 0.0,
+            "unequal_entries": 0
+          },
+          "mixed": {
+            "exact": true,
+            "max_abs": 0.0,
+            "rms": 0.0,
+            "l2": 0.0,
+            "unequal_entries": 0
+          },
+          "original_repeat": {
+            "exact": true,
+            "max_abs": 0.0,
+            "rms": 0.0,
+            "l2": 0.0,
+            "unequal_entries": 0
+          },
+          "mixed_repeat": {
+            "exact": true,
+            "max_abs": 0.0,
+            "rms": 0.0,
+            "l2": 0.0,
+            "unequal_entries": 0
+          }
+        },
+        "raw_sha256": "2adbbd62f108f2351b2605e4e745813b00f86ef0da9a8046c4462689fed67813"
+      }
+    ],
+    "decision": {
+      "eligible": true,
+      "same_geometry_all_exact": true,
+      "geometry_effect_reproduced": true,
+      "reason": "Exact original geometry replays; only changed query geometry changes selected-row outputs in the fixed cases."
+    }
+  },
+  "controls": "All original32 rows must equal saved historical32 bit-for-bit; repeat originals/mixed bit-for-bit; every current64 prefix equals current32; one forward per horizon request. At least one mixed selected-row mismatch must reproduce. No tolerance. Otherwise stop with no recovery child.",
+  "limitations": "No frequency fitting or TEST performance evaluation. TEST cases are instrumentation-only replay comparisons. Four cases cannot establish an architecture-wide cause.",
+  "evidence_class": "Comparator instrumentation diagnostic only",
+  "failed_instrumentation_runs": [],
+  "next_decision": "Freeze a separate amendment before any scientific fit/evaluation.",
+  "verification": {
+    "tests_passed": 3,
+    "plants_detected": 4
+  },
+  "execution": {
+    "valid_execution": true,
+    "eligible": true,
+    "returncode": 0,
+    "seconds": 12.013007106026635,
+    "peak_rss": 1027878912,
+    "failure": null,
+    "slot": 2
+  },
+  "independent_audit": {
+    "passed": true,
+    "checks": 100,
+    "all_four_original_batches_exact": true,
+    "all_prefixes_and_repeats_exact": true,
+    "changed_geometry_cases": [
+      "FIT_weak19.2_phase0"
+    ],
+    "maximum_changed_geometry_difference": 2.384185791015625e-07,
+    "evidence": "Controlled same-model query-geometry switch in four fixed replay cases; no frequency/performance fitting.",
+    "native_worker_finished": true
+  },
+  "native_session": 82928
+}

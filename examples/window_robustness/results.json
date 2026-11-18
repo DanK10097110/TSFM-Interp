@@ -1,0 +1,1112 @@
+{
+  "sequence_cka": {
+    "TimesFM|Chronos-Bolt": 0.6119901613266452,
+    "TimesFM|Chronos-2": 0.685035154038057,
+    "Chronos-Bolt|Chronos-2": 0.9125382653213553
+  },
+  "sequence_partition_max_difference": {
+    "TimesFM": 0.0,
+    "Chronos-Bolt": 0.0,
+    "Chronos-2": 0.0
+  },
+  "cells": {
+    "32_mean": {
+      "n_test_series": 64,
+      "n_windows_per_series": 12,
+      "models": {
+        "TimesFM": {
+          "dimension": 1280,
+          "pca": {
+            "8": {
+              "rank": 8,
+              "participation_ratio": 3.9134302139282227,
+              "explained_variance_fraction": 0.39583247900009155
+            },
+            "32": {
+              "rank": 32,
+              "participation_ratio": 8.953540802001953,
+              "explained_variance_fraction": 0.6158181428909302
+            }
+          }
+        },
+        "Chronos-Bolt": {
+          "dimension": 512,
+          "pca": {
+            "8": {
+              "rank": 8,
+              "participation_ratio": 5.719136714935303,
+              "explained_variance_fraction": 0.5117220878601074
+            },
+            "32": {
+              "rank": 32,
+              "participation_ratio": 13.514674186706543,
+              "explained_variance_fraction": 0.8320717215538025
+            }
+          }
+        },
+        "Chronos-2": {
+          "dimension": 768,
+          "pca": {
+            "8": {
+              "rank": 8,
+              "participation_ratio": 6.59890079498291,
+              "explained_variance_fraction": 0.3265191614627838
+            },
+            "32": {
+              "rank": 32,
+              "participation_ratio": 17.697725296020508,
+              "explained_variance_fraction": 0.5816848278045654
+            }
+          }
+        }
+      },
+      "pairs": {
+        "TimesFM|Chronos-Bolt": {
+          "raw": {
+            "value": 0.29839825876457376,
+            "null_p95": 0.06049276864526228,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank8": {
+            "value": 0.21255159760055767,
+            "null_p95": 0.02178449640489818,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank32": {
+            "value": 0.2646949252192157,
+            "null_p95": 0.03654150784007771,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          }
+        },
+        "TimesFM|Chronos-2": {
+          "raw": {
+            "value": 0.3794237897553535,
+            "null_p95": 0.09919313989658274,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank8": {
+            "value": 0.26986079126489537,
+            "null_p95": 0.03090645065796242,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank32": {
+            "value": 0.3170477170948313,
+            "null_p95": 0.04800634873877113,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          }
+        },
+        "Chronos-Bolt|Chronos-2": {
+          "raw": {
+            "value": 0.8152944998118072,
+            "null_p95": 0.10532959411940104,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank8": {
+            "value": 0.824194117591722,
+            "null_p95": 0.04951340554675944,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank32": {
+            "value": 0.8265133187449862,
+            "null_p95": 0.07846408324460703,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          }
+        }
+      }
+    },
+    "32_native_concat": {
+      "n_test_series": 64,
+      "n_windows_per_series": 12,
+      "models": {
+        "TimesFM": {
+          "dimension": 1280,
+          "pca": {
+            "8": {
+              "rank": 8,
+              "participation_ratio": 3.9134302139282227,
+              "explained_variance_fraction": 0.39583247900009155
+            },
+            "32": {
+              "rank": 32,
+              "participation_ratio": 8.953540802001953,
+              "explained_variance_fraction": 0.6158181428909302
+            }
+          }
+        },
+        "Chronos-Bolt": {
+          "dimension": 1024,
+          "pca": {
+            "8": {
+              "rank": 8,
+              "participation_ratio": 6.65103816986084,
+              "explained_variance_fraction": 0.4502013921737671
+            },
+            "32": {
+              "rank": 32,
+              "participation_ratio": 16.59307861328125,
+              "explained_variance_fraction": 0.7662513256072998
+            }
+          }
+        },
+        "Chronos-2": {
+          "dimension": 1536,
+          "pca": {
+            "8": {
+              "rank": 8,
+              "participation_ratio": 6.961075305938721,
+              "explained_variance_fraction": 0.2661246061325073
+            },
+            "32": {
+              "rank": 32,
+              "participation_ratio": 19.465496063232422,
+              "explained_variance_fraction": 0.4947044253349304
+            }
+          }
+        }
+      },
+      "pairs": {
+        "TimesFM|Chronos-Bolt": {
+          "raw": {
+            "value": 0.3016823765239545,
+            "null_p95": 0.05282877132130007,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank8": {
+            "value": 0.19803580420212452,
+            "null_p95": 0.01592358709643965,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank32": {
+            "value": 0.26594717185939526,
+            "null_p95": 0.028295467381898438,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          }
+        },
+        "TimesFM|Chronos-2": {
+          "raw": {
+            "value": 0.3580750592737356,
+            "null_p95": 0.08594586161830241,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank8": {
+            "value": 0.2244780972843504,
+            "null_p95": 0.019670335736744975,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank32": {
+            "value": 0.29836803081255625,
+            "null_p95": 0.035241828297632324,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          }
+        },
+        "Chronos-Bolt|Chronos-2": {
+          "raw": {
+            "value": 0.8602024172113941,
+            "null_p95": 0.09121278849458504,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank8": {
+            "value": 0.8961554124679363,
+            "null_p95": 0.031194462033250735,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank32": {
+            "value": 0.8765558474924691,
+            "null_p95": 0.05352562381486759,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          }
+        }
+      }
+    },
+    "32_common32_concat": {
+      "n_test_series": 64,
+      "n_windows_per_series": 12,
+      "models": {
+        "TimesFM": {
+          "dimension": 1280,
+          "pca": {
+            "8": {
+              "rank": 8,
+              "participation_ratio": 3.9134302139282227,
+              "explained_variance_fraction": 0.39583247900009155
+            },
+            "32": {
+              "rank": 32,
+              "participation_ratio": 8.953540802001953,
+              "explained_variance_fraction": 0.6158181428909302
+            }
+          }
+        },
+        "Chronos-Bolt": {
+          "dimension": 512,
+          "pca": {
+            "8": {
+              "rank": 8,
+              "participation_ratio": 5.719136714935303,
+              "explained_variance_fraction": 0.5117220878601074
+            },
+            "32": {
+              "rank": 32,
+              "participation_ratio": 13.514674186706543,
+              "explained_variance_fraction": 0.8320717215538025
+            }
+          }
+        },
+        "Chronos-2": {
+          "dimension": 768,
+          "pca": {
+            "8": {
+              "rank": 8,
+              "participation_ratio": 6.59890079498291,
+              "explained_variance_fraction": 0.3265191614627838
+            },
+            "32": {
+              "rank": 32,
+              "participation_ratio": 17.697725296020508,
+              "explained_variance_fraction": 0.5816848278045654
+            }
+          }
+        }
+      },
+      "pairs": {
+        "TimesFM|Chronos-Bolt": {
+          "raw": {
+            "value": 0.29839825876457376,
+            "null_p95": 0.06049276864526228,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank8": {
+            "value": 0.21255159760055767,
+            "null_p95": 0.02178449640489818,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank32": {
+            "value": 0.2646949252192157,
+            "null_p95": 0.03654150784007771,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          }
+        },
+        "TimesFM|Chronos-2": {
+          "raw": {
+            "value": 0.3794237897553535,
+            "null_p95": 0.09919313989658274,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank8": {
+            "value": 0.26986079126489537,
+            "null_p95": 0.03090645065796242,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank32": {
+            "value": 0.3170477170948313,
+            "null_p95": 0.04800634873877113,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          }
+        },
+        "Chronos-Bolt|Chronos-2": {
+          "raw": {
+            "value": 0.8152944998118072,
+            "null_p95": 0.10532959411940104,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank8": {
+            "value": 0.824194117591722,
+            "null_p95": 0.04951340554675944,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank32": {
+            "value": 0.8265133187449862,
+            "null_p95": 0.07846408324460703,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          }
+        }
+      }
+    },
+    "64_mean": {
+      "n_test_series": 64,
+      "n_windows_per_series": 6,
+      "models": {
+        "TimesFM": {
+          "dimension": 1280,
+          "pca": {
+            "8": {
+              "rank": 8,
+              "participation_ratio": 3.7991628646850586,
+              "explained_variance_fraction": 0.4600701630115509
+            },
+            "32": {
+              "rank": 32,
+              "participation_ratio": 8.121060371398926,
+              "explained_variance_fraction": 0.6872931718826294
+            }
+          }
+        },
+        "Chronos-Bolt": {
+          "dimension": 512,
+          "pca": {
+            "8": {
+              "rank": 8,
+              "participation_ratio": 5.9191484451293945,
+              "explained_variance_fraction": 0.5828820466995239
+            },
+            "32": {
+              "rank": 32,
+              "participation_ratio": 12.522982597351074,
+              "explained_variance_fraction": 0.8858131766319275
+            }
+          }
+        },
+        "Chronos-2": {
+          "dimension": 768,
+          "pca": {
+            "8": {
+              "rank": 8,
+              "participation_ratio": 6.9050726890563965,
+              "explained_variance_fraction": 0.3915637731552124
+            },
+            "32": {
+              "rank": 32,
+              "participation_ratio": 17.376544952392578,
+              "explained_variance_fraction": 0.6703764796257019
+            }
+          }
+        }
+      },
+      "pairs": {
+        "TimesFM|Chronos-Bolt": {
+          "raw": {
+            "value": 0.28296083419251794,
+            "null_p95": 0.07852911197228371,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank8": {
+            "value": 0.2142524830345211,
+            "null_p95": 0.03172478599991165,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank32": {
+            "value": 0.24550828990857407,
+            "null_p95": 0.050465658675748336,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          }
+        },
+        "TimesFM|Chronos-2": {
+          "raw": {
+            "value": 0.39914215842729694,
+            "null_p95": 0.1292982781581823,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank8": {
+            "value": 0.29158865635757447,
+            "null_p95": 0.04438112548100402,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank32": {
+            "value": 0.3311128279002352,
+            "null_p95": 0.06939667712159389,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          }
+        },
+        "Chronos-Bolt|Chronos-2": {
+          "raw": {
+            "value": 0.7937782856590402,
+            "null_p95": 0.1596058851363892,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank8": {
+            "value": 0.7827261498470955,
+            "null_p95": 0.09283160444980083,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank32": {
+            "value": 0.8035349064217688,
+            "null_p95": 0.12891838394868865,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          }
+        }
+      }
+    },
+    "64_native_concat": {
+      "n_test_series": 64,
+      "n_windows_per_series": 6,
+      "models": {
+        "TimesFM": {
+          "dimension": 2560,
+          "pca": {
+            "8": {
+              "rank": 8,
+              "participation_ratio": 3.859124183654785,
+              "explained_variance_fraction": 0.38175880908966064
+            },
+            "32": {
+              "rank": 32,
+              "participation_ratio": 9.286198616027832,
+              "explained_variance_fraction": 0.6110179424285889
+            }
+          }
+        },
+        "Chronos-Bolt": {
+          "dimension": 2048,
+          "pca": {
+            "8": {
+              "rank": 8,
+              "participation_ratio": 7.356147289276123,
+              "explained_variance_fraction": 0.41018146276474
+            },
+            "32": {
+              "rank": 32,
+              "participation_ratio": 19.569168090820312,
+              "explained_variance_fraction": 0.7567593455314636
+            }
+          }
+        },
+        "Chronos-2": {
+          "dimension": 3072,
+          "pca": {
+            "8": {
+              "rank": 8,
+              "participation_ratio": 7.600094318389893,
+              "explained_variance_fraction": 0.23171791434288025
+            },
+            "32": {
+              "rank": 32,
+              "participation_ratio": 23.30282974243164,
+              "explained_variance_fraction": 0.4859088063240051
+            }
+          }
+        }
+      },
+      "pairs": {
+        "TimesFM|Chronos-Bolt": {
+          "raw": {
+            "value": 0.3069447433433927,
+            "null_p95": 0.08854665559881227,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank8": {
+            "value": 0.13669881227255026,
+            "null_p95": 0.02204034302065079,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank32": {
+            "value": 0.24071028270395706,
+            "null_p95": 0.040976176560891295,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          }
+        },
+        "TimesFM|Chronos-2": {
+          "raw": {
+            "value": 0.39122690156261036,
+            "null_p95": 0.14477633612280386,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank8": {
+            "value": 0.1929508906264346,
+            "null_p95": 0.027840445660858294,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank32": {
+            "value": 0.29173284706785063,
+            "null_p95": 0.05094949513659873,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          }
+        },
+        "Chronos-Bolt|Chronos-2": {
+          "raw": {
+            "value": 0.8494537237120322,
+            "null_p95": 0.18643794245449943,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank8": {
+            "value": 0.8549539833793378,
+            "null_p95": 0.06412994227979171,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank32": {
+            "value": 0.8634899198016224,
+            "null_p95": 0.10180267452947003,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          }
+        }
+      }
+    },
+    "64_common32_concat": {
+      "n_test_series": 64,
+      "n_windows_per_series": 6,
+      "models": {
+        "TimesFM": {
+          "dimension": 2560,
+          "pca": {
+            "8": {
+              "rank": 8,
+              "participation_ratio": 3.859124183654785,
+              "explained_variance_fraction": 0.38175880908966064
+            },
+            "32": {
+              "rank": 32,
+              "participation_ratio": 9.286198616027832,
+              "explained_variance_fraction": 0.6110179424285889
+            }
+          }
+        },
+        "Chronos-Bolt": {
+          "dimension": 1024,
+          "pca": {
+            "8": {
+              "rank": 8,
+              "participation_ratio": 6.531732559204102,
+              "explained_variance_fraction": 0.48895835876464844
+            },
+            "32": {
+              "rank": 32,
+              "participation_ratio": 15.774833679199219,
+              "explained_variance_fraction": 0.8160703182220459
+            }
+          }
+        },
+        "Chronos-2": {
+          "dimension": 1536,
+          "pca": {
+            "8": {
+              "rank": 8,
+              "participation_ratio": 7.195703506469727,
+              "explained_variance_fraction": 0.2948305606842041
+            },
+            "32": {
+              "rank": 32,
+              "participation_ratio": 20.442922592163086,
+              "explained_variance_fraction": 0.5608717203140259
+            }
+          }
+        }
+      },
+      "pairs": {
+        "TimesFM|Chronos-Bolt": {
+          "raw": {
+            "value": 0.30727470443805477,
+            "null_p95": 0.09070923312362966,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank8": {
+            "value": 0.1850327347417557,
+            "null_p95": 0.027219154191463358,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank32": {
+            "value": 0.24896347144753467,
+            "null_p95": 0.04786205835992456,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          }
+        },
+        "TimesFM|Chronos-2": {
+          "raw": {
+            "value": 0.41660943471535933,
+            "null_p95": 0.14868384728263656,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank8": {
+            "value": 0.2726952965257014,
+            "null_p95": 0.04081699816442648,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank32": {
+            "value": 0.3213683432998018,
+            "null_p95": 0.06268135860990245,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          }
+        },
+        "Chronos-Bolt|Chronos-2": {
+          "raw": {
+            "value": 0.806670517211187,
+            "null_p95": 0.1807265069407431,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank8": {
+            "value": 0.7760074374475491,
+            "null_p95": 0.0866555220968427,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank32": {
+            "value": 0.8155811129141208,
+            "null_p95": 0.12572791107993367,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          }
+        }
+      }
+    },
+    "128_mean": {
+      "n_test_series": 64,
+      "n_windows_per_series": 3,
+      "models": {
+        "TimesFM": {
+          "dimension": 1280,
+          "pca": {
+            "8": {
+              "rank": 8,
+              "participation_ratio": 3.7790462970733643,
+              "explained_variance_fraction": 0.5303205251693726
+            },
+            "32": {
+              "rank": 32,
+              "participation_ratio": 7.750722408294678,
+              "explained_variance_fraction": 0.7741698026657104
+            }
+          }
+        },
+        "Chronos-Bolt": {
+          "dimension": 512,
+          "pca": {
+            "8": {
+              "rank": 8,
+              "participation_ratio": 6.265544414520264,
+              "explained_variance_fraction": 0.6990001201629639
+            },
+            "32": {
+              "rank": 32,
+              "participation_ratio": 10.677652359008789,
+              "explained_variance_fraction": 0.9336243867874146
+            }
+          }
+        },
+        "Chronos-2": {
+          "dimension": 768,
+          "pca": {
+            "8": {
+              "rank": 8,
+              "participation_ratio": 7.1657209396362305,
+              "explained_variance_fraction": 0.47487154603004456
+            },
+            "32": {
+              "rank": 32,
+              "participation_ratio": 16.567373275756836,
+              "explained_variance_fraction": 0.772241473197937
+            }
+          }
+        }
+      },
+      "pairs": {
+        "TimesFM|Chronos-Bolt": {
+          "raw": {
+            "value": 0.30325622517858053,
+            "null_p95": 0.09716188774635423,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank8": {
+            "value": 0.2331308306660635,
+            "null_p95": 0.042910119409179937,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank32": {
+            "value": 0.26600981566893317,
+            "null_p95": 0.06565297257005889,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          }
+        },
+        "TimesFM|Chronos-2": {
+          "raw": {
+            "value": 0.445261451583121,
+            "null_p95": 0.15484800390774406,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank8": {
+            "value": 0.3334756805373444,
+            "null_p95": 0.0570267024888225,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank32": {
+            "value": 0.3777883271430146,
+            "null_p95": 0.08737450237599786,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          }
+        },
+        "Chronos-Bolt|Chronos-2": {
+          "raw": {
+            "value": 0.8007606129440975,
+            "null_p95": 0.198865272583794,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank8": {
+            "value": 0.7882882309808659,
+            "null_p95": 0.1314191277070161,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank32": {
+            "value": 0.8097231964120951,
+            "null_p95": 0.16598102952862218,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          }
+        }
+      }
+    },
+    "128_native_concat": {
+      "n_test_series": 64,
+      "n_windows_per_series": 3,
+      "models": {
+        "TimesFM": {
+          "dimension": 5120,
+          "pca": {
+            "8": {
+              "rank": 8,
+              "participation_ratio": 3.995675563812256,
+              "explained_variance_fraction": 0.38165223598480225
+            },
+            "32": {
+              "rank": 32,
+              "participation_ratio": 10.203646659851074,
+              "explained_variance_fraction": 0.6333369016647339
+            }
+          }
+        },
+        "Chronos-Bolt": {
+          "dimension": 4096,
+          "pca": {
+            "8": {
+              "rank": 8,
+              "participation_ratio": 7.441519260406494,
+              "explained_variance_fraction": 0.40280675888061523
+            },
+            "32": {
+              "rank": 32,
+              "participation_ratio": 20.083816528320312,
+              "explained_variance_fraction": 0.7559316158294678
+            }
+          }
+        },
+        "Chronos-2": {
+          "dimension": 6144,
+          "pca": {
+            "8": {
+              "rank": 8,
+              "participation_ratio": 7.824815273284912,
+              "explained_variance_fraction": 0.2207694947719574
+            },
+            "32": {
+              "rank": 32,
+              "participation_ratio": 26.081392288208008,
+              "explained_variance_fraction": 0.5153498649597168
+            }
+          }
+        }
+      },
+      "pairs": {
+        "TimesFM|Chronos-Bolt": {
+          "raw": {
+            "value": 0.34915321043261105,
+            "null_p95": 0.16645613108218602,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank8": {
+            "value": 0.1338747277636627,
+            "null_p95": 0.0335894015697175,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank32": {
+            "value": 0.22532351841408854,
+            "null_p95": 0.06797374413497301,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          }
+        },
+        "TimesFM|Chronos-2": {
+          "raw": {
+            "value": 0.4675326675853682,
+            "null_p95": 0.2547664997007714,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank8": {
+            "value": 0.25341287535814055,
+            "null_p95": 0.04666368542934955,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank32": {
+            "value": 0.3131495474928761,
+            "null_p95": 0.07968977626957695,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          }
+        },
+        "Chronos-Bolt|Chronos-2": {
+          "raw": {
+            "value": 0.8353000869693389,
+            "null_p95": 0.3590384339075499,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank8": {
+            "value": 0.711051622361047,
+            "null_p95": 0.1802065226658104,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank32": {
+            "value": 0.8164868378059486,
+            "null_p95": 0.21384146614771532,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          }
+        }
+      }
+    },
+    "128_common32_concat": {
+      "n_test_series": 64,
+      "n_windows_per_series": 3,
+      "models": {
+        "TimesFM": {
+          "dimension": 5120,
+          "pca": {
+            "8": {
+              "rank": 8,
+              "participation_ratio": 3.995675563812256,
+              "explained_variance_fraction": 0.38165223598480225
+            },
+            "32": {
+              "rank": 32,
+              "participation_ratio": 10.203646659851074,
+              "explained_variance_fraction": 0.6333369016647339
+            }
+          }
+        },
+        "Chronos-Bolt": {
+          "dimension": 2048,
+          "pca": {
+            "8": {
+              "rank": 8,
+              "participation_ratio": 7.068424224853516,
+              "explained_variance_fraction": 0.5131970047950745
+            },
+            "32": {
+              "rank": 32,
+              "participation_ratio": 15.8014554977417,
+              "explained_variance_fraction": 0.814579963684082
+            }
+          }
+        },
+        "Chronos-2": {
+          "dimension": 3072,
+          "pca": {
+            "8": {
+              "rank": 8,
+              "participation_ratio": 7.608459949493408,
+              "explained_variance_fraction": 0.29080939292907715
+            },
+            "32": {
+              "rank": 32,
+              "participation_ratio": 22.594663619995117,
+              "explained_variance_fraction": 0.5814396142959595
+            }
+          }
+        }
+      },
+      "pairs": {
+        "TimesFM|Chronos-Bolt": {
+          "raw": {
+            "value": 0.3399337175846932,
+            "null_p95": 0.15181685447141324,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank8": {
+            "value": 0.17913010568855434,
+            "null_p95": 0.037271100566992024,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank32": {
+            "value": 0.23863304010542555,
+            "null_p95": 0.06868296621747187,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          }
+        },
+        "TimesFM|Chronos-2": {
+          "raw": {
+            "value": 0.49206637126472447,
+            "null_p95": 0.2399444227290717,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank8": {
+            "value": 0.30493418204406597,
+            "null_p95": 0.053890325264236344,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank32": {
+            "value": 0.35391992270002276,
+            "null_p95": 0.08579866234097211,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          }
+        },
+        "Chronos-Bolt|Chronos-2": {
+          "raw": {
+            "value": 0.796135998923936,
+            "null_p95": 0.3205789174683095,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank8": {
+            "value": 0.7351034734404865,
+            "null_p95": 0.1940770019295781,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          },
+          "rank32": {
+            "value": 0.7808889764589997,
+            "null_p95": 0.2242167963912052,
+            "null_p_plusone": 0.001,
+            "n_permutations": 999,
+            "resample_unit": "whole_source_series_allwindows"
+          }
+        }
+      }
+    }
+  }
+}

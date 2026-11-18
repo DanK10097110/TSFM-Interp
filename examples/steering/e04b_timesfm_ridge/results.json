@@ -1,0 +1,5010 @@
+{
+  "protocol": {
+    "out": "runs/steering_e04b_timesfm_ridge",
+    "model": "timesfm",
+    "test": 8,
+    "seed": 5190000,
+    "doses": [
+      0.2
+    ],
+    "radii": [
+      0.2,
+      0.5
+    ],
+    "steps": [
+      6
+    ],
+    "ridge": 1e-05,
+    "shifted": false,
+    "scope": "adaptive native-head control; not semantic vector or calibrated uncertainty",
+    "success": "relative error < 0.1",
+    "source_sha256": "47d2fda055d4e0fc62848ceff1431da825f491e44bd6bdbdf923d3f93b9d3a10"
+  },
+  "rows": [
+    {
+      "seed": 5190000,
+      "task": "widen",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 0.999430270160541,
+      "collateral": 0.0014719619169544693,
+      "relative_error": 0.0015783738387765405,
+      "first_order_bound": {
+        "relative_error": 1.0709690840575793e-15,
+        "unrestricted_minimum_norm": 1.8426161990379035,
+        "unreachable_fraction": 1.0393207194804207e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.033943331640993404,
+      "median_drift_rms": 0.00012430791684892029,
+      "width_change": 0.25494328141212463,
+      "crossing_fraction": 0.00390625,
+      "baseline_crossing_fraction": 0.00390625,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.6371498300072196,
+          "gain": 1.0045076853059538,
+          "collateral": 0.015798878863583766,
+          "relative_error": 0.016429357874357255,
+          "linear_solve": {
+            "relative_error": 0.001266966705530498,
+            "unrestricted_minimum_norm": 1.8426161990378924,
+            "unreachable_fraction": 1.0443960302776071e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.6236231716004774,
+          "gain": 0.9994300175239057,
+          "collateral": 0.0014720894271258755,
+          "relative_error": 0.0015785839554836414,
+          "linear_solve": {
+            "relative_error": 0.001261248241278577,
+            "unrestricted_minimum_norm": 1.828617983435503,
+            "unreachable_fraction": 1.0125433001222477e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190000,
+      "task": "widen",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 0.999430270160541,
+      "collateral": 0.0014719619169544693,
+      "relative_error": 0.0015783738387765405,
+      "first_order_bound": {
+        "relative_error": 1.0709690840575793e-15,
+        "unrestricted_minimum_norm": 1.8426161990379035,
+        "unreachable_fraction": 1.0393207194804207e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.033943331640993404,
+      "median_drift_rms": 0.00012430791684892029,
+      "width_change": 0.25494328141212463,
+      "crossing_fraction": 0.00390625,
+      "baseline_crossing_fraction": 0.00390625,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.6371498300072196,
+          "gain": 1.0045076853059538,
+          "collateral": 0.015798878863583766,
+          "relative_error": 0.016429357874357255,
+          "linear_solve": {
+            "relative_error": 0.001266966705530498,
+            "unrestricted_minimum_norm": 1.8426161990378924,
+            "unreachable_fraction": 1.0443960302776071e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.6236231716004774,
+          "gain": 0.9994300175239057,
+          "collateral": 0.0014720894271258755,
+          "relative_error": 0.0015785839554836414,
+          "linear_solve": {
+            "relative_error": 0.001261248241278577,
+            "unrestricted_minimum_norm": 1.828617983435503,
+            "unreachable_fraction": 1.0125433001222477e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190000,
+      "task": "narrow",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 1.0000600030499203,
+      "collateral": 0.0015915223293375056,
+      "relative_error": 0.0015926530352778094,
+      "first_order_bound": {
+        "relative_error": 1.0709690840575793e-15,
+        "unrestricted_minimum_norm": 1.8426161990379035,
+        "unreachable_fraction": 1.0393207194804207e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.034650261197597565,
+      "median_drift_rms": 0.00012431923823896796,
+      "width_change": -0.2550649642944336,
+      "crossing_fraction": 0.00390625,
+      "baseline_crossing_fraction": 0.00390625,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.63714983000722,
+          "gain": 0.983794925926017,
+          "collateral": 0.020546914815148483,
+          "relative_error": 0.02616830399862103,
+          "linear_solve": {
+            "relative_error": 0.0012669667055305056,
+            "unrestricted_minimum_norm": 1.8426161990378929,
+            "unreachable_fraction": 1.0931685485677532e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.6574379786126912,
+          "gain": 1.0000602576618793,
+          "collateral": 0.0015918590599016983,
+          "relative_error": 0.0015929991376037473,
+          "linear_solve": {
+            "relative_error": 0.001292068066812282,
+            "unrestricted_minimum_norm": 1.8584780539584933,
+            "unreachable_fraction": 1.3570375220363167e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190000,
+      "task": "narrow",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 1.0000600030499203,
+      "collateral": 0.0015915223293375056,
+      "relative_error": 0.0015926530352778094,
+      "first_order_bound": {
+        "relative_error": 1.0709690840575793e-15,
+        "unrestricted_minimum_norm": 1.8426161990379035,
+        "unreachable_fraction": 1.0393207194804207e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.034650261197597565,
+      "median_drift_rms": 0.00012431923823896796,
+      "width_change": -0.2550649642944336,
+      "crossing_fraction": 0.00390625,
+      "baseline_crossing_fraction": 0.00390625,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.63714983000722,
+          "gain": 0.983794925926017,
+          "collateral": 0.020546914815148483,
+          "relative_error": 0.02616830399862103,
+          "linear_solve": {
+            "relative_error": 0.0012669667055305056,
+            "unrestricted_minimum_norm": 1.8426161990378929,
+            "unreachable_fraction": 1.0931685485677532e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.6574379786126912,
+          "gain": 1.0000602576618793,
+          "collateral": 0.0015918590599016983,
+          "relative_error": 0.0015929991376037473,
+          "linear_solve": {
+            "relative_error": 0.001292068066812282,
+            "unrestricted_minimum_norm": 1.8584780539584933,
+            "unreachable_fraction": 1.3570375220363167e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190000,
+      "task": "season",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 0.9999675872026194,
+      "collateral": 0.00033743898763304367,
+      "relative_error": 0.0003389921235203766,
+      "first_order_bound": {
+        "relative_error": 1.773391843635753e-15,
+        "unrestricted_minimum_norm": 2.4570302094779954,
+        "unreachable_fraction": 1.9304758831493715e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.051043310231914794,
+      "median_drift_rms": 0.14141008257865906,
+      "width_change": -2.0533334463834763e-05,
+      "crossing_fraction": 0.00390625,
+      "baseline_crossing_fraction": 0.00390625,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.441572386714103,
+          "gain": 0.9999679115235297,
+          "collateral": 0.0003375703585964857,
+          "relative_error": 0.0003390920484546211,
+          "linear_solve": {
+            "relative_error": 0.00023546501214384644,
+            "unrestricted_minimum_norm": 2.4570302094779946,
+            "unreachable_fraction": 1.939423776998442e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190000,
+      "task": "season",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 0.9999675872026194,
+      "collateral": 0.00033743898763304367,
+      "relative_error": 0.0003389921235203766,
+      "first_order_bound": {
+        "relative_error": 1.773391843635753e-15,
+        "unrestricted_minimum_norm": 2.4570302094779954,
+        "unreachable_fraction": 1.9304758831493715e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.051043310231914794,
+      "median_drift_rms": 0.14141008257865906,
+      "width_change": -2.0533334463834763e-05,
+      "crossing_fraction": 0.00390625,
+      "baseline_crossing_fraction": 0.00390625,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.441572386714103,
+          "gain": 0.9999679115235297,
+          "collateral": 0.0003375703585964857,
+          "relative_error": 0.0003390920484546211,
+          "linear_solve": {
+            "relative_error": 0.00023546501214384644,
+            "unrestricted_minimum_norm": 2.4570302094779946,
+            "unreachable_fraction": 1.939423776998442e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190000,
+      "task": "upper",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 0.9757472295314074,
+      "collateral": 0.07359701702432554,
+      "relative_error": 0.07749011414549024,
+      "first_order_bound": {
+        "relative_error": 0.05615852964020224,
+        "unrestricted_minimum_norm": 15.762894481012108,
+        "unreachable_fraction": 1.4848184281881076e-15,
+        "rank": 288,
+        "norm_constraint_active": true,
+        "penalty": 9.453970382720123e-05
+      },
+      "relative_hidden_norm": 0.19237823151415043,
+      "median_drift_rms": 0.00458014290779829,
+      "width_change": 0.19430647790431976,
+      "crossing_fraction": 0.00390625,
+      "baseline_crossing_fraction": 0.00390625,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 9.566669464106685,
+          "gain": 1.3094083499163387,
+          "collateral": 0.6841104813877452,
+          "relative_error": 0.7508266629139672,
+          "linear_solve": {
+            "relative_error": 0.05615852964026081,
+            "unrestricted_minimum_norm": 15.76289448101212,
+            "unreachable_fraction": 1.4989901433245962e-15,
+            "rank": 288,
+            "norm_constraint_active": true,
+            "penalty": 9.453970382740445e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 9.566669464111325,
+          "gain": 0.9280082862824202,
+          "collateral": 0.16304330644116377,
+          "relative_error": 0.17822998238024154,
+          "linear_solve": {
+            "relative_error": 0.01061277496509447,
+            "unrestricted_minimum_norm": 11.468561279707197,
+            "unreachable_fraction": 1.5395060597315407e-15,
+            "rank": 288,
+            "norm_constraint_active": true,
+            "penalty": 1.1858621577956124e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 9.566669464111321,
+          "gain": 0.9581989981234073,
+          "collateral": 0.11714317810740471,
+          "relative_error": 0.12437784342474366,
+          "linear_solve": {
+            "relative_error": 0.025073765805358975,
+            "unrestricted_minimum_norm": 12.990549661855173,
+            "unreachable_fraction": 1.6235795883781368e-15,
+            "rank": 288,
+            "norm_constraint_active": true,
+            "penalty": 3.987921110191998e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 9.097463353165832,
+          "gain": 0.9700282383710146,
+          "collateral": 0.08456424406353429,
+          "relative_error": 0.08971854807776214,
+          "linear_solve": {
+            "relative_error": 0.013375372218390986,
+            "unrestricted_minimum_norm": 11.701006269480095,
+            "unreachable_fraction": 1.5764334336522107e-15,
+            "rank": 288,
+            "norm_constraint_active": true,
+            "penalty": 1.6180518314941163e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 9.138194978712644,
+          "gain": 0.9752548858523369,
+          "collateral": 0.07434280122228473,
+          "relative_error": 0.07835287338545423,
+          "linear_solve": {
+            "relative_error": 0.021806556513866378,
+            "unrestricted_minimum_norm": 12.727843920809823,
+            "unreachable_fraction": 1.509867807048859e-15,
+            "rank": 288,
+            "norm_constraint_active": true,
+            "penalty": 3.1573881941232864e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 9.202094764930813,
+          "gain": 0.9757470991462467,
+          "collateral": 0.07359697459268,
+          "relative_error": 0.07749011465353219,
+          "linear_solve": {
+            "relative_error": 0.020040145719414107,
+            "unrestricted_minimum_norm": 12.443498668965836,
+            "unreachable_fraction": 1.2599922971022855e-15,
+            "rank": 288,
+            "norm_constraint_active": true,
+            "penalty": 2.9156599120959383e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190000,
+      "task": "upper",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 0.9935385175049305,
+      "collateral": 0.04623054297329536,
+      "relative_error": 0.04667990852218756,
+      "first_order_bound": {
+        "relative_error": 4.460442327051982e-15,
+        "unrestricted_minimum_norm": 15.762894481012108,
+        "unreachable_fraction": 1.4848184281881076e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.20586946047209648,
+      "median_drift_rms": 0.0018861001590266824,
+      "width_change": 0.19823625683784485,
+      "crossing_fraction": 0.00390625,
+      "baseline_crossing_fraction": 0.00390625,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 13.852193333371707,
+          "gain": 1.3254525139927862,
+          "collateral": 0.8100607265761365,
+          "relative_error": 0.8729935392689244,
+          "linear_solve": {
+            "relative_error": 0.013779603484358326,
+            "unrestricted_minimum_norm": 15.76289448101212,
+            "unreachable_fraction": 1.4989901433245962e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 9.707902497639749,
+          "gain": 0.916321901604533,
+          "collateral": 0.16004679275352487,
+          "relative_error": 0.18060177192312143,
+          "linear_solve": {
+            "relative_error": 0.00911206534439373,
+            "unrestricted_minimum_norm": 11.321373849128632,
+            "unreachable_fraction": 1.8269059240547134e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 11.378813280732738,
+          "gain": 0.9645134862512349,
+          "collateral": 0.09579622948843775,
+          "relative_error": 0.10215777132574261,
+          "linear_solve": {
+            "relative_error": 0.009553231355730215,
+            "unrestricted_minimum_norm": 12.801115594765609,
+            "unreachable_fraction": 1.4320322948084566e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 10.12286132108282,
+          "gain": 0.9705376904457808,
+          "collateral": 0.07049415304573477,
+          "relative_error": 0.07640322832121767,
+          "linear_solve": {
+            "relative_error": 0.008136331438402271,
+            "unrestricted_minimum_norm": 11.136076575456302,
+            "unreachable_fraction": 1.6068624732616105e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 10.120719224781132,
+          "gain": 0.9882992319762706,
+          "collateral": 0.05493812091764169,
+          "relative_error": 0.05617032225567651,
+          "linear_solve": {
+            "relative_error": 0.008164838684240531,
+            "unrestricted_minimum_norm": 11.815697981378218,
+            "unreachable_fraction": 2.133527890958622e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 0.25,
+          "hidden_norm": 9.847425405457397,
+          "gain": 0.9935383871197699,
+          "collateral": 0.046230430217031215,
+          "relative_error": 0.04667981489965172,
+          "linear_solve": {
+            "relative_error": 0.006563424127468021,
+            "unrestricted_minimum_norm": 10.769138440521086,
+            "unreachable_fraction": 1.468627395727581e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190001,
+      "task": "widen",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 0.9997440667007647,
+      "collateral": 0.005031894808197752,
+      "relative_error": 0.005038399271040855,
+      "first_order_bound": {
+        "relative_error": 3.833999554190043e-15,
+        "unrestricted_minimum_norm": 2.701568471445403,
+        "unreachable_fraction": 2.649595121077882e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.023193148291982456,
+      "median_drift_rms": 0.00012879475252702832,
+      "width_change": 0.09474518895149231,
+      "crossing_fraction": 0.08984375,
+      "baseline_crossing_fraction": 0.08984375,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.414050054862636,
+          "gain": 1.0538554952535055,
+          "collateral": 0.032275717891379216,
+          "relative_error": 0.06278643431828451,
+          "linear_solve": {
+            "relative_error": 0.005048852937323385,
+            "unrestricted_minimum_norm": 2.7015684714453996,
+            "unreachable_fraction": 2.6645111656057132e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.4023717118364285,
+          "gain": 1.0013806208318738,
+          "collateral": 0.006389842074399954,
+          "relative_error": 0.00653729268253882,
+          "linear_solve": {
+            "relative_error": 0.004823701103734813,
+            "unrestricted_minimum_norm": 2.6923281719375267,
+            "unreachable_fraction": 1.6144568771707352e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.407921702849849,
+          "gain": 0.9998856162561736,
+          "collateral": 0.005101311817616737,
+          "relative_error": 0.0051025940365081,
+          "linear_solve": {
+            "relative_error": 0.004829420025302542,
+            "unrestricted_minimum_norm": 2.6933703530191218,
+            "unreachable_fraction": 1.3817667187358955e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.4081688396562573,
+          "gain": 0.9997611575849118,
+          "collateral": 0.005054424996605208,
+          "relative_error": 0.00506006499420242,
+          "linear_solve": {
+            "relative_error": 0.004827570540770957,
+            "unrestricted_minimum_norm": 2.6945371805738114,
+            "unreachable_fraction": 1.5196705818364189e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.4088728052925394,
+          "gain": 0.9997471767840378,
+          "collateral": 0.005033698031815005,
+          "relative_error": 0.005040043199619204,
+          "linear_solve": {
+            "relative_error": 0.00482412997155529,
+            "unrestricted_minimum_norm": 2.6943160697645916,
+            "unreachable_fraction": 1.72415917091407e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.408826770636009,
+          "gain": 0.9997434530519678,
+          "collateral": 0.005032400424406806,
+          "relative_error": 0.005038935439962931,
+          "linear_solve": {
+            "relative_error": 0.004825336686323937,
+            "unrestricted_minimum_norm": 2.6946632382397735,
+            "unreachable_fraction": 1.6155733032304832e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190001,
+      "task": "widen",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 0.9997440667007647,
+      "collateral": 0.005031894808197752,
+      "relative_error": 0.005038399271040855,
+      "first_order_bound": {
+        "relative_error": 3.833999554190043e-15,
+        "unrestricted_minimum_norm": 2.701568471445403,
+        "unreachable_fraction": 2.649595121077882e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.023193148291982456,
+      "median_drift_rms": 0.00012879475252702832,
+      "width_change": 0.09474518895149231,
+      "crossing_fraction": 0.08984375,
+      "baseline_crossing_fraction": 0.08984375,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.414050054862636,
+          "gain": 1.0538554952535055,
+          "collateral": 0.032275717891379216,
+          "relative_error": 0.06278643431828451,
+          "linear_solve": {
+            "relative_error": 0.005048852937323385,
+            "unrestricted_minimum_norm": 2.7015684714453996,
+            "unreachable_fraction": 2.6645111656057132e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.4023717118364285,
+          "gain": 1.0013806208318738,
+          "collateral": 0.006389842074399954,
+          "relative_error": 0.00653729268253882,
+          "linear_solve": {
+            "relative_error": 0.004823701103734813,
+            "unrestricted_minimum_norm": 2.6923281719375267,
+            "unreachable_fraction": 1.6144568771707352e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.407921702849849,
+          "gain": 0.9998856162561736,
+          "collateral": 0.005101311817616737,
+          "relative_error": 0.0051025940365081,
+          "linear_solve": {
+            "relative_error": 0.004829420025302542,
+            "unrestricted_minimum_norm": 2.6933703530191218,
+            "unreachable_fraction": 1.3817667187358955e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.4081688396562573,
+          "gain": 0.9997611575849118,
+          "collateral": 0.005054424996605208,
+          "relative_error": 0.00506006499420242,
+          "linear_solve": {
+            "relative_error": 0.004827570540770957,
+            "unrestricted_minimum_norm": 2.6945371805738114,
+            "unreachable_fraction": 1.5196705818364189e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.4088728052925394,
+          "gain": 0.9997471767840378,
+          "collateral": 0.005033698031815005,
+          "relative_error": 0.005040043199619204,
+          "linear_solve": {
+            "relative_error": 0.00482412997155529,
+            "unrestricted_minimum_norm": 2.6943160697645916,
+            "unreachable_fraction": 1.72415917091407e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.408826770636009,
+          "gain": 0.9997434530519678,
+          "collateral": 0.005032400424406806,
+          "relative_error": 0.005038935439962931,
+          "linear_solve": {
+            "relative_error": 0.004825336686323937,
+            "unrestricted_minimum_norm": 2.6946632382397735,
+            "unreachable_fraction": 1.6155733032304832e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190001,
+      "task": "narrow",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 0.9997406315973435,
+      "collateral": 0.005023256015842138,
+      "relative_error": 0.005029947610958863,
+      "first_order_bound": {
+        "relative_error": 3.833999554190043e-15,
+        "unrestricted_minimum_norm": 2.701568471445403,
+        "unreachable_fraction": 2.649595121077882e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.02322391234634973,
+      "median_drift_rms": 0.0001347055658698082,
+      "width_change": -0.0947427749633789,
+      "crossing_fraction": 0.0859375,
+      "baseline_crossing_fraction": 0.08984375,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.414050054862634,
+          "gain": 0.9352287145488111,
+          "collateral": 0.03207605390475433,
+          "relative_error": 0.07227857672298289,
+          "linear_solve": {
+            "relative_error": 0.005048852937323411,
+            "unrestricted_minimum_norm": 2.7015684714453974,
+            "unreachable_fraction": 2.620849321063605e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.4108152066597524,
+          "gain": 0.9983350308252161,
+          "collateral": 0.005165414294585534,
+          "relative_error": 0.005427119603223215,
+          "linear_solve": {
+            "relative_error": 0.005426303339713488,
+            "unrestricted_minimum_norm": 2.7000998772188205,
+            "unreachable_fraction": 1.5423549672535955e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.411987557144901,
+          "gain": 0.9997350777801511,
+          "collateral": 0.005025394863840839,
+          "relative_error": 0.005032372931340397,
+          "linear_solve": {
+            "relative_error": 0.0054745551392631,
+            "unrestricted_minimum_norm": 2.6988326757099057,
+            "unreachable_fraction": 1.7316306587878107e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.4119356931328797,
+          "gain": 0.9997405485927724,
+          "collateral": 0.005025249506558792,
+          "relative_error": 0.005031942729789547,
+          "linear_solve": {
+            "relative_error": 0.005480592715341442,
+            "unrestricted_minimum_norm": 2.699075963828766,
+            "unreachable_fraction": 1.4334721506569849e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.4120219072686155,
+          "gain": 0.9997412452461405,
+          "collateral": 0.005023028337688498,
+          "relative_error": 0.0050296886289179586,
+          "linear_solve": {
+            "relative_error": 0.005479393785827504,
+            "unrestricted_minimum_norm": 2.6989800631910583,
+            "unreachable_fraction": 1.4714165971070494e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": false,
+          "step_fraction": 0.0,
+          "hidden_norm": 2.4120219072686155,
+          "gain": 0.9997412452461405,
+          "collateral": 0.005023028337688498,
+          "relative_error": 0.0050296886289179586,
+          "linear_solve": {
+            "relative_error": 0.005479870490736806,
+            "unrestricted_minimum_norm": 2.698993083795673,
+            "unreachable_fraction": 2.5675643492849933e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190001,
+      "task": "narrow",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 0.9997406315973435,
+      "collateral": 0.005023256015842138,
+      "relative_error": 0.005029947610958863,
+      "first_order_bound": {
+        "relative_error": 3.833999554190043e-15,
+        "unrestricted_minimum_norm": 2.701568471445403,
+        "unreachable_fraction": 2.649595121077882e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.02322391234634973,
+      "median_drift_rms": 0.0001347055658698082,
+      "width_change": -0.0947427749633789,
+      "crossing_fraction": 0.0859375,
+      "baseline_crossing_fraction": 0.08984375,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.414050054862634,
+          "gain": 0.9352287145488111,
+          "collateral": 0.03207605390475433,
+          "relative_error": 0.07227857672298289,
+          "linear_solve": {
+            "relative_error": 0.005048852937323411,
+            "unrestricted_minimum_norm": 2.7015684714453974,
+            "unreachable_fraction": 2.620849321063605e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.4108152066597524,
+          "gain": 0.9983350308252161,
+          "collateral": 0.005165414294585534,
+          "relative_error": 0.005427119603223215,
+          "linear_solve": {
+            "relative_error": 0.005426303339713488,
+            "unrestricted_minimum_norm": 2.7000998772188205,
+            "unreachable_fraction": 1.5423549672535955e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.411987557144901,
+          "gain": 0.9997350777801511,
+          "collateral": 0.005025394863840839,
+          "relative_error": 0.005032372931340397,
+          "linear_solve": {
+            "relative_error": 0.0054745551392631,
+            "unrestricted_minimum_norm": 2.6988326757099057,
+            "unreachable_fraction": 1.7316306587878107e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.4119356931328797,
+          "gain": 0.9997405485927724,
+          "collateral": 0.005025249506558792,
+          "relative_error": 0.005031942729789547,
+          "linear_solve": {
+            "relative_error": 0.005480592715341442,
+            "unrestricted_minimum_norm": 2.699075963828766,
+            "unreachable_fraction": 1.4334721506569849e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.4120219072686155,
+          "gain": 0.9997412452461405,
+          "collateral": 0.005023028337688498,
+          "relative_error": 0.0050296886289179586,
+          "linear_solve": {
+            "relative_error": 0.005479393785827504,
+            "unrestricted_minimum_norm": 2.6989800631910583,
+            "unreachable_fraction": 1.4714165971070494e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": false,
+          "step_fraction": 0.0,
+          "hidden_norm": 2.4120219072686155,
+          "gain": 0.9997412452461405,
+          "collateral": 0.005023028337688498,
+          "relative_error": 0.0050296886289179586,
+          "linear_solve": {
+            "relative_error": 0.005479870490736806,
+            "unrestricted_minimum_norm": 2.698993083795673,
+            "unreachable_fraction": 2.5675643492849933e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190001,
+      "task": "season",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 0.9999663232728989,
+      "collateral": 0.0004039820335145301,
+      "relative_error": 0.00040538328203170863,
+      "first_order_bound": {
+        "relative_error": 2.475640883694716e-15,
+        "unrestricted_minimum_norm": 2.4935078049830346,
+        "unreachable_fraction": 1.9836334325358963e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.023895842374119635,
+      "median_drift_rms": 0.14141161739826202,
+      "width_change": 7.176829967647791e-05,
+      "crossing_fraction": 0.08984375,
+      "baseline_crossing_fraction": 0.08984375,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.4818081656286273,
+          "gain": 0.9999663074320562,
+          "collateral": 0.0004038497396802539,
+          "relative_error": 0.00040525276232798875,
+          "linear_solve": {
+            "relative_error": 0.00020992777477476425,
+            "unrestricted_minimum_norm": 2.493507804983036,
+            "unreachable_fraction": 1.897570449214941e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190001,
+      "task": "season",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 0.9999663232728989,
+      "collateral": 0.0004039820335145301,
+      "relative_error": 0.00040538328203170863,
+      "first_order_bound": {
+        "relative_error": 2.475640883694716e-15,
+        "unrestricted_minimum_norm": 2.4935078049830346,
+        "unreachable_fraction": 1.9836334325358963e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.023895842374119635,
+      "median_drift_rms": 0.14141161739826202,
+      "width_change": 7.176829967647791e-05,
+      "crossing_fraction": 0.08984375,
+      "baseline_crossing_fraction": 0.08984375,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.4818081656286273,
+          "gain": 0.9999663074320562,
+          "collateral": 0.0004038497396802539,
+          "relative_error": 0.00040525276232798875,
+          "linear_solve": {
+            "relative_error": 0.00020992777477476425,
+            "unrestricted_minimum_norm": 2.493507804983036,
+            "unreachable_fraction": 1.897570449214941e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190001,
+      "task": "upper",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 0.9693726012483238,
+      "collateral": 0.12406889037603586,
+      "relative_error": 0.12779329839015416,
+      "first_order_bound": {
+        "relative_error": 6.185289738381917e-15,
+        "unrestricted_minimum_norm": 20.638849153337496,
+        "unreachable_fraction": 2.053992686613798e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.10288096376168154,
+      "median_drift_rms": 0.007699052337557077,
+      "width_change": 0.19874295592308044,
+      "crossing_fraction": 0.08203125,
+      "baseline_crossing_fraction": 0.08984375,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 9.297494757141386,
+          "gain": 0.7240954856388271,
+          "collateral": 0.25411193623299116,
+          "relative_error": 0.3750948909022282,
+          "linear_solve": {
+            "relative_error": 0.016485708587457584,
+            "unrestricted_minimum_norm": 20.638849153337492,
+            "unreachable_fraction": 2.074368424458139e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 12.124210300211656,
+          "gain": 1.0474266251549125,
+          "collateral": 0.26133954938446613,
+          "relative_error": 0.26560806622928523,
+          "linear_solve": {
+            "relative_error": 0.009487512792496055,
+            "unrestricted_minimum_norm": 13.637491378465715,
+            "unreachable_fraction": 1.9617332230342066e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 10.579281616308014,
+          "gain": 0.9681955538690088,
+          "collateral": 0.15547742237942397,
+          "relative_error": 0.1586970436506267,
+          "linear_solve": {
+            "relative_error": 0.007858246865897102,
+            "unrestricted_minimum_norm": 11.917339144162945,
+            "unreachable_fraction": 1.7553925254518568e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 10.639399793503136,
+          "gain": 0.9606515453197061,
+          "collateral": 0.1340833809830269,
+          "relative_error": 0.13973780426773094,
+          "linear_solve": {
+            "relative_error": 0.0075383788668827246,
+            "unrestricted_minimum_norm": 12.733479172578114,
+            "unreachable_fraction": 1.477897957047869e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 0.125,
+          "hidden_norm": 10.611387094395768,
+          "gain": 0.9620651090517638,
+          "collateral": 0.1344428549522694,
+          "relative_error": 0.13969229470150282,
+          "linear_solve": {
+            "relative_error": 0.006453998511990402,
+            "unrestricted_minimum_norm": 12.420130932049124,
+            "unreachable_fraction": 1.536447540454846e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 0.25,
+          "hidden_norm": 10.685156520283206,
+          "gain": 0.9693722892552613,
+          "collateral": 0.1240687248898914,
+          "relative_error": 0.12779321250076991,
+          "linear_solve": {
+            "relative_error": 0.0068764025606028656,
+            "unrestricted_minimum_norm": 12.738712629695588,
+            "unreachable_fraction": 1.5075069357343602e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190001,
+      "task": "upper",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 0.9693726012483238,
+      "collateral": 0.12406889037603586,
+      "relative_error": 0.12779329839015416,
+      "first_order_bound": {
+        "relative_error": 6.185289738381917e-15,
+        "unrestricted_minimum_norm": 20.638849153337496,
+        "unreachable_fraction": 2.053992686613798e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.10288096376168154,
+      "median_drift_rms": 0.007699052337557077,
+      "width_change": 0.19874295592308044,
+      "crossing_fraction": 0.08203125,
+      "baseline_crossing_fraction": 0.08984375,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 9.297494757141386,
+          "gain": 0.7240954856388271,
+          "collateral": 0.25411193623299116,
+          "relative_error": 0.3750948909022282,
+          "linear_solve": {
+            "relative_error": 0.016485708587457584,
+            "unrestricted_minimum_norm": 20.638849153337492,
+            "unreachable_fraction": 2.074368424458139e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 12.124210300211656,
+          "gain": 1.0474266251549125,
+          "collateral": 0.26133954938446613,
+          "relative_error": 0.26560806622928523,
+          "linear_solve": {
+            "relative_error": 0.009487512792496055,
+            "unrestricted_minimum_norm": 13.637491378465715,
+            "unreachable_fraction": 1.9617332230342066e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 10.579281616308014,
+          "gain": 0.9681955538690088,
+          "collateral": 0.15547742237942397,
+          "relative_error": 0.1586970436506267,
+          "linear_solve": {
+            "relative_error": 0.007858246865897102,
+            "unrestricted_minimum_norm": 11.917339144162945,
+            "unreachable_fraction": 1.7553925254518568e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 10.639399793503136,
+          "gain": 0.9606515453197061,
+          "collateral": 0.1340833809830269,
+          "relative_error": 0.13973780426773094,
+          "linear_solve": {
+            "relative_error": 0.0075383788668827246,
+            "unrestricted_minimum_norm": 12.733479172578114,
+            "unreachable_fraction": 1.477897957047869e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 0.125,
+          "hidden_norm": 10.611387094395768,
+          "gain": 0.9620651090517638,
+          "collateral": 0.1344428549522694,
+          "relative_error": 0.13969229470150282,
+          "linear_solve": {
+            "relative_error": 0.006453998511990402,
+            "unrestricted_minimum_norm": 12.420130932049124,
+            "unreachable_fraction": 1.536447540454846e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 0.25,
+          "hidden_norm": 10.685156520283206,
+          "gain": 0.9693722892552613,
+          "collateral": 0.1240687248898914,
+          "relative_error": 0.12779321250076991,
+          "linear_solve": {
+            "relative_error": 0.0068764025606028656,
+            "unrestricted_minimum_norm": 12.738712629695588,
+            "unreachable_fraction": 1.5075069357343602e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190002,
+      "task": "widen",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 1.0008111391409653,
+      "collateral": 0.0015736980512659512,
+      "relative_error": 0.00177044408625757,
+      "first_order_bound": {
+        "relative_error": 1.4453814709973832e-15,
+        "unrestricted_minimum_norm": 1.610619837146849,
+        "unreachable_fraction": 1.2125423641104981e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.03101483029919158,
+      "median_drift_rms": 0.00010350312368245795,
+      "width_change": 0.23980845510959625,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.4291502794186017,
+          "gain": 1.019350455793528,
+          "collateral": 0.025798936143103184,
+          "relative_error": 0.032249422406195105,
+          "linear_solve": {
+            "relative_error": 0.0012362971340238661,
+            "unrestricted_minimum_norm": 1.6106198371468556,
+            "unreachable_fraction": 1.202554056332772e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.3802904466577601,
+          "gain": 1.0008113040677284,
+          "collateral": 0.00157371938558621,
+          "relative_error": 0.001770538617167863,
+          "linear_solve": {
+            "relative_error": 0.0012085120144713984,
+            "unrestricted_minimum_norm": 1.5652035856652124,
+            "unreachable_fraction": 1.3341756340237652e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190002,
+      "task": "widen",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 1.0008111391409653,
+      "collateral": 0.0015736980512659512,
+      "relative_error": 0.00177044408625757,
+      "first_order_bound": {
+        "relative_error": 1.4453814709973832e-15,
+        "unrestricted_minimum_norm": 1.610619837146849,
+        "unreachable_fraction": 1.2125423641104981e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.03101483029919158,
+      "median_drift_rms": 0.00010350312368245795,
+      "width_change": 0.23980845510959625,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.4291502794186017,
+          "gain": 1.019350455793528,
+          "collateral": 0.025798936143103184,
+          "relative_error": 0.032249422406195105,
+          "linear_solve": {
+            "relative_error": 0.0012362971340238661,
+            "unrestricted_minimum_norm": 1.6106198371468556,
+            "unreachable_fraction": 1.202554056332772e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.3802904466577601,
+          "gain": 1.0008113040677284,
+          "collateral": 0.00157371938558621,
+          "relative_error": 0.001770538617167863,
+          "linear_solve": {
+            "relative_error": 0.0012085120144713984,
+            "unrestricted_minimum_norm": 1.5652035856652124,
+            "unreachable_fraction": 1.3341756340237652e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190002,
+      "task": "narrow",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 0.9979162320065758,
+      "collateral": 0.003917249368584022,
+      "relative_error": 0.00443699579288639,
+      "first_order_bound": {
+        "relative_error": 1.4453814709973832e-15,
+        "unrestricted_minimum_norm": 1.610619837146849,
+        "unreachable_fraction": 1.2125423641104981e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.03293423740163334,
+      "median_drift_rms": 0.00012666061229538172,
+      "width_change": -0.23910696804523468,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.4291502794185997,
+          "gain": 0.9747859067132387,
+          "collateral": 0.02470581347213263,
+          "relative_error": 0.03530053426781685,
+          "linear_solve": {
+            "relative_error": 0.001236297134023874,
+            "unrestricted_minimum_norm": 1.610619837146853,
+            "unreachable_fraction": 1.2305946216599045e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.4606767325436287,
+          "gain": 0.9946526116178496,
+          "collateral": 0.008035730060289657,
+          "relative_error": 0.009652332366397266,
+          "linear_solve": {
+            "relative_error": 0.001260253872032731,
+            "unrestricted_minimum_norm": 1.6352739963376774,
+            "unreachable_fraction": 1.8584713936398525e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.4657121388350174,
+          "gain": 0.9979160658035566,
+          "collateral": 0.003917291407044995,
+          "relative_error": 0.004437110963545365,
+          "linear_solve": {
+            "relative_error": 0.0012455295264601433,
+            "unrestricted_minimum_norm": 1.6431257695159656,
+            "unreachable_fraction": 8.753652173101518e-16,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190002,
+      "task": "narrow",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 0.9979162320065758,
+      "collateral": 0.003917249368584022,
+      "relative_error": 0.00443699579288639,
+      "first_order_bound": {
+        "relative_error": 1.4453814709973832e-15,
+        "unrestricted_minimum_norm": 1.610619837146849,
+        "unreachable_fraction": 1.2125423641104981e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.03293423740163334,
+      "median_drift_rms": 0.00012666061229538172,
+      "width_change": -0.23910696804523468,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.4291502794185997,
+          "gain": 0.9747859067132387,
+          "collateral": 0.02470581347213263,
+          "relative_error": 0.03530053426781685,
+          "linear_solve": {
+            "relative_error": 0.001236297134023874,
+            "unrestricted_minimum_norm": 1.610619837146853,
+            "unreachable_fraction": 1.2305946216599045e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.4606767325436287,
+          "gain": 0.9946526116178496,
+          "collateral": 0.008035730060289657,
+          "relative_error": 0.009652332366397266,
+          "linear_solve": {
+            "relative_error": 0.001260253872032731,
+            "unrestricted_minimum_norm": 1.6352739963376774,
+            "unreachable_fraction": 1.8584713936398525e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.4657121388350174,
+          "gain": 0.9979160658035566,
+          "collateral": 0.003917291407044995,
+          "relative_error": 0.004437110963545365,
+          "linear_solve": {
+            "relative_error": 0.0012455295264601433,
+            "unrestricted_minimum_norm": 1.6431257695159656,
+            "unreachable_fraction": 8.753652173101518e-16,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190002,
+      "task": "season",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 0.9999684707271197,
+      "collateral": 0.0006786995703886132,
+      "relative_error": 0.0006794315284810274,
+      "first_order_bound": {
+        "relative_error": 1.6062482730516265e-15,
+        "unrestricted_minimum_norm": 2.981707046117469,
+        "unreachable_fraction": 1.6475908232518275e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.06660606278013842,
+      "median_drift_rms": 0.14140523970127106,
+      "width_change": -7.619243115186691e-05,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.9642500461241736,
+          "gain": 0.9999684810941313,
+          "collateral": 0.0006786751650299359,
+          "relative_error": 0.0006794066683920429,
+          "linear_solve": {
+            "relative_error": 0.0002713695960167017,
+            "unrestricted_minimum_norm": 2.981707046117467,
+            "unreachable_fraction": 1.7030305003263574e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190002,
+      "task": "season",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 0.9999684707271197,
+      "collateral": 0.0006786995703886132,
+      "relative_error": 0.0006794315284810274,
+      "first_order_bound": {
+        "relative_error": 1.6062482730516265e-15,
+        "unrestricted_minimum_norm": 2.981707046117469,
+        "unreachable_fraction": 1.6475908232518275e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.06660606278013842,
+      "median_drift_rms": 0.14140523970127106,
+      "width_change": -7.619243115186691e-05,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.9642500461241736,
+          "gain": 0.9999684810941313,
+          "collateral": 0.0006786751650299359,
+          "relative_error": 0.0006794066683920429,
+          "linear_solve": {
+            "relative_error": 0.0002713695960167017,
+            "unrestricted_minimum_norm": 2.981707046117467,
+            "unreachable_fraction": 1.7030305003263574e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190002,
+      "task": "upper",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 1.0165709326975045,
+      "collateral": 0.04785499605666642,
+      "relative_error": 0.05064283224750358,
+      "first_order_bound": {
+        "relative_error": 0.1471573603838386,
+        "unrestricted_minimum_norm": 20.02721734055516,
+        "unreachable_fraction": 1.4966970712210839e-15,
+        "rank": 288,
+        "norm_constraint_active": true,
+        "penalty": 0.0005015666762273036
+      },
+      "relative_hidden_norm": 0.15072161581071838,
+      "median_drift_rms": 0.0029939368832856417,
+      "width_change": 0.20597387850284576,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 4.450420856475912,
+          "gain": 0.8344786171801387,
+          "collateral": 0.29500341340281905,
+          "relative_error": 0.33826667304053704,
+          "linear_solve": {
+            "relative_error": 0.1471573603838335,
+            "unrestricted_minimum_norm": 20.027217340555165,
+            "unreachable_fraction": 1.4982829130415099e-15,
+            "rank": 288,
+            "norm_constraint_active": true,
+            "penalty": 0.0005015666762272602
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 5.866796646432616,
+          "gain": 0.8857700810767708,
+          "collateral": 0.18197302881019142,
+          "relative_error": 0.21485496873836132,
+          "linear_solve": {
+            "relative_error": 0.0388781541783082,
+            "unrestricted_minimum_norm": 13.987675189157848,
+            "unreachable_fraction": 1.7700526580120969e-15,
+            "rank": 288,
+            "norm_constraint_active": true,
+            "penalty": 9.821495484846159e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 6.737352815292438,
+          "gain": 0.9953576396219431,
+          "collateral": 0.1049874990054879,
+          "relative_error": 0.10509008734084807,
+          "linear_solve": {
+            "relative_error": 0.01055092483402032,
+            "unrestricted_minimum_norm": 10.614125371481311,
+            "unreachable_fraction": 1.6433488668673355e-15,
+            "rank": 288,
+            "norm_constraint_active": true,
+            "penalty": 1.7329308208902152e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 6.952353687193696,
+          "gain": 1.0241064173169432,
+          "collateral": 0.06592516443711828,
+          "relative_error": 0.07019434921644128,
+          "linear_solve": {
+            "relative_error": 0.005142624244703477,
+            "unrestricted_minimum_norm": 9.290516982967533,
+            "unreachable_fraction": 1.6584271066436869e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 6.929230496881828,
+          "gain": 1.0276022856123745,
+          "collateral": 0.0505714826744138,
+          "relative_error": 0.057613896161565314,
+          "linear_solve": {
+            "relative_error": 0.003429235601930297,
+            "unrestricted_minimum_norm": 8.232778596843593,
+            "unreachable_fraction": 1.3789176849145813e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 6.707746081518249,
+          "gain": 1.016570960637182,
+          "collateral": 0.04785462307898471,
+          "relative_error": 0.05064248894427217,
+          "linear_solve": {
+            "relative_error": 0.0026570559139798607,
+            "unrestricted_minimum_norm": 7.4889579697444395,
+            "unreachable_fraction": 1.3615964814944419e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190002,
+      "task": "upper",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 1.0219555138610301,
+      "collateral": 0.03591991483705866,
+      "relative_error": 0.04209851387879909,
+      "first_order_bound": {
+        "relative_error": 6.3755882351747495e-15,
+        "unrestricted_minimum_norm": 20.02721734055516,
+        "unreachable_fraction": 1.4966970712210839e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.15203818866496863,
+      "median_drift_rms": 0.0016308105550706387,
+      "width_change": 0.20487459003925323,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 8.993468249208588,
+          "gain": 0.8681423310190438,
+          "collateral": 0.3211282155112782,
+          "relative_error": 0.34714517952371066,
+          "linear_solve": {
+            "relative_error": 0.016278847054486612,
+            "unrestricted_minimum_norm": 20.027217340555165,
+            "unreachable_fraction": 1.4982829130415099e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 8.691011113323118,
+          "gain": 0.8908039052039385,
+          "collateral": 0.1962360263284933,
+          "relative_error": 0.22457151455139535,
+          "linear_solve": {
+            "relative_error": 0.008337838821352158,
+            "unrestricted_minimum_norm": 12.199492240200236,
+            "unreachable_fraction": 1.6002401788314743e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 7.775040310382353,
+          "gain": 1.0235351533628998,
+          "collateral": 0.14507971967574645,
+          "relative_error": 0.14697628551915579,
+          "linear_solve": {
+            "relative_error": 0.005867560722251872,
+            "unrestricted_minimum_norm": 9.296770661809438,
+            "unreachable_fraction": 1.9928056421958438e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 7.353241703212338,
+          "gain": 1.0164719494059682,
+          "collateral": 0.08204080373196858,
+          "relative_error": 0.08367806519166276,
+          "linear_solve": {
+            "relative_error": 0.0040967045921622425,
+            "unrestricted_minimum_norm": 8.936485920745781,
+            "unreachable_fraction": 1.203233444981179e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 7.098741562866975,
+          "gain": 1.0176340816542504,
+          "collateral": 0.05479532359424214,
+          "relative_error": 0.057562907532424795,
+          "linear_solve": {
+            "relative_error": 0.003263054923673532,
+            "unrestricted_minimum_norm": 8.047637153804349,
+            "unreachable_fraction": 1.9126252156536515e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 6.76633911315892,
+          "gain": 1.021955539472401,
+          "collateral": 0.035919229758979335,
+          "relative_error": 0.04209794270510744,
+          "linear_solve": {
+            "relative_error": 0.0026585392748870295,
+            "unrestricted_minimum_norm": 7.393416642343143,
+            "unreachable_fraction": 1.4353904508520332e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190003,
+      "task": "widen",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 0.9991930064212493,
+      "collateral": 0.0008378797219612542,
+      "relative_error": 0.0011633060924016283,
+      "first_order_bound": {
+        "relative_error": 2.1048220946931684e-15,
+        "unrestricted_minimum_norm": 1.9216058038518926,
+        "unreachable_fraction": 1.3111889148531377e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.04914013407598259,
+      "median_drift_rms": 8.401112427236512e-05,
+      "width_change": 0.5015948414802551,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.81553034526214,
+          "gain": 1.0090258419828286,
+          "collateral": 0.014078873567639639,
+          "relative_error": 0.016723651049713188,
+          "linear_solve": {
+            "relative_error": 0.0005090668285732389,
+            "unrestricted_minimum_norm": 1.9216058038518946,
+            "unreachable_fraction": 1.3122378198748942e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.7545759455525547,
+          "gain": 0.9991930175023005,
+          "collateral": 0.0008377203687633546,
+          "relative_error": 0.0011631836346141981,
+          "linear_solve": {
+            "relative_error": 0.0004895864820659155,
+            "unrestricted_minimum_norm": 1.8567726677310734,
+            "unreachable_fraction": 1.2551025681934178e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190003,
+      "task": "widen",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 0.9991930064212493,
+      "collateral": 0.0008378797219612542,
+      "relative_error": 0.0011633060924016283,
+      "first_order_bound": {
+        "relative_error": 2.1048220946931684e-15,
+        "unrestricted_minimum_norm": 1.9216058038518926,
+        "unreachable_fraction": 1.3111889148531377e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.04914013407598259,
+      "median_drift_rms": 8.401112427236512e-05,
+      "width_change": 0.5015948414802551,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.81553034526214,
+          "gain": 1.0090258419828286,
+          "collateral": 0.014078873567639639,
+          "relative_error": 0.016723651049713188,
+          "linear_solve": {
+            "relative_error": 0.0005090668285732389,
+            "unrestricted_minimum_norm": 1.9216058038518946,
+            "unreachable_fraction": 1.3122378198748942e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.7545759455525547,
+          "gain": 0.9991930175023005,
+          "collateral": 0.0008377203687633546,
+          "relative_error": 0.0011631836346141981,
+          "linear_solve": {
+            "relative_error": 0.0004895864820659155,
+            "unrestricted_minimum_norm": 1.8567726677310734,
+            "unreachable_fraction": 1.2551025681934178e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190003,
+      "task": "narrow",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 0.9988832072579826,
+      "collateral": 0.0021886571270957776,
+      "relative_error": 0.002457121496509644,
+      "first_order_bound": {
+        "relative_error": 2.1048220946931684e-15,
+        "unrestricted_minimum_norm": 1.9216058038518926,
+        "unreachable_fraction": 1.3111889148531377e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.053052016885995264,
+      "median_drift_rms": 0.00016315838729497045,
+      "width_change": -0.5014551281929016,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.815530345262139,
+          "gain": 0.980248515722304,
+          "collateral": 0.020390002268679975,
+          "relative_error": 0.02838790805411434,
+          "linear_solve": {
+            "relative_error": 0.0005090668285732481,
+            "unrestricted_minimum_norm": 1.9216058038518908,
+            "unreachable_fraction": 1.293491744430743e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.8942519071536328,
+          "gain": 0.9988831952828056,
+          "collateral": 0.002188531649224909,
+          "relative_error": 0.002457015172115666,
+          "linear_solve": {
+            "relative_error": 0.0005316654996424168,
+            "unrestricted_minimum_norm": 2.000389046488355,
+            "unreachable_fraction": 1.315976192865009e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190003,
+      "task": "narrow",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 0.9988832072579826,
+      "collateral": 0.0021886571270957776,
+      "relative_error": 0.002457121496509644,
+      "first_order_bound": {
+        "relative_error": 2.1048220946931684e-15,
+        "unrestricted_minimum_norm": 1.9216058038518926,
+        "unreachable_fraction": 1.3111889148531377e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.053052016885995264,
+      "median_drift_rms": 0.00016315838729497045,
+      "width_change": -0.5014551281929016,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.815530345262139,
+          "gain": 0.980248515722304,
+          "collateral": 0.020390002268679975,
+          "relative_error": 0.02838790805411434,
+          "linear_solve": {
+            "relative_error": 0.0005090668285732481,
+            "unrestricted_minimum_norm": 1.9216058038518908,
+            "unreachable_fraction": 1.293491744430743e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.8942519071536328,
+          "gain": 0.9988831952828056,
+          "collateral": 0.002188531649224909,
+          "relative_error": 0.002457015172115666,
+          "linear_solve": {
+            "relative_error": 0.0005316654996424168,
+            "unrestricted_minimum_norm": 2.000389046488355,
+            "unreachable_fraction": 1.315976192865009e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190003,
+      "task": "season",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 0.9998160193807276,
+      "collateral": 0.0008835190627986175,
+      "relative_error": 0.0009024714968332172,
+      "first_order_bound": {
+        "relative_error": 1.5510589862982986e-15,
+        "unrestricted_minimum_norm": 3.0300079738746777,
+        "unreachable_fraction": 1.865084201491519e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.08439231806467877,
+      "median_drift_rms": 0.14139443635940552,
+      "width_change": -0.00026311352849006653,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.0132748729734695,
+          "gain": 0.9998159234559797,
+          "collateral": 0.000883436639022077,
+          "relative_error": 0.0009024103663107242,
+          "linear_solve": {
+            "relative_error": 0.0002708707179422513,
+            "unrestricted_minimum_norm": 3.0300079738746777,
+            "unreachable_fraction": 1.895024676256278e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190003,
+      "task": "season",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 0.9998160193807276,
+      "collateral": 0.0008835190627986175,
+      "relative_error": 0.0009024714968332172,
+      "first_order_bound": {
+        "relative_error": 1.5510589862982986e-15,
+        "unrestricted_minimum_norm": 3.0300079738746777,
+        "unreachable_fraction": 1.865084201491519e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.08439231806467877,
+      "median_drift_rms": 0.14139443635940552,
+      "width_change": -0.00026311352849006653,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.0132748729734695,
+          "gain": 0.9998159234559797,
+          "collateral": 0.000883436639022077,
+          "relative_error": 0.0009024103663107242,
+          "linear_solve": {
+            "relative_error": 0.0002708707179422513,
+            "unrestricted_minimum_norm": 3.0300079738746777,
+            "unreachable_fraction": 1.895024676256278e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190003,
+      "task": "upper",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 0.991694601252675,
+      "collateral": 0.016067520815002397,
+      "relative_error": 0.018087146637670713,
+      "first_order_bound": {
+        "relative_error": 0.09656071915330333,
+        "unrestricted_minimum_norm": 15.685529475888634,
+        "unreachable_fraction": 1.474640891908696e-15,
+        "rank": 288,
+        "norm_constraint_active": true,
+        "penalty": 0.00032742031609976787
+      },
+      "relative_hidden_norm": 0.12130126429644887,
+      "median_drift_rms": 0.0015487372875213623,
+      "width_change": 0.19759778678417206,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 7.141111850730974,
+          "gain": 1.4044892368838189,
+          "collateral": 0.4494872644415484,
+          "relative_error": 0.6046902873785892,
+          "linear_solve": {
+            "relative_error": 0.09656071915342464,
+            "unrestricted_minimum_norm": 15.685529475888634,
+            "unreachable_fraction": 1.4372709285321677e-15,
+            "rank": 288,
+            "norm_constraint_active": true,
+            "penalty": 0.0003274203161008265
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 5.374448905235406,
+          "gain": 0.9532202733680604,
+          "collateral": 0.29608372052847787,
+          "relative_error": 0.2997564217589755,
+          "linear_solve": {
+            "relative_error": 0.003485860558039111,
+            "unrestricted_minimum_norm": 6.128250963631511,
+            "unreachable_fraction": 1.9106646310285667e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 4.8128298386127,
+          "gain": 0.9828634513542054,
+          "collateral": 0.13089805287806452,
+          "relative_error": 0.1320150050060911,
+          "linear_solve": {
+            "relative_error": 0.0018844525979587715,
+            "unrestricted_minimum_norm": 5.1215852029996265,
+            "unreachable_fraction": 1.3803402888187573e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 4.618126412157345,
+          "gain": 0.9372376790270207,
+          "collateral": 0.07960834558497848,
+          "relative_error": 0.1013735548389846,
+          "linear_solve": {
+            "relative_error": 0.001700710742238551,
+            "unrestricted_minimum_norm": 5.013045604474622,
+            "unreachable_fraction": 1.2354707053082437e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 4.34065379745645,
+          "gain": 0.9973307000473142,
+          "collateral": 0.018504821360309207,
+          "relative_error": 0.018696351938663456,
+          "linear_solve": {
+            "relative_error": 0.0013197765517128062,
+            "unrestricted_minimum_norm": 4.602576603707322,
+            "unreachable_fraction": 1.427756887115867e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 4.331129422043735,
+          "gain": 0.9916949691250917,
+          "collateral": 0.016067463195635002,
+          "relative_error": 0.018086926532063452,
+          "linear_solve": {
+            "relative_error": 0.0012709324769826459,
+            "unrestricted_minimum_norm": 4.599585279909545,
+            "unreachable_fraction": 1.2162667286080133e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190003,
+      "task": "upper",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 0.9826983977109192,
+      "collateral": 0.021537365614390302,
+      "relative_error": 0.027626139060271223,
+      "first_order_bound": {
+        "relative_error": 5.0875520937868866e-15,
+        "unrestricted_minimum_norm": 15.685529475888634,
+        "unreachable_fraction": 1.474640891908696e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.12194077880643218,
+      "median_drift_rms": 0.001922002644278109,
+      "width_change": 0.19512292742729187,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 13.88480031576845,
+          "gain": 1.4361309679225085,
+          "collateral": 0.6303788908650074,
+          "relative_error": 0.7665427367271973,
+          "linear_solve": {
+            "relative_error": 0.013391733947488807,
+            "unrestricted_minimum_norm": 15.685529475888634,
+            "unreachable_fraction": 1.4372709285321677e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 6.121635618711158,
+          "gain": 0.8020373014733193,
+          "collateral": 0.3559912465463864,
+          "relative_error": 0.407331557365269,
+          "linear_solve": {
+            "relative_error": 0.002748933761901401,
+            "unrestricted_minimum_norm": 6.772538790799031,
+            "unreachable_fraction": 1.3297062038219362e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 5.215279205419741,
+          "gain": 0.9359491756185887,
+          "collateral": 0.19459064693517808,
+          "relative_error": 0.20486099672360647,
+          "linear_solve": {
+            "relative_error": 0.002363165441663989,
+            "unrestricted_minimum_norm": 5.580179633145347,
+            "unreachable_fraction": 2.5483287711772774e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 4.8098735028847805,
+          "gain": 0.9055360360071062,
+          "collateral": 0.14702927879506408,
+          "relative_error": 0.1747599762996305,
+          "linear_solve": {
+            "relative_error": 0.001776219110526251,
+            "unrestricted_minimum_norm": 5.259907835919484,
+            "unreachable_fraction": 1.1232623842544815e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 4.444963273674326,
+          "gain": 0.9822178771719335,
+          "collateral": 0.029257867729203284,
+          "relative_error": 0.034237796604512906,
+          "linear_solve": {
+            "relative_error": 0.0013963480171658392,
+            "unrestricted_minimum_norm": 4.714953642856304,
+            "unreachable_fraction": 1.9969508630867674e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 4.353963644968596,
+          "gain": 0.9826987655833362,
+          "collateral": 0.0215373950685316,
+          "relative_error": 0.027625931634577647,
+          "linear_solve": {
+            "relative_error": 0.0012962152478443701,
+            "unrestricted_minimum_norm": 4.632153461111235,
+            "unreachable_fraction": 1.8758228541535515e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190004,
+      "task": "widen",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 1.0008609112987774,
+      "collateral": 0.00216907731689513,
+      "relative_error": 0.0023336804989182213,
+      "first_order_bound": {
+        "relative_error": 1.1161645433884248e-15,
+        "unrestricted_minimum_norm": 1.6600846124707138,
+        "unreachable_fraction": 1.2492584156985693e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.031438790741520686,
+      "median_drift_rms": 0.00015557029109913856,
+      "width_change": 0.27176302671432495,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.5211514301374949,
+          "gain": 1.0001597936805326,
+          "collateral": 0.021777743505723045,
+          "relative_error": 0.02177832973901811,
+          "linear_solve": {
+            "relative_error": 0.0009871546156014145,
+            "unrestricted_minimum_norm": 1.6600846124707125,
+            "unreachable_fraction": 1.3547950554054175e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.4775324981728506,
+          "gain": 1.0008607441036403,
+          "collateral": 0.002169036276194558,
+          "relative_error": 0.0023335806777138044,
+          "linear_solve": {
+            "relative_error": 0.00099105140731508,
+            "unrestricted_minimum_norm": 1.620739294855706,
+            "unreachable_fraction": 1.945968491886767e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190004,
+      "task": "widen",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 1.0008609112987774,
+      "collateral": 0.00216907731689513,
+      "relative_error": 0.0023336804989182213,
+      "first_order_bound": {
+        "relative_error": 1.1161645433884248e-15,
+        "unrestricted_minimum_norm": 1.6600846124707138,
+        "unreachable_fraction": 1.2492584156985693e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.031438790741520686,
+      "median_drift_rms": 0.00015557029109913856,
+      "width_change": 0.27176302671432495,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.5211514301374949,
+          "gain": 1.0001597936805326,
+          "collateral": 0.021777743505723045,
+          "relative_error": 0.02177832973901811,
+          "linear_solve": {
+            "relative_error": 0.0009871546156014145,
+            "unrestricted_minimum_norm": 1.6600846124707125,
+            "unreachable_fraction": 1.3547950554054175e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.4775324981728506,
+          "gain": 1.0008607441036403,
+          "collateral": 0.002169036276194558,
+          "relative_error": 0.0023335806777138044,
+          "linear_solve": {
+            "relative_error": 0.00099105140731508,
+            "unrestricted_minimum_norm": 1.620739294855706,
+            "unreachable_fraction": 1.945968491886767e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190004,
+      "task": "narrow",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 0.9985897460837492,
+      "collateral": 0.002227815515158355,
+      "relative_error": 0.0026366604024562934,
+      "first_order_bound": {
+        "relative_error": 1.1161645433884248e-15,
+        "unrestricted_minimum_norm": 1.6600846124707138,
+        "unreachable_fraction": 1.2492584156985693e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.032803291704710635,
+      "median_drift_rms": 0.00012603341019712389,
+      "width_change": -0.27102094888687134,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.521151430137498,
+          "gain": 0.9953022197868162,
+          "collateral": 0.021638602743429797,
+          "relative_error": 0.0221426797750261,
+          "linear_solve": {
+            "relative_error": 0.000987154615601392,
+            "unrestricted_minimum_norm": 1.6600846124707171,
+            "unreachable_fraction": 1.3461465497038743e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.5416601083432597,
+          "gain": 0.9985899132514557,
+          "collateral": 0.0022279331659119748,
+          "relative_error": 0.002636670406059595,
+          "linear_solve": {
+            "relative_error": 0.000963169211989322,
+            "unrestricted_minimum_norm": 1.6708808293819437,
+            "unreachable_fraction": 1.2827149902626001e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190004,
+      "task": "narrow",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 0.9985897460837492,
+      "collateral": 0.002227815515158355,
+      "relative_error": 0.0026366604024562934,
+      "first_order_bound": {
+        "relative_error": 1.1161645433884248e-15,
+        "unrestricted_minimum_norm": 1.6600846124707138,
+        "unreachable_fraction": 1.2492584156985693e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.032803291704710635,
+      "median_drift_rms": 0.00012603341019712389,
+      "width_change": -0.27102094888687134,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.521151430137498,
+          "gain": 0.9953022197868162,
+          "collateral": 0.021638602743429797,
+          "relative_error": 0.0221426797750261,
+          "linear_solve": {
+            "relative_error": 0.000987154615601392,
+            "unrestricted_minimum_norm": 1.6600846124707171,
+            "unreachable_fraction": 1.3461465497038743e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.5416601083432597,
+          "gain": 0.9985899132514557,
+          "collateral": 0.0022279331659119748,
+          "relative_error": 0.002636670406059595,
+          "linear_solve": {
+            "relative_error": 0.000963169211989322,
+            "unrestricted_minimum_norm": 1.6708808293819437,
+            "unreachable_fraction": 1.2827149902626001e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190004,
+      "task": "season",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 0.999913632798395,
+      "collateral": 0.0005378983248764304,
+      "relative_error": 0.0005447879416965346,
+      "first_order_bound": {
+        "relative_error": 1.6250913919795988e-15,
+        "unrestricted_minimum_norm": 2.9860248267077663,
+        "unreachable_fraction": 1.6618058473158215e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.06324368256432804,
+      "median_drift_rms": 0.14140968024730682,
+      "width_change": -5.3979456424713135e-05,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.97227069136319,
+          "gain": 0.9999136630305203,
+          "collateral": 0.0005378753547449187,
+          "relative_error": 0.0005447604698772728,
+          "linear_solve": {
+            "relative_error": 0.0002444877243334468,
+            "unrestricted_minimum_norm": 2.9860248267077663,
+            "unreachable_fraction": 1.6219906881856361e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190004,
+      "task": "season",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 0.999913632798395,
+      "collateral": 0.0005378983248764304,
+      "relative_error": 0.0005447879416965346,
+      "first_order_bound": {
+        "relative_error": 1.6250913919795988e-15,
+        "unrestricted_minimum_norm": 2.9860248267077663,
+        "unreachable_fraction": 1.6618058473158215e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.06324368256432804,
+      "median_drift_rms": 0.14140968024730682,
+      "width_change": -5.3979456424713135e-05,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.97227069136319,
+          "gain": 0.9999136630305203,
+          "collateral": 0.0005378753547449187,
+          "relative_error": 0.0005447604698772728,
+          "linear_solve": {
+            "relative_error": 0.0002444877243334468,
+            "unrestricted_minimum_norm": 2.9860248267077663,
+            "unreachable_fraction": 1.6219906881856361e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190004,
+      "task": "upper",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 0.9978737449273467,
+      "collateral": 0.010753956015016549,
+      "relative_error": 0.010962140785763278,
+      "first_order_bound": {
+        "relative_error": 0.1315812973480732,
+        "unrestricted_minimum_norm": 18.564244772284397,
+        "unreachable_fraction": 1.649480978359874e-15,
+        "rank": 288,
+        "norm_constraint_active": true,
+        "penalty": 0.0004325672229262506
+      },
+      "relative_hidden_norm": 0.11525240572529333,
+      "median_drift_rms": 0.0006273985491134226,
+      "width_change": 0.19907644391059875,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 9.399423599243109,
+          "gain": 1.2811935599893332,
+          "collateral": 0.33393621107726135,
+          "relative_error": 0.43655837095182576,
+          "linear_solve": {
+            "relative_error": 0.1315812973480674,
+            "unrestricted_minimum_norm": 18.564244772284393,
+            "unreachable_fraction": 1.6236538571949841e-15,
+            "rank": 288,
+            "norm_constraint_active": true,
+            "penalty": 0.0004325672229262066
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 7.821483504576523,
+          "gain": 1.1685471050441265,
+          "collateral": 0.1875978253121554,
+          "relative_error": 0.25219252701181644,
+          "linear_solve": {
+            "relative_error": 0.006350971013493232,
+            "unrestricted_minimum_norm": 9.95357522475363,
+            "unreachable_fraction": 1.358860790427102e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 6.731079397450232,
+          "gain": 1.086521539837122,
+          "collateral": 0.11214021707360994,
+          "relative_error": 0.14163828981282933,
+          "linear_solve": {
+            "relative_error": 0.0042299310329555395,
+            "unrestricted_minimum_norm": 7.709616639823969,
+            "unreachable_fraction": 1.6891397291071111e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 5.981547169910333,
+          "gain": 1.0888233757577837,
+          "collateral": 0.06166849388499198,
+          "relative_error": 0.10813230423445028,
+          "linear_solve": {
+            "relative_error": 0.003347248815103745,
+            "unrestricted_minimum_norm": 6.644211346046852,
+            "unreachable_fraction": 1.2398461078671429e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 5.491833962751671,
+          "gain": 0.9956368361599741,
+          "collateral": 0.016818794931950886,
+          "relative_error": 0.017375530543207156,
+          "linear_solve": {
+            "relative_error": 0.00197538680546449,
+            "unrestricted_minimum_norm": 6.002656486271217,
+            "unreachable_fraction": 1.2507933810330762e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 5.416530691392832,
+          "gain": 0.9978734632022679,
+          "collateral": 0.010753927284633674,
+          "relative_error": 0.010962167249011374,
+          "linear_solve": {
+            "relative_error": 0.002040052458509928,
+            "unrestricted_minimum_norm": 5.920757064812943,
+            "unreachable_fraction": 1.4013186268185828e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190004,
+      "task": "upper",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 0.9992380393669007,
+      "collateral": 0.010902989258987354,
+      "relative_error": 0.010929581821276898,
+      "first_order_bound": {
+        "relative_error": 5.821330321420948e-15,
+        "unrestricted_minimum_norm": 18.564244772284397,
+        "unreachable_fraction": 1.649480978359874e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.11034901482474997,
+      "median_drift_rms": 0.0007448778487741947,
+      "width_change": 0.1994747817516327,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 16.94200786358969,
+          "gain": 1.4411333948373795,
+          "collateral": 0.6696024490535109,
+          "relative_error": 0.8018516769448144,
+          "linear_solve": {
+            "relative_error": 0.0139907821966811,
+            "unrestricted_minimum_norm": 18.564244772284393,
+            "unreachable_fraction": 1.6236538571949841e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 7.469806303808503,
+          "gain": 0.9230862651020287,
+          "collateral": 0.3981905485323897,
+          "relative_error": 0.4055507804905334,
+          "linear_solve": {
+            "relative_error": 0.003636556596699641,
+            "unrestricted_minimum_norm": 8.262482759561832,
+            "unreachable_fraction": 1.2271987673821944e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 5.628493859214079,
+          "gain": 1.1134837334975598,
+          "collateral": 0.15991376719414746,
+          "relative_error": 0.19608919069334035,
+          "linear_solve": {
+            "relative_error": 0.0024380263854267476,
+            "unrestricted_minimum_norm": 6.006743040235221,
+            "unreachable_fraction": 1.3883551686646863e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 5.353184201920698,
+          "gain": 0.9927458688616753,
+          "collateral": 0.042863372748611954,
+          "relative_error": 0.04347287823411814,
+          "linear_solve": {
+            "relative_error": 0.0020103596020795093,
+            "unrestricted_minimum_norm": 5.874738308417599,
+            "unreachable_fraction": 1.305707791970671e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 5.152692637217895,
+          "gain": 0.9922844124957917,
+          "collateral": 0.019517551145874886,
+          "relative_error": 0.020987260261094938,
+          "linear_solve": {
+            "relative_error": 0.0017243347152188305,
+            "unrestricted_minimum_norm": 5.532443027211284,
+            "unreachable_fraction": 1.1115614088742109e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 5.186085460010901,
+          "gain": 0.9992377599701283,
+          "collateral": 0.010902981614326377,
+          "relative_error": 0.010929593677053028,
+          "linear_solve": {
+            "relative_error": 0.0018290806584040128,
+            "unrestricted_minimum_norm": 5.635762127488631,
+            "unreachable_fraction": 1.2870662489896608e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190005,
+      "task": "widen",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 1.000756102627115,
+      "collateral": 0.0013593328720378746,
+      "relative_error": 0.0015554668237326471,
+      "first_order_bound": {
+        "relative_error": 1.252479989957661e-15,
+        "unrestricted_minimum_norm": 1.8217995996283354,
+        "unreachable_fraction": 1.3061049895203865e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.04453802008757282,
+      "median_drift_rms": 0.00010273739462718368,
+      "width_change": 0.3672250807285309,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.6541578344059804,
+          "gain": 1.0109845040014036,
+          "collateral": 0.016660855537358403,
+          "relative_error": 0.019956037567452595,
+          "linear_solve": {
+            "relative_error": 0.0008351024703823448,
+            "unrestricted_minimum_norm": 1.8217995996283436,
+            "unreachable_fraction": 1.2983368190591843e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.584596915430775,
+          "gain": 1.0007563329369675,
+          "collateral": 0.0013592962962726363,
+          "relative_error": 0.0015555468275183287,
+          "linear_solve": {
+            "relative_error": 0.000791231869242015,
+            "unrestricted_minimum_norm": 1.743424964226875,
+            "unreachable_fraction": 1.8981342995484173e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190005,
+      "task": "widen",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 1.000756102627115,
+      "collateral": 0.0013593328720378746,
+      "relative_error": 0.0015554668237326471,
+      "first_order_bound": {
+        "relative_error": 1.252479989957661e-15,
+        "unrestricted_minimum_norm": 1.8217995996283354,
+        "unreachable_fraction": 1.3061049895203865e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.04453802008757282,
+      "median_drift_rms": 0.00010273739462718368,
+      "width_change": 0.3672250807285309,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.6541578344059804,
+          "gain": 1.0109845040014036,
+          "collateral": 0.016660855537358403,
+          "relative_error": 0.019956037567452595,
+          "linear_solve": {
+            "relative_error": 0.0008351024703823448,
+            "unrestricted_minimum_norm": 1.8217995996283436,
+            "unreachable_fraction": 1.2983368190591843e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.584596915430775,
+          "gain": 1.0007563329369675,
+          "collateral": 0.0013592962962726363,
+          "relative_error": 0.0015555468275183287,
+          "linear_solve": {
+            "relative_error": 0.000791231869242015,
+            "unrestricted_minimum_norm": 1.743424964226875,
+            "unreachable_fraction": 1.8981342995484173e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190005,
+      "task": "narrow",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 0.9978440771436502,
+      "collateral": 0.0034562822310596165,
+      "relative_error": 0.004073559895628165,
+      "first_order_bound": {
+        "relative_error": 1.252479989957661e-15,
+        "unrestricted_minimum_norm": 1.8217995996283354,
+        "unreachable_fraction": 1.3061049895203865e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.04807681234943348,
+      "median_drift_rms": 0.00024030482745729387,
+      "width_change": -0.36619943380355835,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.6541578344059777,
+          "gain": 0.9816273448304123,
+          "collateral": 0.022823715739644253,
+          "relative_error": 0.02929976890940716,
+          "linear_solve": {
+            "relative_error": 0.0008351024703823717,
+            "unrestricted_minimum_norm": 1.8217995996283387,
+            "unreachable_fraction": 1.2671807391623355e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.7105019128120873,
+          "gain": 0.9978438461164154,
+          "collateral": 0.0034562444795976565,
+          "relative_error": 0.00407365014114438,
+          "linear_solve": {
+            "relative_error": 0.0008553016604765993,
+            "unrestricted_minimum_norm": 1.8742503908151862,
+            "unreachable_fraction": 1.4487556915953592e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190005,
+      "task": "narrow",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 0.9978440771436502,
+      "collateral": 0.0034562822310596165,
+      "relative_error": 0.004073559895628165,
+      "first_order_bound": {
+        "relative_error": 1.252479989957661e-15,
+        "unrestricted_minimum_norm": 1.8217995996283354,
+        "unreachable_fraction": 1.3061049895203865e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.04807681234943348,
+      "median_drift_rms": 0.00024030482745729387,
+      "width_change": -0.36619943380355835,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.6541578344059777,
+          "gain": 0.9816273448304123,
+          "collateral": 0.022823715739644253,
+          "relative_error": 0.02929976890940716,
+          "linear_solve": {
+            "relative_error": 0.0008351024703823717,
+            "unrestricted_minimum_norm": 1.8217995996283387,
+            "unreachable_fraction": 1.2671807391623355e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.7105019128120873,
+          "gain": 0.9978438461164154,
+          "collateral": 0.0034562444795976565,
+          "relative_error": 0.00407365014114438,
+          "linear_solve": {
+            "relative_error": 0.0008553016604765993,
+            "unrestricted_minimum_norm": 1.8742503908151862,
+            "unreachable_fraction": 1.4487556915953592e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190005,
+      "task": "season",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 0.9998520282013345,
+      "collateral": 0.0010934992742695382,
+      "relative_error": 0.0011034655934954655,
+      "first_order_bound": {
+        "relative_error": 1.591321694027924e-15,
+        "unrestricted_minimum_norm": 2.511494353623594,
+        "unreachable_fraction": 1.7305100552555282e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.07019433015228427,
+      "median_drift_rms": 0.14138615131378174,
+      "width_change": -8.653034456074238e-05,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.4974105005416454,
+          "gain": 0.9998521415604751,
+          "collateral": 0.0010932358262775168,
+          "relative_error": 0.0011031893264509855,
+          "linear_solve": {
+            "relative_error": 0.00023069110718219117,
+            "unrestricted_minimum_norm": 2.5114943536235956,
+            "unreachable_fraction": 1.7093865926517666e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190005,
+      "task": "season",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 0.9998520282013345,
+      "collateral": 0.0010934992742695382,
+      "relative_error": 0.0011034655934954655,
+      "first_order_bound": {
+        "relative_error": 1.591321694027924e-15,
+        "unrestricted_minimum_norm": 2.511494353623594,
+        "unreachable_fraction": 1.7305100552555282e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.07019433015228427,
+      "median_drift_rms": 0.14138615131378174,
+      "width_change": -8.653034456074238e-05,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.4974105005416454,
+          "gain": 0.9998521415604751,
+          "collateral": 0.0010932358262775168,
+          "relative_error": 0.0011031893264509855,
+          "linear_solve": {
+            "relative_error": 0.00023069110718219117,
+            "unrestricted_minimum_norm": 2.5114943536235956,
+            "unreachable_fraction": 1.7093865926517666e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190005,
+      "task": "upper",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 0.985439964570105,
+      "collateral": 0.03999646658593342,
+      "relative_error": 0.04256420997833139,
+      "first_order_bound": {
+        "relative_error": 0.09093715729970837,
+        "unrestricted_minimum_norm": 13.695660034313681,
+        "unreachable_fraction": 1.386206896941954e-15,
+        "rank": 288,
+        "norm_constraint_active": true,
+        "penalty": 0.00035963049907833855
+      },
+      "relative_hidden_norm": 0.1467975841878079,
+      "median_drift_rms": 0.0016621201066300273,
+      "width_change": 0.1935388296842575,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 7.115704536437987,
+          "gain": 1.3845108589157462,
+          "collateral": 0.4974319153532803,
+          "relative_error": 0.6287186262837756,
+          "linear_solve": {
+            "relative_error": 0.09093715729970789,
+            "unrestricted_minimum_norm": 13.69566003431368,
+            "unreachable_fraction": 1.391401836189165e-15,
+            "rank": 288,
+            "norm_constraint_active": true,
+            "penalty": 0.00035963049907833416
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 6.286590876681179,
+          "gain": 0.9864623146131632,
+          "collateral": 0.28284316678551613,
+          "relative_error": 0.2831669576820224,
+          "linear_solve": {
+            "relative_error": 0.004789364054309991,
+            "unrestricted_minimum_norm": 7.010875192292061,
+            "unreachable_fraction": 1.8353674299764637e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 5.995425197691586,
+          "gain": 1.022568349726498,
+          "collateral": 0.15423351084094383,
+          "relative_error": 0.15587593231702276,
+          "linear_solve": {
+            "relative_error": 0.0022047905774310772,
+            "unrestricted_minimum_norm": 6.490839557785606,
+            "unreachable_fraction": 1.2574909210160366e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 5.2882111566215135,
+          "gain": 0.9910348523408176,
+          "collateral": 0.0850328160754333,
+          "relative_error": 0.08550411500196593,
+          "linear_solve": {
+            "relative_error": 0.002128127226205122,
+            "unrestricted_minimum_norm": 5.743525407721662,
+            "unreachable_fraction": 1.601249174120265e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 4.992488852104902,
+          "gain": 0.9905517334118483,
+          "collateral": 0.04724767648787971,
+          "relative_error": 0.04818311607839536,
+          "linear_solve": {
+            "relative_error": 0.0015107330303609325,
+            "unrestricted_minimum_norm": 5.253412260261765,
+            "unreachable_fraction": 1.5115007081412998e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 5.222841038719525,
+          "gain": 0.9854401880875229,
+          "collateral": 0.03999581151599461,
+          "relative_error": 0.04256351796726483,
+          "linear_solve": {
+            "relative_error": 0.0018427203915781626,
+            "unrestricted_minimum_norm": 5.632217448597633,
+            "unreachable_fraction": 1.1529427510475647e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190005,
+      "task": "upper",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 0.983135278802365,
+      "collateral": 0.023812229285292794,
+      "relative_error": 0.029179463405095626,
+      "first_order_bound": {
+        "relative_error": 4.274959791731229e-15,
+        "unrestricted_minimum_norm": 13.695660034313681,
+        "unreachable_fraction": 1.386206896941954e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.15799830214777894,
+      "median_drift_rms": 0.0010270075872540474,
+      "width_change": 0.19765257835388184,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 12.58831741503368,
+          "gain": 1.2028235709294675,
+          "collateral": 0.6907359611526848,
+          "relative_error": 0.7198983045917694,
+          "linear_solve": {
+            "relative_error": 0.0100612199583235,
+            "unrestricted_minimum_norm": 13.69566003431368,
+            "unreachable_fraction": 1.391401836189165e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 8.856754700040343,
+          "gain": 1.0412054322659967,
+          "collateral": 0.36068958246405725,
+          "relative_error": 0.3630356215942501,
+          "linear_solve": {
+            "relative_error": 0.0015189474792921764,
+            "unrestricted_minimum_norm": 7.845728597734781,
+            "unreachable_fraction": 1.1713567371463514e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 7.12901278654934,
+          "gain": 1.0274325311183927,
+          "collateral": 0.2813401269226503,
+          "relative_error": 0.2826743900327983,
+          "linear_solve": {
+            "relative_error": 0.000931349697339596,
+            "unrestricted_minimum_norm": 7.8679323140060635,
+            "unreachable_fraction": 1.4989316438014797e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 6.169057934296182,
+          "gain": 0.9990433580242095,
+          "collateral": 0.09404774221742335,
+          "relative_error": 0.09405260751337391,
+          "linear_solve": {
+            "relative_error": 0.0008178497276573697,
+            "unrestricted_minimum_norm": 6.646055634007774,
+            "unreachable_fraction": 1.11603476495559e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 5.834296349479856,
+          "gain": 0.9682669024914504,
+          "collateral": 0.030031019483379315,
+          "relative_error": 0.04369040636911305,
+          "linear_solve": {
+            "relative_error": 0.0008605020936318538,
+            "unrestricted_minimum_norm": 6.255013257316997,
+            "unreachable_fraction": 1.1974654469856297e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 5.62134602603333,
+          "gain": 0.9831355023197829,
+          "collateral": 0.023812339364111146,
+          "relative_error": 0.02917942405184935,
+          "linear_solve": {
+            "relative_error": 0.0007555857711351423,
+            "unrestricted_minimum_norm": 5.928116997563266,
+            "unreachable_fraction": 1.2821778641072288e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190006,
+      "task": "widen",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 1.0002313570257337,
+      "collateral": 0.0014295494098497375,
+      "relative_error": 0.0014481497120664042,
+      "first_order_bound": {
+        "relative_error": 1.1168838013610847e-15,
+        "unrestricted_minimum_norm": 1.6241247647752883,
+        "unreachable_fraction": 1.5021780497458316e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.03606975936241247,
+      "median_drift_rms": 9.330493048764765e-05,
+      "width_change": 0.22497931122779846,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.4531801392144172,
+          "gain": 1.0100153376017584,
+          "collateral": 0.015805346705637897,
+          "relative_error": 0.018711386152891356,
+          "linear_solve": {
+            "relative_error": 0.0012963171601569467,
+            "unrestricted_minimum_norm": 1.6241247647752948,
+            "unreachable_fraction": 1.5387905233331748e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.4113257892982882,
+          "gain": 1.0002312785832397,
+          "collateral": 0.0014293471818904115,
+          "relative_error": 0.001447937550256705,
+          "linear_solve": {
+            "relative_error": 0.0012648435050433436,
+            "unrestricted_minimum_norm": 1.5806967355631438,
+            "unreachable_fraction": 1.2736931899975824e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190006,
+      "task": "widen",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 1.0002313570257337,
+      "collateral": 0.0014295494098497375,
+      "relative_error": 0.0014481497120664042,
+      "first_order_bound": {
+        "relative_error": 1.1168838013610847e-15,
+        "unrestricted_minimum_norm": 1.6241247647752883,
+        "unreachable_fraction": 1.5021780497458316e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.03606975936241247,
+      "median_drift_rms": 9.330493048764765e-05,
+      "width_change": 0.22497931122779846,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.4531801392144172,
+          "gain": 1.0100153376017584,
+          "collateral": 0.015805346705637897,
+          "relative_error": 0.018711386152891356,
+          "linear_solve": {
+            "relative_error": 0.0012963171601569467,
+            "unrestricted_minimum_norm": 1.6241247647752948,
+            "unreachable_fraction": 1.5387905233331748e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.4113257892982882,
+          "gain": 1.0002312785832397,
+          "collateral": 0.0014293471818904115,
+          "relative_error": 0.001447937550256705,
+          "linear_solve": {
+            "relative_error": 0.0012648435050433436,
+            "unrestricted_minimum_norm": 1.5806967355631438,
+            "unreachable_fraction": 1.2736931899975824e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190006,
+      "task": "narrow",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 0.997875385004084,
+      "collateral": 0.004060091809909958,
+      "relative_error": 0.004582393957940509,
+      "first_order_bound": {
+        "relative_error": 1.1168838013610847e-15,
+        "unrestricted_minimum_norm": 1.6241247647752883,
+        "unreachable_fraction": 1.5021780497458316e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.03775279351924696,
+      "median_drift_rms": 0.0001027072939905338,
+      "width_change": -0.22456791996955872,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.4531801392144168,
+          "gain": 0.9848070570589548,
+          "collateral": 0.015141503193225561,
+          "relative_error": 0.021449723405217214,
+          "linear_solve": {
+            "relative_error": 0.0012963171601569473,
+            "unrestricted_minimum_norm": 1.624124764775295,
+            "unreachable_fraction": 1.5436714394463605e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.4771790012907606,
+          "gain": 0.9978754621712408,
+          "collateral": 0.004059918880157649,
+          "relative_error": 0.0045822049604191395,
+          "linear_solve": {
+            "relative_error": 0.0013289720173956586,
+            "unrestricted_minimum_norm": 1.6482691861856502,
+            "unreachable_fraction": 1.1936198602685329e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190006,
+      "task": "narrow",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 0.997875385004084,
+      "collateral": 0.004060091809909958,
+      "relative_error": 0.004582393957940509,
+      "first_order_bound": {
+        "relative_error": 1.1168838013610847e-15,
+        "unrestricted_minimum_norm": 1.6241247647752883,
+        "unreachable_fraction": 1.5021780497458316e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.03775279351924696,
+      "median_drift_rms": 0.0001027072939905338,
+      "width_change": -0.22456791996955872,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.4531801392144168,
+          "gain": 0.9848070570589548,
+          "collateral": 0.015141503193225561,
+          "relative_error": 0.021449723405217214,
+          "linear_solve": {
+            "relative_error": 0.0012963171601569473,
+            "unrestricted_minimum_norm": 1.624124764775295,
+            "unreachable_fraction": 1.5436714394463605e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.4771790012907606,
+          "gain": 0.9978754621712408,
+          "collateral": 0.004059918880157649,
+          "relative_error": 0.0045822049604191395,
+          "linear_solve": {
+            "relative_error": 0.0013289720173956586,
+            "unrestricted_minimum_norm": 1.6482691861856502,
+            "unreachable_fraction": 1.1936198602685329e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190006,
+      "task": "season",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 0.999552892767291,
+      "collateral": 0.0008901377390871401,
+      "relative_error": 0.0009961174991374151,
+      "first_order_bound": {
+        "relative_error": 1.3003139797174506e-15,
+        "unrestricted_minimum_norm": 1.9912172029341355,
+        "unreachable_fraction": 3.018820550914396e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.0505909545151441,
+      "median_drift_rms": 0.14133982360363007,
+      "width_change": -4.574493505060673e-05,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.9795063808172868,
+          "gain": 0.9995528531044159,
+          "collateral": 0.000890039187501461,
+          "relative_error": 0.000996047238598069,
+          "linear_solve": {
+            "relative_error": 0.00018666785407044743,
+            "unrestricted_minimum_norm": 1.9912172029341362,
+            "unreachable_fraction": 2.9962199431849462e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190006,
+      "task": "season",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 0.999552892767291,
+      "collateral": 0.0008901377390871401,
+      "relative_error": 0.0009961174991374151,
+      "first_order_bound": {
+        "relative_error": 1.3003139797174506e-15,
+        "unrestricted_minimum_norm": 1.9912172029341355,
+        "unreachable_fraction": 3.018820550914396e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.0505909545151441,
+      "median_drift_rms": 0.14133982360363007,
+      "width_change": -4.574493505060673e-05,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.9795063808172868,
+          "gain": 0.9995528531044159,
+          "collateral": 0.000890039187501461,
+          "relative_error": 0.000996047238598069,
+          "linear_solve": {
+            "relative_error": 0.00018666785407044743,
+            "unrestricted_minimum_norm": 1.9912172029341362,
+            "unreachable_fraction": 2.9962199431849462e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190006,
+      "task": "upper",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 0.9891161415725945,
+      "collateral": 0.04574118213631346,
+      "relative_error": 0.04701823175636452,
+      "first_order_bound": {
+        "relative_error": 0.1539718916770368,
+        "unrestricted_minimum_norm": 19.366992941152397,
+        "unreachable_fraction": 1.9326161294665614e-15,
+        "rank": 288,
+        "norm_constraint_active": true,
+        "penalty": 0.0005820822975285533
+      },
+      "relative_hidden_norm": 0.149277632307918,
+      "median_drift_rms": 0.003120078006759286,
+      "width_change": 0.19792483747005463,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 7.825534820556643,
+          "gain": 1.6345578827895222,
+          "collateral": 0.6221854035768547,
+          "relative_error": 0.8886947637037224,
+          "linear_solve": {
+            "relative_error": 0.15397189167704267,
+            "unrestricted_minimum_norm": 19.366992941152397,
+            "unreachable_fraction": 1.932230744886239e-15,
+            "rank": 288,
+            "norm_constraint_active": true,
+            "penalty": 0.0005820822975286121
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 7.825534820556642,
+          "gain": 1.1055776034481823,
+          "collateral": 0.804614787104599,
+          "relative_error": 0.8115119136385125,
+          "linear_solve": {
+            "relative_error": 0.02053819245002904,
+            "unrestricted_minimum_norm": 11.011627389311533,
+            "unreachable_fraction": 1.345081799601681e-15,
+            "rank": 288,
+            "norm_constraint_active": true,
+            "penalty": 5.6066185432648194e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 6.1213948308706785,
+          "gain": 1.01992696756497,
+          "collateral": 0.23978172148529817,
+          "relative_error": 0.24060830824139984,
+          "linear_solve": {
+            "relative_error": 0.001995748597715333,
+            "unrestricted_minimum_norm": 6.7112919676156855,
+            "unreachable_fraction": 1.497217696708339e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 6.433482934989501,
+          "gain": 1.0266390675678847,
+          "collateral": 0.10746734614264879,
+          "relative_error": 0.11071978327214257,
+          "linear_solve": {
+            "relative_error": 0.002476153689607799,
+            "unrestricted_minimum_norm": 7.1111929742805895,
+            "unreachable_fraction": 1.7556502040957384e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 6.105014065375713,
+          "gain": 1.0022891010157764,
+          "collateral": 0.07174907880318435,
+          "relative_error": 0.07178558554867395,
+          "linear_solve": {
+            "relative_error": 0.0026152723707947036,
+            "unrestricted_minimum_norm": 6.767016056351499,
+            "unreachable_fraction": 1.4729557376197319e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 5.840886547779316,
+          "gain": 0.9891162835992873,
+          "collateral": 0.04574147789991413,
+          "relative_error": 0.047018486610688325,
+          "linear_solve": {
+            "relative_error": 0.0020753358252835513,
+            "unrestricted_minimum_norm": 6.366551619496054,
+            "unreachable_fraction": 1.3380599880353174e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190006,
+      "task": "upper",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 0.9924871358089149,
+      "collateral": 0.04151597630964168,
+      "relative_error": 0.04219027633586226,
+      "first_order_bound": {
+        "relative_error": 5.585173926642924e-15,
+        "unrestricted_minimum_norm": 19.366992941152397,
+        "unreachable_fraction": 1.9326161294665614e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.1537335551889439,
+      "median_drift_rms": 0.0029222446028143167,
+      "width_change": 0.19745218753814697,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 8.722752908460093,
+          "gain": 0.7363595627248287,
+          "collateral": 0.21972448336345382,
+          "relative_error": 0.34319838105093126,
+          "linear_solve": {
+            "relative_error": 0.015585332757383122,
+            "unrestricted_minimum_norm": 19.366992941152397,
+            "unreachable_fraction": 1.932230744886239e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 9.21524355973313,
+          "gain": 0.9659564518369733,
+          "collateral": 0.2443613001251001,
+          "relative_error": 0.24672131681384477,
+          "linear_solve": {
+            "relative_error": 0.008561095295236928,
+            "unrestricted_minimum_norm": 13.042872368828101,
+            "unreachable_fraction": 1.4230181165360486e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 8.012437599383265,
+          "gain": 1.0513123241253195,
+          "collateral": 0.1323497767379384,
+          "relative_error": 0.14194864567766755,
+          "linear_solve": {
+            "relative_error": 0.0039733673049945056,
+            "unrestricted_minimum_norm": 8.922957680359183,
+            "unreachable_fraction": 1.3246131495192556e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 6.821467728995409,
+          "gain": 1.0090966220013795,
+          "collateral": 0.10744447519510861,
+          "relative_error": 0.10782886339838835,
+          "linear_solve": {
+            "relative_error": 0.0029245718993944343,
+            "unrestricted_minimum_norm": 7.5185056379565784,
+            "unreachable_fraction": 1.6285739641322595e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 6.055303463866696,
+          "gain": 0.9977204725146291,
+          "collateral": 0.07767235259668073,
+          "relative_error": 0.07770579517294483,
+          "linear_solve": {
+            "relative_error": 0.0024009604142265248,
+            "unrestricted_minimum_norm": 6.647360770578179,
+            "unreachable_fraction": 1.4296863687163139e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 6.0152364460952334,
+          "gain": 0.9924872824922204,
+          "collateral": 0.04151616240655281,
+          "relative_error": 0.04219043333883841,
+          "linear_solve": {
+            "relative_error": 0.0023081096681264756,
+            "unrestricted_minimum_norm": 6.606852734634375,
+            "unreachable_fraction": 1.5245870527066288e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190007,
+      "task": "widen",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 1.0002814059078327,
+      "collateral": 0.0014156799078541248,
+      "relative_error": 0.0014433775966339853,
+      "first_order_bound": {
+        "relative_error": 1.1341081580127684e-15,
+        "unrestricted_minimum_norm": 1.69087016372392,
+        "unreachable_fraction": 1.738413961569357e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.03368929024665592,
+      "median_drift_rms": 9.962028707377613e-05,
+      "width_change": 0.24739275872707367,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.4906609407877947,
+          "gain": 1.0065325069838755,
+          "collateral": 0.017284340108509783,
+          "relative_error": 0.018477609706913492,
+          "linear_solve": {
+            "relative_error": 0.0012970370155597703,
+            "unrestricted_minimum_norm": 1.6908701637239236,
+            "unreachable_fraction": 1.692543041782312e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.4516726784989717,
+          "gain": 1.0002813288373078,
+          "collateral": 0.0014158625470568815,
+          "relative_error": 0.0014435417094283782,
+          "linear_solve": {
+            "relative_error": 0.0012556671435123596,
+            "unrestricted_minimum_norm": 1.6456958911888955,
+            "unreachable_fraction": 1.6452723511766933e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190007,
+      "task": "widen",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 1.0002814059078327,
+      "collateral": 0.0014156799078541248,
+      "relative_error": 0.0014433775966339853,
+      "first_order_bound": {
+        "relative_error": 1.1341081580127684e-15,
+        "unrestricted_minimum_norm": 1.69087016372392,
+        "unreachable_fraction": 1.738413961569357e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.03368929024665592,
+      "median_drift_rms": 9.962028707377613e-05,
+      "width_change": 0.24739275872707367,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.4906609407877947,
+          "gain": 1.0065325069838755,
+          "collateral": 0.017284340108509783,
+          "relative_error": 0.018477609706913492,
+          "linear_solve": {
+            "relative_error": 0.0012970370155597703,
+            "unrestricted_minimum_norm": 1.6908701637239236,
+            "unreachable_fraction": 1.692543041782312e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.4516726784989717,
+          "gain": 1.0002813288373078,
+          "collateral": 0.0014158625470568815,
+          "relative_error": 0.0014435417094283782,
+          "linear_solve": {
+            "relative_error": 0.0012556671435123596,
+            "unrestricted_minimum_norm": 1.6456958911888955,
+            "unreachable_fraction": 1.6452723511766933e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190007,
+      "task": "narrow",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 0.9993740835877128,
+      "collateral": 0.0017346672771363207,
+      "relative_error": 0.001844137174273644,
+      "first_order_bound": {
+        "relative_error": 1.1341081580127684e-15,
+        "unrestricted_minimum_norm": 1.69087016372392,
+        "unreachable_fraction": 1.738413961569357e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.035295559626531595,
+      "median_drift_rms": 9.594154835212976e-05,
+      "width_change": -0.24718600511550903,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.490660940787795,
+          "gain": 0.9877703008912179,
+          "collateral": 0.015653928535933146,
+          "relative_error": 0.01986481862236474,
+          "linear_solve": {
+            "relative_error": 0.0012970370155597976,
+            "unrestricted_minimum_norm": 1.6908701637239245,
+            "unreachable_fraction": 1.7037582789118514e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.5208868814697947,
+          "gain": 0.9993741606582375,
+          "collateral": 0.001734379040820021,
+          "relative_error": 0.0018438398897229536,
+          "linear_solve": {
+            "relative_error": 0.0013474206464074462,
+            "unrestricted_minimum_norm": 1.7266455270012844,
+            "unreachable_fraction": 1.449390694108873e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190007,
+      "task": "narrow",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 0.9993740835877128,
+      "collateral": 0.0017346672771363207,
+      "relative_error": 0.001844137174273644,
+      "first_order_bound": {
+        "relative_error": 1.1341081580127684e-15,
+        "unrestricted_minimum_norm": 1.69087016372392,
+        "unreachable_fraction": 1.738413961569357e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.035295559626531595,
+      "median_drift_rms": 9.594154835212976e-05,
+      "width_change": -0.24718600511550903,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.490660940787795,
+          "gain": 0.9877703008912179,
+          "collateral": 0.015653928535933146,
+          "relative_error": 0.01986481862236474,
+          "linear_solve": {
+            "relative_error": 0.0012970370155597976,
+            "unrestricted_minimum_norm": 1.6908701637239245,
+            "unreachable_fraction": 1.7037582789118514e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.5208868814697947,
+          "gain": 0.9993741606582375,
+          "collateral": 0.001734379040820021,
+          "relative_error": 0.0018438398897229536,
+          "linear_solve": {
+            "relative_error": 0.0013474206464074462,
+            "unrestricted_minimum_norm": 1.7266455270012844,
+            "unreachable_fraction": 1.449390694108873e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190007,
+      "task": "season",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 0.9998071827940193,
+      "collateral": 0.0006787845123097404,
+      "relative_error": 0.0007056393477363521,
+      "first_order_bound": {
+        "relative_error": 1.91534910165748e-15,
+        "unrestricted_minimum_norm": 2.332243058420736,
+        "unreachable_fraction": 1.8871619124680868e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.05383706851858653,
+      "median_drift_rms": 0.14138251543045044,
+      "width_change": -9.941030293703079e-05,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.319841139029841,
+          "gain": 0.9998072696284015,
+          "collateral": 0.0006789187827461435,
+          "relative_error": 0.0007057447907721182,
+          "linear_solve": {
+            "relative_error": 0.00020738373304677406,
+            "unrestricted_minimum_norm": 2.332243058420736,
+            "unreachable_fraction": 1.8770996360547947e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190007,
+      "task": "season",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 0.9998071827940193,
+      "collateral": 0.0006787845123097404,
+      "relative_error": 0.0007056393477363521,
+      "first_order_bound": {
+        "relative_error": 1.91534910165748e-15,
+        "unrestricted_minimum_norm": 2.332243058420736,
+        "unreachable_fraction": 1.8871619124680868e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.05383706851858653,
+      "median_drift_rms": 0.14138251543045044,
+      "width_change": -9.941030293703079e-05,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.319841139029841,
+          "gain": 0.9998072696284015,
+          "collateral": 0.0006789187827461435,
+          "relative_error": 0.0007057447907721182,
+          "linear_solve": {
+            "relative_error": 0.00020738373304677406,
+            "unrestricted_minimum_norm": 2.332243058420736,
+            "unreachable_fraction": 1.8770996360547947e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190007,
+      "task": "upper",
+      "dose": 0.2,
+      "radius": 0.2,
+      "steps": 6,
+      "gain": 1.000789434183389,
+      "collateral": 0.015293202359905248,
+      "relative_error": 0.015313564077343795,
+      "first_order_bound": {
+        "relative_error": 0.10878134247613769,
+        "unrestricted_minimum_norm": 17.927189501986586,
+        "unreachable_fraction": 1.834166518869821e-15,
+        "rank": 288,
+        "norm_constraint_active": true,
+        "penalty": 0.0003165064540979808
+      },
+      "relative_hidden_norm": 0.12739261425367118,
+      "median_drift_rms": 0.0009014011593535542,
+      "width_change": 0.1996675729751587,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 8.618006706237503,
+          "gain": 1.5168844582512973,
+          "collateral": 0.5319880728778398,
+          "relative_error": 0.7417417696651678,
+          "linear_solve": {
+            "relative_error": 0.10878134247610541,
+            "unrestricted_minimum_norm": 17.927189501986586,
+            "unreachable_fraction": 1.815262989383067e-15,
+            "rank": 288,
+            "norm_constraint_active": true,
+            "penalty": 0.00031650645409774805
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 6.660662360923726,
+          "gain": 1.185108236968517,
+          "collateral": 0.44078497500795616,
+          "relative_error": 0.47807578226297687,
+          "linear_solve": {
+            "relative_error": 0.004344989945896347,
+            "unrestricted_minimum_norm": 7.405697900368898,
+            "unreachable_fraction": 1.4298571503970864e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 5.714869870668857,
+          "gain": 0.7865962921641766,
+          "collateral": 0.16345730651387239,
+          "relative_error": 0.2688111485241032,
+          "linear_solve": {
+            "relative_error": 0.0026853974422218637,
+            "unrestricted_minimum_norm": 6.255752904194116,
+            "unreachable_fraction": 1.3943786731738677e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 5.76370309529416,
+          "gain": 1.0892337188124657,
+          "collateral": 0.08039485036589643,
+          "relative_error": 0.12010823676358359,
+          "linear_solve": {
+            "relative_error": 0.0024831671321335455,
+            "unrestricted_minimum_norm": 6.2917158130873805,
+            "unreachable_fraction": 1.6360174672022707e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 5.512849261316049,
+          "gain": 1.0028730332851408,
+          "collateral": 0.022189984677405163,
+          "relative_error": 0.02237520369160924,
+          "linear_solve": {
+            "relative_error": 0.001494953474426393,
+            "unrestricted_minimum_norm": 5.902416815227846,
+            "unreachable_fraction": 1.2271503080787356e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 5.489352141307577,
+          "gain": 1.0007893783040342,
+          "collateral": 0.015293135805403363,
+          "relative_error": 0.015313494730772289,
+          "linear_solve": {
+            "relative_error": 0.0017024625428311005,
+            "unrestricted_minimum_norm": 5.9192191338503415,
+            "unreachable_fraction": 1.4234347248804788e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    },
+    {
+      "seed": 5190007,
+      "task": "upper",
+      "dose": 0.2,
+      "radius": 0.5,
+      "steps": 6,
+      "gain": 0.9943826775997876,
+      "collateral": 0.034937423606144546,
+      "relative_error": 0.035386125518105445,
+      "first_order_bound": {
+        "relative_error": 4.584809481049359e-15,
+        "unrestricted_minimum_norm": 17.927189501986586,
+        "unreachable_fraction": 1.834166518869821e-15,
+        "rank": 288,
+        "norm_constraint_active": false,
+        "penalty": 0.0
+      },
+      "relative_hidden_norm": 0.12711183279268135,
+      "median_drift_rms": 0.0016623914707452059,
+      "width_change": 0.19879397749900818,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 7.984737973124858,
+          "gain": 0.6967134098522364,
+          "collateral": 0.20933737784380924,
+          "relative_error": 0.3685171549955025,
+          "linear_solve": {
+            "relative_error": 0.014929641823959392,
+            "unrestricted_minimum_norm": 17.927189501986586,
+            "unreachable_fraction": 1.815262989383067e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 7.108135322168612,
+          "gain": 0.887810697313398,
+          "collateral": 0.14500930821813068,
+          "relative_error": 0.1833415913185189,
+          "linear_solve": {
+            "relative_error": 0.00680776767994618,
+            "unrestricted_minimum_norm": 9.449135243590103,
+            "unreachable_fraction": 1.5763542834610814e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 6.6446656509606346,
+          "gain": 1.0508818877860904,
+          "collateral": 0.09847322704605017,
+          "relative_error": 0.11084197286921246,
+          "linear_solve": {
+            "relative_error": 0.004052612632334256,
+            "unrestricted_minimum_norm": 7.44857536936081,
+            "unreachable_fraction": 1.6261782444398905e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 5.671116990080042,
+          "gain": 0.9875161689706144,
+          "collateral": 0.07097139769689159,
+          "relative_error": 0.0720609833975404,
+          "linear_solve": {
+            "relative_error": 0.0022407608948298474,
+            "unrestricted_minimum_norm": 6.296678227848587,
+            "unreachable_fraction": 1.3391142171423354e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 5.5324748296849195,
+          "gain": 0.9904331108555197,
+          "collateral": 0.03515774408616114,
+          "relative_error": 0.0364361405356107,
+          "linear_solve": {
+            "relative_error": 0.0019153607838287216,
+            "unrestricted_minimum_norm": 6.011479687673384,
+            "unreachable_fraction": 1.1854758634776853e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 5.477253258470815,
+          "gain": 0.9943826217204332,
+          "collateral": 0.03493774111449653,
+          "relative_error": 0.03538644787089163,
+          "linear_solve": {
+            "relative_error": 0.001897624814732932,
+            "unrestricted_minimum_norm": 5.969294040284718,
+            "unreachable_fraction": 1.4884291120789954e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "widen/0.2/0.2/6": {
+      "n": 8,
+      "error": 0.0020413997399784814,
+      "collateral": 0.0019111342506270368,
+      "gain": 1.0001635324103724,
+      "success": 1.0,
+      "first_order_bound": 1.6343510870822643e-15,
+      "relative_hidden_norm": 0.035378413093288985,
+      "crossing_fraction": 0.01171875
+    },
+    "widen/0.2/0.5/6": {
+      "n": 8,
+      "error": 0.0020413997399784814,
+      "collateral": 0.0019111342506270368,
+      "gain": 1.0001635324103724,
+      "success": 1.0,
+      "first_order_bound": 1.6343510870822643e-15,
+      "relative_hidden_norm": 0.035378413093288985,
+      "crossing_fraction": 0.01171875
+    },
+    "narrow/0.2/0.2/6": {
+      "n": 8,
+      "error": 0.003331683670741415,
+      "collateral": 0.0030249427092654615,
+      "gain": 0.9987854207163773,
+      "success": 1.0,
+      "first_order_bound": 1.6343510870822643e-15,
+      "relative_hidden_norm": 0.037223610628937316,
+      "crossing_fraction": 0.01123046875
+    },
+    "narrow/0.2/0.5/6": {
+      "n": 8,
+      "error": 0.003331683670741415,
+      "collateral": 0.0030249427092654615,
+      "gain": 0.9987854207163773,
+      "success": 1.0,
+      "first_order_bound": 1.6343510870822643e-15,
+      "relative_hidden_norm": 0.037223610628937316,
+      "crossing_fraction": 0.01123046875
+    },
+    "season/0.2/0.2/6": {
+      "n": 8,
+      "error": 0.0007095361016165122,
+      "collateral": 0.0006879949381097067,
+      "gain": 0.9998555171430507,
+      "success": 1.0,
+      "first_order_bound": 1.7298020192578559e-15,
+      "relative_hidden_norm": 0.05797544615014932,
+      "crossing_fraction": 0.01171875
+    },
+    "season/0.2/0.5/6": {
+      "n": 8,
+      "error": 0.0007095361016165122,
+      "collateral": 0.0006879949381097067,
+      "gain": 0.9998555171430507,
+      "success": 1.0,
+      "first_order_bound": 1.7298020192578559e-15,
+      "relative_hidden_norm": 0.05797544615014932,
+      "crossing_fraction": 0.01171875
+    },
+    "upper/0.2/0.2/6": {
+      "n": 8,
+      "error": 0.04873394225232771,
+      "collateral": 0.04667165392114986,
+      "gain": 0.9908255812479183,
+      "success": 0.875,
+      "first_order_bound": 0.0981435372472883,
+      "relative_hidden_norm": 0.1382502889822112,
+      "crossing_fraction": 0.0107421875
+    },
+    "upper/0.2/0.5/6": {
+      "n": 8,
+      "error": 0.04523541336646904,
+      "collateral": 0.04236566653260582,
+      "gain": 0.9921010202378965,
+      "success": 0.875,
+      "first_order_bound": 5.2968932394049995e-15,
+      "relative_hidden_norm": 0.1414902620824166,
+      "crossing_fraction": 0.0107421875
+    }
+  },
+  "seconds": 29.158318042755127,
+  "identity": {
+    "capture": 1.9073486328125e-06,
+    "edited_full_model_max_abs": 2.86102294921875e-06
+  }
+}

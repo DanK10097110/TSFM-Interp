@@ -1,0 +1,78 @@
+{
+  "native_worker_seconds_sum": 3647.969339551928,
+  "peak_single_process_bytes": 2182365184,
+  "records": [
+    {
+      "stage": "selective_pilot4941000",
+      "model": "bolt",
+      "seconds": 94.95314344496,
+      "peak_rss": 1161531392
+    },
+    {
+      "stage": "selective_replication4942000",
+      "model": "bolt",
+      "seconds": 559.9075587019906,
+      "peak_rss": 1578577920
+    },
+    {
+      "stage": "dominant",
+      "model": "bolt",
+      "seconds": 40.5858134200098,
+      "peak_rss": 1063124992
+    },
+    {
+      "stage": "transfer",
+      "model": "bolt",
+      "seconds": 26.810092363972217,
+      "peak_rss": 1073807360
+    },
+    {
+      "stage": "transfer_period19p2",
+      "model": "bolt",
+      "seconds": 18.029436597018503,
+      "peak_rss": 1072996352
+    },
+    {
+      "stage": "strong",
+      "model": "bolt",
+      "seconds": 20.17906055203639,
+      "peak_rss": 1073471488
+    },
+    {
+      "stage": "selective_pilot4941000",
+      "model": "timesfm",
+      "seconds": 367.88268272799905,
+      "peak_rss": 1727143936
+    },
+    {
+      "stage": "selective_replication4942000",
+      "model": "timesfm",
+      "seconds": 2254.198404174007,
+      "peak_rss": 2182365184
+    },
+    {
+      "stage": "dominant",
+      "model": "timesfm",
+      "seconds": 102.6755885790335,
+      "peak_rss": 1637179392
+    },
+    {
+      "stage": "transfer",
+      "model": "timesfm",
+      "seconds": 59.70569950895151,
+      "peak_rss": 1642053632
+    },
+    {
+      "stage": "transfer_period19p2",
+      "model": "timesfm",
+      "seconds": 48.52328189695254,
+      "peak_rss": 1646448640
+    },
+    {
+      "stage": "strong",
+      "model": "timesfm",
+      "seconds": 54.51857758499682,
+      "peak_rss": 1644691456
+    }
+  ]
+}

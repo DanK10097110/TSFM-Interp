@@ -1,0 +1,74 @@
+{
+  "m4_hourly/real": {
+    "mean": -1.3143191688037001,
+    "low": -1.9542196620083403,
+    "high": -0.7171091237068095,
+    "independent_sources": 4,
+    "positive_sources": 0,
+    "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+  },
+  "monash_electricity_hourly/real": {
+    "mean": -0.1354890804792643,
+    "low": -0.6871831891228133,
+    "high": 0.4525088164070031,
+    "independent_sources": 4,
+    "positive_sources": 1,
+    "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+  },
+  "monash_pedestrian_counts/real": {
+    "mean": -1.3397339104347392,
+    "low": -1.5639026286557465,
+    "high": -1.1294235464027702,
+    "independent_sources": 4,
+    "positive_sources": 0,
+    "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+  },
+  "synthetic/chirp": {
+    "mean": -0.1432581212205722,
+    "low": -0.466705263482482,
+    "high": 0.17961746798386727,
+    "independent_sources": 8,
+    "positive_sources": 3,
+    "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+  },
+  "synthetic/coupled": {
+    "mean": 0.4987716364073587,
+    "low": -0.043080041740367225,
+    "high": 0.9851817106967707,
+    "independent_sources": 8,
+    "positive_sources": 6,
+    "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+  },
+  "synthetic/off_grid": {
+    "mean": -0.006526957482454937,
+    "low": -0.414266550442442,
+    "high": 0.35828419244634935,
+    "independent_sources": 8,
+    "positive_sources": 5,
+    "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+  },
+  "synthetic/phase_coherent": {
+    "mean": -0.3862864435786868,
+    "low": -0.5524292021188626,
+    "high": -0.22160291670035998,
+    "independent_sources": 8,
+    "positive_sources": 0,
+    "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+  },
+  "synthetic/phase_matched": {
+    "mean": 0.14352343101647952,
+    "low": 0.021792556331440952,
+    "high": 0.2655296020654313,
+    "independent_sources": 8,
+    "positive_sources": 6,
+    "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+  },
+  "synthetic/stationary": {
+    "mean": 0.36950726481606216,
+    "low": 0.07794353710628699,
+    "high": 0.6922220998596846,
+    "independent_sources": 8,
+    "positive_sources": 5,
+    "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+  }
+}

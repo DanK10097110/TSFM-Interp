@@ -1,0 +1,44 @@
+[
+  {
+    "plant": "nyquist",
+    "test": "test_reconstruction_including_trend_dc_nyquist_and_offgrid",
+    "caught": true,
+    "summary": "1 failed in 0.46s"
+  },
+  {
+    "plant": "partition",
+    "test": "test_all_partitions_preserve_leaves_and_nesting",
+    "caught": true,
+    "summary": "1 failed in 0.42s"
+  },
+  {
+    "plant": "affine_bias",
+    "test": "test_affine_closure_and_bias_decoy",
+    "caught": true,
+    "summary": "1 failed in 0.46s"
+  },
+  {
+    "plant": "dedup",
+    "test": "test_input_only_plan_and_bank_identity",
+    "caught": true,
+    "summary": "1 failed in 0.44s"
+  },
+  {
+    "plant": "crossing",
+    "test": "test_nonmonotonic_crossing_and_censoring",
+    "caught": true,
+    "summary": "1 failed in 0.40s"
+  },
+  {
+    "plant": "pseudoreplication",
+    "test": "test_uncertainty_resamples_sources_not_dependent_rows",
+    "caught": true,
+    "summary": "1 failed in 0.41s"
+  },
+  {
+    "plant": "identity_phase",
+    "test": "test_synthetic_phase_pairs_have_equal_spectra_and_valid_crest",
+    "caught": true,
+    "summary": "1 failed in 0.76s"
+  }
+]

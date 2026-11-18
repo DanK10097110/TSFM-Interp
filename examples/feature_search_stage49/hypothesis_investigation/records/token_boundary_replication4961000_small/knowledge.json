@@ -1,0 +1,19 @@
+{
+  "status": "complete",
+  "question": "Do raw-input discontinuities originate at quantization, and does learned processing smooth adjacent-token changes?",
+  "exact_findings": [
+    {
+      "condition": "pretrained",
+      "artifact": "pretrained_results.json",
+      "mean_probability_tv": 0.0029375174635788426
+    },
+    {
+      "condition": "random",
+      "artifact": "random_results.json",
+      "mean_probability_tv": 7.709923011134379e-08
+    }
+  ],
+  "controls": "Exact repeat; changed raw history with identical complete token bundle; token IDs versus identical input embeddings; pretrained versus one architecture-matched random initialization; decreasing-radius embedding interpolation.",
+  "limitations": "Synthetic8-source instrumentation pilot by default; one random initialization; interpolated embeddings are off manifold; token jumps are expected architecture behavior and do not demonstrate semantic incoherence.",
+  "next_decision": "Independently audit saved arithmetic and compare frontend jump versus continuous embedding curvature; no forecasting claims."
+}

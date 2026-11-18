@@ -1,0 +1,46 @@
+{
+  "scope": "Purely descriptive exceptions to the fresh64 result; no fitted predictor, subgroup test, new inference or selection change.",
+  "selection": "All and only the three registered seeds with native loss minus anchored loss < 0.",
+  "units": "Each loss divided by its theoretical common mix energy (a\u00b2+b\u00b2)/2; phases in radians at future origin0.",
+  "exceptions": [
+    {
+      "generator_seed": 3700015,
+      "a": 0.8567549289713614,
+      "b": 1.651190285889794,
+      "amplitude_ratio_a_over_b": 0.5188711054641852,
+      "phi_radians": -2.782922098218658,
+      "psi_radians": 2.1118863721214742,
+      "offset": 0.8219802796450106,
+      "native_loss": 0.04894316330054451,
+      "anchored_loss": 0.06784561317577735,
+      "component_reference_loss": 0.0022594582350832448,
+      "native_minus_anchored_gain": -0.01890244987523284
+    },
+    {
+      "generator_seed": 3700049,
+      "a": 1.3843253668214464,
+      "b": 1.2220918141262134,
+      "amplitude_ratio_a_over_b": 1.132750707287266,
+      "phi_radians": -2.644765794900158,
+      "psi_radians": 1.9108115808290336,
+      "offset": -1.3817796240566436,
+      "native_loss": 0.02442606275912304,
+      "anchored_loss": 0.050174989112846395,
+      "component_reference_loss": 0.0023445400982907453,
+      "native_minus_anchored_gain": -0.025748926353723355
+    },
+    {
+      "generator_seed": 3700062,
+      "a": 1.0815135022123137,
+      "b": 1.471478942849796,
+      "amplitude_ratio_a_over_b": 0.7349840155495254,
+      "phi_radians": -2.199260243017855,
+      "psi_radians": 1.9424001365785655,
+      "offset": 0.332655959028354,
+      "native_loss": 0.0341940018539934,
+      "anchored_loss": 0.08462329773531871,
+      "component_reference_loss": 0.0021734266013328243,
+      "native_minus_anchored_gain": -0.05042929588132531
+    }
+  ]
+}

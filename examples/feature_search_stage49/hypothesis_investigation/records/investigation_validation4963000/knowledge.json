@@ -1,0 +1,51 @@
+{
+  "status": "complete",
+  "question": "Do the completed research modules and the integrated mock pipeline still pass their meaningful checks?",
+  "results": {
+    "completed_research_suite": {
+      "passed": 140,
+      "seconds": 33.77
+    },
+    "objective_control": {
+      "passed": 2,
+      "seconds": 0.4,
+      "plants_detected": 2
+    },
+    "mock_pipeline_smoke": {
+      "passed": 5,
+      "seconds": 103.15,
+      "warning": "Existing test_end_to_end returns a pathlib.Path; PytestReturnNotNoneWarning. No failure."
+    },
+    "generated_documentation": {
+      "stage_docs": "matches",
+      "glossary": "matches"
+    },
+    "new_focused_suite": {
+      "passed": 98,
+      "seconds": 9.89,
+      "modules": 19,
+      "log": "new_focused.log",
+      "manifest": "new_focused.json"
+    },
+    "final_focused_suite": {
+      "passed": 38,
+      "seconds": 6.53,
+      "modules": 8,
+      "log": "final_focused.log",
+      "manifest": "final_focused.json"
+    },
+    "report": {
+      "passed": true,
+      "knowledge_records": 175,
+      "local_references": 91,
+      "section_anchors": 24,
+      "audit": "report_audit.json",
+      "visual_review": "Chrome full-report top and exact HTML/CSS table excerpt inspected; dictionary plot labels inspected directly. Headless fragment screenshots failed to paint, retained as instrumentation evidence."
+    }
+  },
+  "limitations": [
+    "Native replay and planted regressions are recorded per experiment; mock smoke does not validate model weights.",
+    "Headless fragment-navigation screenshots were unpainted; full report top and exact table excerpts render correctly. No experimental result depends on rendering."
+  ],
+  "next_decision": "Investigation closed. Preserve frozen protocols, failures and adverse cases; no background native or fit workers remain."
+}

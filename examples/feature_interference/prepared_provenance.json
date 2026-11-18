@@ -1,0 +1,10 @@
+{
+  "config_sha256": "f29c1d9eaae20b5afff105343632b102436db9669ab34c1bc2ada336a545872d",
+  "protocol_sha256": "b06682af0804545953b62febaa4d4fdfe9e196ddc032cde553bc3e810c4c1deb",
+  "corpus_sha256": "8aef6b8436eca9bba493da71f79531f12ff03029811b82a5f210241c477fd412",
+  "metadata_sha256": "f23284f138f8d93de3206fbb828d3bcb382640b1e023f0d20ecdef536294e2e8",
+  "prepared_before_forecasts": true,
+  "seed_base": 1992000,
+  "estimated_working_mib": 4.0703125,
+  "seed_caution": "caller must choose fresh disjoint generating seeds for replication; no private corpus is accessed"
+}

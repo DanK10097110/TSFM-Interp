@@ -1,0 +1,21 @@
+{
+  "out": "runs/steering_e04b_timesfm_ridge",
+  "model": "timesfm",
+  "test": 8,
+  "seed": 5190000,
+  "doses": [
+    0.2
+  ],
+  "radii": [
+    0.2,
+    0.5
+  ],
+  "steps": [
+    6
+  ],
+  "ridge": 1e-05,
+  "shifted": false,
+  "scope": "adaptive native-head control; not semantic vector or calibrated uncertainty",
+  "success": "relative error < 0.1",
+  "source_sha256": "47d2fda055d4e0fc62848ceff1431da825f491e44bd6bdbdf923d3f93b9d3a10"
+}

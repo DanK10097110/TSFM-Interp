@@ -1,0 +1,44 @@
+{
+  "question": "Is p0 hidden spectral recoverability evidence of a concept learned by that training objective?",
+  "evidence_class": "Controlled toy training / supervised recoverability",
+  "conclusion": "No: same-seed random initialization decodes the tone better than p0 training in all four architecture/seed pairs.",
+  "exact_results": {
+    "records": [
+      {
+        "architecture": "mlp",
+        "seed": 495710,
+        "initial_decoded_nmse": 0.006750625085256504,
+        "p0_decoded_nmse": 0.016827709793355333,
+        "initial_minus_p0": -0.01007708470809883
+      },
+      {
+        "architecture": "mlp",
+        "seed": 495711,
+        "initial_decoded_nmse": 0.006583728204450735,
+        "p0_decoded_nmse": 0.01536392071152469,
+        "initial_minus_p0": -0.008780192507073955
+      },
+      {
+        "architecture": "transformer",
+        "seed": 495710,
+        "initial_decoded_nmse": 0.4061008965454886,
+        "p0_decoded_nmse": 0.47648969898855154,
+        "initial_minus_p0": -0.07038880244306295
+      },
+      {
+        "architecture": "transformer",
+        "seed": 495711,
+        "initial_decoded_nmse": 0.45874250688843426,
+        "p0_decoded_nmse": 0.5042714721036291,
+        "initial_minus_p0": -0.04552896521519484
+      }
+    ],
+    "seconds": 0.15840671805199236
+  },
+  "limitations": "Fixed supervised ridge; input baseline is stronger; same inspected TEST histories; failure of a linear probe is not absence of information.",
+  "next_step": "Preserve initialization and input baselines in subsequent interpretation; distinguish forecast gain from learned representation claims.",
+  "durable_references": [
+    "ROADMAP.md section49.38",
+    "FINDINGS.md PM-35"
+  ]
+}

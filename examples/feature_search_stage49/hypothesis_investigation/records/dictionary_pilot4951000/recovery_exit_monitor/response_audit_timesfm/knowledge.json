@@ -1,0 +1,28 @@
+{
+  "question": "Does reconstruction preserve held-out controlled hidden-state differences?",
+  "exact_results": {
+    "paired_response": "paired_response.json",
+    "base_edits": "base_edit_replay.json",
+    "cached_proxies": "cached_pair_edit_proxies.json",
+    "method_direction_rows": 44,
+    "seconds": 21.8370332630584,
+    "peak_rss": 755933184
+  },
+  "provenance": {
+    "protocol_sha256": "e2f6fa7f6c72d7e8fc18c6d581ea3b5b8953bc5f294da2ebfa93f42bf9938249",
+    "audit_code_sha256": "5d7568228ab713fa9c85500179d6f17fe94576ea15b912a50d2b123760ab68ba",
+    "source_state_sha256": "a46cf7d38aea5fcd21820ebdb379e35a49bcf54b53867adcbfdf2a23627d478a"
+  },
+  "controls": [
+    "Frozen FIT-fitted dictionaries; TEST sourcewise aggregation; sinusoid AND noise at equal input RMS radius",
+    "Compare reconstructed plus-minus difference directly; decoder/center static offsets cancel",
+    "Exact base-state replay distinguished from cached-batch perturbed-state proxies"
+  ],
+  "limitations": [
+    "Descriptive response reconstruction, not true-signal semantics or forecast response preservation",
+    "Existing perturbation phase fixed; no fresh crossed-phase generalization",
+    "Cached +/- states were captured in a different batch geometry from native singleton intervention states"
+  ],
+  "next_step": "Review joint full-state, paired-response, forecast and validity tables before any expansion.",
+  "status": "saved_only_audit_complete"
+}

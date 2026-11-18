@@ -1,0 +1,23 @@
+{
+  "seconds": 559.9075587019906,
+  "peak_rss": 1578577920,
+  "gates": {
+    "self_patch": 0.0,
+    "normalizer_identity": 0.0,
+    "repeat": 0.0,
+    "random_invalid": 20,
+    "random_total": 3546,
+    "closure_max": 2.264507941163174e-07
+  },
+  "cuts": [
+    "0",
+    "1",
+    "3"
+  ],
+  "hashes": {
+    "bolt_forecasts.json": "ae6de26d95f23fb73e2dc862664f607b274dde5a4326d819444e204d2d09a63f",
+    "bolt_geometry.json": "344793ca6389252817db296b5e5a255f49f585139bd0530a371c5e15251f302b",
+    "bolt_stability.json": "1847befd875ece1c217f0ff1da472f822f8b36df9cda7d88f093796a91fa8865",
+    "bolt_states.npz": "9af5a6bb3695d3abc05282a45a2be4c75c27a89236616162c42d3158e145f29a"
+  }
+}

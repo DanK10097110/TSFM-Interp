@@ -1,0 +1,3486 @@
+{
+  "question": "For identical histories, how do native and classical/model hybrid forecasts trade expected losses across persistent, decaying, drifting and stopped futures; do visible cues improve forecasts?",
+  "design": {
+    "seeds": [
+      4951000,
+      4951001,
+      4951002,
+      4951003,
+      4951004,
+      4951005,
+      4951006,
+      4951007
+    ],
+    "source_split": "4951000..4951003 FIT;4951004..4951007 TEST; no selection/tuning",
+    "context": 128,
+    "horizon": 32,
+    "rows": 64,
+    "unique_histories": 32,
+    "dominant_tone": {
+      "amplitude": 8,
+      "period": 19.2
+    },
+    "background": {
+      "weak_amplitude": 0.5,
+      "weak_frequency_per128": 17.35,
+      "offset": 0.3,
+      "noise_sd": 0.05
+    },
+    "changes": {
+      "decay_half_life": 16,
+      "drift_fraction_per32": 0.5,
+      "cessation": "dominant tone removed"
+    },
+    "cue_onset": -32,
+    "selective_depth": 1,
+    "seasonal": "history-estimated lag4..64 minimizing lagged MSE",
+    "metric": "MSE / same seed persistent-history variance",
+    "prior": "p persistent; each other future (1-p)/3",
+    "protocol_sha256": "491f8ff3e150c26bcc5213451715c5ee38085aa1e306f87d45f90727f82d0c51"
+  },
+  "exact_findings": {
+    "test_loss_table": [
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "identical",
+        "regime": "persistent",
+        "method": "native",
+        "mean": 0.30110647105235205,
+        "ci95": [
+          0.12363705973593453,
+          0.4785758823687696
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.10451329445173295,
+          0.14276082502013612,
+          0.5387532167520624,
+          0.41839854798547665
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "identical",
+        "regime": "persistent",
+        "method": "tones_native_residual",
+        "mean": 0.006129296175915122,
+        "ci95": [
+          0.005898563100584463,
+          0.0063600292512457825
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.0062355461256297946,
+          0.005915680658972224,
+          0.0058814455421967015,
+          0.0064845123768617705
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "identical",
+        "regime": "persistent",
+        "method": "tones_zero_residual",
+        "mean": 0.006545095571555196,
+        "ci95": [
+          0.006210749582871738,
+          0.0069354752707918126
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.007100228890901368,
+          0.006102029673315339,
+          0.006536909311540932,
+          0.006441214410463142
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "identical",
+        "regime": "persistent",
+        "method": "seasonal",
+        "mean": 0.020901555862919557,
+        "ci95": [
+          0.019396087622054293,
+          0.022407024103784826
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.019239201643468682,
+          0.022930772062592336,
+          0.019552973600639904,
+          0.02188327614497732
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "identical",
+        "regime": "amplitude_decay",
+        "method": "native",
+        "mean": 0.32278642132794527,
+        "ci95": [
+          0.20534783724198846,
+          0.4402250054139021
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.1978568667338894,
+          0.21283880775008754,
+          0.4587851366199732,
+          0.42166487420783094
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "identical",
+        "regime": "amplitude_decay",
+        "method": "tones_native_residual",
+        "mean": 0.2501276030434017,
+        "ci95": [
+          0.2323687782536656,
+          0.27203303724507977
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.226552166347619,
+          0.25245726939274005,
+          0.2833155862735356,
+          0.23818539015971218
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "identical",
+        "regime": "amplitude_decay",
+        "method": "tones_zero_residual",
+        "mean": 0.25654663692265145,
+        "ci95": [
+          0.2364799841306422,
+          0.2772571538649955
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.2384089101136449,
+          0.26302001098054234,
+          0.290206568448779,
+          0.23455105814763952
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "identical",
+        "regime": "amplitude_decay",
+        "method": "seasonal",
+        "mean": 0.26269217652766874,
+        "ci95": [
+          0.2485605384196726,
+          0.27581157594150935
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.24214481261359308,
+          0.2678077158379111,
+          0.2812150630534334,
+          0.25960111460573726
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "identical",
+        "regime": "frequency_drift",
+        "method": "native",
+        "mean": 1.215630168960125,
+        "ci95": [
+          0.8302163799643079,
+          1.6010439579559421
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.616365164150343,
+          1.0440675957782726,
+          1.6791167933915927,
+          1.5229711225202915
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "identical",
+        "regime": "frequency_drift",
+        "method": "tones_native_residual",
+        "mean": 0.9466441333577564,
+        "ci95": [
+          0.8214944917343119,
+          1.0717937749812008
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.8452680054729228,
+          1.0375501241645506,
+          1.106037425797851,
+          0.7977209779957011
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "identical",
+        "regime": "frequency_drift",
+        "method": "tones_zero_residual",
+        "mean": 0.9548326868225643,
+        "ci95": [
+          0.8325536821641439,
+          1.0771116914809844
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.8774204802635298,
+          1.0486404130390463,
+          1.1055829699229227,
+          0.7876868840647581
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "identical",
+        "regime": "frequency_drift",
+        "method": "seasonal",
+        "mean": 0.969582206309847,
+        "ci95": [
+          0.7813637018485049,
+          1.1311942133148627
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          1.0250167991309216,
+          1.1858054149526753,
+          0.9673606084014248,
+          0.7001460027543661
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "identical",
+        "regime": "abrupt_cessation",
+        "method": "native",
+        "mean": 0.9783512972162725,
+        "ci95": [
+          0.8442245226288185,
+          1.1124780718037264
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.8336808610543144,
+          0.8547681842033228,
+          1.1422196801250857,
+          1.0827364634823669
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "identical",
+        "regime": "abrupt_cessation",
+        "method": "tones_native_residual",
+        "mean": 0.9815096734358224,
+        "ci95": [
+          0.9299504527408937,
+          1.0333160597163484
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.9080062853870327,
+          0.9518946200947549,
+          1.060456539590213,
+          1.005681248671289
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "identical",
+        "regime": "abrupt_cessation",
+        "method": "tones_zero_residual",
+        "mean": 0.9904687006139306,
+        "ci95": [
+          0.9465351630416842,
+          1.0458623832033904
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.9340205136788026,
+          0.973938000063105,
+          1.0698371775834854,
+          0.9840791111303293
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "identical",
+        "regime": "abrupt_cessation",
+        "method": "seasonal",
+        "mean": 0.9934591296070456,
+        "ci95": [
+          0.941288600355147,
+          1.0456296588589442
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.9190561539484724,
+          0.9635210467618216,
+          1.0498988458432021,
+          1.0413604718746863
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "cued",
+        "regime": "persistent",
+        "method": "native",
+        "mean": 0.30110647105235205,
+        "ci95": [
+          0.12363705973593453,
+          0.4785758823687696
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.10451329445173295,
+          0.14276082502013612,
+          0.5387532167520624,
+          0.41839854798547665
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "cued",
+        "regime": "persistent",
+        "method": "tones_native_residual",
+        "mean": 0.006129296175915122,
+        "ci95": [
+          0.005898563100584463,
+          0.0063600292512457825
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.0062355461256297946,
+          0.005915680658972224,
+          0.0058814455421967015,
+          0.0064845123768617705
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "cued",
+        "regime": "persistent",
+        "method": "tones_zero_residual",
+        "mean": 0.006545095571555196,
+        "ci95": [
+          0.006210749582871738,
+          0.0069354752707918126
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.007100228890901368,
+          0.006102029673315339,
+          0.006536909311540932,
+          0.006441214410463142
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "cued",
+        "regime": "persistent",
+        "method": "seasonal",
+        "mean": 0.020901555862919557,
+        "ci95": [
+          0.019396087622054293,
+          0.022407024103784826
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.019239201643468682,
+          0.022930772062592336,
+          0.019552973600639904,
+          0.02188327614497732
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "cued",
+        "regime": "amplitude_decay",
+        "method": "native",
+        "mean": 0.11531376571663164,
+        "ci95": [
+          0.07196341826619582,
+          0.17103150485903906
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.11430983674330333,
+          0.09158291130601673,
+          0.05784794544049331,
+          0.19751436937671318
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "cued",
+        "regime": "amplitude_decay",
+        "method": "tones_native_residual",
+        "mean": 0.6121470020657604,
+        "ci95": [
+          0.537678524487124,
+          0.6822703434180448
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.6966864549297868,
+          0.6678542319063028,
+          0.5897606994128877,
+          0.49428662201406454
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "cued",
+        "regime": "amplitude_decay",
+        "method": "tones_zero_residual",
+        "mean": 0.5692573987293933,
+        "ci95": [
+          0.5392010448987593,
+          0.6067061701706414
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.5313889481902514,
+          0.5610926272132749,
+          0.6219106844897636,
+          0.562637335024283
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "cued",
+        "regime": "amplitude_decay",
+        "method": "seasonal",
+        "mean": 0.09202369812375587,
+        "ci95": [
+          0.08144423491989294,
+          0.10260316132761879
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.08176663739446141,
+          0.08112183244532446,
+          0.0984959188246446,
+          0.10671040383059298
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "cued",
+        "regime": "frequency_drift",
+        "method": "native",
+        "mean": 2.161648053763215,
+        "ci95": [
+          2.013383485416013,
+          2.355906101878768
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          2.4529078587404403,
+          2.1664083166959744,
+          2.064900831293752,
+          1.9623752083226926
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "cued",
+        "regime": "frequency_drift",
+        "method": "tones_native_residual",
+        "mean": 2.664793536286406,
+        "ci95": [
+          2.560102938436356,
+          2.7827755155904472
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          2.615580559455129,
+          2.8385071676355533,
+          2.5176626678452405,
+          2.687423750209702
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "cued",
+        "regime": "frequency_drift",
+        "method": "tones_zero_residual",
+        "mean": 2.142861443610635,
+        "ci95": [
+          1.9957248004598105,
+          2.313084716509331
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          2.049725248154748,
+          1.941724352764873,
+          2.1791249675620605,
+          2.400871205960858
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "cued",
+        "regime": "frequency_drift",
+        "method": "seasonal",
+        "mean": 2.6506457135688817,
+        "ci95": [
+          2.5365588712827316,
+          2.7690445819834113
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          2.685638647785395,
+          2.5446989361596373,
+          2.5284188064058255,
+          2.8438264639246698
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "cued",
+        "regime": "abrupt_cessation",
+        "method": "native",
+        "mean": 0.07641610083559859,
+        "ci95": [
+          0.05070298032253555,
+          0.10212922134866162
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.04423025417761397,
+          0.1028951550887499,
+          0.10136328760857335,
+          0.05717570646745713
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "cued",
+        "regime": "abrupt_cessation",
+        "method": "tones_native_residual",
+        "mean": 0.07641610083559859,
+        "ci95": [
+          0.05070298032253555,
+          0.10212922134866162
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.04423025417761397,
+          0.1028951550887499,
+          0.10136328760857335,
+          0.05717570646745713
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "cued",
+        "regime": "abrupt_cessation",
+        "method": "tones_zero_residual",
+        "mean": 0.006493573889157005,
+        "ci95": [
+          0.006209933660480251,
+          0.006814718740095888
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.006993950381149006,
+          0.0061428435040239695,
+          0.006560477854518511,
+          0.006277023816936532
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "arm": "cued",
+        "regime": "abrupt_cessation",
+        "method": "seasonal",
+        "mean": 0.010627416382440328,
+        "ci95": [
+          0.010270234005859687,
+          0.010945456582698387
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.011056324642199132,
+          0.01061285240419615,
+          0.010720264713329673,
+          0.01012022377003636
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "identical",
+        "regime": "persistent",
+        "method": "native",
+        "mean": 0.015640187787303354,
+        "ci95": [
+          0.013723196604788806,
+          0.017687972178146927
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.0190093439327448,
+          0.016105014006891002,
+          0.013723856914353306,
+          0.013722536295224307
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "identical",
+        "regime": "persistent",
+        "method": "tones_native_residual",
+        "mean": 0.0012932363038689284,
+        "ci95": [
+          0.0010657852650035242,
+          0.0015148495529339226
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.0014167148625442892,
+          0.0016129842433235562,
+          0.001194437377117933,
+          0.0009488087324899359
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "identical",
+        "regime": "persistent",
+        "method": "tones_zero_residual",
+        "mean": 0.006545095571555196,
+        "ci95": [
+          0.006210749582871738,
+          0.0069354752707918126
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.007100228890901368,
+          0.006102029673315339,
+          0.006536909311540932,
+          0.006441214410463142
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "identical",
+        "regime": "persistent",
+        "method": "seasonal",
+        "mean": 0.020901555862919557,
+        "ci95": [
+          0.019396087622054293,
+          0.022407024103784826
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.019239201643468682,
+          0.022930772062592336,
+          0.019552973600639904,
+          0.02188327614497732
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "identical",
+        "regime": "amplitude_decay",
+        "method": "native",
+        "mean": 0.23056084123256423,
+        "ci95": [
+          0.2190591090126382,
+          0.24626032779720905
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.2161637507274724,
+          0.22774518386813555,
+          0.2533534404270936,
+          0.22498098990755536
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "identical",
+        "regime": "amplitude_decay",
+        "method": "tones_native_residual",
+        "mean": 0.24362845270701228,
+        "ci95": [
+          0.22946283056075684,
+          0.26139996075439864
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.2248254516254678,
+          0.2433749673666239,
+          0.2696432255908186,
+          0.23667016624513884
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "identical",
+        "regime": "amplitude_decay",
+        "method": "tones_zero_residual",
+        "mean": 0.25654663692265145,
+        "ci95": [
+          0.2364799841306422,
+          0.2772571538649955
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.2384089101136449,
+          0.26302001098054234,
+          0.290206568448779,
+          0.23455105814763952
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "identical",
+        "regime": "amplitude_decay",
+        "method": "seasonal",
+        "mean": 0.26269217652766874,
+        "ci95": [
+          0.2485605384196726,
+          0.27581157594150935
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.24214481261359308,
+          0.2678077158379111,
+          0.2812150630534334,
+          0.25960111460573726
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "identical",
+        "regime": "frequency_drift",
+        "method": "native",
+        "mean": 0.8020911202848657,
+        "ci95": [
+          0.7072677712645825,
+          0.896914469305149
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.7131609259470332,
+          0.8524826590325283,
+          0.9413462795777696,
+          0.7013746165821317
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "identical",
+        "regime": "frequency_drift",
+        "method": "tones_native_residual",
+        "mean": 0.9347261311852707,
+        "ci95": [
+          0.8278065006228253,
+          1.041645761747716
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.8515048616977051,
+          1.016212675576084,
+          1.067078847919348,
+          0.8041081395479456
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "identical",
+        "regime": "frequency_drift",
+        "method": "tones_zero_residual",
+        "mean": 0.9548326868225643,
+        "ci95": [
+          0.8325536821641439,
+          1.0771116914809844
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.8774204802635298,
+          1.0486404130390463,
+          1.1055829699229227,
+          0.7876868840647581
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "identical",
+        "regime": "frequency_drift",
+        "method": "seasonal",
+        "mean": 0.969582206309847,
+        "ci95": [
+          0.7813637018485049,
+          1.1311942133148627
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          1.0250167991309216,
+          1.1858054149526753,
+          0.9673606084014248,
+          0.7001460027543661
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "identical",
+        "regime": "abrupt_cessation",
+        "method": "native",
+        "mean": 0.9414197994873243,
+        "ci95": [
+          0.8942462247270038,
+          0.9885933742476447
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.8804663013514644,
+          0.9080261481025431,
+          1.0111395845882953,
+          0.9660471639069942
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "identical",
+        "regime": "abrupt_cessation",
+        "method": "tones_native_residual",
+        "mean": 0.974366345669851,
+        "ci95": [
+          0.9242328986258277,
+          1.0244997927138744
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.9110289150376458,
+          0.9374368822140098,
+          1.044594329095475,
+          1.0044052563322738
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "identical",
+        "regime": "abrupt_cessation",
+        "method": "tones_zero_residual",
+        "mean": 0.9904687006139306,
+        "ci95": [
+          0.9465351630416842,
+          1.0458623832033904
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.9340205136788026,
+          0.973938000063105,
+          1.0698371775834854,
+          0.9840791111303293
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "identical",
+        "regime": "abrupt_cessation",
+        "method": "seasonal",
+        "mean": 0.9934591296070456,
+        "ci95": [
+          0.941288600355147,
+          1.0456296588589442
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.9190561539484724,
+          0.9635210467618216,
+          1.0498988458432021,
+          1.0413604718746863
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "cued",
+        "regime": "persistent",
+        "method": "native",
+        "mean": 0.015640187787303354,
+        "ci95": [
+          0.013723196604788806,
+          0.017687972178146927
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.0190093439327448,
+          0.016105014006891002,
+          0.013723856914353306,
+          0.013722536295224307
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "cued",
+        "regime": "persistent",
+        "method": "tones_native_residual",
+        "mean": 0.0012932363038689284,
+        "ci95": [
+          0.0010657852650035242,
+          0.0015148495529339226
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.0014167148625442892,
+          0.0016129842433235562,
+          0.001194437377117933,
+          0.0009488087324899359
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "cued",
+        "regime": "persistent",
+        "method": "tones_zero_residual",
+        "mean": 0.006545095571555196,
+        "ci95": [
+          0.006210749582871738,
+          0.0069354752707918126
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.007100228890901368,
+          0.006102029673315339,
+          0.006536909311540932,
+          0.006441214410463142
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "cued",
+        "regime": "persistent",
+        "method": "seasonal",
+        "mean": 0.020901555862919557,
+        "ci95": [
+          0.019396087622054293,
+          0.022407024103784826
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.019239201643468682,
+          0.022930772062592336,
+          0.019552973600639904,
+          0.02188327614497732
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "cued",
+        "regime": "amplitude_decay",
+        "method": "native",
+        "mean": 0.06732099980877906,
+        "ci95": [
+          0.03844122330610174,
+          0.09407894337540397
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.06553642345459755,
+          0.02680521706311387,
+          0.10359311668233945,
+          0.07334924203506535
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "cued",
+        "regime": "amplitude_decay",
+        "method": "tones_native_residual",
+        "mean": 0.33388033717372523,
+        "ci95": [
+          0.20980641396712257,
+          0.45795426038032794
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.21180722383253558,
+          0.39873721135779017,
+          0.5171713094028657,
+          0.20780560410170956
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "cued",
+        "regime": "amplitude_decay",
+        "method": "tones_zero_residual",
+        "mean": 0.5692573987293933,
+        "ci95": [
+          0.5392010448987593,
+          0.6067061701706414
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.5313889481902514,
+          0.5610926272132749,
+          0.6219106844897636,
+          0.562637335024283
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "cued",
+        "regime": "amplitude_decay",
+        "method": "seasonal",
+        "mean": 0.09202369812375587,
+        "ci95": [
+          0.08144423491989294,
+          0.10260316132761879
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.08176663739446141,
+          0.08112183244532446,
+          0.0984959188246446,
+          0.10671040383059298
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "cued",
+        "regime": "frequency_drift",
+        "method": "native",
+        "mean": 1.2215930531935832,
+        "ci95": [
+          1.077092695965504,
+          1.363330138388834
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          1.4076160140993832,
+          1.1632697622687538,
+          0.9964421737279104,
+          1.3190442626782852
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "cued",
+        "regime": "frequency_drift",
+        "method": "tones_native_residual",
+        "mean": 1.8615308605637368,
+        "ci95": [
+          1.3805607967086082,
+          2.410596488015482
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          1.189427611391138,
+          1.9539603526610188,
+          2.6698252369295696,
+          1.6329102412732208
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "cued",
+        "regime": "frequency_drift",
+        "method": "tones_zero_residual",
+        "mean": 2.142861443610635,
+        "ci95": [
+          1.9957248004598105,
+          2.313084716509331
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          2.049725248154748,
+          1.941724352764873,
+          2.1791249675620605,
+          2.400871205960858
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "cued",
+        "regime": "frequency_drift",
+        "method": "seasonal",
+        "mean": 2.6506457135688817,
+        "ci95": [
+          2.5365588712827316,
+          2.7690445819834113
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          2.685638647785395,
+          2.5446989361596373,
+          2.5284188064058255,
+          2.8438264639246698
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "cued",
+        "regime": "abrupt_cessation",
+        "method": "native",
+        "mean": 0.12979589183824114,
+        "ci95": [
+          0.09619036849760229,
+          0.171036235197118
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.1897787694831735,
+          0.1295135113010548,
+          0.11480863233895146,
+          0.08508265422978478
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "cued",
+        "regime": "abrupt_cessation",
+        "method": "tones_native_residual",
+        "mean": 0.12979589183824114,
+        "ci95": [
+          0.09619036849760229,
+          0.171036235197118
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.1897787694831735,
+          0.1295135113010548,
+          0.11480863233895146,
+          0.08508265422978478
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "cued",
+        "regime": "abrupt_cessation",
+        "method": "tones_zero_residual",
+        "mean": 0.006493573889157005,
+        "ci95": [
+          0.006209933660480251,
+          0.006814718740095888
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.006993950381149006,
+          0.0061428435040239695,
+          0.006560477854518511,
+          0.006277023816936532
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "arm": "cued",
+        "regime": "abrupt_cessation",
+        "method": "seasonal",
+        "mean": 0.010627416382440328,
+        "ci95": [
+          0.010270234005859687,
+          0.010945456582698387
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.011056324642199132,
+          0.01061285240419615,
+          0.010720264713329673,
+          0.01012022377003636
+        ]
+      }
+    ],
+    "test_expected_risk": [
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "native",
+        "persistence_probability": 0.0,
+        "irreducible_mean": 0.20976757472660335,
+        "mean": 0.8389226291681142,
+        "ci95": [
+          0.626596246611705,
+          1.0512490117245235
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.5493009639795157,
+          0.7038915292438942,
+          1.0933738700455504,
+          1.0091241534034963
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "native",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.25253540729535995,
+        "mean": 0.7044685896391737,
+        "ci95": [
+          0.5008564498927623,
+          0.908080729385585
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.43810404659756996,
+          0.5636088531879547,
+          0.9547187067221785,
+          0.8614427520489916
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "native",
+        "persistence_probability": 0.5,
+        "irreducible_mean": 0.23183008903051155,
+        "mean": 0.5700145501102332,
+        "ci95": [
+          0.3751166531738197,
+          0.7649124470466465
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.32690712921562426,
+          0.42332617713201515,
+          0.8160635433988065,
+          0.7137613506944865
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "native",
+        "persistence_probability": 0.75,
+        "irreducible_mean": 0.14765161993205825,
+        "mean": 0.4355605105812925,
+        "ci95": [
+          0.24937685645487712,
+          0.621744164707708
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.2157102118336786,
+          0.2830435010760756,
+          0.6774083800754345,
+          0.5660799493399816
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "native",
+        "persistence_probability": 1.0,
+        "irreducible_mean": 0.0,
+        "mean": 0.30110647105235205,
+        "ci95": [
+          0.12363705973593453,
+          0.4785758823687696
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.10451329445173295,
+          0.14276082502013612,
+          0.5387532167520624,
+          0.41839854798547665
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "tones_native_residual",
+        "persistence_probability": 0.0,
+        "irreducible_mean": 0.20976757472660335,
+        "mean": 0.7260938032789934,
+        "ci95": [
+          0.6702356790057127,
+          0.782584689317625
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.6599421524025249,
+          0.7473006712173484,
+          0.8166031838871998,
+          0.6805292056089006
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "tones_native_residual",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.25253540729535995,
+        "mean": 0.546102676503224,
+        "ci95": [
+          0.504266766567096,
+          0.5884465700509346
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.4965155008333011,
+          0.5619544235777545,
+          0.6139227493009491,
+          0.5120180323008909
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "tones_native_residual",
+        "persistence_probability": 0.5,
+        "irreducible_mean": 0.23183008903051155,
+        "mean": 0.36611154972745424,
+        "ci95": [
+          0.33829785412847924,
+          0.394308450784244
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.3330888492640773,
+          0.3766081759381603,
+          0.41124231471469824,
+          0.3435068589928812
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "tones_native_residual",
+        "persistence_probability": 0.75,
+        "irreducible_mean": 0.14765161993205825,
+        "mean": 0.18612042295168468,
+        "ci95": [
+          0.1723289416898625,
+          0.20017033151755348
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.16966219769485352,
+          0.19126192829856628,
+          0.20856188012844748,
+          0.1749956856848715
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "tones_native_residual",
+        "persistence_probability": 1.0,
+        "irreducible_mean": 0.0,
+        "mean": 0.006129296175915122,
+        "ci95": [
+          0.005898563100584463,
+          0.0063600292512457825
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.0062355461256297946,
+          0.005915680658972224,
+          0.0058814455421967015,
+          0.0064845123768617705
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "tones_zero_residual",
+        "persistence_probability": 0.0,
+        "irreducible_mean": 0.20976757472660335,
+        "mean": 0.7339493414530487,
+        "ci95": [
+          0.6760278262331173,
+          0.7918708566729802
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.6832833013519924,
+          0.7618661413608979,
+          0.8218755719850623,
+          0.6687723511142422
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "tones_zero_residual",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.25253540729535995,
+        "mean": 0.5520982799826754,
+        "ci95": [
+          0.5087135500875086,
+          0.5954830098778421
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.5142375332367197,
+          0.5729251134390023,
+          0.618040906316682,
+          0.5031895669382975
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "tones_zero_residual",
+        "persistence_probability": 0.5,
+        "irreducible_mean": 0.23183008903051155,
+        "mean": 0.3702472185123019,
+        "ci95": [
+          0.34139927394189984,
+          0.3990951630827041
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.34519176512144695,
+          0.3839840855171066,
+          0.4142062406483016,
+          0.3376067827623527
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "tones_zero_residual",
+        "persistence_probability": 0.75,
+        "irreducible_mean": 0.14765161993205825,
+        "mean": 0.18839615704192858,
+        "ci95": [
+          0.17408499779629102,
+          0.20270731628756614
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.17614599700617414,
+          0.19504305759521098,
+          0.21037157497992126,
+          0.1720239985864079
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "tones_zero_residual",
+        "persistence_probability": 1.0,
+        "irreducible_mean": 0.0,
+        "mean": 0.006545095571555196,
+        "ci95": [
+          0.006210749582871738,
+          0.0069354752707918126
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.007100228890901368,
+          0.006102029673315339,
+          0.006536909311540932,
+          0.006441214410463142
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "seasonal",
+        "persistence_probability": 0.0,
+        "irreducible_mean": 0.20976757472660335,
+        "mean": 0.7419111708148536,
+        "ci95": [
+          0.691816440416869,
+          0.7864683581958508
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.7287392552309955,
+          0.8057113925174694,
+          0.7661581724326868,
+          0.6670358630782631
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "seasonal",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.25253540729535995,
+        "mean": 0.5616587670768702,
+        "ci95": [
+          0.524187505439875,
+          0.595353238511341
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.5513642418341139,
+          0.6100162374037501,
+          0.579506872724675,
+          0.5057477163449418
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "seasonal",
+        "persistence_probability": 0.5,
+        "irreducible_mean": 0.23183008903051155,
+        "mean": 0.38140636333888667,
+        "ci95": [
+          0.356558570462881,
+          0.40423811882683125
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.37398922843723215,
+          0.4143210822900309,
+          0.39285557301666335,
+          0.3444595696116203
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "seasonal",
+        "persistence_probability": 0.75,
+        "irreducible_mean": 0.14765161993205825,
+        "mean": 0.2011539596009031,
+        "ci95": [
+          0.18892963548588698,
+          0.21312299914232127
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.1966142150403504,
+          0.21862592717631157,
+          0.2062042733086516,
+          0.18317142287829877
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "seasonal",
+        "persistence_probability": 1.0,
+        "irreducible_mean": 0.0,
+        "mean": 0.020901555862919557,
+        "ci95": [
+          0.019396087622054293,
+          0.022407024103784826
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.019239201643468682,
+          0.022930772062592336,
+          0.019552973600639904,
+          0.02188327614497732
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "native",
+        "persistence_probability": 0.0,
+        "irreducible_mean": 0.20976757472660335,
+        "mean": 0.658023920334918,
+        "ci95": [
+          0.6170322914037751,
+          0.7091600570146797
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.60326365934199,
+          0.6627513303344024,
+          0.7352797681977193,
+          0.6308009234655604
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "native",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.25253540729535995,
+        "mean": 0.4974279871980144,
+        "ci95": [
+          0.4668657035813275,
+          0.5353009244509026
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.45720008048967875,
+          0.5010897512525245,
+          0.5548907903768779,
+          0.4765313266729764
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "native",
+        "persistence_probability": 0.5,
+        "irreducible_mean": 0.23183008903051155,
+        "mean": 0.3368320540611106,
+        "ci95": [
+          0.3166991157588799,
+          0.36144179188712533
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.3111365016373674,
+          0.33942817217064664,
+          0.3745018125560363,
+          0.3222617298803923
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "native",
+        "persistence_probability": 0.75,
+        "irreducible_mean": 0.14765161993205825,
+        "mean": 0.176236120924207,
+        "ci95": [
+          0.16653252793643222,
+          0.1875826593233482
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.16507292278505611,
+          0.1777665930887688,
+          0.19411283473519483,
+          0.16799213308780833
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "native",
+        "persistence_probability": 1.0,
+        "irreducible_mean": 0.0,
+        "mean": 0.015640187787303354,
+        "ci95": [
+          0.013723196604788806,
+          0.017687972178146927
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.0190093439327448,
+          0.016105014006891002,
+          0.013723856914353306,
+          0.013722536295224307
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "tones_native_residual",
+        "persistence_probability": 0.0,
+        "irreducible_mean": 0.20976757472660335,
+        "mean": 0.717573643187378,
+        "ci95": [
+          0.6720904650810295,
+          0.7657610641618569
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.6624530761202729,
+          0.7323415083855725,
+          0.7937721342018805,
+          0.681727854041786
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "tones_native_residual",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.25253540729535995,
+        "mean": 0.5385035414665008,
+        "ci95": [
+          0.5043635392601513,
+          0.574604055675383
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.49719398580584073,
+          0.5496593773500104,
+          0.5956277099956899,
+          0.511533092714462
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "tones_native_residual",
+        "persistence_probability": 0.5,
+        "irreducible_mean": 0.23183008903051155,
+        "mean": 0.3594334397456235,
+        "ci95": [
+          0.3366366134392733,
+          0.38344704718890893
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.3319348954914086,
+          0.36697724631444806,
+          0.3974832857894992,
+          0.341338331387138
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "tones_native_residual",
+        "persistence_probability": 0.75,
+        "irreducible_mean": 0.14765161993205825,
+        "mean": 0.18036333802474616,
+        "ci95": [
+          0.1689096876183952,
+          0.19229003870243488
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.16667580517697644,
+          0.18429511527888578,
+          0.19933886158330855,
+          0.17114357005981395
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "tones_native_residual",
+        "persistence_probability": 1.0,
+        "irreducible_mean": 0.0,
+        "mean": 0.0012932363038689284,
+        "ci95": [
+          0.0010657852650035242,
+          0.0015148495529339226
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.0014167148625442892,
+          0.0016129842433235562,
+          0.001194437377117933,
+          0.0009488087324899359
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "tones_zero_residual",
+        "persistence_probability": 0.0,
+        "irreducible_mean": 0.20976757472660335,
+        "mean": 0.7339493414530487,
+        "ci95": [
+          0.6760278262331173,
+          0.7918708566729802
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.6832833013519924,
+          0.7618661413608979,
+          0.8218755719850623,
+          0.6687723511142422
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "tones_zero_residual",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.25253540729535995,
+        "mean": 0.5520982799826754,
+        "ci95": [
+          0.5087135500875086,
+          0.5954830098778421
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.5142375332367197,
+          0.5729251134390023,
+          0.618040906316682,
+          0.5031895669382975
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "tones_zero_residual",
+        "persistence_probability": 0.5,
+        "irreducible_mean": 0.23183008903051155,
+        "mean": 0.3702472185123019,
+        "ci95": [
+          0.34139927394189984,
+          0.3990951630827041
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.34519176512144695,
+          0.3839840855171066,
+          0.4142062406483016,
+          0.3376067827623527
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "tones_zero_residual",
+        "persistence_probability": 0.75,
+        "irreducible_mean": 0.14765161993205825,
+        "mean": 0.18839615704192858,
+        "ci95": [
+          0.17408499779629102,
+          0.20270731628756614
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.17614599700617414,
+          0.19504305759521098,
+          0.21037157497992126,
+          0.1720239985864079
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "tones_zero_residual",
+        "persistence_probability": 1.0,
+        "irreducible_mean": 0.0,
+        "mean": 0.006545095571555196,
+        "ci95": [
+          0.006210749582871738,
+          0.0069354752707918126
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.007100228890901368,
+          0.006102029673315339,
+          0.006536909311540932,
+          0.006441214410463142
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "seasonal",
+        "persistence_probability": 0.0,
+        "irreducible_mean": 0.20976757472660335,
+        "mean": 0.7419111708148536,
+        "ci95": [
+          0.691816440416869,
+          0.7864683581958508
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.7287392552309955,
+          0.8057113925174694,
+          0.7661581724326868,
+          0.6670358630782631
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "seasonal",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.25253540729535995,
+        "mean": 0.5616587670768702,
+        "ci95": [
+          0.524187505439875,
+          0.595353238511341
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.5513642418341139,
+          0.6100162374037501,
+          0.579506872724675,
+          0.5057477163449418
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "seasonal",
+        "persistence_probability": 0.5,
+        "irreducible_mean": 0.23183008903051155,
+        "mean": 0.38140636333888667,
+        "ci95": [
+          0.356558570462881,
+          0.40423811882683125
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.37398922843723215,
+          0.4143210822900309,
+          0.39285557301666335,
+          0.3444595696116203
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "seasonal",
+        "persistence_probability": 0.75,
+        "irreducible_mean": 0.14765161993205825,
+        "mean": 0.2011539596009031,
+        "ci95": [
+          0.18892963548588698,
+          0.21312299914232127
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.1966142150403504,
+          0.21862592717631157,
+          0.2062042733086516,
+          0.18317142287829877
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "seasonal",
+        "persistence_probability": 1.0,
+        "irreducible_mean": 0.0,
+        "mean": 0.020901555862919557,
+        "ci95": [
+          0.019396087622054293,
+          0.022407024103784826
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.019239201643468682,
+          0.022930772062592336,
+          0.019552973600639904,
+          0.02188327614497732
+        ]
+      }
+    ],
+    "equal_prior_all_splits": [
+      {
+        "split": "fit",
+        "model": "bolt",
+        "method": "native",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.2560429525614489,
+        "mean": 0.7094379105057189,
+        "ci95": [
+          0.5598806446097165,
+          0.8691740018596184
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.7613705890886597,
+          0.6068367162941246,
+          0.5129245729253085,
+          0.956619763714783
+        ]
+      },
+      {
+        "split": "fit",
+        "model": "bolt",
+        "method": "tones_native_residual",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.2560429525614489,
+        "mean": 0.5475325317444729,
+        "ci95": [
+          0.5328854675756314,
+          0.5693351451181006
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.580745015858932,
+          0.5306654022556565,
+          0.5351055328956061,
+          0.5436141759676972
+        ]
+      },
+      {
+        "split": "fit",
+        "model": "bolt",
+        "method": "tones_zero_residual",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.2560429525614489,
+        "mean": 0.5504349716260026,
+        "ci95": [
+          0.5258120292960123,
+          0.5839331482198418
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.5993440289372055,
+          0.5192763828424973,
+          0.5377005060677505,
+          0.5454189686565574
+        ]
+      },
+      {
+        "split": "fit",
+        "model": "bolt",
+        "method": "seasonal",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.2560429525614489,
+        "mean": 0.5276401187667683,
+        "ci95": [
+          0.5042915598110624,
+          0.5509886777224742
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.5545390128024908,
+          0.4949167899581903,
+          0.5136663296639346,
+          0.5474383426424574
+        ]
+      },
+      {
+        "split": "fit",
+        "model": "timesfm",
+        "method": "native",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.2560429525614489,
+        "mean": 0.5018837112187249,
+        "ci95": [
+          0.4841692401193306,
+          0.519598182318119
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.5208263772060224,
+          0.4855611418980313,
+          0.48277733834062997,
+          0.5183699874302158
+        ]
+      },
+      {
+        "split": "fit",
+        "model": "timesfm",
+        "method": "tones_native_residual",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.2560429525614489,
+        "mean": 0.5467902032427756,
+        "ci95": [
+          0.5256825134124905,
+          0.5733846493370399
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.587330558981681,
+          0.5315469204031167,
+          0.5198181064218642,
+          0.5484652271644408
+        ]
+      },
+      {
+        "split": "fit",
+        "model": "timesfm",
+        "method": "tones_zero_residual",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.2560429525614489,
+        "mean": 0.5504349716260026,
+        "ci95": [
+          0.5258120292960123,
+          0.5839331482198418
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.5993440289372055,
+          0.5192763828424973,
+          0.5377005060677505,
+          0.5454189686565574
+        ]
+      },
+      {
+        "split": "fit",
+        "model": "timesfm",
+        "method": "seasonal",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.2560429525614489,
+        "mean": 0.5276401187667683,
+        "ci95": [
+          0.5042915598110624,
+          0.5509886777224742
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.5545390128024908,
+          0.4949167899581903,
+          0.5136663296639346,
+          0.5474383426424574
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "native",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.25253540729535995,
+        "mean": 0.7044685896391737,
+        "ci95": [
+          0.5008564498927623,
+          0.908080729385585
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.43810404659756996,
+          0.5636088531879547,
+          0.9547187067221785,
+          0.8614427520489916
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "tones_native_residual",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.25253540729535995,
+        "mean": 0.546102676503224,
+        "ci95": [
+          0.504266766567096,
+          0.5884465700509346
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.4965155008333011,
+          0.5619544235777545,
+          0.6139227493009491,
+          0.5120180323008909
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "tones_zero_residual",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.25253540729535995,
+        "mean": 0.5520982799826754,
+        "ci95": [
+          0.5087135500875086,
+          0.5954830098778421
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.5142375332367197,
+          0.5729251134390023,
+          0.618040906316682,
+          0.5031895669382975
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "seasonal",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.25253540729535995,
+        "mean": 0.5616587670768702,
+        "ci95": [
+          0.524187505439875,
+          0.595353238511341
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.5513642418341139,
+          0.6100162374037501,
+          0.579506872724675,
+          0.5057477163449418
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "native",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.25253540729535995,
+        "mean": 0.4974279871980144,
+        "ci95": [
+          0.4668657035813275,
+          0.5353009244509026
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.45720008048967875,
+          0.5010897512525245,
+          0.5548907903768779,
+          0.4765313266729764
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "tones_native_residual",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.25253540729535995,
+        "mean": 0.5385035414665008,
+        "ci95": [
+          0.5043635392601513,
+          0.574604055675383
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.49719398580584073,
+          0.5496593773500104,
+          0.5956277099956899,
+          0.511533092714462
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "tones_zero_residual",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.25253540729535995,
+        "mean": 0.5520982799826754,
+        "ci95": [
+          0.5087135500875086,
+          0.5954830098778421
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.5142375332367197,
+          0.5729251134390023,
+          0.618040906316682,
+          0.5031895669382975
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "seasonal",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.25253540729535995,
+        "mean": 0.5616587670768702,
+        "ci95": [
+          0.524187505439875,
+          0.595353238511341
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.5513642418341139,
+          0.6100162374037501,
+          0.579506872724675,
+          0.5057477163449418
+        ]
+      },
+      {
+        "split": "all",
+        "model": "bolt",
+        "method": "native",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.2542891799284044,
+        "mean": 0.7069532500724462,
+        "ci95": [
+          0.5776212436186394,
+          0.8344709971088186
+        ],
+        "n_sources": 8,
+        "positive_sources": 8,
+        "values": [
+          0.7613705890886597,
+          0.6068367162941246,
+          0.5129245729253085,
+          0.956619763714783,
+          0.43810404659756996,
+          0.5636088531879547,
+          0.9547187067221785,
+          0.8614427520489916
+        ]
+      },
+      {
+        "split": "all",
+        "model": "bolt",
+        "method": "tones_native_residual",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.2542891799284044,
+        "mean": 0.5468176041238485,
+        "ci95": [
+          0.5229830041017143,
+          0.5726130030933066
+        ],
+        "n_sources": 8,
+        "positive_sources": 8,
+        "values": [
+          0.580745015858932,
+          0.5306654022556565,
+          0.5351055328956061,
+          0.5436141759676972,
+          0.4965155008333011,
+          0.5619544235777545,
+          0.6139227493009491,
+          0.5120180323008909
+        ]
+      },
+      {
+        "split": "all",
+        "model": "bolt",
+        "method": "tones_zero_residual",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.2542891799284044,
+        "mean": 0.551266625804339,
+        "ci95": [
+          0.5253805036157696,
+          0.5786538584608543
+        ],
+        "n_sources": 8,
+        "positive_sources": 8,
+        "values": [
+          0.5993440289372055,
+          0.5192763828424973,
+          0.5377005060677505,
+          0.5454189686565574,
+          0.5142375332367197,
+          0.5729251134390023,
+          0.618040906316682,
+          0.5031895669382975
+        ]
+      },
+      {
+        "split": "all",
+        "model": "bolt",
+        "method": "seasonal",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.2542891799284044,
+        "mean": 0.5446494429218193,
+        "ci95": [
+          0.5200522907787835,
+          0.5703838049754858
+        ],
+        "n_sources": 8,
+        "positive_sources": 8,
+        "values": [
+          0.5545390128024908,
+          0.4949167899581903,
+          0.5136663296639346,
+          0.5474383426424574,
+          0.5513642418341139,
+          0.6100162374037501,
+          0.579506872724675,
+          0.5057477163449418
+        ]
+      },
+      {
+        "split": "all",
+        "model": "timesfm",
+        "method": "native",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.2542891799284044,
+        "mean": 0.49965584920836964,
+        "ci95": [
+          0.479855205162726,
+          0.5205700701292781
+        ],
+        "n_sources": 8,
+        "positive_sources": 8,
+        "values": [
+          0.5208263772060224,
+          0.4855611418980313,
+          0.48277733834062997,
+          0.5183699874302158,
+          0.45720008048967875,
+          0.5010897512525245,
+          0.5548907903768779,
+          0.4765313266729764
+        ]
+      },
+      {
+        "split": "all",
+        "model": "timesfm",
+        "method": "tones_native_residual",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.2542891799284044,
+        "mean": 0.5426468723546383,
+        "ci95": [
+          0.5206045049900292,
+          0.5657109914006992
+        ],
+        "n_sources": 8,
+        "positive_sources": 8,
+        "values": [
+          0.587330558981681,
+          0.5315469204031167,
+          0.5198181064218642,
+          0.5484652271644408,
+          0.49719398580584073,
+          0.5496593773500104,
+          0.5956277099956899,
+          0.511533092714462
+        ]
+      },
+      {
+        "split": "all",
+        "model": "timesfm",
+        "method": "tones_zero_residual",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.2542891799284044,
+        "mean": 0.551266625804339,
+        "ci95": [
+          0.5253805036157696,
+          0.5786538584608543
+        ],
+        "n_sources": 8,
+        "positive_sources": 8,
+        "values": [
+          0.5993440289372055,
+          0.5192763828424973,
+          0.5377005060677505,
+          0.5454189686565574,
+          0.5142375332367197,
+          0.5729251134390023,
+          0.618040906316682,
+          0.5031895669382975
+        ]
+      },
+      {
+        "split": "all",
+        "model": "timesfm",
+        "method": "seasonal",
+        "persistence_probability": 0.25,
+        "irreducible_mean": 0.2542891799284044,
+        "mean": 0.5446494429218193,
+        "ci95": [
+          0.5200522907787835,
+          0.5703838049754858
+        ],
+        "n_sources": 8,
+        "positive_sources": 8,
+        "values": [
+          0.5545390128024908,
+          0.4949167899581903,
+          0.5136663296639346,
+          0.5474383426424574,
+          0.5513642418341139,
+          0.6100162374037501,
+          0.579506872724675,
+          0.5057477163449418
+        ]
+      }
+    ],
+    "test_cue_gain": [
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "native",
+        "regime": "persistent",
+        "ignore_loss": 0.30110647105235205,
+        "cued_loss": 0.30110647105235205,
+        "mean": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_sources": 4,
+        "positive_sources": 0,
+        "values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "native",
+        "regime": "amplitude_decay",
+        "ignore_loss": 0.7517128210494375,
+        "cued_loss": 0.11531376571663164,
+        "mean": 0.6363990553328058,
+        "ci95": [
+          0.5245631443902093,
+          0.7697197114667849
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.5045972382083156,
+          0.5445290505721031,
+          0.8447832650983454,
+          0.6516866674524595
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "native",
+        "regime": "frequency_drift",
+        "ignore_loss": 2.232874043739955,
+        "cued_loss": 2.161648053763215,
+        "mean": 0.07122598997674007,
+        "ci95": [
+          -0.32595431474289255,
+          0.4677449248300758
+        ],
+        "n_sources": 4,
+        "positive_sources": 2,
+        "values": [
+          -0.5580923573835619,
+          -0.09249353236962943,
+          0.5650300364810361,
+          0.37045981317911547
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "native",
+        "regime": "abrupt_cessation",
+        "ignore_loss": 0.9783512972162725,
+        "cued_loss": 0.07641610083559859,
+        "mean": 0.9019351963806739,
+        "ci95": [
+          0.7706618179956366,
+          1.0332085747657112
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.7894506068767004,
+          0.7518730291145729,
+          1.0408563925165124,
+          1.0255607570149097
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "tones_native_residual",
+        "regime": "persistent",
+        "ignore_loss": 0.006129296175915122,
+        "cued_loss": 0.006129296175915122,
+        "mean": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_sources": 4,
+        "positive_sources": 0,
+        "values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "tones_native_residual",
+        "regime": "amplitude_decay",
+        "ignore_loss": 0.7359168986429642,
+        "cued_loss": 0.6121470020657604,
+        "mean": 0.1237698965772037,
+        "ci95": [
+          0.018072842737928863,
+          0.22946695041647855
+        ],
+        "n_sources": 4,
+        "positive_sources": 3,
+        "values": [
+          -0.014861486825196724,
+          0.05100717230105445,
+          0.20768076813818703,
+          0.25125313269477006
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "tones_native_residual",
+        "regime": "frequency_drift",
+        "ignore_loss": 2.329167157357439,
+        "cued_loss": 2.664793536286406,
+        "mean": -0.33562637892896663,
+        "ci95": [
+          -0.5536682632231285,
+          -0.09524968743934004
+        ],
+        "n_sources": 4,
+        "positive_sources": 1,
+        "values": [
+          -0.5050306541708522,
+          -0.6023058722754047,
+          0.0413439681378307,
+          -0.2765129574074403
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "tones_native_residual",
+        "regime": "abrupt_cessation",
+        "ignore_loss": 0.9815096734358224,
+        "cued_loss": 0.07641610083559859,
+        "mean": 0.9050935726002238,
+        "ci95": [
+          0.8563877481077118,
+          0.9537993970927358
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.8637760312094187,
+          0.848999465006005,
+          0.9590932519816396,
+          0.9485055422038318
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "tones_zero_residual",
+        "regime": "persistent",
+        "ignore_loss": 0.006545095571555196,
+        "cued_loss": 0.006545095571555196,
+        "mean": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_sources": 4,
+        "positive_sources": 0,
+        "values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "tones_zero_residual",
+        "regime": "amplitude_decay",
+        "ignore_loss": 0.7442409274963577,
+        "cued_loss": 0.5692573987293933,
+        "mean": 0.17498352876696444,
+        "ci95": [
+          0.168579674486184,
+          0.1814444745937253
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.17291087707467256,
+          0.17694199736729543,
+          0.18428900710007623,
+          0.16579223352581351
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "tones_zero_residual",
+        "regime": "frequency_drift",
+        "ignore_loss": 2.33532755514907,
+        "cued_loss": 2.142861443610635,
+        "mean": 0.1924661115384353,
+        "ci95": [
+          0.02415699142868677,
+          0.3607752316481838
+        ],
+        "n_sources": 4,
+        "positive_sources": 3,
+        "values": [
+          0.07910956326963081,
+          0.33052664764630046,
+          0.39102381565006716,
+          -0.030795580412257273
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "tones_zero_residual",
+        "regime": "abrupt_cessation",
+        "ignore_loss": 0.9904687006139306,
+        "cued_loss": 0.006493573889157005,
+        "mean": 0.9839751267247736,
+        "ci95": [
+          0.9397204443015883,
+          1.0394063139364955
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.9270265632976535,
+          0.9677951565590811,
+          1.0632766997289669,
+          0.9778020873133928
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "seasonal",
+        "regime": "persistent",
+        "ignore_loss": 0.020901555862919557,
+        "cued_loss": 0.020901555862919557,
+        "mean": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_sources": 4,
+        "positive_sources": 0,
+        "values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "seasonal",
+        "regime": "amplitude_decay",
+        "ignore_loss": 0.7480201341424483,
+        "cued_loss": 0.09202369812375587,
+        "mean": 0.6559964360186924,
+        "ci95": [
+          0.6269185951213504,
+          0.6807224235017211
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.6122438936977018,
+          0.6502970033736256,
+          0.6905021476111463,
+          0.6709426993922959
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "seasonal",
+        "regime": "frequency_drift",
+        "ignore_loss": 2.3138330833296026,
+        "cued_loss": 2.6506457135688817,
+        "mean": -0.3368126302392792,
+        "ci95": [
+          -0.509218737825456,
+          -0.11527488706537681
+        ],
+        "n_sources": 4,
+        "positive_sources": 0,
+        "values": [
+          -0.5693676366887295,
+          -0.3248031422064299,
+          -0.004009903099774892,
+          -0.44906983896218255
+        ]
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "seasonal",
+        "regime": "abrupt_cessation",
+        "ignore_loss": 0.9934591296070456,
+        "cued_loss": 0.010627416382440328,
+        "mean": 0.9828317132246052,
+        "ci95": [
+          0.9304540118319493,
+          1.035209414617261
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.9079998293062733,
+          0.9529081943576254,
+          1.0391785811298724,
+          1.0312402481046499
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "native",
+        "regime": "persistent",
+        "ignore_loss": 0.015640187787303354,
+        "cued_loss": 0.015640187787303354,
+        "mean": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_sources": 4,
+        "positive_sources": 0,
+        "values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "native",
+        "regime": "amplitude_decay",
+        "ignore_loss": 0.7009578027288812,
+        "cued_loss": 0.06732099980877906,
+        "mean": 0.6336368029201022,
+        "ci95": [
+          0.6071198640776314,
+          0.6511734549623099
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.5930364527182798,
+          0.6529768117689334,
+          0.6493700981556865,
+          0.639163849037509
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "native",
+        "regime": "frequency_drift",
+        "ignore_loss": 2.284990281109079,
+        "cued_loss": 1.2215930531935832,
+        "mean": 1.063397227915496,
+        "ci95": [
+          0.766023453385885,
+          1.383774910992304
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.6709589603082378,
+          1.0295697061177715,
+          1.5018433126171482,
+          1.0512169326188268
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "native",
+        "regime": "abrupt_cessation",
+        "ignore_loss": 0.9414197994873243,
+        "cued_loss": 0.12979589183824114,
+        "mean": 0.8116239076490832,
+        "ci95": [
+          0.7346000843348895,
+          0.8886477309632768
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.6906875318682909,
+          0.7785126368014883,
+          0.8963309522493439,
+          0.8809645096772094
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "tones_native_residual",
+        "regime": "persistent",
+        "ignore_loss": 0.0012932363038689284,
+        "cued_loss": 0.0012932363038689284,
+        "mean": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_sources": 4,
+        "positive_sources": 0,
+        "values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "tones_native_residual",
+        "regime": "amplitude_decay",
+        "ignore_loss": 0.7289346152343883,
+        "cued_loss": 0.33388033717372523,
+        "mean": 0.39505427806066296,
+        "ci95": [
+          0.28598286201947754,
+          0.5041256941018484
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.4718530378294765,
+          0.307010313932479,
+          0.26495541010647605,
+          0.5363983503742202
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "tones_native_residual",
+        "regime": "frequency_drift",
+        "ignore_loss": 2.3168995803280183,
+        "cued_loss": 1.8615308605637368,
+        "mean": 0.45536871976428145,
+        "ci95": [
+          0.059863097864093606,
+          0.8508743416644693
+        ],
+        "n_sources": 4,
+        "positive_sources": 3,
+        "values": [
+          0.9234187319485399,
+          0.2615692790853481,
+          -0.1418430833571609,
+          0.7783299513803987
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "tones_native_residual",
+        "regime": "abrupt_cessation",
+        "ignore_loss": 0.974366345669851,
+        "cued_loss": 0.12979589183824114,
+        "mean": 0.8445704538316099,
+        "ci95": [
+          0.7645867582337136,
+          0.9245541494295062
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.7212501455544723,
+          0.807923370912955,
+          0.9297856967565234,
+          0.9193226021024891
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "tones_zero_residual",
+        "regime": "persistent",
+        "ignore_loss": 0.006545095571555196,
+        "cued_loss": 0.006545095571555196,
+        "mean": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_sources": 4,
+        "positive_sources": 0,
+        "values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "tones_zero_residual",
+        "regime": "amplitude_decay",
+        "ignore_loss": 0.7442409274963577,
+        "cued_loss": 0.5692573987293933,
+        "mean": 0.17498352876696444,
+        "ci95": [
+          0.168579674486184,
+          0.1814444745937253
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.17291087707467256,
+          0.17694199736729543,
+          0.18428900710007623,
+          0.16579223352581351
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "tones_zero_residual",
+        "regime": "frequency_drift",
+        "ignore_loss": 2.33532755514907,
+        "cued_loss": 2.142861443610635,
+        "mean": 0.1924661115384353,
+        "ci95": [
+          0.02415699142868677,
+          0.3607752316481838
+        ],
+        "n_sources": 4,
+        "positive_sources": 3,
+        "values": [
+          0.07910956326963081,
+          0.33052664764630046,
+          0.39102381565006716,
+          -0.030795580412257273
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "tones_zero_residual",
+        "regime": "abrupt_cessation",
+        "ignore_loss": 0.9904687006139306,
+        "cued_loss": 0.006493573889157005,
+        "mean": 0.9839751267247736,
+        "ci95": [
+          0.9397204443015883,
+          1.0394063139364955
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.9270265632976535,
+          0.9677951565590811,
+          1.0632766997289669,
+          0.9778020873133928
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "seasonal",
+        "regime": "persistent",
+        "ignore_loss": 0.020901555862919557,
+        "cued_loss": 0.020901555862919557,
+        "mean": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_sources": 4,
+        "positive_sources": 0,
+        "values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "seasonal",
+        "regime": "amplitude_decay",
+        "ignore_loss": 0.7480201341424483,
+        "cued_loss": 0.09202369812375587,
+        "mean": 0.6559964360186924,
+        "ci95": [
+          0.6269185951213504,
+          0.6807224235017211
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.6122438936977018,
+          0.6502970033736256,
+          0.6905021476111463,
+          0.6709426993922959
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "seasonal",
+        "regime": "frequency_drift",
+        "ignore_loss": 2.3138330833296026,
+        "cued_loss": 2.6506457135688817,
+        "mean": -0.3368126302392792,
+        "ci95": [
+          -0.509218737825456,
+          -0.11527488706537681
+        ],
+        "n_sources": 4,
+        "positive_sources": 0,
+        "values": [
+          -0.5693676366887295,
+          -0.3248031422064299,
+          -0.004009903099774892,
+          -0.44906983896218255
+        ]
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "seasonal",
+        "regime": "abrupt_cessation",
+        "ignore_loss": 0.9934591296070456,
+        "cued_loss": 0.010627416382440328,
+        "mean": 0.9828317132246052,
+        "ci95": [
+          0.9304540118319493,
+          1.035209414617261
+        ],
+        "n_sources": 4,
+        "positive_sources": 4,
+        "values": [
+          0.9079998293062733,
+          0.9529081943576254,
+          1.0391785811298724,
+          1.0312402481046499
+        ]
+      }
+    ],
+    "test_crossovers": [
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "tones_native_residual",
+        "native_minus_method_at_p0": 0.1128288258891208,
+        "native_minus_method_at_p1": 0.29497717487643693,
+        "crossing_probability": null
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "tones_zero_residual",
+        "native_minus_method_at_p0": 0.10497328771506553,
+        "native_minus_method_at_p1": 0.29456137548079686,
+        "crossing_probability": null
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "seasonal",
+        "native_minus_method_at_p0": 0.09701145835326064,
+        "native_minus_method_at_p1": 0.28020491518943247,
+        "crossing_probability": null
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "tones_native_residual",
+        "native_minus_method_at_p0": -0.059549722852460074,
+        "native_minus_method_at_p1": 0.014346951483434426,
+        "crossing_probability": 0.8058511886716185
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "tones_zero_residual",
+        "native_minus_method_at_p0": -0.07592542111813072,
+        "native_minus_method_at_p1": 0.009095092215748158,
+        "crossing_probability": 0.8930247318075889
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "seasonal",
+        "native_minus_method_at_p0": -0.08388725047993562,
+        "native_minus_method_at_p1": -0.005261368075616203,
+        "crossing_probability": null
+      }
+    ],
+    "extraction": "8/8 accept a tone for uncued histories and cued decay/drift;0/8 accept for cued cessation",
+    "interpretation": [
+      "Identical histories share one prediction and cannot reveal their future regime. These are hypothetical prior-weighted expected losses, not detection accuracy or inferred pretraining priors.",
+      "Equal-prior hybrid improves Bolt but harms TimesFM relative to native on both FIT and TEST splits.",
+      "TimesFM hybrid beats native only above persistence probability0.8058511886716185 on TEST when other futures are equally weighted.",
+      "Both native models use visible decay and cessation cues beneficially on4/4 TEST sources; TimesFM drift gain positive4/4, Bolt2/4.",
+      "Selective continuation still accepts cued decay/drift, and cued hybrid losses exceed native for both. On cessation it abstains and exactly equals native; zero-residual baseline is substantially better than native in that condition."
+    ]
+  },
+  "controls": {
+    "native": {
+      "bolt": {
+        "gates": {
+          "repeat": 32,
+          "self_patch": 96,
+          "duplicate": 32,
+          "capture_vs_plain": 32,
+          "residual_repeat": 32,
+          "target_access_denied": true
+        },
+        "layers": [
+          "0",
+          "1",
+          "3"
+        ],
+        "torch_threads": 1,
+        "torch_interop_threads": 1,
+        "worker_seconds": 26.324679799028672,
+        "worker_peak_rss_bytes": 1067978752
+      },
+      "timesfm": {
+        "gates": {
+          "repeat": 32,
+          "self_patch": 96,
+          "duplicate": 32,
+          "capture_vs_plain": 32,
+          "residual_repeat": 32,
+          "target_access_denied": true
+        },
+        "layers": [
+          "0",
+          "5",
+          "10"
+        ],
+        "torch_threads": 1,
+        "torch_interop_threads": 1,
+        "worker_seconds": 47.65785254898947,
+        "worker_peak_rss_bytes": 1636655104
+      }
+    },
+    "exact_history_and_prediction_identity": true,
+    "target_access_denied": true,
+    "frozen_source_input_checkpoint_binding": true,
+    "focused_tests_passed": 11,
+    "unit_planted_regressions_caught": 11,
+    "independent_score_plant_caught": true,
+    "arithmetic_replay": {
+      "passed": true,
+      "counts": {
+        "losses": 512,
+        "expected_risks": 320,
+        "cue_gains": 256,
+        "finite_arrays": 392,
+        "paired_world_identity": 8
+      },
+      "largest_abs_arithmetic_difference": 5.551115123125783e-16,
+      "source_sha256": "0274a34a368fcfdadd3a113cf2341e89be2bf4237ed282e39a80bf4aa0a1f5d3",
+      "note": "Independent formulas; no native inference or outcome-dependent selection"
+    },
+    "execution": {
+      "bolt": {
+        "valid": true,
+        "returncode": 0,
+        "reason": null,
+        "seconds": 28.094693543971516,
+        "peak_rss_bytes": 1067864064
+      },
+      "timesfm": {
+        "valid": true,
+        "returncode": 0,
+        "reason": null,
+        "seconds": 49.23432445002254,
+        "peak_rss_bytes": 1636675584
+      }
+    },
+    "sessions": {
+      "bolt": 20771,
+      "timesfm": 58645
+    },
+    "native_slots_released": true
+  },
+  "limitations": [
+    "Exploratory synthetic pilot;8 independent seeds, only4 TEST sources.",
+    "One strong amplitude/period/background and one cue lead time/severity; not natural-data validation.",
+    "Fixed depth1 and fixed seasonal rule; no learned selector or outcome-dependent tuning.",
+    "Bootstrap intervals descriptive/unadjusted; no significance or causal training claim.",
+    "Counterfactual futures share noise; empirical mixture-mean lower bound is a retrospective diagnostic, not a deployable oracle.",
+    "Raw hidden states saved without cross-model alignment or semantic/causal analysis.",
+    "Original batch-geometry failure preserved and calibrated; singleton wrapper changes geometry only."
+  ],
+  "evidence_class": "exploratory source-disjoint behavioral evidence; numerical instrument calibration; no causal or sealed confirmation claim",
+  "next_decision": {
+    "status": "proposal only; no expansion run",
+    "proposal": "Coordinate a fresh source-held-out cue-boundary replication: vary lead time8/16/32 and separately compare no extraction, frozen depth1, and a preregistered recent-history stability veto. Keep identical-history risk arm and zero-residual control; select any veto threshold on FIT only.",
+    "motivation": "Current conservative extraction accepts every cued decay/drift history and can override useful native adaptation; cessation abstention exposes harmful residual forecasts.",
+    "coordination": "Do not duplicate coordinator natural-data or tiny controlled-training tracks. Stop native compute pending coordination."
+  },
+  "artifacts": {
+    "report": "REPORT.txt",
+    "analysis": "analysis.json",
+    "figure": "expected_risk.png",
+    "state_files": [
+      "bolt_states.npz",
+      "timesfm_states.npz"
+    ],
+    "row_mapping": "evaluation/rows.json",
+    "state_key": "q{query}_{full|residual}_block{index}",
+    "states": "all native tokens, FP32",
+    "prior_failure": "../knowledge.json",
+    "calibration": "../calibration_batch_geometry/knowledge.json"
+  },
+  "source_edits": "Only new persistence_* experiment files and test_persistence_* tests plus fresh run artifacts; no commit; ROADMAP/FINDINGS untouched"
+}

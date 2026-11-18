@@ -1,0 +1,30 @@
+{
+  "arguments": {
+    "model": "bolt",
+    "profiles": "runs/dynamic_d07_bolt_full/profiles",
+    "out": "runs/dynamic_d15_bolt_real",
+    "source": "runs/real_background_poc492306"
+  },
+  "selected_indices": [
+    4,
+    5,
+    6,
+    7,
+    12,
+    13,
+    14,
+    15,
+    20,
+    21,
+    22,
+    23
+  ],
+  "context_slice": [
+    128,
+    256
+  ],
+  "corpus_sha256": "da1b2ae642ba6f2c4e995ca5eff897db107453e68a40dfdd2a1d4494d7c064be",
+  "profile_sha256": "43ad83f17b07f522252e5c393728a70ec0d58c7bfba655c8558258a4347cdf4d",
+  "fit": "none: restore frozen synthetic profiles; normal per-input refinement remains enabled",
+  "scope": "external-validity check on reused public sources; not sealed confirmation; pretraining overlap unknown"
+}

@@ -1,0 +1,202 @@
+{
+  "phase": {
+    "stage": "49.10",
+    "role": "New amended alias follow-up,not retroactive pilot control pass",
+    "original_pilot": "tsfm_lens/runs/feature_search_stage49_phase_orbit3500000",
+    "original_failed_result_sha256": "8f95564f8ab1e605cfc7891a52bcf6592885aed736112a0e80ec1b863904e097",
+    "original_global_controls_pass": false,
+    "original_singleton_max_abs": 7.152557373046875e-07,
+    "fp64_replay": "tsfm_lens/runs/feature_search_stage49_phase_orbit3500000_fp64_replay",
+    "fp64_replay_sha256": "c75514472d81e133c7cd12137ecb4f94a3bac6e24767cf5af5497be5af53d990",
+    "fixed_B8_control": "tsfm_lens/runs/feature_search_stage49_c2_batch_diagnosis3500000",
+    "fixed_B8_control_sha256": "7c46bd842d068b20e6ddd5f172916bc96071f0e863b61c7fd7766df087d4d15f",
+    "models": {
+      "timesfm": {
+        "checkpoint": "/common/home/djk255/.cache/huggingface/hub/models--google--timesfm-2.5-200m-pytorch/snapshots/1d952420fba87f3c6dee4f240de0f1a0fbc790e3/model.safetensors",
+        "weight_sha256": "2f776efe6245e42b24bc4153ffdf61810140210e4bd3b01fb21f7aa779ab6ce8",
+        "config_sha256": "cd3315b760d5cc7e278d7afdf41b897031ced888fc6c115bd9b3ac0ea2c47408"
+      },
+      "bolt": {
+        "checkpoint": "/common/home/djk255/.cache/huggingface/hub/models--amazon--chronos-bolt-small/snapshots/772f3d25d38aec6d914c8949dab4462e2d46f5d8/model.safetensors",
+        "weight_sha256": "06a6a19bbe74bc10a9cd193bd4bf2bf638ae07f7e0d51653ae7ab8ea968a21dd",
+        "config_sha256": "9ca0ebbe049ccebacb0546361e8aa728f0cf104cd18d1838d78d296aa317bd21"
+      },
+      "chronos2": {
+        "checkpoint": "/common/home/djk255/.cache/huggingface/hub/models--amazon--chronos-2/snapshots/29ec3766d36d6f73f0696f85560a422f50e8498c/model.safetensors",
+        "weight_sha256": "ddcda3c7508bf2528087723e98a20707cc04b7f370ae275a9fd88078ddba4f42",
+        "config_sha256": "ef1143bfdc9c0376d9a056eefca46cb4b1ec3d0ffacd541ff56feb40fb708031"
+      }
+    },
+    "installed_sources": {
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tsfm_lens/models/timesfm_adapter.py": "39ae8128e782bb56fd15add2ea292274b0d4f5c6a517a50f4c0087724d6ebccd",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tsfm_lens/models/chronos_bolt_adapter.py": "8a876125160daa1f7a7325491bc3c15d083c5dad5af99d8a405cb486e1d09602",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tsfm_lens/models/chronos2_adapter.py": "e38368da3a9e4f2bd404070ce6d84dd4f0d260967b9ab0a19d0a1f74ed26b1b8",
+      "/common/home/djk255/miniforge3/envs/cudaPy/lib/python3.12/site-packages/timesfm/torch/util.py": "c700a82459e115a1c6c9797058e6e3272aa79e8705a11d48d83489b67766e917",
+      "/common/home/djk255/miniforge3/envs/cudaPy/lib/python3.12/site-packages/chronos/chronos_bolt.py": "572a3ffd23a7887c423d234fd0086a4dfa2bac0c3e34d4b7d42eb9cda2e3d1d4",
+      "/common/home/djk255/miniforge3/envs/cudaPy/lib/python3.12/site-packages/chronos/chronos2/model.py": "13ed6b3e1010e1b60fad45cd078da5ff1cda23cdfcaf9055a996276219d9e3c1",
+      "/common/home/djk255/miniforge3/envs/cudaPy/lib/python3.12/site-packages/timesfm/timesfm_2p5/timesfm_2p5_torch.py": "07e135cbf3f5099e60469f7c2bb0781426f7109d62c51634775b6be470608371"
+    },
+    "coarse_source": "tsfm_lens/runs/feature_search_stage49_phase_orbit3500000_prepared_v2",
+    "coarse_forecast_sha256": {
+      "timesfm/p32_16": "26e761f172bb1265f4902ccede77946a4495c28c4bfa4e6caedecb0649dc7a2a",
+      "timesfm/p40_20": "6d3e364f066229d2eb181dc74cf1d06b754a0101ce0c810c017e24643094c3a3",
+      "bolt/p32_16": "903ee900d17c85dc045c2d35f974c238027dfdaa9c55cbea89dfd2c12299db07",
+      "bolt/p40_20": "eb6c7e776de0e6a74e40de6163dba9110988d3847af64a7fc067665a9b2c6000",
+      "chronos2/p32_16": "fb3800b6235b7a692a380420e088480e7ca23cd3529561fb601738057b69efa4",
+      "chronos2/p40_20": "21166da57795d4842e4f3d642f63aa95e58c37e789715b7c66f600d7e70ff660"
+    },
+    "primary_rows": 5376,
+    "budget": "672primaryB8calls+12repeat/permutation+4C2unique/neighbor=688calls=5504contexts;allcallsB8,no padding",
+    "fine_bundles": [
+      0,
+      3,
+      4,
+      7
+    ],
+    "fine_grid": 16,
+    "new_fine_cells_per_pair": 768,
+    "offgrid_bundles": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "offgrid_cells_per_bundle": 16,
+    "offgrid_reconstruction": "Coarse8 loworderONLY forALL8;no fine/coarse selection",
+    "mode_order": 3,
+    "measurement_dtype": "FP64",
+    "primary": "Full waveform phaseDFT;both stability bounds onALL4;highorderenergy onALL4;coarseoffgridRMS on>=7/8 ofALL8;zcoefficientssecondary",
+    "thresholds": {
+      "relative_low_order": 0.05,
+      "absolute_low_order_over_scale": 0.02,
+      "beyond_order3_over_mix_energy": 0.05,
+      "offgrid_RMS_over_scale": 0.05
+    },
+    "candidate_family": "ALL6 originalcomparisons including2pilotnegatives;both model/period responses mustpass;negativepilot cannotbe rescued",
+    "native_controls": "B8repeat/permutation exact0 eachmodel/pair;C2explicitarange andsame-slot target0 neighborreplace exact0 onactualnewcorpus;oldsingletonfailretained",
+    "no_expansion": "No amplitude/phase/grid/order adaptation,no hidden captures,no native ranking reversal claim",
+    "resources": {
+      "gpu": 3,
+      "cpu_threads": 2,
+      "batch_size": 8,
+      "cap_bytes": 6442450944,
+      "timeout_seconds": 600
+    },
+    "runner_sha256": "c8965437dfc7ffeaba643dc33a1b9a81bf9acb820ccfc10fd12e67a0ba21c653",
+    "math_sha256": "ac309fc011ea467966f5a6b5f68abf1602203d5c41300b08a98e78593c11d3ae",
+    "fp64_math_sha256": "496af48772d41688b4ec0f809d1b368fbd8b50b125574aa0462163da0503c410",
+    "request_bindings": {
+      "p32_16": {
+        "npz": "dcd119600e992093dc869f0b51667c8a3b7abd9ecbec93a861d2e7351587dc37",
+        "json": "942bf7dbae99dea935e273a8db87d1a17a856e1a2268f2d204e130d8f06e946f"
+      },
+      "p40_20": {
+        "npz": "271977421e66e96dbe31dd540339b0eeaf442f37426b7bb0bc7a77fc1727423d",
+        "json": "942bf7dbae99dea935e273a8db87d1a17a856e1a2268f2d204e130d8f06e946f"
+      }
+    }
+  },
+  "recoverability": {
+    "scope": "Exploratory cached-cohort linear recoverability;both outcomes previously inspected;not new heldout confirmation",
+    "models": [
+      "bolt",
+      "timesfm"
+    ],
+    "source": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/feature_search_20261111_native_head_capture",
+    "frozen_head_probe": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/feature_search_20261111_native_head_readout_fp64",
+    "bindings": {
+      "captures": {
+        "protocol.json": "3746783f062c1cdfe6c180ca4fccd1b6b944b4d54518ba1db59757d61af6acfa",
+        "provenance.json": "3349998ba85c64d10e05dad47e670a9a80117b086b11b05627c4ef50f95bb46f",
+        "old_metadata.json": "7b6f00c0f827fc947cbdb915eea30f5128851e798c4a4b1c7f486fe4404cd097",
+        "old_corpus.npz": "b637a9e632ba27bccdb38cce456a449348cabb7a45e208d186e52f619ab4dced",
+        "fresh_metadata.json": "70256c8c83a0f6839aa27d7501ad908f05e878b94dacc258b9f262714b853d40",
+        "fresh_corpus.npz": "4cbfb4d5a707c539ed8bec0ba2a315436871c0d8fea104bdb110ec839dafdeb3",
+        "bolt_old_head.npz": "7a287663dd936cf05864caac967ef6fb020b100548dcadef1fdae08a5692532c",
+        "bolt_fresh_head.npz": "2084cbfd0db88b6e776e81f083a20d71131b06dc49b4985a008deb4724a45c80",
+        "timesfm_old_head.npz": "95d3b03ea34fb65dfce082501580756004c0e6d1ce564bea5e4f0c8c3f264085",
+        "timesfm_fresh_head.npz": "a962ec4b44b33469d524a4a58e07a3fa73bba3b8243bbf5298c7bc7f3af8e11a"
+      },
+      "head_probe": {
+        "frozen_selection.json": "0bd2e5a1940f9816e3668dbe4feaab00edf6bb4d40faa0a66ffe202f54033bb2",
+        "predictions.npz": "a74295fa8cb1af1bb615d4481479e3329e894e84f859e47bb7c8060180f29ca1",
+        "results.json": "8f7d982789c579bf7a4f3fa79eeb8a74194ceb25ee6de52f83d19f8cd7296209",
+        "bolt_frozen_probe.npz": "f11dddf8f5258e34cc5aea9244758b9326fefcebe7870c1a8d6d79c08a40999b",
+        "timesfm_frozen_probe.npz": "d92cddc80b5bcfcafe85d9108148cbd40245cb231c84ed724966e111118e761f"
+      }
+    },
+    "driver_sha256": "4f98ac2e8b637573098e6b3ddd591b3d0f4b8b08af6a08db37a8280c548f474f",
+    "helper_sha256": {
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/mixture_readout.py": "6875dc767b74005ffd88cdbd550a41466706b47aed25ebc7b74f294a73aa243a",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/head_readout.py": "9120648b317e0013790a5e8586f0f55b73c784e4088e758b82d19a32ffedab03"
+    },
+    "targets": "identical SH25[a sin\u03c6/s,a cos\u03c6/s,b sin\u03c8/s,b cos\u03c8/s]",
+    "input": "native32-step point forecast;normalize by float64 context population mean/std,identical external chart available to both reconstructions",
+    "fitting": "exact reused fit_frozen_head:float64 StandardScaler onold96trainseeds only;Ridge alpha[.01,1,100] chosen onold48validationseeds;no refit onvalidation;old48test+fresh128evaluation",
+    "primary": "fresh128 generating-bundle outputdecoder scaledfutureMSE and paired outputminusfrozenhead excess",
+    "gates": "outputpointmean<=.01 AND excesspointmean<=.01;descriptive only,no inferential equivalence claim",
+    "intervals": "pointwise approximate paired generating-seed bootstrap2000 seed9201;four cells averaged perseed;no pvalues",
+    "normalization": "physical forecast outputs renormalized using context only;knownharmonic reconstruction plus externalcontextmean/std matches SH25;commonmixvariance(a\u00b2+b\u00b2)/2 forloss",
+    "interpretation": "Success means task-specific linear recovery from forecast output,not fairzero-shot improvement or deployable repair;failure doesnotprove information destruction or absence",
+    "provenance_limit": "Original legacy head caches have no embedded rowIDs;this protocol binds their exact bytes to validated ordered corpus/metadata and producer hookidentity declarations,then crosschecks frozen head predictions. It cannot independently prove original row-order execution.",
+    "time_budget_seconds": 180,
+    "cpu_threads": 1,
+    "no_nonlinear_fallback": true
+  },
+  "homogeneous": {
+    "mode": "pilot",
+    "driver_sha256": "2670effb2dfc0b631d368a69cab4263a8d2a90eb1208acc93d246a5c0ef55051",
+    "source_sha256": {
+      "timesfm.timesfm_2p5.timesfm_2p5_torch": "07e135cbf3f5099e60469f7c2bb0781426f7109d62c51634775b6be470608371",
+      "timesfm.torch.transformer": "744a0e1e41c1262150998fbc621bb7e4bb2fb9c79b0fe46e70dea744511962bb",
+      "timesfm.torch.dense": "28894985384eaa3dda7b1b882d5bb8426d8b274b2d9a01cb14c4651c0584ec1d",
+      "timesfm.torch.normalization": "c37b56afd198aebf5ef71ee04ef244a63318da2e4a0497ec9b319088f6cc5154",
+      "timesfm.torch.util": "c700a82459e115a1c6c9797058e6e3272aa79e8705a11d48d83489b67766e917"
+    },
+    "checkpoint": "/common/home/djk255/.cache/huggingface/hub/models--google--timesfm-2.5-200m-pytorch/snapshots/1d952420fba87f3c6dee4f240de0f1a0fbc790e3/model.safetensors",
+    "resolved_checkpoint": "/common/users/djk255/hf_cache_home/huggingface/hub/models--google--timesfm-2.5-200m-pytorch/blobs/2f776efe6245e42b24bc4153ffdf61810140210e4bd3b01fb21f7aa779ab6ce8",
+    "checkpoint_weight_sha256": "2f776efe6245e42b24bc4153ffdf61810140210e4bd3b01fb21f7aa779ab6ce8",
+    "bindings": {
+      "corpus": "69360df451e91e53c5b07e7a9c11efc200345becce416cf63435c7c3c00d67fa",
+      "metadata": "4ce21c2e246e41812c5995a9b88ec66b05ba5aa31416ec0e6507592b2bfc4a6f",
+      "native_forecast": "bdfb43826de26c612728c430a36a8426629f2cccaef3957af9e7cb63ba78e38a"
+    },
+    "calibration_ids": [
+      3400000
+    ],
+    "pilot_ids": [
+      3400000,
+      3400004,
+      3400008,
+      3400012,
+      3400016,
+      3400020,
+      3400024,
+      3400028,
+      3400032,
+      3400036,
+      3400040,
+      3400044,
+      3400048,
+      3400052,
+      3400056,
+      3400060
+    ],
+    "horizon": 64,
+    "point_channel": 5,
+    "replay_normalized_waveform_RMS": 1e-05,
+    "small_residual_normalized_energy": 1e-08,
+    "cpu_threads": 1,
+    "resident_limit_gib": 1.5,
+    "runtime_seconds": 180,
+    "available_memory_kib": 250457964,
+    "checkpoint_bytes": 925181104,
+    "interpretation": "inspected controlled cohort; descriptive source replay only, no statistical replication, no repair",
+    "counterfactual": "Fixed mixture normalizer evaluates lower-RMS u and v off the native unit-RMS manifold; no causal-isolated-feature claim",
+    "calibration_source": "tsfm_lens/runs/feature_search_stage49_homogeneous_calibration"
+  }
+}

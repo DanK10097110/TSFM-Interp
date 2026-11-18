@@ -1,0 +1,554 @@
+[
+  {
+    "case": 0,
+    "context": 0,
+    "kind": "context_ignore",
+    "context_window": "old",
+    "baseline_sensitivity": 0.29742451863918495,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 0.8455058336257935,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 0,
+    "context": 1,
+    "kind": "context_ignore",
+    "context_window": "old",
+    "baseline_sensitivity": 0.0836858178082618,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 0.7006158232688904,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 0,
+    "context": 2,
+    "kind": "context_ignore",
+    "context_window": "old",
+    "baseline_sensitivity": 0.3621218822380749,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 1.3842098712921143,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 0,
+    "context": 3,
+    "kind": "context_ignore",
+    "context_window": "old",
+    "baseline_sensitivity": 0.4243142136855393,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 0.9936057329177856,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 0,
+    "context": 4,
+    "kind": "context_ignore",
+    "context_window": "old",
+    "baseline_sensitivity": 1.0456960806690594,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 1.0771619081497192,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 0,
+    "context": 5,
+    "kind": "context_ignore",
+    "context_window": "old",
+    "baseline_sensitivity": 1.1661051567463316,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 1.2945494651794434,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 0,
+    "context": 6,
+    "kind": "context_ignore",
+    "context_window": "old",
+    "baseline_sensitivity": 0.5501483461220377,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 1.2962501049041748,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 0,
+    "context": 7,
+    "kind": "context_ignore",
+    "context_window": "old",
+    "baseline_sensitivity": 1.0367986796714148,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 0.7060590982437134,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 1,
+    "context": 0,
+    "kind": "context_ignore",
+    "context_window": "recent",
+    "baseline_sensitivity": 0.4879226188030442,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 0.722346305847168,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 1,
+    "context": 1,
+    "kind": "context_ignore",
+    "context_window": "recent",
+    "baseline_sensitivity": 0.21457960181212582,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 0.7650517225265503,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 1,
+    "context": 2,
+    "kind": "context_ignore",
+    "context_window": "recent",
+    "baseline_sensitivity": 0.36379731052232606,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 0.9148280024528503,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 1,
+    "context": 3,
+    "kind": "context_ignore",
+    "context_window": "recent",
+    "baseline_sensitivity": 0.5334271233259548,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 0.6997109651565552,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 1,
+    "context": 4,
+    "kind": "context_ignore",
+    "context_window": "recent",
+    "baseline_sensitivity": 2.056702843547519,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 0.9570547342300415,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 1,
+    "context": 5,
+    "kind": "context_ignore",
+    "context_window": "recent",
+    "baseline_sensitivity": 2.304254187976642,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 1.4163095951080322,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 1,
+    "context": 6,
+    "kind": "context_ignore",
+    "context_window": "recent",
+    "baseline_sensitivity": 0.9961583295450289,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 1.15411376953125,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 1,
+    "context": 7,
+    "kind": "context_ignore",
+    "context_window": "recent",
+    "baseline_sensitivity": 1.3331197777126762,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 0.7328459620475769,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 2,
+    "context": 0,
+    "kind": "context_focus",
+    "context_window": "old",
+    "baseline_sensitivity": 0.5816821785179949,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 0.7577204704284668,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 2,
+    "context": 1,
+    "kind": "context_focus",
+    "context_window": "old",
+    "baseline_sensitivity": 0.10864829482750187,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 0.7209512591362,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 2,
+    "context": 2,
+    "kind": "context_focus",
+    "context_window": "old",
+    "baseline_sensitivity": 0.5134763167415158,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 0.7716379165649414,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 2,
+    "context": 3,
+    "kind": "context_focus",
+    "context_window": "old",
+    "baseline_sensitivity": 1.2598715250973476,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 0.8370043039321899,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 2,
+    "context": 4,
+    "kind": "context_focus",
+    "context_window": "old",
+    "baseline_sensitivity": 0.9826503739395768,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 0.6943787336349487,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 2,
+    "context": 5,
+    "kind": "context_focus",
+    "context_window": "old",
+    "baseline_sensitivity": 1.091633734360848,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 0.7351496815681458,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 2,
+    "context": 6,
+    "kind": "context_focus",
+    "context_window": "old",
+    "baseline_sensitivity": 1.1287749897688626,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 0.7184295058250427,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 2,
+    "context": 7,
+    "kind": "context_focus",
+    "context_window": "old",
+    "baseline_sensitivity": 0.7442392248875134,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 0.7503648996353149,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 3,
+    "context": 0,
+    "kind": "context_focus",
+    "context_window": [
+      24,
+      48
+    ],
+    "baseline_sensitivity": 0.6752446309068465,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 0.9195818305015564,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 3,
+    "context": 1,
+    "kind": "context_focus",
+    "context_window": [
+      24,
+      48
+    ],
+    "baseline_sensitivity": 0.27267236035026715,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 0.911758542060852,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 3,
+    "context": 2,
+    "kind": "context_focus",
+    "context_window": [
+      24,
+      48
+    ],
+    "baseline_sensitivity": 0.6020244687901222,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 0.9161549806594849,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 3,
+    "context": 3,
+    "kind": "context_focus",
+    "context_window": [
+      24,
+      48
+    ],
+    "baseline_sensitivity": 0.9138847562779923,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 0.9325644969940186,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 3,
+    "context": 4,
+    "kind": "context_focus",
+    "context_window": [
+      24,
+      48
+    ],
+    "baseline_sensitivity": 1.55650009317895,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 0.9111581444740295,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 3,
+    "context": 5,
+    "kind": "context_focus",
+    "context_window": [
+      24,
+      48
+    ],
+    "baseline_sensitivity": 1.956999395993378,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 0.9412655234336853,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 3,
+    "context": 6,
+    "kind": "context_focus",
+    "context_window": [
+      24,
+      48
+    ],
+    "baseline_sensitivity": 1.121288706849004,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 0.906061053276062,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 3,
+    "context": 7,
+    "kind": "context_focus",
+    "context_window": [
+      24,
+      48
+    ],
+    "baseline_sensitivity": 1.1286253320394468,
+    "controlled_sensitivity": 0.0,
+    "ratio": 0.0,
+    "input_relative_norm": 0.9203147292137146,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 4,
+    "context": 0,
+    "kind": "context_emphasize",
+    "context_window": "old",
+    "baseline_sensitivity": 0.38981613593401343,
+    "controlled_sensitivity": 0.5695949337697374,
+    "ratio": 1.4611887022197465,
+    "input_relative_norm": 0.42275291681289673,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 4,
+    "context": 1,
+    "kind": "context_emphasize",
+    "context_window": "old",
+    "baseline_sensitivity": 0.06418300015850296,
+    "controlled_sensitivity": 0.1001238820454553,
+    "ratio": 1.5599750992972379,
+    "input_relative_norm": 0.3503079116344452,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 4,
+    "context": 2,
+    "kind": "context_emphasize",
+    "context_window": "old",
+    "baseline_sensitivity": 0.17697464384009168,
+    "controlled_sensitivity": 0.5924897291983219,
+    "ratio": 3.347879200896574,
+    "input_relative_norm": 0.6921049356460571,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 4,
+    "context": 3,
+    "kind": "context_emphasize",
+    "context_window": "old",
+    "baseline_sensitivity": 0.43737611822286876,
+    "controlled_sensitivity": 1.1922905208630825,
+    "ratio": 2.726007368000693,
+    "input_relative_norm": 0.4968028962612152,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 4,
+    "context": 4,
+    "kind": "context_emphasize",
+    "context_window": "old",
+    "baseline_sensitivity": 0.7489892183172333,
+    "controlled_sensitivity": 2.1326574334509085,
+    "ratio": 2.8473806849214545,
+    "input_relative_norm": 0.5385809540748596,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 4,
+    "context": 5,
+    "kind": "context_emphasize",
+    "context_window": "old",
+    "baseline_sensitivity": 1.0296909495065336,
+    "controlled_sensitivity": 1.233056528133507,
+    "ratio": 1.1975015694995026,
+    "input_relative_norm": 0.6472747325897217,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 4,
+    "context": 6,
+    "kind": "context_emphasize",
+    "context_window": "old",
+    "baseline_sensitivity": 0.7489642245184788,
+    "controlled_sensitivity": 1.0894966110027244,
+    "ratio": 1.4546710982132416,
+    "input_relative_norm": 0.648125171661377,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 4,
+    "context": 7,
+    "kind": "context_emphasize",
+    "context_window": "old",
+    "baseline_sensitivity": 0.2062885082237177,
+    "controlled_sensitivity": 0.6089478165740836,
+    "ratio": 2.951923118827764,
+    "input_relative_norm": 0.3530295193195343,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 5,
+    "context": 0,
+    "kind": "context_emphasize",
+    "context_window": "recent",
+    "baseline_sensitivity": 0.5534359389100589,
+    "controlled_sensitivity": 1.381403971445505,
+    "ratio": 2.496050354384381,
+    "input_relative_norm": 0.361173152923584,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 5,
+    "context": 1,
+    "kind": "context_emphasize",
+    "context_window": "recent",
+    "baseline_sensitivity": 0.2345121896492065,
+    "controlled_sensitivity": 0.4310340243543708,
+    "ratio": 1.8380026428439826,
+    "input_relative_norm": 0.38252583146095276,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 5,
+    "context": 2,
+    "kind": "context_emphasize",
+    "context_window": "recent",
+    "baseline_sensitivity": 0.5066656325583585,
+    "controlled_sensitivity": 1.4065639066932012,
+    "ratio": 2.776118639803719,
+    "input_relative_norm": 0.45741400122642517,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 5,
+    "context": 3,
+    "kind": "context_emphasize",
+    "context_window": "recent",
+    "baseline_sensitivity": 0.5700449303887627,
+    "controlled_sensitivity": 0.787268564561721,
+    "ratio": 1.381064057573172,
+    "input_relative_norm": 0.3498554825782776,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 5,
+    "context": 4,
+    "kind": "context_emphasize",
+    "context_window": "recent",
+    "baseline_sensitivity": 1.8554953441438549,
+    "controlled_sensitivity": 3.7634678172824185,
+    "ratio": 2.028282005212426,
+    "input_relative_norm": 0.47852736711502075,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 5,
+    "context": 5,
+    "kind": "context_emphasize",
+    "context_window": "recent",
+    "baseline_sensitivity": 2.619699081272898,
+    "controlled_sensitivity": 4.214416881142815,
+    "ratio": 1.608740832590227,
+    "input_relative_norm": 0.7081548571586609,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 5,
+    "context": 6,
+    "kind": "context_emphasize",
+    "context_window": "recent",
+    "baseline_sensitivity": 1.1372962540425058,
+    "controlled_sensitivity": 0.9906664150576783,
+    "ratio": 0.871071553727858,
+    "input_relative_norm": 0.5770569443702698,
+    "replay_max_abs": 0.0
+  },
+  {
+    "case": 5,
+    "context": 7,
+    "kind": "context_emphasize",
+    "context_window": "recent",
+    "baseline_sensitivity": 0.8907692174507605,
+    "controlled_sensitivity": 2.1886947082615835,
+    "ratio": 2.4570839061157486,
+    "input_relative_norm": 0.36642298102378845,
+    "replay_max_abs": 0.0
+  }
+]

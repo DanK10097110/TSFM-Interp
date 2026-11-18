@@ -1,0 +1,32 @@
+{
+  "question": "Do new posthoc controls detect lost level, wrong gain/plane and wrong source weighting?",
+  "design": "Isolated in-memory mutations, no original source edits or models",
+  "exact_findings": {
+    "plants": [
+      {
+        "plant": "erase_DC",
+        "test": "test_level_baselines_preserve_level_and_do_not_refit",
+        "caught": true
+      },
+      {
+        "plant": "reverse_gain",
+        "test": "test_known_orthogonal_gain_and_future_poison",
+        "caught": true
+      },
+      {
+        "plant": "wrong_plane",
+        "test": "test_known_orthogonal_gain_and_future_poison",
+        "caught": true
+      },
+      {
+        "plant": "window_pooling",
+        "test": "test_equal_station_zero_abstention_accounting",
+        "caught": true
+      }
+    ]
+  },
+  "controls": "Mutation changed source; assertion failure required",
+  "limitations": "Software audit only",
+  "evidence_class": "planted regression verification",
+  "next_decision": "Run saved-array posthoc diagnostic after successful controls"
+}

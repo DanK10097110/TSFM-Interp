@@ -1,0 +1,447 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Frequency composition: fresh replication</title><style>
+body{font:17px/1.55 system-ui,sans-serif;max-width:1140px;margin:40px auto;padding:0 24px;color:#192738;background:#fafbfd}h1{line-height:1.15}img{width:100%;height:auto}figure{margin:24px 0}figcaption{font-size:.9rem;color:#475569}a{color:#0755a2}table{border-collapse:collapse;width:100%;font-size:.85rem}td,th{border:1px solid #cbd5e1;padding:8px;text-align:left}th{background:#e7eef6}.notice{background:#fff3dc;border-left:4px solid #b76b16;padding:16px}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.75rem}</style>
+<h1>Composing component states improves fresh mixture forecasts</h1>
+<p>The component forecasts are accurate, but TimesFM struggles when those components are mixed. On 64 new mixtures, amplitude- and background-aware state composition after 15 of 20 transformer blocks reduced the mean forecast loss and beat geometry-matched random edits. Those available component representations can support a much better continuation under this controlled intervention.</p>
+<p class="notice"><strong>Fresh selected-cut replication passed.</strong> Native normalized MSE 0.463168 → anchored 0.0388412; matched-random mean 0.400122. Improvement occurs in 61/64 seeds; 3 seeds become worse. The actual component-sum reference is 0.00371419. This uses known separated components and an off-manifold state edit, not a deployable forecasting fix.</p>
+<p><a href="restoration/index.html">Loss chart, discovery history and all controls</a> · <a href="restoration/source_data.json">Portable restoration source data</a> · <a href="restoration_audit.json">Independent model-free audit</a> · <a href="restoration_evidence.json">Bound producer results and protocols</a></p>
+<figure><img src="restoration/restoration_summary.png" alt="Restoration discovery and fresh selected-cut replication losses with geometry controls and resource history"><figcaption>TimesFM 32/16, context 128, horizon 64; fresh generating seeds 3700000–3700063. Cut 15 means after 15 blocks, index 14. Cut 20 and raw-input reconstruction are controls, not additional candidates. Known component decomposition is privileged.</figcaption></figure>
+<h2>What replicated—and what it does not establish</h2>
+<p>Native-minus-anchored gain is 0.424326 (61/64 favorable signs; global Holm2 p=4.74284e-15). Mean-random-minus-anchored advantage is 0.361281 (64/64; Holm2 p=2.1684e-19). Both registered empirical size gates and the conditional-majority tests pass. Exact sign tests do not establish population mean-superiority.</p>
+<p>The unclipped recovery ratio is 0.923546 of the <em>native-to-component-reference gap</em>, not the fraction of native error removed and not a bounded ceiling score. Suffix-remainder energy is 0.0334065. The component sum is a reference, not a performance bound.</p>
+<p>This supports compatibility of a background-anchored state composition with the remaining suffix. It does not identify the origin of harmful computation, a unique or isolated feature, or a generally usable repair. Cut 15 was selected from a coarse registered discovery grid; it is not claimed to be the earliest possible site. Geometry controls use two fixed random draws per seed, averaged within seed, not 128 independent samples.</p>
+<p>The original 16-seed discovery <strong>failed its memory cap</strong> and remains failed. A resource-only rerun reproduced all 29 saved matrices bitwise and the entire scientific dictionary exactly, then passed; that is execution correction, not replication. The separate fresh 64-seed run used four serial workers, released every model before pooled statistics, passed the 1.5 GiB cap, and finished in 41.62 seconds.</p>
+<p>The independent audit verifies all 64 saved outcomes, identities, hashes, exact binomial/Holm2 values and gate/resource overrides. Its geometry check verifies frozen diagnostics and random-draw hashes; hidden states were not persisted, so it does not regenerate those rotations from hidden states. <a href="restoration_exact_p.json">Bit-exact p-value verification</a> · <a href="restoration_exceptions.json">Three negative cases, descriptive only</a>.</p>
+<h2>Frequency crossover: the primary native accuracy flip remains failed</h2>
+<p>TimesFM 32/16 shows strong error reduction when known components are forecast separately. Bolt 40/20 already struggles with pure frequencies, and most mixed error remains after component summation. The native off-response reversal replicated; the <strong>primary native accuracy ranking flip FAILED</strong>.</p>
+<p><a href="../feature_search_20261111/index.html">Earlier study and diagnostic tools</a> · <a href="source_data.json">Portable scientific source data</a> · <a href="crossover_summary.pdf">Figure PDF</a> · <a href="producer_results.json">All saved results</a> · <a href="protocol.json">Frozen producer protocol</a> · <a href="producer_provenance.json">Native source and resource provenance</a></p>
+<p class="notice">Context 128 is primary. Its 32/16 TF−Bolt mean gap is positive, but q=0.5625 and Holm22 p=1: no confirmed ranking flip. Context 512 passes the separate sensitivity flip and cannot rescue the primary result. A mean interval excluding zero is not a significant exact sign result.</p>
+<figure><img src="crossover_summary.png" alt="Four panels comparing native and component losses, remaining error, exact sign effects and separate context sensitivity"><figcaption>64 fresh matched seeds 3400000–3400063, periods 32/16 and 40/20, horizon 64, six input conditions, three models. The figure focuses on the two selected models; all three remain in the portable results. Confidence intervals are pointwise. Native sums use actual model background forecasts and oracle-separated component inputs, not a deployable repair.</figcaption></figure>
+<h2>Decision boundaries</h2><ul>
+<li>TimesFM 32/16: positive native-minus-component-sum gain passes the registered sign and empirical size gates. This is an input-level functional composition diagnostic, including native normalization.</li>
+<li>Pure-frequency weakness and composition effects can coexist; nonsignificant G is not absence.</li><li>Bolt 40/20 at 128: pure-frequency errors are large and the empirical component-sum gain is positive, but its sign test does not pass. This does not establish absence of composition effects or a pure-only mechanism.</li>
+<li>Bolt 40/20 at 512: the detected gain is negative; the component sum is worse. This sensitivity finding is not a positive improvement.</li>
+<li>Off-response contrasts reverse between frequency pairs, without identifying a unique hidden feature or proving patch aliasing causes the task error.</li></ul>
+<h2>Closed branches remain visible</h2><p>Stronger input-only RBF control: prediction loss 0.00793532 versus 0.0092270738 after adding derivative features; primary gain -0.0012917538. The robustness gate fails. This closes the tested incremental prediction claim, not every possible feature predictor.</p>
+<p>Residual-update clamp: no site advances. Final block 19 has 13/16 favorable signs, Holm8 p=0.170166015625; native controls pass but the full intervention gate fails. This is not forecast repair.</p>
+<h2>Phase-resolution audit: completed, partial response only</h2>
+<p>No eligible comparison passed the complete feature-expansion gate. Bolt 40/20 has stable low-order patterns but fails held-out waveform coverage; TimesFM and Bolt 32/16 fail the required stability check. Both pilot-negative comparisons remain closed. No finer grid, higher order, or hidden capture is supported by this branch.</p>
+<table><tr><th>Model</th><th>32/16</th><th>40/20</th></tr><tr><td>TimesFM</td><td>Unresolved / aliased</td><td>Stable and adequate</td></tr><tr><td>Bolt</td><td>Unresolved / aliased</td><td>Stable low-order; partial coverage</td></tr><tr><td>Chronos-2</td><td>Stable and adequate</td><td>Stable and adequate</td></tr></table>
+<p><a href="phase_orbit/index.html">Full partial-response report, mode tables and bound figure/data</a>. Only stable 40/20 mode identities are described there. Native preprocessing varies with phase on finite windows; these patterns do not assign a normalization or internal-feature cause. Original pilot control failures remain recorded; separate FP64 replay and fixed-B8 diagnostics do not retroactively relabel them. <a href="followup_results.json">Completed follow-up producer results</a> and <a href="followup_protocols.json">their bound protocols</a> remain available.</p>
+<h2>Forecast-output recoverability: tested linear gate closed</h2>
+<p>This separate 32/16 task uses context 128 and horizon 32, rather than the horizon-64 crossover above. Readout fitting uses 96 old training bundles and 48 validation bundles; the table evaluates 128 previously inspected generating bundles. Task-specific supervised recovery from the forecast output is substantially worse than the frozen head-input readout. Both models fail the descriptive point gate: output reconstruction MSE ≤0.01 and output-minus-head excess ≤0.01. These are exploratory cached-cohort diagnostics, not new held-out confirmation or an information-destruction proof.</p>
+<table><tr><th>Model</th><th>Native MSE</th><th>Output readout</th><th>Frozen head readout</th><th>Output−head excess</th><th>Point gate</th></tr><tr><td>Bolt</td><td>0.2044276</td><td>0.02237086</td><td>0.0005480985</td><td>0.02182276</td><td>Failed</td></tr><tr><td>TimesFM</td><td>0.3512594</td><td>0.07411272</td><td>0.0006623375</td><td>0.07345038</td><td>Failed</td></tr></table>
+<p>Losses use common theoretical mixture energy. Extra semantic labels, a known harmonic basis, and external context mean/scale privilege both readouts; the input oracle is near zero. This is not a deployable forecast repair. Exact intervals, old/fresh cohort results, and the legacy cache row-order limitation remain in the portable source data.</p>
+<h2>Homogeneous normalizer: calibrated source replay, descriptive decomposition</h2>
+<p>On the TimesFM 32/16 task, context 128 and horizon 64, identical normalized 32-step patches route identical attention value vectors; the collapsed tokenwise path reproduces the inspected native forecasts. This explains the homogeneous context-invariance boundary, not composition error or general irrelevance of attention routing. The 16-bundle replay maximum normalized waveform RMS is 5.370742e-06.</p>
+<p>The exact radial decomposition has signed projection shares 0.6314958 for the fixed-normalizer term and 0.3685054 for the radial remainder. These are signed vector projections, not additive energy fractions or causal blame; cross terms and replay residual remain recorded. Fixed-mixture-normalizer component inputs are off the native unit-RMS manifold. No fitting, population replication, or repair claim follows.</p>
+<h2>Low-rank compactness screen: closed negative</h2>
+<p>A separate exploratory screen reused the 16 discovery seeds, at fixed cut 15, with an uncentered SVD channel basis. Opposite generating-seed parity folds fit on 8 bundles and apply to the other 8; no truth or forecast loss enters the basis fit. All prespecified ranks 1, 2, and 4 fail the frozen screen.</p>
+<table><tr><th>Rank</th><th>Mean normalized MSE</th><th>Full-edit gain recovered</th><th>Random-loss advantage</th><th>Mean-only advantage</th><th>Screen</th></tr><tr><td>1</td><td>0.2950803</td><td>39.3%</td><td>0.1123409</td><td>-0.01173326</td><td>Failed</td></tr><tr><td>2</td><td>0.1952378</td><td>62.8%</td><td>0.1775108</td><td>0.08810926</td><td>Failed</td></tr><tr><td>4</td><td>0.1385366</td><td>76.1%</td><td>0.2350918</td><td>0.1448105</td><td>Failed</td></tr></table>
+<p>Full-state edit loss on these 16 seeds is 0.03675789; the mean-only control is 0.283347. Rank 4 recovers only 76.1% of the <em>full-edit improvement</em>, below the required 80%, and loss remains above 0.06. This recovery denominator differs from the native-to-component-reference gap used in the fresh full-state replication.</p>
+<p>No higher-rank search or fresh compactness inference follows. This closes the tiny prespecified uncentered-SVD screen; it does <strong>not</strong> disprove all low-dimensional or nonlinear mechanisms. The mean-only edit is a training-fold channel mean broadcast across positions, not every possible position template. Random controls preserve edit geometry but are not matched-rank or capacity-equivalent controls. There are no p-values or confirmatory claims on these reused seeds. <a href="compactness_evidence.json">Bound compactness results and protocol</a> · <a href="compactness_audit.json">Independent audit</a> recomputes the held-out projectors, all 96 keyed random edits and their geometry from saved states.</p>
+<h2>All 22 registered effects</h2><p>g is the TF−Bolt native mixed-loss gap; C is the difference in native-minus-actual-sum gains; o is the full-Gram off-target derivative energy gap. Common theoretical mixed energy normalizes every pure/mixed/background loss. Two-sided detection alone is not a predicted-direction or mean-superiority claim. Legacy mixed-minus-average-pure interaction remains descriptive: an additive biased forecaster can have nonzero interaction at zero actual-sum gain.</p>
+<table><thead><tr><th>Contrast</th><th>Signed empirical mean</th><th>q positive/non-tie</th><th>Global Holm22 p</th><th>Size/sign gate</th><th>Scope</th></tr></thead><tbody><tr><td>c128/g32</td><td>0.118744</td><td>0.5625</td><td>1</td><td>False</td><td>primary</td></tr><tr><td>c128/g40</td><td>-1.00604</td><td>0</td><td>2.38524e-18</td><td>True</td><td>primary</td></tr><tr><td>c128/g40_minus_g32</td><td>-1.12478</td><td>0</td><td>2.38524e-18</td><td>True</td><td>primary</td></tr><tr><td>c128/C32</td><td>0.388039</td><td>0.859375</td><td>3.188e-08</td><td>True</td><td>primary</td></tr><tr><td>c128/C40</td><td>-0.150458</td><td>0.4375</td><td>1</td><td>False</td><td>primary</td></tr><tr><td>c128/C40_minus_C32</td><td>-0.538497</td><td>0.1875</td><td>3.65329e-06</td><td>True</td><td>primary</td></tr><tr><td>c128/o32</td><td>0.434124</td><td>0.78125</td><td>4.94864e-05</td><td>True</td><td>primary</td></tr><tr><td>c128/o40</td><td>-0.181329</td><td>0.015625</td><td>1.0571e-16</td><td>True</td><td>primary</td></tr><tr><td>c128/o40_minus_o32</td><td>-0.615453</td><td>0.078125</td><td>9.9031e-12</td><td>True</td><td>primary</td></tr><tr><td>c128/G_timesfm32</td><td>0.481933</td><td>1</td><td>2.38524e-18</td><td>True</td><td>primary</td></tr><tr><td>c128/G_bolt40</td><td>0.150692</td><td>0.5625</td><td>1</td><td>False</td><td>primary</td></tr><tr><td>c512/g32</td><td>0.423755</td><td>0.90625</td><td>9.02902e-11</td><td>True</td><td>sensitivity; cannot rescue 128</td></tr><tr><td>c512/g40</td><td>-0.605031</td><td>0</td><td>2.38524e-18</td><td>True</td><td>sensitivity; cannot rescue 128</td></tr><tr><td>c512/g40_minus_g32</td><td>-1.02879</td><td>0</td><td>2.38524e-18</td><td>True</td><td>sensitivity; cannot rescue 128</td></tr><tr><td>c512/C32</td><td>0.469957</td><td>0.984375</td><td>1.0571e-16</td><td>True</td><td>sensitivity; cannot rescue 128</td></tr><tr><td>c512/C40</td><td>0.0879153</td><td>0.671875</td><td>0.0488814</td><td>True</td><td>sensitivity; cannot rescue 128</td></tr><tr><td>c512/C40_minus_C32</td><td>-0.382042</td><td>0.34375</td><td>0.0674328</td><td>False</td><td>sensitivity; cannot rescue 128</td></tr><tr><td>c512/o32</td><td>0.49009</td><td>0.953125</td><td>5.69141e-14</td><td>True</td><td>sensitivity; cannot rescue 128</td></tr><tr><td>c512/o40</td><td>-0.322578</td><td>0</td><td>2.38524e-18</td><td>True</td><td>sensitivity; cannot rescue 128</td></tr><tr><td>c512/o40_minus_o32</td><td>-0.812669</td><td>0.015625</td><td>1.0571e-16</td><td>True</td><td>sensitivity; cannot rescue 128</td></tr><tr><td>c512/G_timesfm32</td><td>0.481933</td><td>1</td><td>2.38524e-18</td><td>True</td><td>sensitivity; cannot rescue 128</td></tr><tr><td>c512/G_bolt40</td><td>-0.0879177</td><td>0.328125</td><td>0.0488814</td><td>True</td><td>sensitivity; cannot rescue 128</td></tr></tbody></table>
+<p>q tests concern conditional majority among non-tied matched seeds. Mean and ratio intervals use approximate paired whole-seed bootstrap; no confidence bound establishes the practical margin. Native normalization remains part of each model function. Significant associations or input interventions do not establish hidden mediation.</p>
+<details><summary>Independent CPU replay and source provenance</summary><pre>{
+  &quot;replay&quot;: {
+    &quot;passed&quot;: true,
+    &quot;claims_replayed&quot;: 22,
+    &quot;per_seed_values_checked&quot;: 6144,
+    &quot;maximum_per_seed_absolute_error&quot;: 5.329070518200751e-15,
+    &quot;maximum_full_gram_energy_closure&quot;: 1.0278701946031862e-15,
+    &quot;methods&quot;: &quot;Independent direct saved-forecast losses; Gram normal equations; scipy exact binomial/CP; sorted monotone Holm; paired bootstrap replay&quot;,
+    &quot;source_sha256&quot;: &quot;06cfa68e74178b2396a04bc5e5827d36c2f2372f7c79aabd319b84b16e9fc201&quot;,
+    &quot;prepared_protocol_sha256&quot;: &quot;76d672e1521e029c3ec17068a82101f4b8fa03a987dc3a0f0211f9641717e72d&quot;,
+    &quot;results_sha256&quot;: &quot;776718bd7a0ef0b0ad6f6f7fae27b53dfec34dcd0cf1ef422643217861a23ff3&quot;
+  },
+  &quot;source_files&quot;: {
+    &quot;tsfm_lens/runs/feature_search_stage49_crossover3400000/results.json&quot;: &quot;776718bd7a0ef0b0ad6f6f7fae27b53dfec34dcd0cf1ef422643217861a23ff3&quot;,
+    &quot;tsfm_lens/runs/feature_search_stage49_crossover3400000/protocol.json&quot;: &quot;76d672e1521e029c3ec17068a82101f4b8fa03a987dc3a0f0211f9641717e72d&quot;,
+    &quot;tsfm_lens/runs/feature_search_stage49_crossover3400000/provenance.json&quot;: &quot;5a51e9a87cd3ec2b6edd974eda3e2c167d5e750082a19c242d368a61da52cce9&quot;,
+    &quot;tsfm_lens/runs/feature_search_stage49_crossover3400000_prepared/protocol.json&quot;: &quot;76d672e1521e029c3ec17068a82101f4b8fa03a987dc3a0f0211f9641717e72d&quot;,
+    &quot;tsfm_lens/runs/feature_search_20261111_stage49_rbf_challenge/results.json&quot;: &quot;096b00f7fbe6c7c409859442484b99cd50aa77cbef38e09cfbe2f93aa1e9a06b&quot;,
+    &quot;tsfm_lens/runs/stage49_timesfm_residual_update3100000_retry1/results.json&quot;: &quot;586596967571505e35a8431509076b75f862ce16db9008477bd2c2f79e60b69a&quot;,
+    &quot;tsfm_lens/runs/feature_search_stage49_phase_alias3500000/results.json&quot;: &quot;14b4c44948659321792f7f4bfca8347d7f79583f10232c0c8476a674359b0a17&quot;,
+    &quot;tsfm_lens/runs/feature_search_stage49_phase_alias3500000/protocol.json&quot;: &quot;9c7eb8871ad3cf3569988c4db4926985f70a9b57b39d91d5f5976d10ec508c64&quot;,
+    &quot;tsfm_lens/runs/feature_search_stage49_forecast_recoverability/results.json&quot;: &quot;cc83259e07885681a6563947a662a2672e533ca5a95f673887be27ffc452c01a&quot;,
+    &quot;tsfm_lens/runs/feature_search_stage49_forecast_recoverability/protocol.json&quot;: &quot;86790ac0979b62b17b2f1b357a47067346b767415b106cc424b03a9cd12867d9&quot;,
+    &quot;tsfm_lens/runs/feature_search_stage49_homogeneous_pilot/results.json&quot;: &quot;da1910d955aca3841fe600fc4cb7e36b18d19f03c9362bf41a0c5b17cb483d53&quot;,
+    &quot;tsfm_lens/runs/feature_search_stage49_homogeneous_pilot/protocol.json&quot;: &quot;cf0c20a34bf092e6e074caf3aea48d32b609b034eb02a170054caa71044cb657&quot;,
+    &quot;tsfm_lens/runs/feature_search_stage49_restoration3600000/results.json&quot;: &quot;216db91eb3cc0156af999c889f26f7155f9308c3f9c05b6601a9142acbe92280&quot;,
+    &quot;tsfm_lens/runs/feature_search_stage49_restoration3600000/protocol.json&quot;: &quot;044fbb9a00a17b039522b7c89f7ddf7829b77791ecc39f0b7bb6bc3ed40329d9&quot;,
+    &quot;tsfm_lens/runs/feature_search_stage49_restoration3600000_memorysafe/results.json&quot;: &quot;17976a6424a843397196908121fb292c2ccaa2f222d92256b44dbafafeff4515&quot;,
+    &quot;tsfm_lens/runs/feature_search_stage49_restoration3600000_memorysafe/protocol.json&quot;: &quot;d4be08607442fbc25f1d99dd948850a31cf876053369de86cbf6c2a3c9003826&quot;,
+    &quot;tsfm_lens/runs/feature_search_stage49_restoration3700000/results.json&quot;: &quot;526adc50dbd4c07cc4100ff5267aa9a694bbce219facdc7248ca71f77c7bf13e&quot;,
+    &quot;tsfm_lens/runs/feature_search_stage49_restoration3700000/protocol.json&quot;: &quot;0136c8049cbb108bd246b2abc14188dbbee30ec3304e686bee4c211486530d6c&quot;,
+    &quot;tsfm_lens/runs/feature_search_stage49_restoration3700000/controller_validity.json&quot;: &quot;025b8d35ed8b34ae98c7a456ee1b76a360999d8ba797435cf860c85040ec47da&quot;,
+    &quot;tsfm_lens/runs/feature_search_stage49_restoration3700000_independent_audit/audit.json&quot;: &quot;3b758b985841d511eeb86c49e6972406d0ffea0b8700ad9fb36cd12b94caa611&quot;,
+    &quot;tsfm_lens/runs/feature_search_stage49_restoration3700000_independent_audit/exact_p_verification.json&quot;: &quot;e1f3494d21dc9f8fa32d4c42cab2e74b52bc34fe8e3cf4d9a33fa9d1a615abd8&quot;,
+    &quot;tsfm_lens/runs/feature_search_stage49_compactness3600000/results.json&quot;: &quot;7b04a693fc940e89e7a5ff00789ac6bc9ce72b53512815ac205ab05615f8bfa5&quot;,
+    &quot;tsfm_lens/runs/feature_search_stage49_compactness3600000/protocol.json&quot;: &quot;a807f4e5c59e8bbc194086f76a7b9aeb20939acbf5e4436c30fcf5bb348559b1&quot;,
+    &quot;tsfm_lens/runs/feature_search_stage49_compactness3600000_independent_audit/audit.json&quot;: &quot;b17c0786db1c9792b7fe86a319a126dcdeba6377b6c3b4dfedd1a9c6a0483843&quot;
+  },
+  &quot;producer_protocol&quot;: {
+    &quot;config&quot;: {
+      &quot;seed_base&quot;: 3400000,
+      &quot;n_seeds&quot;: 64,
+      &quot;contexts&quot;: [
+        128,
+        512
+      ],
+      &quot;pairs&quot;: [
+        [
+          32,
+          16
+        ],
+        [
+          40,
+          20
+        ]
+      ],
+      &quot;horizon&quot;: 64,
+      &quot;delta&quot;: 0.02,
+      &quot;amplitudes&quot;: [
+        0.5,
+        2.0
+      ],
+      &quot;offset&quot;: [
+        -2.0,
+        2.0
+      ],
+      &quot;models&quot;: [
+        {
+          &quot;name&quot;: &quot;bolt&quot;,
+          &quot;adapter&quot;: &quot;chronos_bolt&quot;,
+          &quot;checkpoint&quot;: &quot;amazon/chronos-bolt-small&quot;
+        },
+        {
+          &quot;name&quot;: &quot;timesfm&quot;,
+          &quot;adapter&quot;: &quot;timesfm&quot;,
+          &quot;checkpoint&quot;: &quot;google/timesfm-2.5-200m-pytorch&quot;
+        },
+        {
+          &quot;name&quot;: &quot;chronos2&quot;,
+          &quot;adapter&quot;: &quot;chronos2&quot;,
+          &quot;checkpoint&quot;: &quot;amazon/chronos-2&quot;
+        }
+      ],
+      &quot;literature_primary_urls&quot;: [
+        &quot;https://arxiv.org/abs/2510.19236&quot;,
+        &quot;https://arxiv.org/abs/2511.15324&quot;,
+        &quot;https://arxiv.org/abs/2502.06037&quot;,
+        &quot;https://arxiv.org/abs/2511.05619&quot;,
+        &quot;https://arxiv.org/abs/2610.28997&quot;,
+        &quot;https://arxiv.org/abs/2611.02750&quot;
+      ],
+      &quot;novelty_boundary&quot;: &quot;Prior work covers composition interference, spectral shift and patch/tokenization effects; this is a controlled comparative generalization diagnostic, not a new aliasing mechanism&quot;,
+      &quot;primary_estimand&quot;: &quot;sign_probability&quot;,
+      &quot;alpha&quot;: 0.05,
+      &quot;n_boot&quot;: 2000,
+      &quot;bootstrap_seed&quot;: 3400017,
+      &quot;minimum_absolute_mean&quot;: null,
+      &quot;family_size&quot;: 22,
+      &quot;maximum_basis_condition&quot;: 100.0,
+      &quot;candidate_gate&quot;: &quot;No further expansion without root review&quot;,
+      &quot;scope&quot;: &quot;forecast-only discovery screen; exact q concerns conditional non-tie majority, not mean superiority; no hidden-feature cause or aliasing diagnosis&quot;,
+      &quot;time_origin&quot;: &quot;context t=-C..-1, future t=0..H-1; identical future across contexts&quot;,
+      &quot;normalization&quot;: &quot;native mean/scale recorded, never frozen; empirical context statistics separately labeled&quot;,
+      &quot;resource&quot;: {
+        &quot;cpu_threads&quot;: 2,
+        &quot;batch_size&quot;: 8,
+        &quot;gpu_gib&quot;: 6,
+        &quot;runtime_seconds&quot;: 300
+      },
+      &quot;conditions&quot;: [
+        &quot;baseline&quot;,
+        &quot;minus&quot;,
+        &quot;plus&quot;,
+        &quot;pure_phi&quot;,
+        &quot;pure_psi&quot;,
+        &quot;background&quot;
+      ],
+      &quot;primary_context&quot;: 128,
+      &quot;sensitivity_context&quot;: 512,
+      &quot;units&quot;: &quot;Every pure/mixed/background MSE uses common theoretical (a\u00b2+b\u00b2)/2, not realized finite-window variance; derivative energy uses b\u00b2/2&quot;,
+      &quot;comparator_scope&quot;: &quot;S uses oracle-separated component inputs and three native calls; not a deployable repair. G includes all native computation and input-dependent normalization, not specifically hidden interactions&quot;,
+      &quot;effects&quot;: [
+        &quot;g32&quot;,
+        &quot;g40&quot;,
+        &quot;g40_minus_g32&quot;,
+        &quot;C32&quot;,
+        &quot;C40&quot;,
+        &quot;C40_minus_C32&quot;,
+        &quot;o32&quot;,
+        &quot;o40&quot;,
+        &quot;o40_minus_o32&quot;,
+        &quot;G_timesfm32&quot;,
+        &quot;G_bolt40&quot;
+      ],
+      &quot;minimum_mse_effect&quot;: 0.05,
+      &quot;minimum_off_energy_effect&quot;: 0.02,
+      &quot;role&quot;: &quot;fresh replication of the preselected crossover; both contexts globally corrected;512 cannot rescue128&quot;,
+      &quot;composition&quot;: &quot;G=L-S where S uses actual f(pure_phi)+f(pure_psi)-f(background); C=G_timesfm-G_bolt&quot;,
+      &quot;legacy_interaction&quot;: &quot;mixed-minus-average-pure J is descriptive only; separable frequency error can produce J!=0 at G=0&quot;,
+      &quot;ratio&quot;: &quot;sum of per-seed normalized S divided by sum of per-seed normalized L; paired whole-seed bootstrap, pointwise&quot;,
+      &quot;ranking_flip&quot;: &quot;requires passing g32&gt;0,g40&lt;0 AND g40-g32&lt;0 at128;512 sensitivity does not rescue&quot;,
+      &quot;nonadditivity&quot;: &quot;positive passing G establishes a diagnostic error reduction; nonsignificant G does not establish absence&quot;
+    },
+    &quot;sources&quot;: {
+      &quot;p32_16_c128&quot;: {
+        &quot;corpus_sha256&quot;: &quot;69360df451e91e53c5b07e7a9c11efc200345becce416cf63435c7c3c00d67fa&quot;,
+        &quot;metadata_sha256&quot;: &quot;4ce21c2e246e41812c5995a9b88ec66b05ba5aa31416ec0e6507592b2bfc4a6f&quot;,
+        &quot;periods&quot;: [
+          32,
+          16
+        ]
+      },
+      &quot;p32_16_c512&quot;: {
+        &quot;corpus_sha256&quot;: &quot;92b232f8a23c86684c4136f7594f7ea6b25115c818c3ab968ff94a9a4ab8f185&quot;,
+        &quot;metadata_sha256&quot;: &quot;4ce21c2e246e41812c5995a9b88ec66b05ba5aa31416ec0e6507592b2bfc4a6f&quot;,
+        &quot;periods&quot;: [
+          32,
+          16
+        ]
+      },
+      &quot;p40_20_c128&quot;: {
+        &quot;corpus_sha256&quot;: &quot;d870835be36a2205df2383f907f2afe0c663e25f95085666c40d520e3b7a204f&quot;,
+        &quot;metadata_sha256&quot;: &quot;4ce21c2e246e41812c5995a9b88ec66b05ba5aa31416ec0e6507592b2bfc4a6f&quot;,
+        &quot;periods&quot;: [
+          40,
+          20
+        ]
+      },
+      &quot;p40_20_c512&quot;: {
+        &quot;corpus_sha256&quot;: &quot;0eb26d4001fd41839c0605eb72474a95c01fcc0dd5bb29695d9538aedb6e8b8e&quot;,
+        &quot;metadata_sha256&quot;: &quot;4ce21c2e246e41812c5995a9b88ec66b05ba5aa31416ec0e6507592b2bfc4a6f&quot;,
+        &quot;periods&quot;: [
+          40,
+          20
+        ]
+      }
+    },
+    &quot;driver_sha256&quot;: &quot;89779c662ebe0543a92b0007abc4c5576b206423403c3d1b44cf66a4b2bf5ef7&quot;,
+    &quot;screen_helper_sha256&quot;: &quot;f1b608eadcc2bcb8e1c4cd0d05b4eda2ec7f470fe7199e2ba2c43b96321cbe5c&quot;,
+    &quot;prepared_before_inference&quot;: true
+  },
+  &quot;producer_provenance&quot;: {
+    &quot;bolt&quot;: {
+      &quot;config&quot;: {
+        &quot;name&quot;: &quot;bolt&quot;,
+        &quot;adapter&quot;: &quot;chronos_bolt&quot;,
+        &quot;checkpoint&quot;: &quot;amazon/chronos-bolt-small&quot;,
+        &quot;layer_regex&quot;: &quot;&quot;,
+        &quot;batch_size&quot;: 32,
+        &quot;capture_layer_stride&quot;: 1,
+        &quot;kwargs&quot;: {},
+        &quot;random_init&quot;: false
+      },
+      &quot;adapter_source_sha256&quot;: &quot;8a876125160daa1f7a7325491bc3c15d083c5dad5af99d8a405cb486e1d09602&quot;,
+      &quot;checkpoint_identifier&quot;: &quot;amazon/chronos-bolt-small&quot;,
+      &quot;checkpoint_identifier_sha256&quot;: &quot;86deab4bb6e53afc7fa57d2ac88de879437b1153679a8b9bacd1215c9814ba76&quot;,
+      &quot;checkpoint_scope&quot;: &quot;Identifier, not a checksum of weights; offline installed cached checkpoint only&quot;,
+      &quot;cases&quot;: {
+        &quot;p32_16_c128&quot;: {
+          &quot;native&quot;: {
+            &quot;output_steps&quot;: 64,
+            &quot;normalization_audit_source_sha256&quot;: &quot;1f24c6daa90740fee72a36c481b8d2409d1b2db8ad4cf8c857bea4a891f7646a&quot;
+          },
+          &quot;forward_passes&quot;: 1,
+          &quot;autoregressive_rollouts&quot;: 0,
+          &quot;repeat_max_abs&quot;: 0.0,
+          &quot;permutation_max_abs&quot;: 0.0,
+          &quot;forecast_sha256&quot;: &quot;66caf311703eb44860aff5593799adf1cb3ea94b254e64911fff440a73583bc5&quot;
+        },
+        &quot;p32_16_c512&quot;: {
+          &quot;native&quot;: {
+            &quot;output_steps&quot;: 64,
+            &quot;normalization_audit_source_sha256&quot;: &quot;1f24c6daa90740fee72a36c481b8d2409d1b2db8ad4cf8c857bea4a891f7646a&quot;
+          },
+          &quot;forward_passes&quot;: 1,
+          &quot;autoregressive_rollouts&quot;: 0,
+          &quot;repeat_max_abs&quot;: 0.0,
+          &quot;permutation_max_abs&quot;: 0.0,
+          &quot;forecast_sha256&quot;: &quot;0f051531d037fc2d41165307d8c5a7c9da683e500f7d7dde2ce27e94b963cb3d&quot;
+        },
+        &quot;p40_20_c128&quot;: {
+          &quot;native&quot;: {
+            &quot;output_steps&quot;: 64,
+            &quot;normalization_audit_source_sha256&quot;: &quot;1f24c6daa90740fee72a36c481b8d2409d1b2db8ad4cf8c857bea4a891f7646a&quot;
+          },
+          &quot;forward_passes&quot;: 1,
+          &quot;autoregressive_rollouts&quot;: 0,
+          &quot;repeat_max_abs&quot;: 0.0,
+          &quot;permutation_max_abs&quot;: 0.0,
+          &quot;forecast_sha256&quot;: &quot;adc090a5e1e2f8615759cc0d1586df6b8ad85e98f771b0c7c2c48e1558d53267&quot;
+        },
+        &quot;p40_20_c512&quot;: {
+          &quot;native&quot;: {
+            &quot;output_steps&quot;: 64,
+            &quot;normalization_audit_source_sha256&quot;: &quot;1f24c6daa90740fee72a36c481b8d2409d1b2db8ad4cf8c857bea4a891f7646a&quot;
+          },
+          &quot;forward_passes&quot;: 1,
+          &quot;autoregressive_rollouts&quot;: 0,
+          &quot;repeat_max_abs&quot;: 0.0,
+          &quot;permutation_max_abs&quot;: 0.0,
+          &quot;forecast_sha256&quot;: &quot;22517d4873f79499ebedc0d226d06af81988942b311ad3eca7d227fa82defd05&quot;
+        }
+      },
+      &quot;resolved_model_config_declarations&quot;: {
+        &quot;_name_or_path&quot;: &quot;amazon/chronos-bolt-small&quot;,
+        &quot;_commit_hash&quot;: &quot;772f3d25d38aec6d914c8949dab4462e2d46f5d8&quot;
+      },
+      &quot;resolved_declaration_scope&quot;: &quot;Native declarations when available; null means unavailable, not verified weight bytes&quot;,
+      &quot;wall_seconds&quot;: 9.158795557013946,
+      &quot;peak_allocated_bytes&quot;: 208354304,
+      &quot;peak_reserved_bytes&quot;: 281018368
+    },
+    &quot;timesfm&quot;: {
+      &quot;config&quot;: {
+        &quot;name&quot;: &quot;timesfm&quot;,
+        &quot;adapter&quot;: &quot;timesfm&quot;,
+        &quot;checkpoint&quot;: &quot;google/timesfm-2.5-200m-pytorch&quot;,
+        &quot;layer_regex&quot;: &quot;&quot;,
+        &quot;batch_size&quot;: 32,
+        &quot;capture_layer_stride&quot;: 1,
+        &quot;kwargs&quot;: {},
+        &quot;random_init&quot;: false
+      },
+      &quot;adapter_source_sha256&quot;: &quot;39ae8128e782bb56fd15add2ea292274b0d4f5c6a517a50f4c0087724d6ebccd&quot;,
+      &quot;checkpoint_identifier&quot;: &quot;google/timesfm-2.5-200m-pytorch&quot;,
+      &quot;checkpoint_identifier_sha256&quot;: &quot;63be2e9043364b292399295f1201c39e16fdf2eae2a4d0b21a519a0b31ad5384&quot;,
+      &quot;checkpoint_scope&quot;: &quot;Identifier, not a checksum of weights; offline installed cached checkpoint only&quot;,
+      &quot;cases&quot;: {
+        &quot;p32_16_c128&quot;: {
+          &quot;native&quot;: {
+            &quot;output_steps&quot;: 128,
+            &quot;normalization_audit_source_sha256&quot;: &quot;1f24c6daa90740fee72a36c481b8d2409d1b2db8ad4cf8c857bea4a891f7646a&quot;
+          },
+          &quot;forward_passes&quot;: 1,
+          &quot;autoregressive_rollouts&quot;: 0,
+          &quot;repeat_max_abs&quot;: 0.0,
+          &quot;permutation_max_abs&quot;: 0.0,
+          &quot;forecast_sha256&quot;: &quot;bdfb43826de26c612728c430a36a8426629f2cccaef3957af9e7cb63ba78e38a&quot;
+        },
+        &quot;p32_16_c512&quot;: {
+          &quot;native&quot;: {
+            &quot;output_steps&quot;: 128,
+            &quot;normalization_audit_source_sha256&quot;: &quot;1f24c6daa90740fee72a36c481b8d2409d1b2db8ad4cf8c857bea4a891f7646a&quot;
+          },
+          &quot;forward_passes&quot;: 1,
+          &quot;autoregressive_rollouts&quot;: 0,
+          &quot;repeat_max_abs&quot;: 0.0,
+          &quot;permutation_max_abs&quot;: 0.0,
+          &quot;forecast_sha256&quot;: &quot;47942822216cd29048d5e3c30d33afcc1da6123ac47823b686871574a5151b93&quot;
+        },
+        &quot;p40_20_c128&quot;: {
+          &quot;native&quot;: {
+            &quot;output_steps&quot;: 128,
+            &quot;normalization_audit_source_sha256&quot;: &quot;1f24c6daa90740fee72a36c481b8d2409d1b2db8ad4cf8c857bea4a891f7646a&quot;
+          },
+          &quot;forward_passes&quot;: 1,
+          &quot;autoregressive_rollouts&quot;: 0,
+          &quot;repeat_max_abs&quot;: 0.0,
+          &quot;permutation_max_abs&quot;: 0.0,
+          &quot;forecast_sha256&quot;: &quot;4ceb3b00b4196faac5353c067ff9dfd271a21c2b5dd9ddc637b82e4528252828&quot;
+        },
+        &quot;p40_20_c512&quot;: {
+          &quot;native&quot;: {
+            &quot;output_steps&quot;: 128,
+            &quot;normalization_audit_source_sha256&quot;: &quot;1f24c6daa90740fee72a36c481b8d2409d1b2db8ad4cf8c857bea4a891f7646a&quot;
+          },
+          &quot;forward_passes&quot;: 1,
+          &quot;autoregressive_rollouts&quot;: 0,
+          &quot;repeat_max_abs&quot;: 0.0,
+          &quot;permutation_max_abs&quot;: 0.0,
+          &quot;forecast_sha256&quot;: &quot;4d0e5f243ac2412392ae078a12215a20deaf2ee1994096535431a9d06d9cde2f&quot;
+        }
+      },
+      &quot;resolved_model_config_declarations&quot;: {
+        &quot;_name_or_path&quot;: null,
+        &quot;_commit_hash&quot;: null
+      },
+      &quot;resolved_declaration_scope&quot;: &quot;Native declarations when available; null means unavailable, not verified weight bytes&quot;,
+      &quot;wall_seconds&quot;: 8.55782687701867,
+      &quot;peak_allocated_bytes&quot;: 977705472,
+      &quot;peak_reserved_bytes&quot;: 1046478848
+    },
+    &quot;chronos2&quot;: {
+      &quot;config&quot;: {
+        &quot;name&quot;: &quot;chronos2&quot;,
+        &quot;adapter&quot;: &quot;chronos2&quot;,
+        &quot;checkpoint&quot;: &quot;amazon/chronos-2&quot;,
+        &quot;layer_regex&quot;: &quot;&quot;,
+        &quot;batch_size&quot;: 32,
+        &quot;capture_layer_stride&quot;: 1,
+        &quot;kwargs&quot;: {},
+        &quot;random_init&quot;: false
+      },
+      &quot;adapter_source_sha256&quot;: &quot;e38368da3a9e4f2bd404070ce6d84dd4f0d260967b9ab0a19d0a1f74ed26b1b8&quot;,
+      &quot;checkpoint_identifier&quot;: &quot;amazon/chronos-2&quot;,
+      &quot;checkpoint_identifier_sha256&quot;: &quot;d2dfb1c44b4d6ec3723f0c5a3041de33ac78119a5b4dd894546ac83bf91b507a&quot;,
+      &quot;checkpoint_scope&quot;: &quot;Identifier, not a checksum of weights; offline installed cached checkpoint only&quot;,
+      &quot;cases&quot;: {
+        &quot;p32_16_c128&quot;: {
+          &quot;native&quot;: {
+            &quot;output_patches&quot;: 4,
+            &quot;use_arcsinh&quot;: true,
+            &quot;singleton_max_abs&quot;: 1.9073486328125e-06,
+            &quot;normalization_source_sha256&quot;: &quot;572a3ffd23a7887c423d234fd0086a4dfa2bac0c3e34d4b7d42eb9cda2e3d1d4&quot;
+          },
+          &quot;forward_passes&quot;: 1,
+          &quot;autoregressive_rollouts&quot;: 0,
+          &quot;repeat_max_abs&quot;: 0.0,
+          &quot;permutation_max_abs&quot;: 0.0,
+          &quot;forecast_sha256&quot;: &quot;3c327e22f575b424797f7a812c5846ae72938e42a1b25ac8e633b6871c4e5054&quot;
+        },
+        &quot;p32_16_c512&quot;: {
+          &quot;native&quot;: {
+            &quot;output_patches&quot;: 4,
+            &quot;use_arcsinh&quot;: true,
+            &quot;singleton_max_abs&quot;: 2.384185791015625e-06,
+            &quot;normalization_source_sha256&quot;: &quot;572a3ffd23a7887c423d234fd0086a4dfa2bac0c3e34d4b7d42eb9cda2e3d1d4&quot;
+          },
+          &quot;forward_passes&quot;: 1,
+          &quot;autoregressive_rollouts&quot;: 0,
+          &quot;repeat_max_abs&quot;: 0.0,
+          &quot;permutation_max_abs&quot;: 0.0,
+          &quot;forecast_sha256&quot;: &quot;446d824806123041847d38095f7a9a8391122143e8cf4410d939c3d4bcbe8fb3&quot;
+        },
+        &quot;p40_20_c128&quot;: {
+          &quot;native&quot;: {
+            &quot;output_patches&quot;: 4,
+            &quot;use_arcsinh&quot;: true,
+            &quot;singleton_max_abs&quot;: 9.5367431640625e-07,
+            &quot;normalization_source_sha256&quot;: &quot;572a3ffd23a7887c423d234fd0086a4dfa2bac0c3e34d4b7d42eb9cda2e3d1d4&quot;
+          },
+          &quot;forward_passes&quot;: 1,
+          &quot;autoregressive_rollouts&quot;: 0,
+          &quot;repeat_max_abs&quot;: 0.0,
+          &quot;permutation_max_abs&quot;: 0.0,
+          &quot;forecast_sha256&quot;: &quot;dbac628592ff6afb456147f20aa1126ceea4de5ad6055637b469e0a0652f6e16&quot;
+        },
+        &quot;p40_20_c512&quot;: {
+          &quot;native&quot;: {
+            &quot;output_patches&quot;: 4,
+            &quot;use_arcsinh&quot;: true,
+            &quot;singleton_max_abs&quot;: 1.5497207641601562e-06,
+            &quot;normalization_source_sha256&quot;: &quot;572a3ffd23a7887c423d234fd0086a4dfa2bac0c3e34d4b7d42eb9cda2e3d1d4&quot;
+          },
+          &quot;forward_passes&quot;: 1,
+          &quot;autoregressive_rollouts&quot;: 0,
+          &quot;repeat_max_abs&quot;: 0.0,
+          &quot;permutation_max_abs&quot;: 0.0,
+          &quot;forecast_sha256&quot;: &quot;fe708def8d681bbb68f20d46b2928d310012ffebb17069d1b84b379f8324d388&quot;
+        }
+      },
+      &quot;resolved_model_config_declarations&quot;: {
+        &quot;_name_or_path&quot;: &quot;amazon/chronos-2&quot;,
+        &quot;_commit_hash&quot;: &quot;29ec3766d36d6f73f0696f85560a422f50e8498c&quot;
+      },
+      &quot;resolved_declaration_scope&quot;: &quot;Native declarations when available; null means unavailable, not verified weight bytes&quot;,
+      &quot;wall_seconds&quot;: 4.590279725001892,
+      &quot;peak_allocated_bytes&quot;: 499722240,
+      &quot;peak_reserved_bytes&quot;: 524288000
+    }
+  }
+}</pre></details>
+<p>Rebuild without model weights or run stores, from repository root:</p><pre>python tsfm_lens/experiments/feature_search/stage49_report.py --source-data examples/feature_search_stage49/source_data.json --out examples/feature_search_stage49_rebuild</pre></html>

@@ -1,0 +1,505 @@
+{
+  "question": "Do level-preserving simple residual forecasts help, and is weather hybrid harm in the history-frequency tone plane or elsewhere?",
+  "design": {
+    "created_utc": "2026-11-16T19:11:07.947350+00:00",
+    "stage": "POSTHOC AFTER COMPLETED PRIMARY; no new confirmation",
+    "question": "Do level-preserving simple residual forecasts help, and is weather hybrid harm in the history-frequency tone plane or elsewhere?",
+    "source": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/postrelease_weather_pilot202610",
+    "bindings": {
+      "protocol.json": "172116a6b42be80dacd295732cd2ac66922609acfc7791770e1f7091cd98911c",
+      "inference/inputs.npz": "40b29f5f5a08b43b1f4ffddc113cf587af3b4bdc088c0e4f481927d6b408999b",
+      "inference/plans.json": "7ea22b2e5dc35ddbdfac62c1dc635b2f59a87e197fe8ff64d6e54b6422363866",
+      "inference/rows.json": "d84e3350b560a26b2dac0cdda4729e7de5fe7287e35c718cb26b2deb535e4c80",
+      "evaluation/targets.npz": "f0603a4a14d04d7c8c11fa60a9f72f6b7cdcaac3ce754153b37339a4675cde79",
+      "bolt_forecasts.npz": "24f600bc6a8fad1b20df4d177cd04127b61aa5a8c93bb3ae2c2d09301846b10a",
+      "timesfm_forecasts.npz": "d8d7db43d9cf6f95106a955b16485522877ce1be26130abb1186bb82672ebf5a",
+      "analysis/summary.json": "8087df7b01aef8c80d99ab1557bf85855698f5a513b6f69fddb8ac4265a13b5b",
+      "analysis/losses.npz": "1dd66544aed84adab5a884683447ee5852efa20d7bed1b1e80d3161895a906dc",
+      "audit/final_audit.json": "7c6eed7df5ab5330c044e111bb7ef82d8c0c2d46b94dbdf0c932fa66643e2bf8"
+    },
+    "sources": {
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/postrelease_weather_posthoc.py": "093cf6fafd9001d6027bbaebb4b88edb33dd7f58b641db6784756445d0d7bce7",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/natural_gain_location.py": "1ef75cda362e51fca7c994bb0d230c8dec7fe13f556f2651509e41dfae5f6d2d",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/postrelease_weather_score.py": "55cd231ad7f361abd67f1ac9a06411fd829f5ac07c9d3e9ee43b8a41022b8bea"
+    },
+    "baseline_mean": "saved future tone + mean(original float64 history minus saved fitted past tone)",
+    "baseline_last": "saved future tone + last(original float64 history minus saved fitted past tone)",
+    "abstention_baselines": "No extracted tone: plain history mean or last observed temperature. No native fallback or method selection.",
+    "projection": "Identical natural_gain_location.partition: QR of sin/cos at saved past-only frequency on32-step future grid; target unchanged, projected errors ONLY diagnostic.",
+    "abstention_partition": "No plane defined; exact identical native/hybrid implies zero gain and zero update, retained in aggregates.",
+    "aggregation": "Every gain and update-energy divided by original window history variance, then average windows within station, then equal8 stations; counts4/4/4/4/4/2/4/4.",
+    "uncertainty": "Reuse primary4096 paired8-station bootstrap draws; descriptive because shared weather induces dependence. No new inferential or significance claim.",
+    "natural_comparison": {
+      "path": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/natural_gain_location4956300",
+      "summary_sha256": "a803484f9c8016d188374b113d9b18d6471fba6d78ef8da5d063e1f8a33217ee",
+      "scope": "Existing all64 electricity sources per model; natural forecasts/targets already own-history standardized. Compare descriptive partition signs, not a matched causal domain effect."
+    },
+    "limits": [
+      "tones_zero physical zero drops DC; its huge loss is NOT useful evidence for residual necessity.",
+      "Future tone-plane projection is not ground-truth component labeling; over32 hours sin/cos can overlap trends or levels.",
+      "In-plane update includes both added continuation and changed native residual response; cannot attribute it solely to bad classical continuation.",
+      "Native outputs are medians, not means. Chronological observation holdout does not imply unseen locations/distribution."
+    ],
+    "budget": "Saved arrays only, CPU1; no downloads, native calls, fits, threshold tuning or forecast selection."
+  },
+  "exact_findings": {
+    "baselines": {
+      "tone_mean_residual": {
+        "mean_normalized_mse": 0.8649854790083853,
+        "station_losses": [
+          0.8961262879087382,
+          0.2721926384884729,
+          0.9674485648506376,
+          1.0715261918101129,
+          1.3050953734099806,
+          0.6152400200578392,
+          0.9414021169203077,
+          0.8508526386209925
+        ],
+        "comparisons": {
+          "bolt_native": {
+            "mean_gain": -0.39205200700155207,
+            "station_wins": 1,
+            "percentile95": [
+              -0.6684091674769139,
+              -0.03596844145683868
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "timesfm_native": {
+            "mean_gain": -0.41463882528112744,
+            "station_wins": 1,
+            "percentile95": [
+              -0.6549560974050175,
+              -0.11567558013670712
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          }
+        }
+      },
+      "tone_last_residual": {
+        "mean_normalized_mse": 1.1309893084967446,
+        "station_losses": [
+          1.451270973086637,
+          0.2382193776633346,
+          0.268446321087478,
+          1.214223780759501,
+          1.9829369938843646,
+          1.824852051659099,
+          0.8216721710818318,
+          1.2462927987517096
+        ],
+        "comparisons": {
+          "bolt_native": {
+            "mean_gain": -0.6580558364899114,
+            "station_wins": 1,
+            "percentile95": [
+              -1.0236607714609773,
+              -0.28481850148633236
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "timesfm_native": {
+            "mean_gain": -0.6806426547694868,
+            "station_wins": 1,
+            "percentile95": [
+              -1.0381891396029068,
+              -0.30228778759068514
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          }
+        }
+      }
+    },
+    "weather_gain_location": {
+      "bolt": {
+        "gain": {
+          "mean_gain": -0.18179685019641517,
+          "station_wins": 1,
+          "percentile95": [
+            -0.4652814900347783,
+            -0.012929377139995042
+          ],
+          "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+        },
+        "tone_gain": {
+          "mean_gain": -0.021876413106958606,
+          "station_wins": 2,
+          "percentile95": [
+            -0.040724456048963305,
+            -0.00594345663811971
+          ],
+          "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+        },
+        "other_gain": {
+          "mean_gain": -0.15992043708945658,
+          "station_wins": 1,
+          "percentile95": [
+            -0.4266052448595564,
+            -0.00408150969528358
+          ],
+          "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+        },
+        "update_energy": {
+          "mean_gain": 0.08082973348644201,
+          "station_wins": 8,
+          "percentile95": [
+            0.019299288275709908,
+            0.18462802634481681
+          ],
+          "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+        },
+        "tone_update": {
+          "mean_gain": 0.01769406644203822,
+          "station_wins": 8,
+          "percentile95": [
+            0.00786352735756029,
+            0.02865666413312322
+          ],
+          "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+        },
+        "other_update": {
+          "mean_gain": 0.06313566704440378,
+          "station_wins": 8,
+          "percentile95": [
+            0.010125151391389801,
+            0.1562736353084466
+          ],
+          "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+        },
+        "off_plane_update_fraction": 0.7810945839007851,
+        "station_values": {
+          "gain": [
+            -0.032881512891427975,
+            0.02340064899835045,
+            -0.06530474652447249,
+            -0.012135095132264297,
+            -0.02582788371533638,
+            -1.0856956392173227,
+            -0.00299409207998623,
+            -0.25293648100886185
+          ],
+          "tone_gain": [
+            0.0006131554162650476,
+            -0.015112173403440454,
+            -0.003290329973925048,
+            -0.010336744705256855,
+            -0.020784219536422854,
+            -0.06523279649360891,
+            0.00037475184077872127,
+            -0.06124294800005851
+          ],
+          "other_gain": [
+            -0.03349466830769303,
+            0.038512822401790894,
+            -0.06201441655054745,
+            -0.001798350427007445,
+            -0.005043664178913529,
+            -1.0204628427237137,
+            -0.003368843920764954,
+            -0.19169353300880335
+          ],
+          "update_energy": [
+            0.027726375086201405,
+            0.03406239588601668,
+            0.049804600157948915,
+            0.01884357069784875,
+            0.004035820375445917,
+            0.41332131663393384,
+            0.007348533146843894,
+            0.0914952559072966
+          ],
+          "tone_update": [
+            0.0038746027204936357,
+            0.016476810516255564,
+            0.03718182956044552,
+            0.00646636772252239,
+            0.0013543101666623333,
+            0.04104049747046402,
+            0.004856120634511388,
+            0.030301992744950913
+          ],
+          "other_update": [
+            0.02385177236570777,
+            0.017585585369761104,
+            0.012622770597503408,
+            0.012377202975326365,
+            0.0026815102087835844,
+            0.3722808191634698,
+            0.0024924125123325083,
+            0.061193263162345704
+          ]
+        }
+      },
+      "timesfm": {
+        "gain": {
+          "mean_gain": -0.056108200841023526,
+          "station_wins": 3,
+          "percentile95": [
+            -0.15435815654050503,
+            0.0190181296657901
+          ],
+          "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+        },
+        "tone_gain": {
+          "mean_gain": -0.023748947453231563,
+          "station_wins": 2,
+          "percentile95": [
+            -0.053234737884169575,
+            -0.0006085541099169799
+          ],
+          "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+        },
+        "other_gain": {
+          "mean_gain": -0.03235925338779193,
+          "station_wins": 4,
+          "percentile95": [
+            -0.1071057618665032,
+            0.021807347758686195
+          ],
+          "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+        },
+        "update_energy": {
+          "mean_gain": 0.049786305785744396,
+          "station_wins": 8,
+          "percentile95": [
+            0.02433519772211884,
+            0.07959634614720636
+          ],
+          "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+        },
+        "tone_update": {
+          "mean_gain": 0.022048944789847515,
+          "station_wins": 8,
+          "percentile95": [
+            0.008041533077579948,
+            0.036946164500007345
+          ],
+          "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+        },
+        "other_update": {
+          "mean_gain": 0.027737360995896892,
+          "station_wins": 8,
+          "percentile95": [
+            0.014387590390814822,
+            0.04423358057663257
+          ],
+          "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+        },
+        "off_plane_update_fraction": 0.5571283218976872,
+        "station_values": {
+          "gain": [
+            -0.062410721780625726,
+            0.06725168677312637,
+            0.041752143195586136,
+            0.029977917060130255,
+            -0.015661070449884972,
+            -0.33087130271961446,
+            -0.004264955679835215,
+            -0.1746393031270706
+          ],
+          "tone_gain": [
+            -0.006312011688082578,
+            0.007417520709007905,
+            -0.001944924353439174,
+            0.007001234020691926,
+            -0.010563992697841317,
+            -0.08055790695903826,
+            -0.00750454646971218,
+            -0.09752695218743881
+          ],
+          "other_gain": [
+            -0.05609871009254315,
+            0.05983416606411844,
+            0.04369706754902526,
+            0.02297668303943832,
+            -0.005097077752043656,
+            -0.25031339576057576,
+            0.0032395907898769595,
+            -0.07711235093963184
+          ],
+          "update_energy": [
+            0.032535697403586764,
+            0.05212433061405547,
+            0.06377342822177196,
+            0.03400838277179403,
+            0.002245051234174821,
+            0.0778084582440282,
+            0.004611162832800058,
+            0.13118393496374392
+          ],
+          "tone_update": [
+            0.004036688402152301,
+            0.02319531376501613,
+            0.04222890821728856,
+            0.004243896208336477,
+            0.00047312400861274865,
+            0.0440628199539546,
+            0.0024870159531744655,
+            0.05566379181024484
+          ],
+          "other_update": [
+            0.028499009001434462,
+            0.028929016849039334,
+            0.021544520004483404,
+            0.02976448656345755,
+            0.0017719272255620725,
+            0.033745638290073585,
+            0.002124146879625592,
+            0.07552014315349913
+          ]
+        }
+      }
+    },
+    "electricity_reference": [
+      {
+        "model": "bolt",
+        "domain": "monash_electricity_hourly",
+        "scope": "all",
+        "n": 64,
+        "gain": {
+          "mean": -0.0036596262080511297,
+          "ci95": [
+            -0.026730626618159652,
+            0.021560536619039034
+          ],
+          "n": 64
+        },
+        "tone_gain": {
+          "mean": -0.005241596723809181,
+          "ci95": [
+            -0.026180195486389335,
+            0.011121768541978858
+          ],
+          "n": 64
+        },
+        "other_gain": {
+          "mean": 0.0015819705157580407,
+          "ci95": [
+            -0.01320063450435993,
+            0.019724180899050654
+          ],
+          "n": 64
+        },
+        "update_energy": {
+          "mean": 0.03959876704996359,
+          "ci95": [
+            0.02134708038517989,
+            0.0629571259767639
+          ],
+          "n": 64
+        },
+        "tone_update": {
+          "mean": 0.02175209453333423,
+          "ci95": [
+            0.009781770189600027,
+            0.037979823677124186
+          ],
+          "n": 64
+        },
+        "other_update": {
+          "mean": 0.01784667251662936,
+          "ci95": [
+            0.0099956521202874,
+            0.027716376223473813
+          ],
+          "n": 64
+        },
+        "off_tone_update_fraction": 0.45068758060349173
+      },
+      {
+        "model": "timesfm",
+        "domain": "monash_electricity_hourly",
+        "scope": "all",
+        "n": 64,
+        "gain": {
+          "mean": 0.08393875257071565,
+          "ci95": [
+            0.03481941953029382,
+            0.13686426103624988
+          ],
+          "n": 64
+        },
+        "tone_gain": {
+          "mean": 0.03509242848460109,
+          "ci95": [
+            0.003713959570970901,
+            0.06581113004156913
+          ],
+          "n": 64
+        },
+        "other_gain": {
+          "mean": 0.04884632408611454,
+          "ci95": [
+            0.021306738222309874,
+            0.07839115799806708
+          ],
+          "n": 64
+        },
+        "update_energy": {
+          "mean": 0.0740687718367499,
+          "ci95": [
+            0.04624430852845128,
+            0.10784857716328203
+          ],
+          "n": 64
+        },
+        "tone_update": {
+          "mean": 0.035785525878774045,
+          "ci95": [
+            0.019545546741443414,
+            0.057662461390203076
+          ],
+          "n": 64
+        },
+        "other_update": {
+          "mean": 0.03828324595797584,
+          "ci95": [
+            0.024813113435972575,
+            0.05396746046550397
+          ],
+          "n": 64
+        },
+        "off_tone_update_fraction": 0.5168608174353616
+      }
+    ],
+    "windows": 30,
+    "stations": 8,
+    "accepted_windows": 18,
+    "native_launched": false,
+    "audit": {
+      "baseline_predictions_replayed": 60,
+      "normalized_baseline_losses_replayed": 60,
+      "model_window_partitions_replayed": 60,
+      "partition_scalars_replayed": 360,
+      "descriptive_partition_intervals_replayed": 12,
+      "max_abs_partition_replay_error": 6.106226635438361e-16,
+      "orthogonal_method": "Independent B inv(B.T B) B.T versus original QR",
+      "source_bindings_unchanged": true
+    },
+    "tests": {
+      "focused_passed": 3,
+      "plants_caught": 4
+    },
+    "interpretation": {
+      "primary_unchanged": "Frozen native-versus-hybrid negative primary and audit are final; all primary completion-manifest files reverified unchanged.",
+      "tones_zero": "The physical-zero-residual control omits temperature DC. Its50.726728059060875 normalized loss is NOT useful evidence for residual necessity, nor does it isolate tone quality.",
+      "level_controls": "Posthoc mean-residual and last-observed-residual controls preserve level. Both have higher observed equal-station loss than native and hybrid; this compares two simple residual rules only, not proof a learned/native residual is necessary.",
+      "geometry": "Both tone-plane and off-plane weather gains are negative. Off-plane accounts for0.8796656098093939 of net Bolt harm and0.5767294780931997 of net TimesFM harm. These ratios use aggregate signed losses; they are not causal fractions.",
+      "attribution": "Most observed harm is outside the fixed tone plane, especially Bolt. Bad continuation alone is not established: the in-plane update includes added tones plus changed native residual response, and finite-horizon sin/cos can overlap level/trend.",
+      "electricity": "TimesFM electricity gain is positive in both plane and off-plane, unlike weather. Bolt electricity total gain is slightly negative, not an electricity-positive result for both models.",
+      "limits": "Posthoc reused observations, descriptive8-station bootstrap with shared-weather dependence, versus64 electricity series. No matched causal domain comparison, confirmation, or training-prior attribution."
+    },
+    "status": "COMPLETE: posthoc saved-array diagnostics audited; primary immutable; native branch CLOSED"
+  },
+  "controls": "Primary bindings; fixed history-only plane; level-preserving constants; exact abstentions; orthogonal identities.",
+  "limitations": [
+    "tones_zero physical zero drops DC; its huge loss is NOT useful evidence for residual necessity.",
+    "Future tone-plane projection is not ground-truth component labeling; over32 hours sin/cos can overlap trends or levels.",
+    "In-plane update includes both added continuation and changed native residual response; cannot attribute it solely to bad classical continuation.",
+    "Native outputs are medians, not means. Chronological observation holdout does not imply unseen locations/distribution.",
+    "Reuse primary4096 paired8-station bootstrap draws; descriptive because shared weather induces dependence. No new inferential or significance claim."
+  ],
+  "evidence_class": "posthoc descriptive saved-array diagnostic",
+  "next_decision": "Report completed primary and separate posthoc diagnostics for coordinator review. Native branch closed; no downloads, native runs, threshold tuning or selection."
+}

@@ -1,0 +1,949 @@
+{
+  "results": {
+    "models": {
+      "bolt": {
+        "capture_controls": {
+          "default_vs_independent": 0.0,
+          "repeat": 0.0,
+          "hook": 0.0,
+          "batch_permutation": 0.0
+        },
+        "capture_passed": true,
+        "forecast_normalized_RMS": 1.1359217184861372e-07,
+        "deltas": {
+          "0.01": {
+            "replay": {
+              "relative_RMS": 1.5480141451931952e-05,
+              "absolute_RMS_over_analytic_strength": 4.034360513205419e-06,
+              "passed": true
+            },
+            "absolute_attribution": {
+              "total_energy_ratio": {
+                "value": 0.06792029434615932,
+                "lo": 0.053230721833013805,
+                "hi": 0.08442797849651663,
+                "n_seeds": 128
+              },
+              "projection_shares_stable": true,
+              "branches": {
+                "skip": {
+                  "energy_ratio": {
+                    "value": 0.059259579943904864,
+                    "lo": 0.046841557258334464,
+                    "hi": 0.07351636114640435,
+                    "n_seeds": 128
+                  },
+                  "signed_projection_share": {
+                    "value": 0.875019171287109,
+                    "lo": 0.8325804980074815,
+                    "hi": 0.9154652481841392,
+                    "n_seeds": 128
+                  }
+                },
+                "nonlinear": {
+                  "energy_ratio": {
+                    "value": 0.008316792280378365,
+                    "lo": 0.0064366122120023475,
+                    "hi": 0.010442088581722724,
+                    "n_seeds": 128
+                  },
+                  "signed_projection_share": {
+                    "value": 0.12498111430911979,
+                    "lo": 0.08453458158286292,
+                    "hi": 0.16742073484041187,
+                    "n_seeds": 128
+                  }
+                },
+                "normalization_residual": {
+                  "energy_ratio": {
+                    "value": 5.796099831663133e-12,
+                    "lo": 3.8296903085137066e-12,
+                    "hi": 8.268227122837198e-12,
+                    "n_seeds": 128
+                  },
+                  "signed_projection_share": {
+                    "value": -9.172624656051768e-08,
+                    "lo": -1.0389220865502322e-06,
+                    "hi": 7.769101015931887e-07,
+                    "n_seeds": 128
+                  }
+                },
+                "numerical_replay_residual": {
+                  "energy_ratio": {
+                    "value": 1.6276064750424627e-11,
+                    "lo": 1.2092069536677199e-11,
+                    "hi": 2.1220264117498207e-11,
+                    "n_seeds": 128
+                  },
+                  "signed_projection_share": {
+                    "value": -1.9386998221910396e-07,
+                    "lo": -1.942786763775691e-06,
+                    "hi": 1.7691093842169883e-06,
+                    "n_seeds": 128
+                  }
+                }
+              },
+              "cross_energy_ratio": {
+                "skip__nonlinear": {
+                  "value": 0.00034396092852426077,
+                  "lo": -0.005391714578192048,
+                  "hi": 0.0059600805437322905,
+                  "n_seeds": 128
+                },
+                "skip__normalization_residual": {
+                  "value": -2.9645949446604408e-08,
+                  "lo": -1.482560439975491e-07,
+                  "hi": 7.52089936203811e-08,
+                  "n_seeds": 128
+                },
+                "skip__numerical_replay_residual": {
+                  "value": 2.8174321125125852e-08,
+                  "lo": -1.9947870165187016e-07,
+                  "hi": 2.6334769748776905e-07,
+                  "n_seeds": 128
+                },
+                "nonlinear__normalization_residual": {
+                  "value": 1.718519374613452e-08,
+                  "lo": -4.439680516475437e-08,
+                  "hi": 7.825054128177505e-08,
+                  "n_seeds": 128
+                },
+                "nonlinear__numerical_replay_residual": {
+                  "value": -5.453130193852818e-08,
+                  "lo": -1.5202069798667718e-07,
+                  "hi": 4.442647799088916e-08,
+                  "n_seeds": 128
+                },
+                "normalization_residual__numerical_replay_residual": {
+                  "value": -1.0983830510951063e-11,
+                  "lo": -1.6973593368877582e-11,
+                  "hi": -6.268981698523484e-12,
+                  "n_seeds": 128
+                }
+              },
+              "descriptive_label": "mixed/unresolved",
+              "label_scope": "prespecified point-estimate rule;CIs shown;not a unique causal attribution",
+              "coefficient_closure_max_abs": 6.106226635438361e-16
+            }
+          },
+          "0.02": {
+            "replay": {
+              "relative_RMS": 8.017848543046605e-06,
+              "absolute_RMS_over_analytic_strength": 2.085346481315857e-06,
+              "passed": true
+            },
+            "absolute_attribution": {
+              "total_energy_ratio": {
+                "value": 0.06764578652284922,
+                "lo": 0.05295597640746315,
+                "hi": 0.08396354440762376,
+                "n_seeds": 128
+              },
+              "projection_shares_stable": true,
+              "branches": {
+                "skip": {
+                  "energy_ratio": {
+                    "value": 0.05926274123883171,
+                    "lo": 0.04682530586612661,
+                    "hi": 0.07370418143128996,
+                    "n_seeds": 128
+                  },
+                  "signed_projection_share": {
+                    "value": 0.87667741978196,
+                    "lo": 0.8346336463489934,
+                    "hi": 0.9158260681132262,
+                    "n_seeds": 128
+                  }
+                },
+                "nonlinear": {
+                  "energy_ratio": {
+                    "value": 0.00830145740309505,
+                    "lo": 0.0064085469967588024,
+                    "hi": 0.010436907163890195,
+                    "n_seeds": 128
+                  },
+                  "signed_projection_share": {
+                    "value": 0.12332294866816161,
+                    "lo": 0.08417480380114482,
+                    "hi": 0.16536639851770582,
+                    "n_seeds": 128
+                  }
+                },
+                "normalization_residual": {
+                  "energy_ratio": {
+                    "value": 1.7865753066023403e-12,
+                    "lo": 1.2747421957285037e-12,
+                    "hi": 2.393661353754522e-12,
+                    "n_seeds": 128
+                  },
+                  "signed_projection_share": {
+                    "value": 3.0203348951159855e-07,
+                    "lo": -1.7302999349160226e-07,
+                    "hi": 7.780178808802973e-07,
+                    "n_seeds": 128
+                  }
+                },
+                "numerical_replay_residual": {
+                  "energy_ratio": {
+                    "value": 4.348669947085245e-12,
+                    "lo": 3.1569075146509668e-12,
+                    "hi": 5.807049412820405e-12,
+                    "n_seeds": 128
+                  },
+                  "signed_projection_share": {
+                    "value": -6.704836109035566e-07,
+                    "lo": -1.5492262386242934e-06,
+                    "hi": 2.138192819917886e-07,
+                    "n_seeds": 128
+                  }
+                }
+              },
+              "cross_energy_ratio": {
+                "skip__nonlinear": {
+                  "value": 8.16377318295376e-05,
+                  "lo": -0.005541297413051728,
+                  "hi": 0.005521221574046122,
+                  "n_seeds": 128
+                },
+                "skip__normalization_residual": {
+                  "value": 4.9483653208597646e-08,
+                  "lo": -1.1606983120853758e-08,
+                  "hi": 1.0976771528972455e-07,
+                  "n_seeds": 128
+                },
+                "skip__numerical_replay_residual": {
+                  "value": -1.0251720068425666e-07,
+                  "lo": -2.1559493244736292e-07,
+                  "hi": 1.242210402940577e-08,
+                  "n_seeds": 128
+                },
+                "nonlinear__normalization_residual": {
+                  "value": -8.621215752772747e-09,
+                  "lo": -3.7939128682086424e-08,
+                  "hi": 1.907640967163962e-08,
+                  "n_seeds": 128
+                },
+                "nonlinear__numerical_replay_residual": {
+                  "value": 1.1801145621792888e-08,
+                  "lo": -3.610413133878383e-08,
+                  "hi": 5.7055483565197645e-08,
+                  "n_seeds": 128
+                },
+                "normalization_residual__numerical_replay_residual": {
+                  "value": -3.424697932510795e-12,
+                  "lo": -4.98933720765468e-12,
+                  "hi": -2.11304040211674e-12,
+                  "n_seeds": 128
+                }
+              },
+              "descriptive_label": "mixed/unresolved",
+              "label_scope": "prespecified point-estimate rule;CIs shown;not a unique causal attribution",
+              "coefficient_closure_max_abs": 4.996003610813204e-16
+            }
+          }
+        },
+        "all_gates_passed": true,
+        "base_native_scaled_mse": {
+          "value": 0.2260463565213291,
+          "lo": 0.1956780048413383,
+          "hi": 0.25574521472385664,
+          "n_seeds": 128
+        }
+      },
+      "timesfm": {
+        "capture_controls": {
+          "default_vs_independent": 0.0,
+          "repeat": 0.0,
+          "hook": 0.0,
+          "batch_permutation": 0.0
+        },
+        "capture_passed": true,
+        "forecast_normalized_RMS": 1.562744038304438e-07,
+        "deltas": {
+          "0.01": {
+            "replay": {
+              "relative_RMS": 7.574625342757983e-06,
+              "absolute_RMS_over_analytic_strength": 5.49432058287816e-06,
+              "passed": true
+            },
+            "absolute_attribution": {
+              "total_energy_ratio": {
+                "value": 0.5261452802980068,
+                "lo": 0.32911573860617316,
+                "hi": 0.7732388791801856,
+                "n_seeds": 128
+              },
+              "projection_shares_stable": true,
+              "branches": {
+                "skip": {
+                  "energy_ratio": {
+                    "value": 0.4783507677538495,
+                    "lo": 0.30449949294553963,
+                    "hi": 0.7000833459294397,
+                    "n_seeds": 128
+                  },
+                  "signed_projection_share": {
+                    "value": 0.9488826688180311,
+                    "lo": 0.927913887220414,
+                    "hi": 0.9724805162469107,
+                    "n_seeds": 128
+                  }
+                },
+                "nonlinear": {
+                  "energy_ratio": {
+                    "value": 0.005995756764984406,
+                    "lo": 0.0037128853361989038,
+                    "hi": 0.008754234172763985,
+                    "n_seeds": 128
+                  },
+                  "signed_projection_share": {
+                    "value": 0.05111740171513982,
+                    "lo": 0.027520221152494206,
+                    "hi": 0.07208530918087014,
+                    "n_seeds": 128
+                  }
+                },
+                "normalization_residual": {
+                  "energy_ratio": {
+                    "value": 2.460085681679665e-12,
+                    "lo": 1.5187241065884513e-12,
+                    "hi": 3.625451505990802e-12,
+                    "n_seeds": 128
+                  },
+                  "signed_projection_share": {
+                    "value": -2.6156526518912214e-07,
+                    "lo": -7.639781484877427e-07,
+                    "hi": 1.5866056320947786e-07,
+                    "n_seeds": 128
+                  }
+                },
+                "numerical_replay_residual": {
+                  "energy_ratio": {
+                    "value": 3.018755866741901e-11,
+                    "lo": 2.327025989661343e-11,
+                    "hi": 3.8211602575275996e-11,
+                    "n_seeds": 128
+                  },
+                  "signed_projection_share": {
+                    "value": 1.910320942491835e-07,
+                    "lo": -1.0926647307883798e-06,
+                    "hi": 1.627931075016411e-06,
+                    "n_seeds": 128
+                  }
+                }
+              },
+              "cross_energy_ratio": {
+                "skip__nonlinear": {
+                  "value": 0.04179883002781086,
+                  "lo": 0.014002437104927629,
+                  "hi": 0.07486778322291804,
+                  "n_seeds": 128
+                },
+                "skip__normalization_residual": {
+                  "value": -2.3296211491886778e-07,
+                  "lo": -7.738322980420123e-07,
+                  "hi": 1.8589865516928822e-07,
+                  "n_seeds": 128
+                },
+                "skip__numerical_replay_residual": {
+                  "value": 1.4293697252694098e-07,
+                  "lo": -1.2991060755124927e-06,
+                  "hi": 1.4184815986112387e-06,
+                  "n_seeds": 128
+                },
+                "nonlinear__normalization_residual": {
+                  "value": -4.22800651278973e-08,
+                  "lo": -9.617549376826316e-08,
+                  "hi": -4.692392155860486e-09,
+                  "n_seeds": 128
+                },
+                "nonlinear__numerical_replay_residual": {
+                  "value": 5.802932156793227e-08,
+                  "lo": -1.0189150261517368e-07,
+                  "hi": 2.2232702964203263e-07,
+                  "n_seeds": 128
+                },
+                "normalization_residual__numerical_replay_residual": {
+                  "value": -5.399662904391416e-12,
+                  "lo": -8.429465149132703e-12,
+                  "hi": -2.9082875977519155e-12,
+                  "n_seeds": 128
+                }
+              },
+              "descriptive_label": "mixed/unresolved",
+              "label_scope": "prespecified point-estimate rule;CIs shown;not a unique causal attribution",
+              "coefficient_closure_max_abs": 1.5543122344752192e-15
+            }
+          },
+          "0.02": {
+            "replay": {
+              "relative_RMS": 3.69028318492777e-06,
+              "absolute_RMS_over_analytic_strength": 2.669730305035922e-06,
+              "passed": true
+            },
+            "absolute_attribution": {
+              "total_energy_ratio": {
+                "value": 0.5233779165585487,
+                "lo": 0.3281922023010483,
+                "hi": 0.7686762309500851,
+                "n_seeds": 128
+              },
+              "projection_shares_stable": true,
+              "branches": {
+                "skip": {
+                  "energy_ratio": {
+                    "value": 0.47593671827895,
+                    "lo": 0.30342028645495306,
+                    "hi": 0.6962631207913859,
+                    "n_seeds": 128
+                  },
+                  "signed_projection_share": {
+                    "value": 0.9489904683670002,
+                    "lo": 0.928083692047078,
+                    "hi": 0.9726158322745203,
+                    "n_seeds": 128
+                  }
+                },
+                "nonlinear": {
+                  "energy_ratio": {
+                    "value": 0.005953303185716187,
+                    "lo": 0.0036781807399430206,
+                    "hi": 0.008684523383924753,
+                    "n_seeds": 128
+                  },
+                  "signed_projection_share": {
+                    "value": 0.05100960392505708,
+                    "lo": 0.027384283508917962,
+                    "hi": 0.07191648803460332,
+                    "n_seeds": 128
+                  }
+                },
+                "normalization_residual": {
+                  "energy_ratio": {
+                    "value": 7.221861323430034e-13,
+                    "lo": 4.443622031853007e-13,
+                    "hi": 1.0786153325403125e-12,
+                    "n_seeds": 128
+                  },
+                  "signed_projection_share": {
+                    "value": 6.814245145749925e-08,
+                    "lo": -1.5536885781862958e-07,
+                    "hi": 3.290800042945667e-07,
+                    "n_seeds": 128
+                  }
+                },
+                "numerical_replay_residual": {
+                  "energy_ratio": {
+                    "value": 7.127459901624157e-12,
+                    "lo": 5.528692081119316e-12,
+                    "hi": 9.113484800300318e-12,
+                    "n_seeds": 128
+                  },
+                  "signed_projection_share": {
+                    "value": -1.4043450865829094e-07,
+                    "lo": -6.257261355225007e-07,
+                    "hi": 3.347789830947242e-07,
+                    "n_seeds": 128
+                  }
+                }
+              },
+              "cross_energy_ratio": {
+                "skip__nonlinear": {
+                  "value": 0.04148797077260176,
+                  "lo": 0.013847968315558633,
+                  "hi": 0.07428966543632258,
+                  "n_seeds": 128
+                },
+                "skip__normalization_residual": {
+                  "value": 5.703350355736287e-08,
+                  "lo": -1.4143976494817016e-07,
+                  "hi": 3.3482150302226837e-07,
+                  "n_seeds": 128
+                },
+                "skip__numerical_replay_residual": {
+                  "value": -1.5602832125463277e-07,
+                  "lo": -6.24587677699078e-07,
+                  "hi": 3.249609156881689e-07,
+                  "n_seeds": 128
+                },
+                "nonlinear__normalization_residual": {
+                  "value": 1.4294823773649148e-08,
+                  "lo": -4.407390162691778e-09,
+                  "hi": 4.2492244559404883e-08,
+                  "n_seeds": 128
+                },
+                "nonlinear__numerical_replay_residual": {
+                  "value": 9.014688383070645e-09,
+                  "lo": -4.429322200921716e-08,
+                  "hi": 6.242235946361202e-08,
+                  "n_seeds": 128
+                },
+                "normalization_residual__numerical_replay_residual": {
+                  "value": -1.263157240735167e-12,
+                  "lo": -1.951885594456011e-12,
+                  "hi": -7.02606453631171e-13,
+                  "n_seeds": 128
+                }
+              },
+              "descriptive_label": "mixed/unresolved",
+              "label_scope": "prespecified point-estimate rule;CIs shown;not a unique causal attribution",
+              "coefficient_closure_max_abs": 8.881784197001252e-16
+            }
+          }
+        },
+        "all_gates_passed": true,
+        "base_native_scaled_mse": {
+          "value": 0.41008771413969214,
+          "lo": 0.33418201472607734,
+          "hi": 0.4845016668535211,
+          "n_seeds": 128
+        }
+      },
+      "chronos2": {
+        "capture_controls": {
+          "default_vs_independent": 0.0,
+          "repeat": 0.0,
+          "hook": 0.0,
+          "batch_permutation": 0.0
+        },
+        "capture_passed": true,
+        "forecast_normalized_RMS": 1.6268159836412075e-07,
+        "deltas": {
+          "0.01": {
+            "replay": {
+              "relative_RMS": 0.00018925590566378338,
+              "absolute_RMS_over_analytic_strength": 6.130684766885956e-06,
+              "passed": true
+            },
+            "absolute_attribution": {
+              "total_energy_ratio": {
+                "value": 0.0010493469166017904,
+                "lo": 0.000852574867087011,
+                "hi": 0.0012728398245462095,
+                "n_seeds": 128
+              },
+              "projection_shares_stable": true,
+              "branches": {
+                "skip": {
+                  "energy_ratio": {
+                    "value": 0.0010585702610415586,
+                    "lo": 0.0008630824346767829,
+                    "hi": 0.0012970082426228538,
+                    "n_seeds": 128
+                  },
+                  "signed_projection_share": {
+                    "value": 0.7318282625464787,
+                    "lo": 0.6311803664544495,
+                    "hi": 0.8413291186708631,
+                    "n_seeds": 128
+                  }
+                },
+                "nonlinear": {
+                  "energy_ratio": {
+                    "value": 0.0005720293345329569,
+                    "lo": 0.0004483654299648634,
+                    "hi": 0.0007101641642864247,
+                    "n_seeds": 128
+                  },
+                  "signed_projection_share": {
+                    "value": 0.26816664154003206,
+                    "lo": 0.15867838465603457,
+                    "hi": 0.3688227380232049,
+                    "n_seeds": 128
+                  }
+                },
+                "normalization_residual": {
+                  "energy_ratio": {
+                    "value": 5.899810564135029e-12,
+                    "lo": 4.099138759657465e-12,
+                    "hi": 8.164804646869114e-12,
+                    "n_seeds": 128
+                  },
+                  "signed_projection_share": {
+                    "value": -3.2866748353320446e-06,
+                    "lo": -1.345475238067052e-05,
+                    "hi": 5.897522010698048e-06,
+                    "n_seeds": 128
+                  }
+                },
+                "numerical_replay_residual": {
+                  "energy_ratio": {
+                    "value": 3.7585295710999355e-11,
+                    "lo": 2.8906272248079405e-11,
+                    "hi": 4.829821511311662e-11,
+                    "n_seeds": 128
+                  },
+                  "signed_projection_share": {
+                    "value": 8.38258832452919e-06,
+                    "lo": -1.6784825058989425e-05,
+                    "hi": 3.5699552839018066e-05,
+                    "n_seeds": 128
+                  }
+                }
+              },
+              "cross_energy_ratio": {
+                "skip__nonlinear": {
+                  "value": -0.0005812633439349885,
+                  "lo": -0.0008218089746327218,
+                  "hi": -0.0003804028019588749,
+                  "n_seeds": 128
+                },
+                "skip__normalization_residual": {
+                  "value": -8.830711220054399e-09,
+                  "lo": -2.8455522859120415e-08,
+                  "hi": 9.935536705003956e-09,
+                  "n_seeds": 128
+                },
+                "skip__numerical_replay_residual": {
+                  "value": 1.5114133476815868e-08,
+                  "lo": -3.976835549790714e-08,
+                  "hi": 6.746231629812687e-08,
+                  "n_seeds": 128
+                },
+                "nonlinear__normalization_residual": {
+                  "value": 1.9348725452929163e-09,
+                  "lo": -1.0770463742345135e-08,
+                  "hi": 1.5114441075166703e-08,
+                  "n_seeds": 128
+                },
+                "nonlinear__numerical_replay_residual": {
+                  "value": 2.4168675097593426e-09,
+                  "lo": -2.6996330369152064e-08,
+                  "hi": 3.2230118566997855e-08,
+                  "n_seeds": 128
+                },
+                "normalization_residual__numerical_replay_residual": {
+                  "value": -1.36851550235036e-11,
+                  "lo": -2.0892890134515513e-11,
+                  "hi": -7.721344186781674e-12,
+                  "n_seeds": 128
+                }
+              },
+              "descriptive_label": "weak branch mixing",
+              "label_scope": "prespecified point-estimate rule;CIs shown;not a unique causal attribution",
+              "coefficient_closure_max_abs": 4.631711680858075e-16
+            }
+          },
+          "0.02": {
+            "replay": {
+              "relative_RMS": 9.333489280649417e-05,
+              "absolute_RMS_over_analytic_strength": 2.8855823427820253e-06,
+              "passed": true
+            },
+            "absolute_attribution": {
+              "total_energy_ratio": {
+                "value": 0.0009558260830210641,
+                "lo": 0.0007815565060432136,
+                "hi": 0.0011529389520927222,
+                "n_seeds": 128
+              },
+              "projection_shares_stable": true,
+              "branches": {
+                "skip": {
+                  "energy_ratio": {
+                    "value": 0.0010194881704441178,
+                    "lo": 0.0008285794473261142,
+                    "hi": 0.0012528653881906339,
+                    "n_seeds": 128
+                  },
+                  "signed_projection_share": {
+                    "value": 0.7613772004206494,
+                    "lo": 0.6593041301834678,
+                    "hi": 0.871991795605246,
+                    "n_seeds": 128
+                  }
+                },
+                "nonlinear": {
+                  "energy_ratio": {
+                    "value": 0.000519826584457352,
+                    "lo": 0.00041185830394937215,
+                    "hi": 0.0006415488840615623,
+                    "n_seeds": 128
+                  },
+                  "signed_projection_share": {
+                    "value": 0.23860973456977103,
+                    "lo": 0.12799122618392367,
+                    "hi": 0.340687412617642,
+                    "n_seeds": 128
+                  }
+                },
+                "normalization_residual": {
+                  "energy_ratio": {
+                    "value": 1.775968595092348e-12,
+                    "lo": 1.2957086383130133e-12,
+                    "hi": 2.3367382638812484e-12,
+                    "n_seeds": 128
+                  },
+                  "signed_projection_share": {
+                    "value": 1.1303184198379741e-06,
+                    "lo": -3.6936463205265292e-06,
+                    "hi": 6.101115241409394e-06,
+                    "n_seeds": 128
+                  }
+                },
+                "numerical_replay_residual": {
+                  "energy_ratio": {
+                    "value": 8.326585457087667e-12,
+                    "lo": 6.558706570385739e-12,
+                    "hi": 1.0418656516986071e-11,
+                    "n_seeds": 128
+                  },
+                  "signed_projection_share": {
+                    "value": 1.1934691159293156e-05,
+                    "lo": 4.1427158769383685e-08,
+                    "hi": 2.43887910387766e-05,
+                    "n_seeds": 128
+                  }
+                }
+              },
+              "cross_energy_ratio": {
+                "skip__nonlinear": {
+                  "value": -0.0005835136410364913,
+                  "lo": -0.0008102070648137755,
+                  "hi": -0.0003918243602325189,
+                  "n_seeds": 128
+                },
+                "skip__normalization_residual": {
+                  "value": -4.797554885893779e-09,
+                  "lo": -1.1893620413875505e-08,
+                  "hi": 2.6685601354312945e-09,
+                  "n_seeds": 128
+                },
+                "skip__numerical_replay_residual": {
+                  "value": 3.0472062367883055e-08,
+                  "lo": 7.731934284225146e-09,
+                  "hi": 5.351120973109827e-08,
+                  "n_seeds": 128
+                },
+                "nonlinear__normalization_residual": {
+                  "value": 6.9582833820096666e-09,
+                  "lo": 8.163794215791912e-11,
+                  "hi": 1.3865045282554638e-08,
+                  "n_seeds": 128
+                },
+                "nonlinear__numerical_replay_residual": {
+                  "value": -7.670232555385011e-09,
+                  "lo": -2.5544837186677465e-08,
+                  "hi": 1.011193796549546e-08,
+                  "n_seeds": 128
+                },
+                "normalization_residual__numerical_replay_residual": {
+                  "value": -3.5047777055162815e-12,
+                  "lo": -5.191975009152547e-12,
+                  "hi": -2.0212688668698062e-12,
+                  "n_seeds": 128
+                }
+              },
+              "descriptive_label": "weak branch mixing",
+              "label_scope": "prespecified point-estimate rule;CIs shown;not a unique causal attribution",
+              "coefficient_closure_max_abs": 4.9439619065339e-16
+            }
+          }
+        },
+        "all_gates_passed": true,
+        "base_native_scaled_mse": {
+          "value": 0.0009364711026324517,
+          "lo": 0.0008709591655098281,
+          "hi": 0.0009997378449811704,
+          "n_seeds": 128
+        }
+      }
+    },
+    "comparisons": {
+      "timesfm_minus_chronos2": {
+        "value": 0.5250959333814048,
+        "lo": 0.3280945788163841,
+        "hi": 0.7723828712240296,
+        "n_seeds": 128,
+        "sign_test": {
+          "positive": 126,
+          "negative": 2,
+          "ties": 0,
+          "n_non_ties": 128,
+          "q": 0.984375,
+          "q_cp95": [
+            0.944697409977551,
+            0.9981021068782607
+          ],
+          "p": 4.853028427369814e-35,
+          "majority_positive": true
+        },
+        "scope": "ratio interval approximate;exact sign test establishes conditional majority,not assumption-free mean superiority",
+        "minimum_point_effect": 0.1,
+        "p_holm": 9.706056854739628e-35,
+        "passed": true
+      },
+      "bolt_minus_chronos2": {
+        "value": 0.06687094742955753,
+        "lo": 0.052205034722263094,
+        "hi": 0.08340006809074582,
+        "n_seeds": 128,
+        "sign_test": {
+          "positive": 126,
+          "negative": 2,
+          "ties": 0,
+          "n_non_ties": 128,
+          "q": 0.984375,
+          "q_cp95": [
+            0.944697409977551,
+            0.9981021068782607
+          ],
+          "p": 4.853028427369814e-35,
+          "majority_positive": true
+        },
+        "scope": "ratio interval approximate;exact sign test establishes conditional majority,not assumption-free mean superiority",
+        "minimum_point_effect": 0.02,
+        "p_holm": 9.706056854739628e-35,
+        "passed": true
+      }
+    },
+    "scope": "fresh native-computation replication;no probes or interventions",
+    "all_primary_passed": true,
+    "inference_caveat": "Exact sign tests establish a conditional majority among non-ties;approximate ratio intervals do not establish assumption-free mean superiority. All128seeds remain in energy ratios."
+  },
+  "protocol": {
+    "seed_base": 2225000,
+    "n_seeds": 128,
+    "n_contexts_per_model": 640,
+    "periods": [
+      32,
+      16
+    ],
+    "context": 128,
+    "horizon": 32,
+    "conditions": [
+      [
+        "base",
+        null,
+        0,
+        0.0
+      ],
+      [
+        "psi_1_0.01",
+        "psi",
+        1,
+        0.01
+      ],
+      [
+        "psi_-1_0.01",
+        "psi",
+        -1,
+        0.01
+      ],
+      [
+        "psi_1_0.02",
+        "psi",
+        1,
+        0.02
+      ],
+      [
+        "psi_-1_0.02",
+        "psi",
+        -1,
+        0.02
+      ]
+    ],
+    "amplitudes": [
+      0.5,
+      2
+    ],
+    "offset": [
+      -2,
+      2
+    ],
+    "phase": [
+      -3.141592653589793,
+      3.141592653589793
+    ],
+    "noise": 0,
+    "primary_delta": 0.01,
+    "convergence_delta": 0.02,
+    "claims": {
+      "timesfm_minus_chronos2": 0.1,
+      "bolt_minus_chronos2": 0.02
+    },
+    "inference": "global Holm2 of TWO-SIDED exact sign tests on paired per-seed energy numerator differences;positive conditional majority;ratio-of-aggregate-energies bootstrap lower95>0;minimum point effects fixed",
+    "bootstrap_draws": 2000,
+    "bootstrap_seed": 165901,
+    "sign_test": "scipy binomtest p=.5,two-sided;Clopper-Pearson95 exact;ties explicitly counted",
+    "caveat": "Sign tests establish conditional majority,not assumption-free mean superiority;ratio intervals approximate;ties reported and retained in ratio estimates",
+    "controls": "native repeat,capture hook,batch permutation,independent Chronos-2 groupIDs all exact0",
+    "replay_gates": {
+      "forecast_normalized_RMS": 1e-05,
+      "derivative_relative_RMS": 0.01,
+      "derivative_absolute_RMS_over_analytic_strength": 1e-05
+    },
+    "branch_scope": "descriptive only;common sinh secant for Chronos-2;absolute branch energies over shared analytic target-strength sum",
+    "projection_floor": 0.0001,
+    "labels": "weak if bothbranchratios<.02;cancellation if both>.05,total<.02,negative cross offsets>=50%sumbranch energies;else mixed/unresolved",
+    "no_probes": true,
+    "no_hidden_interventions": true,
+    "manifests": {
+      "bolt": {
+        "checkpoint": "/common/home/djk255/.cache/huggingface/hub/models--amazon--chronos-bolt-small/snapshots/772f3d25d38aec6d914c8949dab4462e2d46f5d8/model.safetensors",
+        "tensor_sha256": {
+          "hidden_layer.bias": "d53f5e243046b429940cb0010cb557f07acf3a116af7c90773e0f4e4e81bcd93",
+          "hidden_layer.weight": "6dcbe8ccc0dc9a363d2343fe47f5db9665d5e4f1fbee3a07ff68d04ee4519a6f",
+          "output_layer.bias": "04c46525f9aab2c2506747c2923dedd2757c63aa295c88bcbc3ba46815a53ee3",
+          "output_layer.weight": "eb579feabf07feb2c654d3168770305ee683b032e63a7223aeb39014c737602b",
+          "residual_layer.bias": "40080778d9a76bb2b01f0f8e18b6dabf363a353fca27ff94ebd55a9340bfdb60",
+          "residual_layer.weight": "10e3c640531162b99255bbe23780b491c208aa1b4a304894c4b24acc81dddb25"
+        },
+        "source_sha256": {
+          "chronos.chronos_bolt": "572a3ffd23a7887c423d234fd0086a4dfa2bac0c3e34d4b7d42eb9cda2e3d1d4"
+        }
+      },
+      "timesfm": {
+        "checkpoint": "/common/home/djk255/.cache/huggingface/hub/models--google--timesfm-2.5-200m-pytorch/snapshots/1d952420fba87f3c6dee4f240de0f1a0fbc790e3/model.safetensors",
+        "tensor_sha256": {
+          "hidden_layer.weight": "2fb48e9f0f0d6eca70aea1e6c4688a25416c4b1e33261a45f232b1a90d294eca",
+          "output_layer.weight": "1a68c54ba309c5c47328e5e5cd8bf941d90713f4a91648fb79c54692eb4684e1",
+          "residual_layer.weight": "b2ccb7116219cf41554c1941f31f138e3d70562f5789ce551cf97e6b84de397b"
+        },
+        "source_sha256": {
+          "timesfm.timesfm_2p5.timesfm_2p5_torch": "07e135cbf3f5099e60469f7c2bb0781426f7109d62c51634775b6be470608371",
+          "timesfm.torch.dense": "28894985384eaa3dda7b1b882d5bb8426d8b274b2d9a01cb14c4651c0584ec1d",
+          "timesfm.torch.util": "c700a82459e115a1c6c9797058e6e3272aa79e8705a11d48d83489b67766e917"
+        }
+      },
+      "chronos2": {
+        "checkpoint": "/common/home/djk255/.cache/huggingface/hub/models--amazon--chronos-2/snapshots/29ec3766d36d6f73f0696f85560a422f50e8498c/model.safetensors",
+        "tensor_sha256": {
+          "hidden_layer.bias": "93a85da4fc90e73bc0aeebb8a5cb220e28169c9a2259e02c6a63104a935995ec",
+          "hidden_layer.weight": "9c1b2eb4225aa45ebc0f82e478b14eb2cdf86df62e265f9f4e035daf8e3583f0",
+          "output_layer.bias": "14473a91c62a73487189e34b4f6b9f29c5345c0c9fecbb9304df91d0d61b97bc",
+          "output_layer.weight": "8a0a75b14592de30adbd3f5f324e829e53e79ce8a44335115b96f5b417b54d68",
+          "residual_layer.bias": "db3f635282486c766b76dea026b946354f62fca0bf3929abb6668fe79308b0ba",
+          "residual_layer.weight": "37a47d6d3fc7aa6109b90791ff18f00815c39b27aef503a33e3258e322cfe7bd"
+        },
+        "source_sha256": {
+          "chronos.chronos2.model": "13ed6b3e1010e1b60fad45cd078da5ff1cda23cdfcaf9055a996276219d9e3c1",
+          "chronos.chronos2.layers": "73493f306ecfaa21fa57636ff46321ccb5d50ded02a382598cf759dbfc9dd60f",
+          "chronos.chronos_bolt": "572a3ffd23a7887c423d234fd0086a4dfa2bac0c3e34d4b7d42eb9cda2e3d1d4"
+        }
+      }
+    },
+    "driver_sha256": "f6953e515c721939170b629f24d03dcaf65f6e52a66c31c87ee6d03ea74d7314",
+    "capture_helper_sha256": "79e613a1f0b021eee1a067acbec1928177e11980eed950a9b40fae9978a69f03",
+    "replay_helper_sha256": "fe38943fb0fb454192cdc208fb2f01fed4dc6b8949b45def12dd47533989f0b1",
+    "corpus_sha256": "4febbb4742b379e931c15169cf74cea936f18e7d197689b0a51b45aed9b904d0",
+    "metadata_sha256": "0f67893f4db4b9f5dd135fac1d42a52f3ca856ed4e2b32c2064990ab7567a742"
+  },
+  "source_files": {
+    "results": {
+      "path": "tsfm_lens/runs/feature_search_20261111_native_head_replication2225000/results.json",
+      "sha256": "31830b80069a4e74bd9bc5c813ba0ce67a974e25cdd25a03a21f7bfc2c9e5c6b"
+    },
+    "protocol": {
+      "path": "tsfm_lens/runs/feature_search_20261111_native_head_replication2225000/protocol.json",
+      "sha256": "3435aae35012c76a9d82c5bcbd019e72bb2dbd93441756e6fea4562e6f9b4e26"
+    }
+  },
+  "figure_scope": {
+    "primary_delta": 0.01,
+    "energy_intervals": "pointwise paired-seed bootstrap95%;approximate ratios",
+    "q_intervals": "exact Clopper-Pearson95%;conditional majority among non-ties",
+    "no_stacked_energies": true,
+    "no_probe_or_isolated_feature_claim": true
+  }
+}

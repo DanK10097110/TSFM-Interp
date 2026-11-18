@@ -1,0 +1,1274 @@
+{
+  "status": "complete_audited",
+  "question": "Does old frozen phase-response prediction transfer from cardinal to previously unseen oblique phases on the same16 backgrounds?",
+  "design": {
+    "question": "Does old frozen phase-response prediction transfer from cardinal to previously unseen oblique phases on the same16 backgrounds?",
+    "stage": "prepared_capture_held",
+    "source_count": 16,
+    "nodes": 144,
+    "perturbed_inputs": 128,
+    "backgrounds": 16,
+    "period": 19.2,
+    "angles": [
+      0.39269908169872414,
+      1.1780972450961724,
+      1.9634954084936207,
+      2.748893571891069,
+      3.5342917352885173,
+      4.319689898685965,
+      5.105088062083414,
+      5.890486225480862
+    ],
+    "cardinal_angles": [
+      0.0,
+      1.5707963267948966,
+      3.141592653589793,
+      4.71238898038469
+    ],
+    "context": 128,
+    "horizon": 32,
+    "source_role": "Reuse exact16 fresh-transfer backgrounds4954300..4954315. NO new independent sources claimed. Eight new oblique input phases per source; phases never inflate n.",
+    "coefficients": "Byte-identical old-only frozen_predictors.json copied from transfer4954300. Only center19.2 zero, bounded scalar, complexlinear and fullH. Same finite-horizon19.2 basis. NO fits, frequency shifts, per-source oracle, or new predictor selection.",
+    "primary": "Native: for each model (1) oblique scalar NMSE minus fullH NMSE; (2) oblique fullH NMSE minus cardinal fullH NMSE. Four paired-source contrasts,16384 common type-stratified source bootstrap draws seed4954500; nominal95 and family4 Bonferroni98.75 percentile intervals. No equivalence claim from nonsignificance, no automatic threshold.",
+    "descriptive": "Locked policy; each baseline zero/scalar/complex/fullH; each of8 angles per source retained. Cardinal4 and oblique8 scores each pool actual waveform error over all angles before dividing by total ideal signal energy. No per-angle ratio averaging for primary.",
+    "odd_even": "Opposite pairs i,i+4 for oblique and i,i+2 for cardinal. Save raw odd differences and even sums relative to background; each frozen predictor error splits into odd residual plus even energy. No new fit. Input antipodal FP32 closure is measured.",
+    "controls": "Previous frozen capture repeat, normalizer endpoint-state parity, self-patch and same-batch replay; after capture require exact new-vs-saved cardinal background forecast parity, all four model/policy settings. Checkpoint/code/input/old-predictor hashes; finite checks.",
+    "limitations": "A finite eight-angle holdout can expose cardinal aliasing but cannot establish a globally linear phase law; higher harmonics can alias even this grid. Conditional on same16 synthetic sources, fixed amplitude.1 and32-step horizon. Output-frequency distortion may contribute shared error; no forecasting repair, absent-information or patch-causality claim.",
+    "native_capture": "Reuse frozen response_phase_transfer.run/worker/capture_bank, forecasts only with transient endpoint-state identity checks.",
+    "cpu_threads": 1,
+    "worker_cap": 3221225472,
+    "seconds_per_model": 300,
+    "budget": {
+      "bolt": {
+        "seconds": 32.62290444730269,
+        "formula": "1.1*(20s allowance + actual400-node elapsed *144/400); estimate only"
+      },
+      "timesfm": {
+        "seconds": 64.0188549988228,
+        "formula": "1.1*(20s allowance + actual400-node elapsed *144/400); estimate only"
+      }
+    },
+    "capture_hold": true,
+    "grant_contract": "No grant created by prepare. Native entry points require explicit external coordinator slot grant bound to this exact protocol; queue behind Plato32freshcausal and Popper64electricity.",
+    "checkpoints": {
+      "bolt": {
+        "repo": "amazon/chronos-bolt-small",
+        "path": "/common/home/djk255/.cache/huggingface/hub/models--amazon--chronos-bolt-small/snapshots/772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "revision": "772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "weights": {
+          "model.safetensors": "06a6a19bbe74bc10a9cd193bd4bf2bf638ae07f7e0d51653ae7ab8ea968a21dd"
+        }
+      },
+      "timesfm": {
+        "repo": "google/timesfm-2.5-200m-pytorch",
+        "path": "/common/home/djk255/.cache/huggingface/hub/models--google--timesfm-2.5-200m-pytorch/snapshots/1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+        "revision": "1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+        "weights": {
+          "model.safetensors": "2f776efe6245e42b24bc4153ffdf61810140210e4bd3b01fb21f7aa779ab6ce8"
+        }
+      }
+    },
+    "prior": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300",
+    "prior_hashes": {
+      "inputs.npy": "d60f13fd2278e782be817f7a580fba6a9cebc8387a3c6fbb62363f3f588f6d0c",
+      "groups.json": "ea5909cd07e132407b9cc9187c3961e7fc415386b5fdd0ad134cf533026911f2",
+      "sources.json": "759549340b1747c32439c94d8a5eeec7684159553c169cb091bb6ec31d49ac28",
+      "frozen_predictors.json": "7c1920909020b49c9da55a5c3444ca9e82b855fb31d95ee283b7aaca5aa8b947",
+      "protocol.json": "fc5b74295f9d30e0afb23809699b339f647976685d2b9637951511fea2231572",
+      "execution.json": "9963b7325032deeb500c19d8f0c50191d8fe1bcac54900b9e15e762b24fd0990",
+      "audit.json": "258c234bab95bf4cdc7903a71106d345e45502953d2948c63a6be5b129d12048",
+      "bolt_native_forecast.npy": "3d736b5a1d63faaaafc2cb7d75dc2f8b1c1c284e2a4a8a21bf074ca0cb6b63cf",
+      "bolt_locked_forecast.npy": "3c647571be1a4e7ae0522872236ab1950da8d6c263693bfdd1f6d9d131367f3e",
+      "timesfm_native_forecast.npy": "c47081c79692db23823970d2b2b90846c1e71e29b955c88793f36d1e8097eea8",
+      "timesfm_locked_forecast.npy": "5ef0eeee5e54a4151bd35f75653bfeacd5aee321b6c0c272e2cc4d51d45d8e3b"
+    },
+    "source_hashes": {
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_transfer.py": "a3e17fcd057a2ca92698d5a71d070e4b3b77a9037bbc05f10b4d538eacabad2c",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tests/test_response_phase_transfer.py": "b14de4d33859f8d696cae13c95a4462096196152d74b65757a95cd91e03f03c3",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_transfer_plants.py": "8daed827a1e205ba25ff6563d409e586367f2c31a9ac9bc56bb9d943d0a5150d",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_transfer_audit.py": "29b0f96aa022005a3a0bbd1650ed80c493dfd225b50a3edcb90e483bfa4499ec",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_study.py": "baa8f5a94890b89411df99e108e9ab01e906e8419c1696002cc9a6d6f8a48187",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_surface_focused.py": "758b73564af323796355c51c16b8332f7710fef57fe748ecdfd2c9bc1b907b1e",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_surface_crossed.py": "4882c7aeda3269bb48bc6675196fbd984f6db12b98617d2a8f2fba2b6979d41d",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/selective_study.py": "d87ed477e46d72604fa6824fcc5b146880142a730fc52f0f70bf933b652604eb",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/coherence_study.py": "e9bd4dc10d57cfbc30cb4b01cfafe96789cccb6d34fe85616699ecfef799aec7",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/real_background_poc.py": "c88868ab339608f52afa8041d89cf3b48aa4260e87fb497b64fa7bf058b3eda6",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/homogeneous_normalizer.py": "2670effb2dfc0b631d368a69cab4263a8d2a90eb1208acc93d246a5c0ef55051",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tsfm_lens/extraction/hooks.py": "6f161d02a472c246691caed21bd301a201d7219d3aeef90de2854baa7bdc4281",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_oblique.py": "3b6ea53c6489236f51efd7d2a8fa404b4baf04ea719cb6449293e8b4b5f602d0",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_oblique_audit.py": "b30dd655f9610973182356266fe932486ebf6d383a2fe68dcfc461f4c2045de2",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_oblique_plants.py": "5ff6e56ed1d58c55d655db0b67200d5c1d209e9b82aeccd38707eb39e8aaca77",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tests/test_response_phase_oblique.py": "42b05d06d38178eddb9f1682e870ae31ce82f481eb761d01912f911519650515"
+    },
+    "hashes": {
+      "inputs.npy": "db7699b1e216c8388a98ba3092a04824a25610c7563257d584089f693221b195",
+      "nodes.json": "84d3850fdba635aadfad8120c7ccd1b45254a700c1e85f78519244134a4a2ab6",
+      "groups.json": "998ac923b4a258925899963605e44000c5bbe716155aa002b555962c921f0d54",
+      "sources.json": "759549340b1747c32439c94d8a5eeec7684159553c169cb091bb6ec31d49ac28",
+      "frozen_predictors.json": "7c1920909020b49c9da55a5c3444ca9e82b855fb31d95ee283b7aaca5aa8b947",
+      "bootstrap_source_indices.npy": "c579d99de8c994c7815dced2d3bc053197cdf3a64fad71311d66bba043085144"
+    }
+  },
+  "exact_findings": {
+    "primary": [
+      {
+        "model": "bolt",
+        "policy": "native",
+        "contrast": "oblique_scalar_minus_fullH",
+        "mean": 0.24816757777846288,
+        "positive_sources": 14,
+        "source_differences": [
+          0.12234821633461551,
+          0.043299034145133475,
+          0.5393817302631823,
+          0.29188925480340194,
+          0.05600859025694671,
+          0.010589539460546471,
+          0.682469368316557,
+          0.3900400645773262,
+          0.14269494014104467,
+          -0.05268926429361992,
+          0.17977271376751847,
+          0.44302265890929216,
+          0.15607638205062846,
+          -0.038036462783750113,
+          0.8077069102595965,
+          0.19610756824698627
+        ],
+        "percentile95": [
+          0.1820132629649184,
+          0.30652601466359786
+        ],
+        "family4_percentile": [
+          0.16488455363199903,
+          0.31861438122355634
+        ]
+      },
+      {
+        "model": "bolt",
+        "policy": "native",
+        "contrast": "oblique_minus_cardinal_fullH",
+        "mean": -0.0011263704039139958,
+        "positive_sources": 9,
+        "source_differences": [
+          -0.001401923676745076,
+          4.244541634115806e-05,
+          0.00715947735645206,
+          0.009936124368771282,
+          0.0014353942994403401,
+          0.00032620191961224565,
+          -0.012297557229013822,
+          -0.0066686712653271085,
+          -0.0014247519109971685,
+          0.0013503803908455625,
+          -0.009055465468908341,
+          0.012832039332405731,
+          0.0037465852291043156,
+          -0.0004475016243114527,
+          -0.023931513245173064,
+          0.0003768096448794056
+        ],
+        "percentile95": [
+          -0.00442060861418078,
+          0.0022783953884522386
+        ],
+        "family4_percentile": [
+          -0.005321212898958217,
+          0.0030806069996447798
+        ]
+      },
+      {
+        "model": "timesfm",
+        "policy": "native",
+        "contrast": "oblique_scalar_minus_fullH",
+        "mean": 0.18448195097911668,
+        "positive_sources": 11,
+        "source_differences": [
+          0.5336557653146643,
+          -0.18006326727353672,
+          0.35036164912279544,
+          0.1394892753033492,
+          0.32054123866662176,
+          -0.07870742997571156,
+          0.24811899376456348,
+          0.18000796311003897,
+          0.6097473614709294,
+          -0.10496912851059736,
+          0.16903698425220504,
+          0.1972607803675686,
+          0.40160989928277524,
+          -0.08228479695173685,
+          0.30694129793369274,
+          -0.05903537021175481
+        ],
+        "percentile95": [
+          0.14111593232500477,
+          0.22500276342726522
+        ],
+        "family4_percentile": [
+          0.1284197096030567,
+          0.23487771838239072
+        ]
+      },
+      {
+        "model": "timesfm",
+        "policy": "native",
+        "contrast": "oblique_minus_cardinal_fullH",
+        "mean": 0.014961578867542007,
+        "positive_sources": 11,
+        "source_differences": [
+          0.029862508448523783,
+          -0.16500783848148748,
+          0.02188141937471655,
+          0.02216896456046502,
+          0.03814290552891042,
+          0.03290118809058562,
+          -0.012190455743112505,
+          0.043987478863438234,
+          0.05553230674312748,
+          0.07406133518899605,
+          0.003000023996191592,
+          -0.0017385681243768936,
+          -0.00022161679435339643,
+          0.10268431381692111,
+          -0.033061843942521985,
+          0.027383140354648505
+        ],
+        "percentile95": [
+          -0.015557829048946889,
+          0.0375074610105988
+        ],
+        "family4_percentile": [
+          -0.021438797058978148,
+          0.04062954464586506
+        ]
+      }
+    ],
+    "baselines": [
+      {
+        "model": "bolt",
+        "policy": "native",
+        "baseline": "zero",
+        "mean_scores": {
+          "cardinal": {
+            "nmse": 0.8397102958771663,
+            "odd_residual_nmse": 0.8252769363146508,
+            "even_nmse": 0.014433359562515473
+          },
+          "oblique": {
+            "nmse": 0.8393602121822303,
+            "odd_residual_nmse": 0.8248031488747327,
+            "even_nmse": 0.014557063307497632
+          }
+        },
+        "oblique_minus_cardinal": {
+          "mean": -0.0003500836949360802,
+          "positive_sources": 10,
+          "source_differences": [
+            -0.0022182618797474962,
+            0.0002511290519239817,
+            0.003745718397235809,
+            0.00894396354553928,
+            0.002152027115807087,
+            0.001885936485178874,
+            -0.007379656597114703,
+            -0.006955988312688177,
+            -0.001211075664607708,
+            0.0022392531048066044,
+            -0.004480616260434056,
+            0.015407944005118246,
+            0.0025861615209616384,
+            9.49815216529093e-05,
+            -0.022882015627459174,
+            0.002219160474849602
+          ],
+          "percentile95": [
+            -0.0036286221194281715,
+            0.002682090414225373
+          ],
+          "family4_percentile": [
+            -0.004564447502769498,
+            0.00336829967591189
+          ]
+        }
+      },
+      {
+        "model": "bolt",
+        "policy": "native",
+        "baseline": "scalar_bounded",
+        "mean_scores": {
+          "cardinal": {
+            "nmse": 0.7779709336359619,
+            "odd_residual_nmse": 0.7635375740734465,
+            "even_nmse": 0.014433359562515473
+          },
+          "oblique": {
+            "nmse": 0.7776501876763855,
+            "odd_residual_nmse": 0.7630931243688879,
+            "even_nmse": 0.014557063307497632
+          }
+        },
+        "oblique_minus_cardinal": {
+          "mean": -0.0003207459595764052,
+          "positive_sources": 9,
+          "source_differences": [
+            -0.0029495701052171253,
+            -0.00045075487410806137,
+            0.0062924515658318025,
+            0.0061740672819512454,
+            0.002876120339805499,
+            0.0012740283241818862,
+            -0.0042129725679938,
+            -0.005292020019359134,
+            -0.001899231121537559,
+            0.0022757992792570847,
+            -0.0025795355510636053,
+            0.013426002008017246,
+            0.0029362715262357675,
+            0.000360116689350376,
+            -0.025147849436750747,
+            0.001785141308176641
+          ],
+          "percentile95": [
+            -0.0038246832976018743,
+            0.002790452857472253
+          ],
+          "family4_percentile": [
+            -0.004927693213151397,
+            0.003476115089289825
+          ]
+        }
+      },
+      {
+        "model": "bolt",
+        "policy": "native",
+        "baseline": "complex_linear",
+        "mean_scores": {
+          "cardinal": {
+            "nmse": 0.5460455764202343,
+            "odd_residual_nmse": 0.5316122168577189,
+            "even_nmse": 0.014433359562515473
+          },
+          "oblique": {
+            "nmse": 0.5449647188350277,
+            "odd_residual_nmse": 0.53040765552753,
+            "even_nmse": 0.014557063307497632
+          }
+        },
+        "oblique_minus_cardinal": {
+          "mean": -0.0010808575852066012,
+          "positive_sources": 9,
+          "source_differences": [
+            -0.0014119353314013816,
+            0.0001099010878080342,
+            0.007916588312864237,
+            0.010561058792352307,
+            0.0014358985692465298,
+            0.00046335106769340717,
+            -0.012041432924203566,
+            -0.006875584203170693,
+            -0.0015206685205816917,
+            0.001393926752892849,
+            -0.00926946295178932,
+            0.013339599969004912,
+            0.0037312960280989627,
+            -0.00055933205912162,
+            -0.025129044259976197,
+            0.0005621183069776103
+          ],
+          "percentile95": [
+            -0.004554261735755671,
+            0.0024820440940235347
+          ],
+          "family4_percentile": [
+            -0.005517670503167468,
+            0.003313966580780754
+          ]
+        }
+      },
+      {
+        "model": "bolt",
+        "policy": "native",
+        "baseline": "full_H",
+        "mean_scores": {
+          "cardinal": {
+            "nmse": 0.5306089803018366,
+            "odd_residual_nmse": 0.5161756207393211,
+            "even_nmse": 0.014433359562515473
+          },
+          "oblique": {
+            "nmse": 0.5294826098979226,
+            "odd_residual_nmse": 0.514925546590425,
+            "even_nmse": 0.014557063307497632
+          }
+        },
+        "oblique_minus_cardinal": {
+          "mean": -0.0011263704039139958,
+          "positive_sources": 9,
+          "source_differences": [
+            -0.001401923676745076,
+            4.244541634115806e-05,
+            0.00715947735645206,
+            0.009936124368771282,
+            0.0014353942994403401,
+            0.00032620191961224565,
+            -0.012297557229013822,
+            -0.0066686712653271085,
+            -0.0014247519109971685,
+            0.0013503803908455625,
+            -0.009055465468908341,
+            0.012832039332405731,
+            0.0037465852291043156,
+            -0.0004475016243114527,
+            -0.023931513245173064,
+            0.0003768096448794056
+          ],
+          "percentile95": [
+            -0.00442060861418078,
+            0.0022783953884522386
+          ],
+          "family4_percentile": [
+            -0.005321212898958217,
+            0.0030806069996447798
+          ]
+        }
+      },
+      {
+        "model": "bolt",
+        "policy": "locked",
+        "baseline": "zero",
+        "mean_scores": {
+          "cardinal": {
+            "nmse": 0.7643894058068286,
+            "odd_residual_nmse": 0.7486318745722607,
+            "even_nmse": 0.01575753123456789
+          },
+          "oblique": {
+            "nmse": 0.767530523543311,
+            "odd_residual_nmse": 0.7513654193403251,
+            "even_nmse": 0.016165104202985968
+          }
+        },
+        "oblique_minus_cardinal": {
+          "mean": 0.0031411177364824797,
+          "positive_sources": 12,
+          "source_differences": [
+            -0.001849430385773565,
+            0.00023285851759732856,
+            0.015342789334489515,
+            0.002946233089251904,
+            0.0018559802438369855,
+            0.0018896256849730009,
+            -0.0014294733321933428,
+            0.008886417176238948,
+            -0.0012821364635917099,
+            0.0020282696026290292,
+            -0.009365456627805191,
+            0.020625933166337207,
+            0.001589399533877378,
+            0.00021892399469738977,
+            0.0057702052470014475,
+            0.002797745002153351
+          ],
+          "percentile95": [
+            0.0003930808518642453,
+            0.006081822852928275
+          ],
+          "family4_percentile": [
+            -0.00025929422614104597,
+            0.006827911306422114
+          ]
+        }
+      },
+      {
+        "model": "bolt",
+        "policy": "locked",
+        "baseline": "scalar_bounded",
+        "mean_scores": {
+          "cardinal": {
+            "nmse": 0.7005798704957453,
+            "odd_residual_nmse": 0.6848223392611774,
+            "even_nmse": 0.01575753123456789
+          },
+          "oblique": {
+            "nmse": 0.7035788450941178,
+            "odd_residual_nmse": 0.6874137408911318,
+            "even_nmse": 0.016165104202985968
+          }
+        },
+        "oblique_minus_cardinal": {
+          "mean": 0.0029989745983724884,
+          "positive_sources": 12,
+          "source_differences": [
+            -0.0023229328335729327,
+            -0.0006189326769305281,
+            0.01912251790599606,
+            0.001625878491390842,
+            0.0027187187663725854,
+            0.0011464080089577666,
+            0.0016664201234299902,
+            0.00735237872867589,
+            -0.0019668512137979155,
+            0.0020250666139858264,
+            -0.006147679237526349,
+            0.017865136618232635,
+            0.0017300980931764798,
+            0.0005328847698206629,
+            0.0014539193672147288,
+            0.0018005620485340712
+          ],
+          "percentile95": [
+            0.00039471739452952314,
+            0.006008264227368968
+          ],
+          "family4_percentile": [
+            -0.00012698718437051995,
+            0.006788285199845727
+          ]
+        }
+      },
+      {
+        "model": "bolt",
+        "policy": "locked",
+        "baseline": "complex_linear",
+        "mean_scores": {
+          "cardinal": {
+            "nmse": 0.5284850083504666,
+            "odd_residual_nmse": 0.5127274771158987,
+            "even_nmse": 0.01575753123456789
+          },
+          "oblique": {
+            "nmse": 0.5305552326094324,
+            "odd_residual_nmse": 0.5143901284064465,
+            "even_nmse": 0.016165104202985968
+          }
+        },
+        "oblique_minus_cardinal": {
+          "mean": 0.002070224258965702,
+          "positive_sources": 8,
+          "source_differences": [
+            -0.0012422506443994785,
+            -0.00011352120902369256,
+            0.017727318956640037,
+            0.004214658503462199,
+            0.0015749464253640433,
+            0.0004614211015661063,
+            -0.0037754396436333604,
+            0.007550115881348907,
+            -0.0014577791053523304,
+            0.001262525286190752,
+            -0.00808425783363087,
+            0.017356304976950176,
+            0.0025112370024358843,
+            -0.00034781197069755354,
+            -0.0033644362890645763,
+            -0.0011494432947050104
+          ],
+          "percentile95": [
+            -0.0006172725221812562,
+            0.00528858075978384
+          ],
+          "family4_percentile": [
+            -0.001098542640007064,
+            0.006164551983472884
+          ]
+        }
+      },
+      {
+        "model": "bolt",
+        "policy": "locked",
+        "baseline": "full_H",
+        "mean_scores": {
+          "cardinal": {
+            "nmse": 0.5197104702318471,
+            "odd_residual_nmse": 0.5039529389972792,
+            "even_nmse": 0.01575753123456789
+          },
+          "oblique": {
+            "nmse": 0.5216793654682154,
+            "odd_residual_nmse": 0.5055142612652295,
+            "even_nmse": 0.016165104202985968
+          }
+        },
+        "oblique_minus_cardinal": {
+          "mean": 0.0019688952363681646,
+          "positive_sources": 8,
+          "source_differences": [
+            -0.0012393894312145715,
+            -0.00016494932893973413,
+            0.016636133281774268,
+            0.004333597522184762,
+            0.0014375803159850098,
+            0.00033799162729031273,
+            -0.004566359885847859,
+            0.007316552679556054,
+            -0.0014984447439086446,
+            0.0012519109645435234,
+            -0.008028925774167028,
+            0.017200482826822183,
+            0.0024690072568782084,
+            -0.00013285024486298092,
+            -0.0026922038940970783,
+            -0.0011578093901057906
+          ],
+          "percentile95": [
+            -0.0006311572872092812,
+            0.005069741762042776
+          ],
+          "family4_percentile": [
+            -0.0010945314052527278,
+            0.005904263688261261
+          ]
+        }
+      },
+      {
+        "model": "timesfm",
+        "policy": "native",
+        "baseline": "zero",
+        "mean_scores": {
+          "cardinal": {
+            "nmse": 2.028619155529883,
+            "odd_residual_nmse": 1.6985158783280663,
+            "even_nmse": 0.3301032772018164
+          },
+          "oblique": {
+            "nmse": 2.050564413574539,
+            "odd_residual_nmse": 1.7218773334685245,
+            "even_nmse": 0.3286870801060148
+          }
+        },
+        "oblique_minus_cardinal": {
+          "mean": 0.02194525804465644,
+          "positive_sources": 12,
+          "source_differences": [
+            0.04797439414411775,
+            -0.15408693595950007,
+            0.02805947023426336,
+            0.04458556473623476,
+            0.047668021723245024,
+            0.06770240662521143,
+            -0.020420188092515446,
+            0.054343594125374706,
+            0.05656078082833593,
+            0.07975783819426363,
+            0.011005364907302084,
+            0.006009493088835249,
+            -0.019435676633551724,
+            0.09519168215213991,
+            -0.04330781174241327,
+            0.04951613038315972
+          ],
+          "percentile95": [
+            -0.009106467454757456,
+            0.04499989611651556
+          ],
+          "family4_percentile": [
+            -0.016951389990551943,
+            0.04800033271391057
+          ]
+        }
+      },
+      {
+        "model": "timesfm",
+        "policy": "native",
+        "baseline": "scalar_bounded",
+        "mean_scores": {
+          "cardinal": {
+            "nmse": 1.9283313395848056,
+            "odd_residual_nmse": 1.598228062382989,
+            "even_nmse": 0.3301032772018164
+          },
+          "oblique": {
+            "nmse": 1.947975478262753,
+            "odd_residual_nmse": 1.6192883981567379,
+            "even_nmse": 0.3286870801060148
+          }
+        },
+        "oblique_minus_cardinal": {
+          "mean": 0.01964413867794719,
+          "positive_sources": 12,
+          "source_differences": [
+            0.03583134068983451,
+            -0.15881016165109862,
+            0.01719782787912183,
+            0.026067109610200423,
+            0.051507282298362655,
+            0.04780303300339206,
+            -0.012265103032964797,
+            0.03136565030219629,
+            0.06403388854292258,
+            0.08705114455345075,
+            0.009963846124947162,
+            0.008461562829836566,
+            -0.005057891946377957,
+            0.1173467795795835,
+            -0.03082263780538308,
+            0.02463254786913116
+          ],
+          "percentile95": [
+            -0.0116538318676064,
+            0.042725868207394435
+          ],
+          "family4_percentile": [
+            -0.018099425393299645,
+            0.04570240365435677
+          ]
+        }
+      },
+      {
+        "model": "timesfm",
+        "policy": "native",
+        "baseline": "complex_linear",
+        "mean_scores": {
+          "cardinal": {
+            "nmse": 1.7445773331921237,
+            "odd_residual_nmse": 1.4144740559903073,
+            "even_nmse": 0.3301032772018164
+          },
+          "oblique": {
+            "nmse": 1.759156524986764,
+            "odd_residual_nmse": 1.4304694448807491,
+            "even_nmse": 0.3286870801060148
+          }
+        },
+        "oblique_minus_cardinal": {
+          "mean": 0.014579191794640272,
+          "positive_sources": 11,
+          "source_differences": [
+            0.02561441844170731,
+            -0.16449913736591126,
+            0.021773450417756912,
+            0.024126968770152635,
+            0.03740785942425351,
+            0.03762620882535028,
+            -0.013188551791973535,
+            0.04174814318460063,
+            0.053035055573299905,
+            0.0771085449967801,
+            0.0035174385542930953,
+            -0.002699537298190946,
+            -0.0021691632096589863,
+            0.10144455831267063,
+            -0.034550943981545235,
+            0.026971755860659308
+          ],
+          "percentile95": [
+            -0.016043229551865747,
+            0.036964988122071926
+          ],
+          "family4_percentile": [
+            -0.0219010680913933,
+            0.03990704921726832
+          ]
+        }
+      },
+      {
+        "model": "timesfm",
+        "policy": "native",
+        "baseline": "full_H",
+        "mean_scores": {
+          "cardinal": {
+            "nmse": 1.7485319484160942,
+            "odd_residual_nmse": 1.4184286712142777,
+            "even_nmse": 0.3301032772018164
+          },
+          "oblique": {
+            "nmse": 1.763493527283636,
+            "odd_residual_nmse": 1.4348064471776216,
+            "even_nmse": 0.3286870801060148
+          }
+        },
+        "oblique_minus_cardinal": {
+          "mean": 0.014961578867542007,
+          "positive_sources": 11,
+          "source_differences": [
+            0.029862508448523783,
+            -0.16500783848148748,
+            0.02188141937471655,
+            0.02216896456046502,
+            0.03814290552891042,
+            0.03290118809058562,
+            -0.012190455743112505,
+            0.043987478863438234,
+            0.05553230674312748,
+            0.07406133518899605,
+            0.003000023996191592,
+            -0.0017385681243768936,
+            -0.00022161679435339643,
+            0.10268431381692111,
+            -0.033061843942521985,
+            0.027383140354648505
+          ],
+          "percentile95": [
+            -0.015557829048946889,
+            0.0375074610105988
+          ],
+          "family4_percentile": [
+            -0.021438797058978148,
+            0.04062954464586506
+          ]
+        }
+      },
+      {
+        "model": "timesfm",
+        "policy": "locked",
+        "baseline": "zero",
+        "mean_scores": {
+          "cardinal": {
+            "nmse": 2.157198238479727,
+            "odd_residual_nmse": 1.7939487822192213,
+            "even_nmse": 0.36324945626050587
+          },
+          "oblique": {
+            "nmse": 2.162355844659819,
+            "odd_residual_nmse": 1.796885678992758,
+            "even_nmse": 0.3654701656670607
+          }
+        },
+        "oblique_minus_cardinal": {
+          "mean": 0.0051576061800917145,
+          "positive_sources": 9,
+          "source_differences": [
+            0.03607842703866604,
+            -0.14733709675523343,
+            -0.0526111213379723,
+            -0.0039025073856562287,
+            0.05786958561399347,
+            0.07179386464366955,
+            0.00501838724073167,
+            -0.18077064822117017,
+            0.04079259792459222,
+            0.08430571041114021,
+            -0.026496430107026736,
+            -0.035485662269073126,
+            0.02236934790349987,
+            0.09815798088758276,
+            0.1282194120457767,
+            -0.015480148752053058
+          ],
+          "percentile95": [
+            -0.03189869862200705,
+            0.03787596668785093
+          ],
+          "family4_percentile": [
+            -0.04231198958459389,
+            0.04552982912250633
+          ]
+        }
+      },
+      {
+        "model": "timesfm",
+        "policy": "locked",
+        "baseline": "scalar_bounded",
+        "mean_scores": {
+          "cardinal": {
+            "nmse": 2.0484728749891086,
+            "odd_residual_nmse": 1.6852234187286026,
+            "even_nmse": 0.36324945626050587
+          },
+          "oblique": {
+            "nmse": 2.057200140451929,
+            "odd_residual_nmse": 1.6917299747848682,
+            "even_nmse": 0.3654701656670607
+          }
+        },
+        "oblique_minus_cardinal": {
+          "mean": 0.008727265462820294,
+          "positive_sources": 10,
+          "source_differences": [
+            0.01704580800242894,
+            -0.14811175141697008,
+            -0.06260740913785101,
+            -0.010814613855207655,
+            0.057803291535737156,
+            0.04907489260658782,
+            0.015457908632794837,
+            -0.13778016949348337,
+            0.04844097921986146,
+            0.09496006729259321,
+            -0.018574814336258294,
+            -0.0433422698848932,
+            0.035350141698861304,
+            0.12233037630718768,
+            0.11991883159741379,
+            0.0004849786363221309
+          ],
+          "percentile95": [
+            -0.0267765173357711,
+            0.04036683302818112
+          ],
+          "family4_percentile": [
+            -0.03652807629220202,
+            0.0482257566145339
+          ]
+        }
+      },
+      {
+        "model": "timesfm",
+        "policy": "locked",
+        "baseline": "complex_linear",
+        "mean_scores": {
+          "cardinal": {
+            "nmse": 1.8512282205957034,
+            "odd_residual_nmse": 1.4879787643351974,
+            "even_nmse": 0.36324945626050587
+          },
+          "oblique": {
+            "nmse": 1.8599724362799712,
+            "odd_residual_nmse": 1.4945022706129105,
+            "even_nmse": 0.3654701656670607
+          }
+        },
+        "oblique_minus_cardinal": {
+          "mean": 0.008744215684267939,
+          "positive_sources": 10,
+          "source_differences": [
+            0.008724488998007818,
+            -0.15323494343179567,
+            -0.026919003525768925,
+            0.00030804962804320546,
+            0.038927367946889335,
+            0.03718192371684825,
+            0.013408677540942993,
+            -0.09469489610399873,
+            0.042414029355314575,
+            0.08050744229624396,
+            -0.03290350510386797,
+            -0.003728911615559688,
+            0.03308053597355043,
+            0.10650727628291534,
+            0.10105055684876407,
+            -0.010721637858241984
+          ],
+          "percentile95": [
+            -0.02274010605063587,
+            0.036214109584538016
+          ],
+          "family4_percentile": [
+            -0.031957130340781306,
+            0.041656253709036514
+          ]
+        }
+      },
+      {
+        "model": "timesfm",
+        "policy": "locked",
+        "baseline": "full_H",
+        "mean_scores": {
+          "cardinal": {
+            "nmse": 1.8729364974889793,
+            "odd_residual_nmse": 1.5096870412284733,
+            "even_nmse": 0.36324945626050587
+          },
+          "oblique": {
+            "nmse": 1.883339721532661,
+            "odd_residual_nmse": 1.5178695558656001,
+            "even_nmse": 0.3654701656670607
+          }
+        },
+        "oblique_minus_cardinal": {
+          "mean": 0.010403224043681828,
+          "positive_sources": 10,
+          "source_differences": [
+            0.013506274786043937,
+            -0.14510773580878178,
+            -0.02634224664321394,
+            0.002197834389271902,
+            0.039740023726149154,
+            0.032034542107826525,
+            0.01697008295028435,
+            -0.09574324567632353,
+            0.04665948106832252,
+            0.08214703418280056,
+            -0.03447919554186152,
+            -0.0033346677282109494,
+            0.035380350371127633,
+            0.10797852122659535,
+            0.10256254671828868,
+            -0.0077180154294096415
+          ],
+          "percentile95": [
+            -0.020545164355070433,
+            0.03772732221838148
+          ],
+          "family4_percentile": [
+            -0.029363244439626453,
+            0.04318759825902216
+          ]
+        }
+      }
+    ],
+    "by_type": [
+      {
+        "model": "bolt",
+        "policy": "native",
+        "type": 0,
+        "sources": 4,
+        "oblique_scalar_minus_fullH": 0.11928203219580884,
+        "oblique_minus_cardinal_fullH": 0.0005888259852006028
+      },
+      {
+        "model": "bolt",
+        "policy": "native",
+        "type": 1,
+        "sources": 4,
+        "oblique_scalar_minus_fullH": -0.009209288367922522,
+        "oblique_minus_cardinal_fullH": 0.0003178815256218784
+      },
+      {
+        "model": "bolt",
+        "policy": "native",
+        "type": 2,
+        "sources": 4,
+        "oblique_scalar_minus_fullH": 0.5523326806517136,
+        "oblique_minus_cardinal_fullH": -0.009531264646660792
+      },
+      {
+        "model": "bolt",
+        "policy": "native",
+        "type": 3,
+        "sources": 4,
+        "oblique_scalar_minus_fullH": 0.3302648866342517,
+        "oblique_minus_cardinal_fullH": 0.004119075520182328
+      },
+      {
+        "model": "bolt",
+        "policy": "locked",
+        "type": 0,
+        "sources": 4,
+        "oblique_scalar_minus_fullH": 0.1204010796821266,
+        "oblique_minus_cardinal_fullH": 0.00029218834943500055
+      },
+      {
+        "model": "bolt",
+        "policy": "locked",
+        "type": 1,
+        "sources": 4,
+        "oblique_scalar_minus_fullH": 0.031200831107128173,
+        "oblique_minus_cardinal_fullH": 0.00032302575450778026
+      },
+      {
+        "model": "bolt",
+        "policy": "locked",
+        "type": 2,
+        "sources": 4,
+        "oblique_scalar_minus_fullH": 0.4402236371796003,
+        "oblique_minus_cardinal_fullH": 0.0003371609319155755
+      },
+      {
+        "model": "bolt",
+        "policy": "locked",
+        "type": 3,
+        "sources": 4,
+        "oblique_scalar_minus_fullH": 0.1357723705347548,
+        "oblique_minus_cardinal_fullH": 0.006923205909614302
+      },
+      {
+        "model": "timesfm",
+        "policy": "native",
+        "type": 0,
+        "sources": 4,
+        "oblique_scalar_minus_fullH": 0.4663885661837477,
+        "oblique_minus_cardinal_fullH": 0.030829025981552072
+      },
+      {
+        "model": "timesfm",
+        "policy": "native",
+        "type": 1,
+        "sources": 4,
+        "oblique_scalar_minus_fullH": -0.11150615567789562,
+        "oblique_minus_cardinal_fullH": 0.011159749653753825
+      },
+      {
+        "model": "timesfm",
+        "policy": "native",
+        "type": 2,
+        "sources": 4,
+        "oblique_scalar_minus_fullH": 0.26861473126831414,
+        "oblique_minus_cardinal_fullH": -0.005092714078681587
+      },
+      {
+        "model": "timesfm",
+        "policy": "native",
+        "type": 3,
+        "sources": 4,
+        "oblique_scalar_minus_fullH": 0.11443066214230051,
+        "oblique_minus_cardinal_fullH": 0.022950253913543717
+      },
+      {
+        "model": "timesfm",
+        "policy": "locked",
+        "type": 0,
+        "sources": 4,
+        "oblique_scalar_minus_fullH": 0.43420656514704953,
+        "oblique_minus_cardinal_fullH": 0.03382153248791081
+      },
+      {
+        "model": "timesfm",
+        "policy": "locked",
+        "type": 1,
+        "sources": 4,
+        "oblique_scalar_minus_fullH": -0.11871559956653399,
+        "oblique_minus_cardinal_fullH": 0.019263090427110163
+      },
+      {
+        "model": "timesfm",
+        "policy": "locked",
+        "type": 2,
+        "sources": 4,
+        "oblique_scalar_minus_fullH": 0.20932183753512862,
+        "oblique_minus_cardinal_fullH": 0.014677796870874393
+      },
+      {
+        "model": "timesfm",
+        "policy": "locked",
+        "type": 3,
+        "sources": 4,
+        "oblique_scalar_minus_fullH": 0.17062887256142778,
+        "oblique_minus_cardinal_fullH": -0.026149523611168055
+      }
+    ],
+    "interpretation": "Frozen fullH advantage over old attenuation survives previously unseen oblique phases for both models. Cardinal-only aliasing is insufficient as an explanation of the transferred advantage. No clear mean increase in fullH error relative to cardinal grid was detected; this is not an equivalence test or proof of globally linear phase response. Eight-angle holdout retains16 source units, not128 independent sources. TimesFM even/nonlinear residual remains substantial.",
+    "caveats": "Existing16 synthetic backgrounds reused; fixed weak amplitude.1,19.2h,32-step horizon. Higher harmonics can alias finite angle grids. Conditional mixture-type effects and approximate source-bootstrap intervals; response prediction is not improved forecasting.",
+    "next_decision": "Oblique capture complete and slot2 released. Conditional authorization for Bolt64h preparation is met; inspect direct-head capability and prepare only, no native launch until separate coordinator grant."
+  },
+  "controls": {
+    "predictors_byte_identical": true,
+    "predictors_refitted": false,
+    "background_parity": {
+      "bolt": {
+        "native": {
+          "exact": true,
+          "max_error": 0.0,
+          "sources": 16
+        },
+        "locked": {
+          "exact": true,
+          "max_error": 0.0,
+          "sources": 16
+        }
+      },
+      "timesfm": {
+        "native": {
+          "exact": true,
+          "max_error": 0.0,
+          "sources": 16
+        },
+        "locked": {
+          "exact": true,
+          "max_error": 0.0,
+          "sources": 16
+        }
+      }
+    },
+    "native_gates": {
+      "bolt": {
+        "repeat_forecast": 0.0,
+        "repeat_hidden": 0.0,
+        "normalizer_forecast": 0.0,
+        "normalizer_hidden": 0.0,
+        "self_patch": 0.0
+      },
+      "timesfm": {
+        "repeat_forecast": 0.0,
+        "repeat_hidden": 0.0,
+        "normalizer_forecast": 0.0,
+        "normalizer_hidden": 0.0,
+        "self_patch": 0.0
+      }
+    },
+    "source_unit": 16
+  },
+  "limitations": "A finite eight-angle holdout can expose cardinal aliasing but cannot establish a globally linear phase law; higher harmonics can alias even this grid. Conditional on same16 synthetic sources, fixed amplitude.1 and32-step horizon. Output-frequency distortion may contribute shared error; no forecasting repair, absent-information or patch-causality claim.",
+  "evidence_class": "Frozen prospective within-source phase holdout; no native outcomes",
+  "failed_instrumentation_runs": [],
+  "next_decision": "Oblique capture complete and slot2 released. Conditional authorization for Bolt64h preparation is met; inspect direct-head capability and prepare only, no native launch until separate coordinator grant.",
+  "verification": {
+    "tests_passed": 6,
+    "test_session": 43734,
+    "test_elapsed_seconds": 0.97,
+    "plants_detected": 8,
+    "preflight": {
+      "passed": true,
+      "checks": 32,
+      "maximum_absolute_discrepancy": 0.0,
+      "results_checked": false,
+      "existing_sources": 16,
+      "new_sources": 0,
+      "predictors_byte_identical": true,
+      "native_loaded": false
+    },
+    "standin": {
+      "passed": true,
+      "checks": 5164,
+      "maximum_absolute_discrepancy": 1.7763568394002505e-15,
+      "results_checked": true,
+      "existing_sources": 16,
+      "new_sources": 0,
+      "predictors_byte_identical": true,
+      "native_loaded": false
+    },
+    "test_source_sha256": "42b05d06d38178eddb9f1682e870ae31ce82f481eb761d01912f911519650515",
+    "plant_source_sha256": "5ff6e56ed1d58c55d655db0b67200d5c1d209e9b82aeccd38707eb39e8aaca77"
+  },
+  "execution": {
+    "bolt": {
+      "valid": true,
+      "returncode": 0,
+      "seconds": 21.820882684085518,
+      "peak_rss": 1069305856,
+      "failure": null,
+      "grant_sha256": "712dd80d8422df5525c493700da54224bfc3863c6f29849b132c7e4b33ab19b3",
+      "slot": 2
+    },
+    "timesfm": {
+      "valid": true,
+      "returncode": 0,
+      "seconds": 60.65456954902038,
+      "peak_rss": 1639219200,
+      "failure": null,
+      "grant_sha256": "712dd80d8422df5525c493700da54224bfc3863c6f29849b132c7e4b33ab19b3",
+      "slot": 2
+    }
+  },
+  "slot2_release": {
+    "slot": 2,
+    "released": true,
+    "run": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_oblique4954500",
+    "sessions": {
+      "bolt": 66313,
+      "timesfm": 92042
+    },
+    "execution": {
+      "bolt": {
+        "valid": true,
+        "returncode": 0,
+        "seconds": 21.820882684085518,
+        "peak_rss": 1069305856,
+        "failure": null,
+        "grant_sha256": "712dd80d8422df5525c493700da54224bfc3863c6f29849b132c7e4b33ab19b3",
+        "slot": 2
+      },
+      "timesfm": {
+        "valid": true,
+        "returncode": 0,
+        "seconds": 60.65456954902038,
+        "peak_rss": 1639219200,
+        "failure": null,
+        "grant_sha256": "712dd80d8422df5525c493700da54224bfc3863c6f29849b132c7e4b33ab19b3",
+        "slot": 2
+      }
+    },
+    "native_workers_remaining": 0
+  },
+  "independent_audit": {
+    "passed": true,
+    "checks": 5164,
+    "maximum_absolute_discrepancy": 1.7763568394002505e-15,
+    "results_checked": true,
+    "existing_sources": 16,
+    "new_sources": 0,
+    "predictors_byte_identical": true,
+    "native_loaded": false
+  }
+}

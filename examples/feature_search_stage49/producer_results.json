@@ -1,0 +1,2094 @@
+{
+  "protocol": {
+    "seed_base": 3400000,
+    "n_seeds": 64,
+    "contexts": [
+      128,
+      512
+    ],
+    "pairs": [
+      [
+        32,
+        16
+      ],
+      [
+        40,
+        20
+      ]
+    ],
+    "horizon": 64,
+    "delta": 0.02,
+    "amplitudes": [
+      0.5,
+      2.0
+    ],
+    "offset": [
+      -2.0,
+      2.0
+    ],
+    "models": [
+      {
+        "name": "bolt",
+        "adapter": "chronos_bolt",
+        "checkpoint": "amazon/chronos-bolt-small"
+      },
+      {
+        "name": "timesfm",
+        "adapter": "timesfm",
+        "checkpoint": "google/timesfm-2.5-200m-pytorch"
+      },
+      {
+        "name": "chronos2",
+        "adapter": "chronos2",
+        "checkpoint": "amazon/chronos-2"
+      }
+    ],
+    "literature_primary_urls": [
+      "https://arxiv.org/abs/2510.19236",
+      "https://arxiv.org/abs/2511.15324",
+      "https://arxiv.org/abs/2502.06037",
+      "https://arxiv.org/abs/2511.05619",
+      "https://arxiv.org/abs/2610.28997",
+      "https://arxiv.org/abs/2611.02750"
+    ],
+    "novelty_boundary": "Prior work covers composition interference, spectral shift and patch/tokenization effects; this is a controlled comparative generalization diagnostic, not a new aliasing mechanism",
+    "primary_estimand": "sign_probability",
+    "alpha": 0.05,
+    "n_boot": 2000,
+    "bootstrap_seed": 3400017,
+    "minimum_absolute_mean": null,
+    "family_size": 22,
+    "maximum_basis_condition": 100.0,
+    "candidate_gate": "No further expansion without root review",
+    "scope": "forecast-only discovery screen; exact q concerns conditional non-tie majority, not mean superiority; no hidden-feature cause or aliasing diagnosis",
+    "time_origin": "context t=-C..-1, future t=0..H-1; identical future across contexts",
+    "normalization": "native mean/scale recorded, never frozen; empirical context statistics separately labeled",
+    "resource": {
+      "cpu_threads": 2,
+      "batch_size": 8,
+      "gpu_gib": 6,
+      "runtime_seconds": 300
+    },
+    "conditions": [
+      "baseline",
+      "minus",
+      "plus",
+      "pure_phi",
+      "pure_psi",
+      "background"
+    ],
+    "primary_context": 128,
+    "sensitivity_context": 512,
+    "units": "Every pure/mixed/background MSE uses common theoretical (a\u00b2+b\u00b2)/2, not realized finite-window variance; derivative energy uses b\u00b2/2",
+    "comparator_scope": "S uses oracle-separated component inputs and three native calls; not a deployable repair. G includes all native computation and input-dependent normalization, not specifically hidden interactions",
+    "effects": [
+      "g32",
+      "g40",
+      "g40_minus_g32",
+      "C32",
+      "C40",
+      "C40_minus_C32",
+      "o32",
+      "o40",
+      "o40_minus_o32",
+      "G_timesfm32",
+      "G_bolt40"
+    ],
+    "minimum_mse_effect": 0.05,
+    "minimum_off_energy_effect": 0.02,
+    "role": "fresh replication of the preselected crossover; both contexts globally corrected;512 cannot rescue128",
+    "composition": "G=L-S where S uses actual f(pure_phi)+f(pure_psi)-f(background); C=G_timesfm-G_bolt",
+    "legacy_interaction": "mixed-minus-average-pure J is descriptive only; separable frequency error can produce J!=0 at G=0",
+    "ratio": "sum of per-seed normalized S divided by sum of per-seed normalized L; paired whole-seed bootstrap, pointwise",
+    "ranking_flip": "requires passing g32>0,g40<0 AND g40-g32<0 at128;512 sensitivity does not rescue",
+    "nonadditivity": "positive passing G establishes a diagnostic error reduction; nonsignificant G does not establish absence"
+  },
+  "claims": {
+    "c128/g32": {
+      "value": 0.5625,
+      "lo": 0.4327589000664598,
+      "hi": 0.6862652464515039,
+      "p": 0.3817327947933377,
+      "positive": 36,
+      "negative": 28,
+      "ties": 0,
+      "n_seeds": 64,
+      "n_nonzero": 64,
+      "excluded_seeds": 0,
+      "descriptive_signed_mean": 0.11874371544743115,
+      "descriptive_signed_median": 0.04502390241789615,
+      "mean_vs_majority_disagreement": false,
+      "minimum_two_sided_p": 1.0842021724855044e-19,
+      "ci": 0.95,
+      "interval": "pointwise Clopper-Pearson exact binomial interval",
+      "estimand": "q=P(D>0 | D!=0, jointly identifiable); H0:q=0.5; exact two-sided binomial",
+      "resample_unit": "generating_seed_bundle",
+      "signed_balance": 0.125,
+      "mean": {
+        "value": 0.11874371544743115,
+        "lo": 0.021943767851164694,
+        "hi": 0.21971940673023518,
+        "interval": "approximate pointwise whole-seed mean bootstrap"
+      },
+      "minimum_absolute_mean": 0.05,
+      "p_holm": 1.0,
+      "passed": false,
+      "scope": "primary"
+    },
+    "c128/g40": {
+      "value": 0.0,
+      "lo": 0.0,
+      "hi": 0.05600908938663657,
+      "p": 1.0842021724855044e-19,
+      "positive": 0,
+      "negative": 64,
+      "ties": 0,
+      "n_seeds": 64,
+      "n_nonzero": 64,
+      "excluded_seeds": 0,
+      "descriptive_signed_mean": -1.0060395215956244,
+      "descriptive_signed_median": -0.9862531855335154,
+      "mean_vs_majority_disagreement": false,
+      "minimum_two_sided_p": 1.0842021724855044e-19,
+      "ci": 0.95,
+      "interval": "pointwise Clopper-Pearson exact binomial interval",
+      "estimand": "q=P(D>0 | D!=0, jointly identifiable); H0:q=0.5; exact two-sided binomial",
+      "resample_unit": "generating_seed_bundle",
+      "signed_balance": -1.0,
+      "mean": {
+        "value": -1.0060395215956244,
+        "lo": -1.1402943743267355,
+        "hi": -0.8803634903765098,
+        "interval": "approximate pointwise whole-seed mean bootstrap"
+      },
+      "minimum_absolute_mean": 0.05,
+      "p_holm": 2.3852447794681098e-18,
+      "passed": true,
+      "scope": "primary"
+    },
+    "c128/g40_minus_g32": {
+      "value": 0.0,
+      "lo": 0.0,
+      "hi": 0.05600908938663657,
+      "p": 1.0842021724855044e-19,
+      "positive": 0,
+      "negative": 64,
+      "ties": 0,
+      "n_seeds": 64,
+      "n_nonzero": 64,
+      "excluded_seeds": 0,
+      "descriptive_signed_mean": -1.1247832370430557,
+      "descriptive_signed_median": -1.0279196110866857,
+      "mean_vs_majority_disagreement": false,
+      "minimum_two_sided_p": 1.0842021724855044e-19,
+      "ci": 0.95,
+      "interval": "pointwise Clopper-Pearson exact binomial interval",
+      "estimand": "q=P(D>0 | D!=0, jointly identifiable); H0:q=0.5; exact two-sided binomial",
+      "resample_unit": "generating_seed_bundle",
+      "signed_balance": -1.0,
+      "mean": {
+        "value": -1.1247832370430557,
+        "lo": -1.3150564850891524,
+        "hi": -0.9555997316525772,
+        "interval": "approximate pointwise whole-seed mean bootstrap"
+      },
+      "minimum_absolute_mean": 0.05,
+      "p_holm": 2.3852447794681098e-18,
+      "passed": true,
+      "scope": "primary"
+    },
+    "c128/C32": {
+      "value": 0.859375,
+      "lo": 0.7497631643759881,
+      "hi": 0.9336259283315738,
+      "p": 3.542223380175076e-09,
+      "positive": 55,
+      "negative": 9,
+      "ties": 0,
+      "n_seeds": 64,
+      "n_nonzero": 64,
+      "excluded_seeds": 0,
+      "descriptive_signed_mean": 0.3880386561813179,
+      "descriptive_signed_median": 0.2410871370823238,
+      "mean_vs_majority_disagreement": false,
+      "minimum_two_sided_p": 1.0842021724855044e-19,
+      "ci": 0.95,
+      "interval": "pointwise Clopper-Pearson exact binomial interval",
+      "estimand": "q=P(D>0 | D!=0, jointly identifiable); H0:q=0.5; exact two-sided binomial",
+      "resample_unit": "generating_seed_bundle",
+      "signed_balance": 0.71875,
+      "mean": {
+        "value": 0.3880386561813179,
+        "lo": 0.27946371539034637,
+        "hi": 0.5004793367577185,
+        "interval": "approximate pointwise whole-seed mean bootstrap"
+      },
+      "minimum_absolute_mean": 0.05,
+      "p_holm": 3.1880010421575684e-08,
+      "passed": true,
+      "scope": "primary"
+    },
+    "c128/C40": {
+      "value": 0.4375,
+      "lo": 0.31373475354849606,
+      "hi": 0.5672410999335402,
+      "p": 0.3817327947933377,
+      "positive": 28,
+      "negative": 36,
+      "ties": 0,
+      "n_seeds": 64,
+      "n_nonzero": 64,
+      "excluded_seeds": 0,
+      "descriptive_signed_mean": -0.1504579461036926,
+      "descriptive_signed_median": -0.13839813958984057,
+      "mean_vs_majority_disagreement": false,
+      "minimum_two_sided_p": 1.0842021724855044e-19,
+      "ci": 0.95,
+      "interval": "pointwise Clopper-Pearson exact binomial interval",
+      "estimand": "q=P(D>0 | D!=0, jointly identifiable); H0:q=0.5; exact two-sided binomial",
+      "resample_unit": "generating_seed_bundle",
+      "signed_balance": -0.125,
+      "mean": {
+        "value": -0.1504579461036926,
+        "lo": -0.2625850834393224,
+        "hi": -0.054577115660502565,
+        "interval": "approximate pointwise whole-seed mean bootstrap"
+      },
+      "minimum_absolute_mean": 0.05,
+      "p_holm": 1.0,
+      "passed": false,
+      "scope": "primary"
+    },
+    "c128/C40_minus_C32": {
+      "value": 0.1875,
+      "lo": 0.10081515935377759,
+      "hi": 0.30462287369514823,
+      "p": 4.5666107004454105e-07,
+      "positive": 12,
+      "negative": 52,
+      "ties": 0,
+      "n_seeds": 64,
+      "n_nonzero": 64,
+      "excluded_seeds": 0,
+      "descriptive_signed_mean": -0.5384966022850105,
+      "descriptive_signed_median": -0.42894595752937714,
+      "mean_vs_majority_disagreement": false,
+      "minimum_two_sided_p": 1.0842021724855044e-19,
+      "ci": 0.95,
+      "interval": "pointwise Clopper-Pearson exact binomial interval",
+      "estimand": "q=P(D>0 | D!=0, jointly identifiable); H0:q=0.5; exact two-sided binomial",
+      "resample_unit": "generating_seed_bundle",
+      "signed_balance": -0.625,
+      "mean": {
+        "value": -0.5384966022850105,
+        "lo": -0.7180310946894,
+        "hi": -0.3858990957665902,
+        "interval": "approximate pointwise whole-seed mean bootstrap"
+      },
+      "minimum_absolute_mean": 0.05,
+      "p_holm": 3.6532885603563284e-06,
+      "passed": true,
+      "scope": "primary"
+    },
+    "c128/o32": {
+      "value": 0.78125,
+      "lo": 0.6603036881847398,
+      "hi": 0.8749317262847537,
+      "p": 7.069487542545679e-06,
+      "positive": 50,
+      "negative": 14,
+      "ties": 0,
+      "n_seeds": 64,
+      "n_nonzero": 64,
+      "excluded_seeds": 0,
+      "descriptive_signed_mean": 0.4341239800184107,
+      "descriptive_signed_median": 0.10909151295463113,
+      "mean_vs_majority_disagreement": false,
+      "minimum_two_sided_p": 1.0842021724855044e-19,
+      "ci": 0.95,
+      "interval": "pointwise Clopper-Pearson exact binomial interval",
+      "estimand": "q=P(D>0 | D!=0, jointly identifiable); H0:q=0.5; exact two-sided binomial",
+      "resample_unit": "generating_seed_bundle",
+      "signed_balance": 0.5625,
+      "mean": {
+        "value": 0.4341239800184107,
+        "lo": 0.272855701158694,
+        "hi": 0.6204777085085301,
+        "interval": "approximate pointwise whole-seed mean bootstrap"
+      },
+      "minimum_absolute_mean": 0.02,
+      "p_holm": 4.948641279781975e-05,
+      "passed": true,
+      "scope": "primary"
+    },
+    "c128/o40": {
+      "value": 0.015625,
+      "lo": 0.0003955125140506643,
+      "hi": 0.08401032643435365,
+      "p": 7.047314121155779e-18,
+      "positive": 1,
+      "negative": 63,
+      "ties": 0,
+      "n_seeds": 64,
+      "n_nonzero": 64,
+      "excluded_seeds": 0,
+      "descriptive_signed_mean": -0.1813287680828609,
+      "descriptive_signed_median": -0.06648182594687976,
+      "mean_vs_majority_disagreement": false,
+      "minimum_two_sided_p": 1.0842021724855044e-19,
+      "ci": 0.95,
+      "interval": "pointwise Clopper-Pearson exact binomial interval",
+      "estimand": "q=P(D>0 | D!=0, jointly identifiable); H0:q=0.5; exact two-sided binomial",
+      "resample_unit": "generating_seed_bundle",
+      "signed_balance": -0.96875,
+      "mean": {
+        "value": -0.1813287680828609,
+        "lo": -0.26558755967906134,
+        "hi": -0.1120886239510355,
+        "interval": "approximate pointwise whole-seed mean bootstrap"
+      },
+      "minimum_absolute_mean": 0.02,
+      "p_holm": 1.0570971181733668e-16,
+      "passed": true,
+      "scope": "primary"
+    },
+    "c128/o40_minus_o32": {
+      "value": 0.078125,
+      "lo": 0.02585384016796814,
+      "hi": 0.1729783290042076,
+      "p": 9.002816938122327e-13,
+      "positive": 5,
+      "negative": 59,
+      "ties": 0,
+      "n_seeds": 64,
+      "n_nonzero": 64,
+      "excluded_seeds": 0,
+      "descriptive_signed_mean": -0.6154527481012717,
+      "descriptive_signed_median": -0.3049130939961714,
+      "mean_vs_majority_disagreement": false,
+      "minimum_two_sided_p": 1.0842021724855044e-19,
+      "ci": 0.95,
+      "interval": "pointwise Clopper-Pearson exact binomial interval",
+      "estimand": "q=P(D>0 | D!=0, jointly identifiable); H0:q=0.5; exact two-sided binomial",
+      "resample_unit": "generating_seed_bundle",
+      "signed_balance": -0.84375,
+      "mean": {
+        "value": -0.6154527481012717,
+        "lo": -0.8618903662958938,
+        "hi": -0.40745716973565965,
+        "interval": "approximate pointwise whole-seed mean bootstrap"
+      },
+      "minimum_absolute_mean": 0.02,
+      "p_holm": 9.90309863193456e-12,
+      "passed": true,
+      "scope": "primary"
+    },
+    "c128/G_timesfm32": {
+      "value": 1.0,
+      "lo": 0.9439909106133635,
+      "hi": 1.0,
+      "p": 1.0842021724855044e-19,
+      "positive": 64,
+      "negative": 0,
+      "ties": 0,
+      "n_seeds": 64,
+      "n_nonzero": 64,
+      "excluded_seeds": 0,
+      "descriptive_signed_mean": 0.4819326662116931,
+      "descriptive_signed_median": 0.2988093197577536,
+      "mean_vs_majority_disagreement": false,
+      "minimum_two_sided_p": 1.0842021724855044e-19,
+      "ci": 0.95,
+      "interval": "pointwise Clopper-Pearson exact binomial interval",
+      "estimand": "q=P(D>0 | D!=0, jointly identifiable); H0:q=0.5; exact two-sided binomial",
+      "resample_unit": "generating_seed_bundle",
+      "signed_balance": 1.0,
+      "mean": {
+        "value": 0.4819326662116931,
+        "lo": 0.375502990072568,
+        "hi": 0.5906817214393111,
+        "interval": "approximate pointwise whole-seed mean bootstrap"
+      },
+      "minimum_absolute_mean": 0.05,
+      "p_holm": 2.3852447794681098e-18,
+      "passed": true,
+      "scope": "primary"
+    },
+    "c128/G_bolt40": {
+      "value": 0.5625,
+      "lo": 0.4327589000664598,
+      "hi": 0.6862652464515039,
+      "p": 0.3817327947933377,
+      "positive": 36,
+      "negative": 28,
+      "ties": 0,
+      "n_seeds": 64,
+      "n_nonzero": 64,
+      "excluded_seeds": 0,
+      "descriptive_signed_mean": 0.15069158933283772,
+      "descriptive_signed_median": 0.1385777810822752,
+      "mean_vs_majority_disagreement": false,
+      "minimum_two_sided_p": 1.0842021724855044e-19,
+      "ci": 0.95,
+      "interval": "pointwise Clopper-Pearson exact binomial interval",
+      "estimand": "q=P(D>0 | D!=0, jointly identifiable); H0:q=0.5; exact two-sided binomial",
+      "resample_unit": "generating_seed_bundle",
+      "signed_balance": 0.125,
+      "mean": {
+        "value": 0.15069158933283772,
+        "lo": 0.05484220972896172,
+        "hi": 0.26283591996593714,
+        "interval": "approximate pointwise whole-seed mean bootstrap"
+      },
+      "minimum_absolute_mean": 0.05,
+      "p_holm": 1.0,
+      "passed": false,
+      "scope": "primary"
+    },
+    "c512/g32": {
+      "value": 0.90625,
+      "lo": 0.8070308955516561,
+      "hi": 0.9648126671291817,
+      "p": 9.029018960445001e-12,
+      "positive": 58,
+      "negative": 6,
+      "ties": 0,
+      "n_seeds": 64,
+      "n_nonzero": 64,
+      "excluded_seeds": 0,
+      "descriptive_signed_mean": 0.42375512564038564,
+      "descriptive_signed_median": 0.23916534443622775,
+      "mean_vs_majority_disagreement": false,
+      "minimum_two_sided_p": 1.0842021724855044e-19,
+      "ci": 0.95,
+      "interval": "pointwise Clopper-Pearson exact binomial interval",
+      "estimand": "q=P(D>0 | D!=0, jointly identifiable); H0:q=0.5; exact two-sided binomial",
+      "resample_unit": "generating_seed_bundle",
+      "signed_balance": 0.8125,
+      "mean": {
+        "value": 0.42375512564038564,
+        "lo": 0.31551618422494176,
+        "hi": 0.5343335582169089,
+        "interval": "approximate pointwise whole-seed mean bootstrap"
+      },
+      "minimum_absolute_mean": 0.05,
+      "p_holm": 9.029018960445001e-11,
+      "passed": true,
+      "scope": "sensitivity; cannot rescue128"
+    },
+    "c512/g40": {
+      "value": 0.0,
+      "lo": 0.0,
+      "hi": 0.05600908938663657,
+      "p": 1.0842021724855044e-19,
+      "positive": 0,
+      "negative": 64,
+      "ties": 0,
+      "n_seeds": 64,
+      "n_nonzero": 64,
+      "excluded_seeds": 0,
+      "descriptive_signed_mean": -0.6050308567398762,
+      "descriptive_signed_median": -0.5015606181605905,
+      "mean_vs_majority_disagreement": false,
+      "minimum_two_sided_p": 1.0842021724855044e-19,
+      "ci": 0.95,
+      "interval": "pointwise Clopper-Pearson exact binomial interval",
+      "estimand": "q=P(D>0 | D!=0, jointly identifiable); H0:q=0.5; exact two-sided binomial",
+      "resample_unit": "generating_seed_bundle",
+      "signed_balance": -1.0,
+      "mean": {
+        "value": -0.6050308567398762,
+        "lo": -0.7163114121539644,
+        "hi": -0.506240387430177,
+        "interval": "approximate pointwise whole-seed mean bootstrap"
+      },
+      "minimum_absolute_mean": 0.05,
+      "p_holm": 2.3852447794681098e-18,
+      "passed": true,
+      "scope": "sensitivity; cannot rescue128"
+    },
+    "c512/g40_minus_g32": {
+      "value": 0.0,
+      "lo": 0.0,
+      "hi": 0.05600908938663657,
+      "p": 1.0842021724855044e-19,
+      "positive": 0,
+      "negative": 64,
+      "ties": 0,
+      "n_seeds": 64,
+      "n_nonzero": 64,
+      "excluded_seeds": 0,
+      "descriptive_signed_mean": -1.028785982380262,
+      "descriptive_signed_median": -0.9221642906847234,
+      "mean_vs_majority_disagreement": false,
+      "minimum_two_sided_p": 1.0842021724855044e-19,
+      "ci": 0.95,
+      "interval": "pointwise Clopper-Pearson exact binomial interval",
+      "estimand": "q=P(D>0 | D!=0, jointly identifiable); H0:q=0.5; exact two-sided binomial",
+      "resample_unit": "generating_seed_bundle",
+      "signed_balance": -1.0,
+      "mean": {
+        "value": -1.028785982380262,
+        "lo": -1.1953316998589179,
+        "hi": -0.8671532608318593,
+        "interval": "approximate pointwise whole-seed mean bootstrap"
+      },
+      "minimum_absolute_mean": 0.05,
+      "p_holm": 2.3852447794681098e-18,
+      "passed": true,
+      "scope": "sensitivity; cannot rescue128"
+    },
+    "c512/C32": {
+      "value": 0.984375,
+      "lo": 0.9159896735656463,
+      "hi": 0.9996044874859493,
+      "p": 7.047314121155779e-18,
+      "positive": 63,
+      "negative": 1,
+      "ties": 0,
+      "n_seeds": 64,
+      "n_nonzero": 64,
+      "excluded_seeds": 0,
+      "descriptive_signed_mean": 0.46995725571438696,
+      "descriptive_signed_median": 0.283752064095598,
+      "mean_vs_majority_disagreement": false,
+      "minimum_two_sided_p": 1.0842021724855044e-19,
+      "ci": 0.95,
+      "interval": "pointwise Clopper-Pearson exact binomial interval",
+      "estimand": "q=P(D>0 | D!=0, jointly identifiable); H0:q=0.5; exact two-sided binomial",
+      "resample_unit": "generating_seed_bundle",
+      "signed_balance": 0.96875,
+      "mean": {
+        "value": 0.46995725571438696,
+        "lo": 0.36066777238403375,
+        "hi": 0.5838523704965511,
+        "interval": "approximate pointwise whole-seed mean bootstrap"
+      },
+      "minimum_absolute_mean": 0.05,
+      "p_holm": 1.0570971181733668e-16,
+      "passed": true,
+      "scope": "sensitivity; cannot rescue128"
+    },
+    "c512/C40": {
+      "value": 0.671875,
+      "lo": 0.5431232132214403,
+      "hi": 0.7841280011062753,
+      "p": 0.008146902228698568,
+      "positive": 43,
+      "negative": 21,
+      "ties": 0,
+      "n_seeds": 64,
+      "n_nonzero": 64,
+      "excluded_seeds": 0,
+      "descriptive_signed_mean": 0.08791534946326918,
+      "descriptive_signed_median": 0.14046734511849013,
+      "mean_vs_majority_disagreement": false,
+      "minimum_two_sided_p": 1.0842021724855044e-19,
+      "ci": 0.95,
+      "interval": "pointwise Clopper-Pearson exact binomial interval",
+      "estimand": "q=P(D>0 | D!=0, jointly identifiable); H0:q=0.5; exact two-sided binomial",
+      "resample_unit": "generating_seed_bundle",
+      "signed_balance": 0.34375,
+      "mean": {
+        "value": 0.08791534946326918,
+        "lo": 0.006191620074256324,
+        "hi": 0.1646244992153122,
+        "interval": "approximate pointwise whole-seed mean bootstrap"
+      },
+      "minimum_absolute_mean": 0.05,
+      "p_holm": 0.04888141337219141,
+      "passed": true,
+      "scope": "sensitivity; cannot rescue128"
+    },
+    "c512/C40_minus_C32": {
+      "value": 0.34375,
+      "lo": 0.22946324249933903,
+      "hi": 0.47302303877831625,
+      "p": 0.01685819004428113,
+      "positive": 22,
+      "negative": 42,
+      "ties": 0,
+      "n_seeds": 64,
+      "n_nonzero": 64,
+      "excluded_seeds": 0,
+      "descriptive_signed_mean": -0.3820419062511179,
+      "descriptive_signed_median": -0.2439796689995044,
+      "mean_vs_majority_disagreement": false,
+      "minimum_two_sided_p": 1.0842021724855044e-19,
+      "ci": 0.95,
+      "interval": "pointwise Clopper-Pearson exact binomial interval",
+      "estimand": "q=P(D>0 | D!=0, jointly identifiable); H0:q=0.5; exact two-sided binomial",
+      "resample_unit": "generating_seed_bundle",
+      "signed_balance": -0.3125,
+      "mean": {
+        "value": -0.3820419062511179,
+        "lo": -0.533101010607037,
+        "hi": -0.23772072509531095,
+        "interval": "approximate pointwise whole-seed mean bootstrap"
+      },
+      "minimum_absolute_mean": 0.05,
+      "p_holm": 0.06743276017712452,
+      "passed": false,
+      "scope": "sensitivity; cannot rescue128"
+    },
+    "c512/o32": {
+      "value": 0.953125,
+      "lo": 0.8690642627585942,
+      "hi": 0.9902269250455434,
+      "p": 4.742842403537839e-15,
+      "positive": 61,
+      "negative": 3,
+      "ties": 0,
+      "n_seeds": 64,
+      "n_nonzero": 64,
+      "excluded_seeds": 0,
+      "descriptive_signed_mean": 0.49009039427166734,
+      "descriptive_signed_median": 0.11767852175497336,
+      "mean_vs_majority_disagreement": false,
+      "minimum_two_sided_p": 1.0842021724855044e-19,
+      "ci": 0.95,
+      "interval": "pointwise Clopper-Pearson exact binomial interval",
+      "estimand": "q=P(D>0 | D!=0, jointly identifiable); H0:q=0.5; exact two-sided binomial",
+      "resample_unit": "generating_seed_bundle",
+      "signed_balance": 0.90625,
+      "mean": {
+        "value": 0.49009039427166734,
+        "lo": 0.32164656077356446,
+        "hi": 0.6840114503117501,
+        "interval": "approximate pointwise whole-seed mean bootstrap"
+      },
+      "minimum_absolute_mean": 0.02,
+      "p_holm": 5.691410884245407e-14,
+      "passed": true,
+      "scope": "sensitivity; cannot rescue128"
+    },
+    "c512/o40": {
+      "value": 0.0,
+      "lo": 0.0,
+      "hi": 0.05600908938663657,
+      "p": 1.0842021724855044e-19,
+      "positive": 0,
+      "negative": 64,
+      "ties": 0,
+      "n_seeds": 64,
+      "n_nonzero": 64,
+      "excluded_seeds": 0,
+      "descriptive_signed_mean": -0.322578414313917,
+      "descriptive_signed_median": -0.08245517149246041,
+      "mean_vs_majority_disagreement": false,
+      "minimum_two_sided_p": 1.0842021724855044e-19,
+      "ci": 0.95,
+      "interval": "pointwise Clopper-Pearson exact binomial interval",
+      "estimand": "q=P(D>0 | D!=0, jointly identifiable); H0:q=0.5; exact two-sided binomial",
+      "resample_unit": "generating_seed_bundle",
+      "signed_balance": -1.0,
+      "mean": {
+        "value": -0.322578414313917,
+        "lo": -0.6539574189865388,
+        "hi": -0.13093416467654984,
+        "interval": "approximate pointwise whole-seed mean bootstrap"
+      },
+      "minimum_absolute_mean": 0.02,
+      "p_holm": 2.3852447794681098e-18,
+      "passed": true,
+      "scope": "sensitivity; cannot rescue128"
+    },
+    "c512/o40_minus_o32": {
+      "value": 0.015625,
+      "lo": 0.0003955125140506643,
+      "hi": 0.08401032643435365,
+      "p": 7.047314121155779e-18,
+      "positive": 1,
+      "negative": 63,
+      "ties": 0,
+      "n_seeds": 64,
+      "n_nonzero": 64,
+      "excluded_seeds": 0,
+      "descriptive_signed_mean": -0.8126688085855844,
+      "descriptive_signed_median": -0.3809831295463047,
+      "mean_vs_majority_disagreement": false,
+      "minimum_two_sided_p": 1.0842021724855044e-19,
+      "ci": 0.95,
+      "interval": "pointwise Clopper-Pearson exact binomial interval",
+      "estimand": "q=P(D>0 | D!=0, jointly identifiable); H0:q=0.5; exact two-sided binomial",
+      "resample_unit": "generating_seed_bundle",
+      "signed_balance": -0.96875,
+      "mean": {
+        "value": -0.8126688085855844,
+        "lo": -1.265956257180969,
+        "hi": -0.4925911362111855,
+        "interval": "approximate pointwise whole-seed mean bootstrap"
+      },
+      "minimum_absolute_mean": 0.02,
+      "p_holm": 1.0570971181733668e-16,
+      "passed": true,
+      "scope": "sensitivity; cannot rescue128"
+    },
+    "c512/G_timesfm32": {
+      "value": 1.0,
+      "lo": 0.9439909106133635,
+      "hi": 1.0,
+      "p": 1.0842021724855044e-19,
+      "positive": 64,
+      "negative": 0,
+      "ties": 0,
+      "n_seeds": 64,
+      "n_nonzero": 64,
+      "excluded_seeds": 0,
+      "descriptive_signed_mean": 0.48193266740277185,
+      "descriptive_signed_median": 0.2988096060662277,
+      "mean_vs_majority_disagreement": false,
+      "minimum_two_sided_p": 1.0842021724855044e-19,
+      "ci": 0.95,
+      "interval": "pointwise Clopper-Pearson exact binomial interval",
+      "estimand": "q=P(D>0 | D!=0, jointly identifiable); H0:q=0.5; exact two-sided binomial",
+      "resample_unit": "generating_seed_bundle",
+      "signed_balance": 1.0,
+      "mean": {
+        "value": 0.48193266740277185,
+        "lo": 0.3755032310614414,
+        "hi": 0.5906814288364804,
+        "interval": "approximate pointwise whole-seed mean bootstrap"
+      },
+      "minimum_absolute_mean": 0.05,
+      "p_holm": 2.3852447794681098e-18,
+      "passed": true,
+      "scope": "sensitivity; cannot rescue128"
+    },
+    "c512/G_bolt40": {
+      "value": 0.328125,
+      "lo": 0.2158719988937247,
+      "hi": 0.45687678677855953,
+      "p": 0.008146902228698568,
+      "positive": 21,
+      "negative": 43,
+      "ties": 0,
+      "n_seeds": 64,
+      "n_nonzero": 64,
+      "excluded_seeds": 0,
+      "descriptive_signed_mean": -0.08791768331268007,
+      "descriptive_signed_median": -0.14048488208232585,
+      "mean_vs_majority_disagreement": false,
+      "minimum_two_sided_p": 1.0842021724855044e-19,
+      "ci": 0.95,
+      "interval": "pointwise Clopper-Pearson exact binomial interval",
+      "estimand": "q=P(D>0 | D!=0, jointly identifiable); H0:q=0.5; exact two-sided binomial",
+      "resample_unit": "generating_seed_bundle",
+      "signed_balance": -0.34375,
+      "mean": {
+        "value": -0.08791768331268007,
+        "lo": -0.16462744213583266,
+        "hi": -0.006194088824030349,
+        "interval": "approximate pointwise whole-seed mean bootstrap"
+      },
+      "minimum_absolute_mean": 0.05,
+      "p_holm": 0.04888141337219141,
+      "passed": true,
+      "scope": "sensitivity; cannot rescue128"
+    }
+  },
+  "descriptive": {
+    "p32_16_c128": {
+      "bolt": {
+        "metrics": {
+          "L": {
+            "value": 0.3664807856160988,
+            "lo": 0.3161385707985459,
+            "hi": 0.41881439471904663,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "S": {
+            "value": 0.2725867755857236,
+            "lo": 0.2449467105349621,
+            "hi": 0.29764171028522785,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "G": {
+            "value": 0.0938940100303752,
+            "lo": 0.04960514601081126,
+            "hi": 0.14074783315610076,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "pure_phi": {
+            "value": 0.25898172180913004,
+            "lo": 0.229822127632001,
+            "hi": 0.286394056453646,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "pure_psi": {
+            "value": 0.014592522005811133,
+            "lo": 0.012482437146228542,
+            "hi": 0.017108289150789477,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "background": {
+            "value": 4.769386367296788e-07,
+            "lo": 4.128114507158356e-07,
+            "hi": 5.496211963651599e-07,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "J": {
+            "value": 0.2296936637086282,
+            "lo": 0.18490316325558,
+            "hi": 0.2760639521940867,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "component_sum_direct_discrepancy": {
+            "value": 0.1360851675271988,
+            "lo": 0.11471623629331588,
+            "hi": 0.15840655267238615,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "off_target_energy": {
+            "value": 0.06980623234452037,
+            "lo": 0.0424968611902077,
+            "hi": 0.10577045529985896,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "target_derivative_error": {
+            "value": 0.25517690866434184,
+            "lo": 0.18808978254332373,
+            "hi": 0.3308338041745773,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "total_derivative_error": {
+            "value": 0.4854383789218263,
+            "lo": 0.3823385569114803,
+            "hi": 0.6064681098024748,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_offset_energy": {
+            "value": 0.013047551269929963,
+            "lo": 0.0066625464022074775,
+            "hi": 0.02332817582428415,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_residual_energy": {
+            "value": 0.14740768664303405,
+            "lo": 0.1230148210776468,
+            "hi": 0.17115494525489447,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_cross_energy": {
+            "value": 2.595863862449395e-16,
+            "lo": 1.7592954558067932e-16,
+            "hi": 3.4814490597997097e-16,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_energy_closure_error": {
+            "value": 3.1051574132264824e-09,
+            "lo": -7.832718942508723e-09,
+            "hi": 1.513615713156499e-08,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          }
+        },
+        "residual_fraction": {
+          "value": 0.7437955447718003,
+          "lo": 0.6550175342523302,
+          "hi": 0.8489078652590933,
+          "excluded_bootstrap_draws": 0,
+          "interval": "approximate pointwise paired whole-seed ratio bootstrap; not mean of individual ratios"
+        },
+        "diagnostics": {
+          "basis_condition": 1.4142135623730956,
+          "gram_condition": 2.0000000000000004,
+          "groundtruth_fit_residual": 6.661338147750939e-15,
+          "warning": "Full Gram retained: separate component energies are descriptive and need not sum to total energy on non-orthogonal windows"
+        }
+      },
+      "timesfm": {
+        "metrics": {
+          "L": {
+            "value": 0.48522450106353,
+            "lo": 0.37871783065029463,
+            "hi": 0.5941310839797068,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "S": {
+            "value": 0.0032918348518368463,
+            "lo": 0.00297750044600472,
+            "hi": 0.0036385782057089043,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "G": {
+            "value": 0.4819326662116931,
+            "lo": 0.375502990072568,
+            "hi": 0.5906817214393111,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "pure_phi": {
+            "value": 0.0019299124727025973,
+            "lo": 0.0016138719192795553,
+            "hi": 0.002288066626017246,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "pure_psi": {
+            "value": 0.0008481877918879866,
+            "lo": 0.0007359858061560993,
+            "hi": 0.0009694833042914418,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "background": {
+            "value": 5.291515784408378e-16,
+            "lo": 3.2931041197187113e-16,
+            "hi": 7.635136016406254e-16,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "J": {
+            "value": 0.4838354509312347,
+            "lo": 0.3773807230524043,
+            "hi": 0.5927116437989816,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "component_sum_direct_discrepancy": {
+            "value": 0.4748646318912506,
+            "lo": 0.37182323485612867,
+            "hi": 0.5812980815768242,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "off_target_energy": {
+            "value": 0.5039302123629311,
+            "lo": 0.33484408381406344,
+            "hi": 0.698151702988813,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "target_derivative_error": {
+            "value": 0.6322758640376658,
+            "lo": 0.4948357356882236,
+            "hi": 0.7775866787647125,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "total_derivative_error": {
+            "value": 1.441024150047094,
+            "lo": 1.0979544033063766,
+            "hi": 1.808097596011044,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_offset_energy": {
+            "value": 0.07923628180359257,
+            "lo": 0.039675722664015575,
+            "hi": 0.1347945264800346,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_residual_energy": {
+            "value": 0.22558179184290422,
+            "lo": 0.15752388110561635,
+            "hi": 0.3007856939266256,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_cross_energy": {
+            "value": 5.823600760918599e-16,
+            "lo": 3.2991066560047165e-16,
+            "hi": 8.637155403948874e-16,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_energy_closure_error": {
+            "value": 3.4286012533914636e-10,
+            "lo": -1.910626285521936e-08,
+            "hi": 1.9659324006349576e-08,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          }
+        },
+        "residual_fraction": {
+          "value": 0.006784148048216241,
+          "lo": 0.005734700793525599,
+          "hi": 0.00837327135483489,
+          "excluded_bootstrap_draws": 0,
+          "interval": "approximate pointwise paired whole-seed ratio bootstrap; not mean of individual ratios"
+        },
+        "diagnostics": {
+          "basis_condition": 1.4142135623730956,
+          "gram_condition": 2.0000000000000004,
+          "groundtruth_fit_residual": 6.661338147750939e-15,
+          "warning": "Full Gram retained: separate component energies are descriptive and need not sum to total energy on non-orthogonal windows"
+        }
+      },
+      "chronos2": {
+        "metrics": {
+          "L": {
+            "value": 0.000995097505405026,
+            "lo": 0.0009088866651089235,
+            "hi": 0.0010938474743404842,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "S": {
+            "value": 0.0007749825468094638,
+            "lo": 0.0007086128036023411,
+            "hi": 0.0008527776558217135,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "G": {
+            "value": 0.000220114958595562,
+            "lo": 0.00013823991971689814,
+            "hi": 0.0003016518457749136,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "pure_phi": {
+            "value": 0.0003241745490736138,
+            "lo": 0.0002765080472810805,
+            "hi": 0.0003715178005959612,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "pure_psi": {
+            "value": 0.0004557562154789539,
+            "lo": 0.0003906184968646576,
+            "hi": 0.0005366483018961949,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "background": {
+            "value": 5.292963868180077e-16,
+            "lo": 3.293683382588228e-16,
+            "hi": 7.636216212461708e-16,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "J": {
+            "value": 0.000605132123128742,
+            "lo": 0.0005300397472488832,
+            "hi": 0.0006864980567264808,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "component_sum_direct_discrepancy": {
+            "value": 0.0007094898028299212,
+            "lo": 0.0006395622243871912,
+            "hi": 0.0007837950513930989,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "off_target_energy": {
+            "value": 0.0008244662506904942,
+            "lo": 0.0006538782828826761,
+            "hi": 0.0010139897270883384,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "target_derivative_error": {
+            "value": 0.0020701117169958563,
+            "lo": 0.0016554986294661492,
+            "hi": 0.002509565525213292,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "total_derivative_error": {
+            "value": 0.008172431233818927,
+            "lo": 0.007442110264178304,
+            "hi": 0.008914138755493203,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_offset_energy": {
+            "value": 0.00031873679802634023,
+            "lo": 0.00021848408163802158,
+            "hi": 0.0004352958421905933,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_residual_energy": {
+            "value": 0.0049591164681062425,
+            "lo": 0.0044748885956310686,
+            "hi": 0.0054377037801492155,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_cross_energy": {
+            "value": 3.3486738738191515e-16,
+            "lo": 2.447287524356466e-16,
+            "hi": 4.1993009731729216e-16,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_energy_closure_error": {
+            "value": -7.558531368508319e-09,
+            "lo": -1.734437274784632e-08,
+            "hi": 1.6471399822082154e-09,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          }
+        },
+        "residual_fraction": {
+          "value": 0.7788006126033141,
+          "lo": 0.7135495343289366,
+          "hi": 0.8527035624315894,
+          "excluded_bootstrap_draws": 0,
+          "interval": "approximate pointwise paired whole-seed ratio bootstrap; not mean of individual ratios"
+        },
+        "diagnostics": {
+          "basis_condition": 1.4142135623730956,
+          "gram_condition": 2.0000000000000004,
+          "groundtruth_fit_residual": 6.661338147750939e-15,
+          "warning": "Full Gram retained: separate component energies are descriptive and need not sum to total energy on non-orthogonal windows"
+        }
+      }
+    },
+    "p40_20_c128": {
+      "bolt": {
+        "metrics": {
+          "L": {
+            "value": 1.0064865160504577,
+            "lo": 0.8807931355859502,
+            "hi": 1.140740285297083,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "S": {
+            "value": 0.8557949267176199,
+            "lo": 0.8140355847843734,
+            "hi": 0.8988036755992516,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "G": {
+            "value": 0.15069158933283772,
+            "lo": 0.05484220972896172,
+            "hi": 0.26283591996593714,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "pure_phi": {
+            "value": 0.5266942240516733,
+            "lo": 0.4663083694642055,
+            "hi": 0.5853797279507352,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "pure_psi": {
+            "value": 0.31118882961609595,
+            "lo": 0.2759195437192973,
+            "hi": 0.34795278242980426,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "background": {
+            "value": 4.769386367296788e-07,
+            "lo": 4.128114507158356e-07,
+            "hi": 5.496211963651599e-07,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "J": {
+            "value": 0.587544989216573,
+            "lo": 0.4670139456647171,
+            "hi": 0.7166220115242933,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "component_sum_direct_discrepancy": {
+            "value": 0.294653981924057,
+            "lo": 0.23324495404958726,
+            "hi": 0.36277006566524506,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "off_target_energy": {
+            "value": 0.18186624082320946,
+            "lo": 0.1126351470762814,
+            "hi": 0.2661282929598365,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "target_derivative_error": {
+            "value": 0.44522044876785394,
+            "lo": 0.38583391466178,
+            "hi": 0.5092187337240023,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "total_derivative_error": {
+            "value": 1.1541671776948044,
+            "lo": 0.9391619947735543,
+            "hi": 1.411276604735398,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_offset_energy": {
+            "value": 0.21884493578416933,
+            "lo": 0.0844874664502544,
+            "hi": 0.3805716206495948,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_residual_energy": {
+            "value": 0.24980429595724443,
+            "lo": 0.21431814623192771,
+            "hi": 0.2886493141464997,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_cross_energy": {
+            "value": 0.028757355154321602,
+            "lo": -0.0005229448910699821,
+            "hi": 0.057704937103297646,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_energy_closure_error": {
+            "value": -3.870305043515628e-09,
+            "lo": -2.38541864313153e-08,
+            "hi": 1.4628848866018075e-08,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          }
+        },
+        "residual_fraction": {
+          "value": 0.8502795746095388,
+          "lo": 0.7679059716968856,
+          "hi": 0.9382502269311893,
+          "excluded_bootstrap_draws": 0,
+          "interval": "approximate pointwise paired whole-seed ratio bootstrap; not mean of individual ratios"
+        },
+        "diagnostics": {
+          "basis_condition": 1.7169783429745813,
+          "gram_condition": 2.948014630243738,
+          "groundtruth_fit_residual": 5.329070518200751e-15,
+          "warning": "Full Gram retained: separate component energies are descriptive and need not sum to total energy on non-orthogonal windows"
+        }
+      },
+      "timesfm": {
+        "metrics": {
+          "L": {
+            "value": 0.0004469944548331565,
+            "lo": 0.00038686823966287154,
+            "hi": 0.0005107699520692795,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "S": {
+            "value": 0.0002133512256880205,
+            "lo": 0.00019903315012755363,
+            "hi": 0.00022849196449009092,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "G": {
+            "value": 0.000233643229145136,
+            "lo": 0.00017088829009791748,
+            "hi": 0.0003040131052443183,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "pure_phi": {
+            "value": 6.790126177201213e-05,
+            "lo": 5.732465103222914e-05,
+            "hi": 7.887298102097901e-05,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "pure_psi": {
+            "value": 0.00014179938347068523,
+            "lo": 0.00012648240500284593,
+            "hi": 0.00015827693579706777,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "background": {
+            "value": 5.291515784408378e-16,
+            "lo": 3.2931041197187113e-16,
+            "hi": 7.635136016406254e-16,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "J": {
+            "value": 0.00034214413221180786,
+            "lo": 0.00028181186085473334,
+            "hi": 0.0004074582820776823,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "component_sum_direct_discrepancy": {
+            "value": 0.000543519388884306,
+            "lo": 0.0004635844874428585,
+            "hi": 0.0006308824958978219,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "off_target_energy": {
+            "value": 0.0005374727403484972,
+            "lo": 0.000398738668681369,
+            "hi": 0.0006888339513875162,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "target_derivative_error": {
+            "value": 0.0008015317564285177,
+            "lo": 0.0006540203050448196,
+            "hi": 0.0009595124530922893,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "total_derivative_error": {
+            "value": 0.002196433766370296,
+            "lo": 0.0019273235083878723,
+            "hi": 0.002468558748410204,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_offset_energy": {
+            "value": 0.00021879232523798367,
+            "lo": 0.00012687048879717514,
+            "hi": 0.00033517659834493547,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_residual_energy": {
+            "value": 0.0005801850911744766,
+            "lo": 0.0005241043977570053,
+            "hi": 0.0006416539414896958,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_cross_energy": {
+            "value": -0.00035347279247715233,
+            "lo": -0.0018332503415504856,
+            "hi": 0.0011608643413966223,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_energy_closure_error": {
+            "value": 5.37210156326226e-09,
+            "lo": -3.2894712698356594e-09,
+            "hi": 1.4844428479151382e-08,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          }
+        },
+        "residual_fraction": {
+          "value": 0.47730172797703985,
+          "lo": 0.40444172095899833,
+          "hi": 0.5635610676940929,
+          "excluded_bootstrap_draws": 0,
+          "interval": "approximate pointwise paired whole-seed ratio bootstrap; not mean of individual ratios"
+        },
+        "diagnostics": {
+          "basis_condition": 1.7169783429745813,
+          "gram_condition": 2.948014630243738,
+          "groundtruth_fit_residual": 5.329070518200751e-15,
+          "warning": "Full Gram retained: separate component energies are descriptive and need not sum to total energy on non-orthogonal windows"
+        }
+      },
+      "chronos2": {
+        "metrics": {
+          "L": {
+            "value": 0.0008847017322430884,
+            "lo": 0.0008079232057719195,
+            "hi": 0.0009651409251025932,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "S": {
+            "value": 0.0004202951972218028,
+            "lo": 0.00038105299804355773,
+            "hi": 0.000464711184341977,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "G": {
+            "value": 0.00046440653502128563,
+            "lo": 0.0003745901733341212,
+            "hi": 0.0005595113198482425,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "pure_phi": {
+            "value": 0.0002207860446903153,
+            "lo": 0.00018293781400515,
+            "hi": 0.00026198940156703246,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "pure_psi": {
+            "value": 0.00018761274087754018,
+            "lo": 0.00016587165228063348,
+            "hi": 0.00021087171729995945,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "background": {
+            "value": 5.292963868180077e-16,
+            "lo": 3.293683382588228e-16,
+            "hi": 7.636216212461708e-16,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "J": {
+            "value": 0.0006805023394591608,
+            "lo": 0.0005987400775182113,
+            "hi": 0.000768911942230338,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "component_sum_direct_discrepancy": {
+            "value": 0.0008923105197027326,
+            "lo": 0.0008078667975496501,
+            "hi": 0.0009807295980863273,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "off_target_energy": {
+            "value": 0.0007156097668492214,
+            "lo": 0.0005561113219394784,
+            "hi": 0.0009222936336771094,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "target_derivative_error": {
+            "value": 0.0014032723468366847,
+            "lo": 0.0011319346662173387,
+            "hi": 0.0016856471088149475,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "total_derivative_error": {
+            "value": 0.007214437194955002,
+            "lo": 0.006683495032958917,
+            "hi": 0.007748718284416362,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_offset_energy": {
+            "value": 0.00037756889267680303,
+            "lo": 0.00028120609996387083,
+            "hi": 0.0004791020452503112,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_residual_energy": {
+            "value": 0.004875106473409658,
+            "lo": 0.004562801182925908,
+            "hi": 0.005204731272374138,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_cross_energy": {
+            "value": 0.0018244659763582763,
+            "lo": -4.187843531948979e-05,
+            "hi": 0.0038126952972956344,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_energy_closure_error": {
+            "value": -6.466969212193136e-09,
+            "lo": -1.4266458719720862e-08,
+            "hi": 1.3013239958748348e-09,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          }
+        },
+        "residual_fraction": {
+          "value": 0.4750699381543867,
+          "lo": 0.41350863722603215,
+          "hi": 0.5450770614714807,
+          "excluded_bootstrap_draws": 0,
+          "interval": "approximate pointwise paired whole-seed ratio bootstrap; not mean of individual ratios"
+        },
+        "diagnostics": {
+          "basis_condition": 1.7169783429745813,
+          "gram_condition": 2.948014630243738,
+          "groundtruth_fit_residual": 5.329070518200751e-15,
+          "warning": "Full Gram retained: separate component energies are descriptive and need not sum to total energy on non-orthogonal windows"
+        }
+      }
+    },
+    "p32_16_c512": {
+      "bolt": {
+        "metrics": {
+          "L": {
+            "value": 0.061469377554325966,
+            "lo": 0.05628448515035714,
+            "hi": 0.06639408305831762,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "S": {
+            "value": 0.04949396586594112,
+            "lo": 0.04419101311302575,
+            "hi": 0.054585189893054366,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "G": {
+            "value": 0.011975411688384844,
+            "lo": 0.003733247934941118,
+            "hi": 0.019891243727413164,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "pure_phi": {
+            "value": 0.04361469174790329,
+            "lo": 0.03800664477184795,
+            "hi": 0.049117184934455556,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "pure_psi": {
+            "value": 0.006805014947152908,
+            "lo": 0.005543305168125616,
+            "hi": 0.00834823589043098,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "background": {
+            "value": 7.413202989184536e-15,
+            "lo": 5.810200055057532e-15,
+            "hi": 9.101405855483287e-15,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "J": {
+            "value": 0.03625952420679786,
+            "lo": 0.029922514945608266,
+            "hi": 0.042396012065738585,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "component_sum_direct_discrepancy": {
+            "value": 0.035038240253925323,
+            "lo": 0.03084129183553159,
+            "hi": 0.03934979923069477,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "off_target_energy": {
+            "value": 0.01382485611999856,
+            "lo": 0.010387097353422808,
+            "hi": 0.017553824493694834,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "target_derivative_error": {
+            "value": 0.020705349706705505,
+            "lo": 0.015787472512854728,
+            "hi": 0.025914189490889323,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "total_derivative_error": {
+            "value": 0.06400660601680667,
+            "lo": 0.05647704483202737,
+            "hi": 0.07234967312077963,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_offset_energy": {
+            "value": 0.004327169796516429,
+            "lo": 0.0029171891575081018,
+            "hi": 0.005923322089436566,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_residual_energy": {
+            "value": 0.025149230393586162,
+            "lo": 0.02189448545239622,
+            "hi": 0.028563452067620666,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_cross_energy": {
+            "value": 4.3441049749674743e-16,
+            "lo": 3.2459347273589533e-16,
+            "hi": 5.396652008785954e-16,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_energy_closure_error": {
+            "value": 1.986696366765062e-09,
+            "lo": -9.020601585626174e-09,
+            "hi": 1.224558064134561e-08,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          }
+        },
+        "residual_fraction": {
+          "value": 0.8051808532175048,
+          "lo": 0.6958942195547598,
+          "hi": 0.9351610366813474,
+          "excluded_bootstrap_draws": 0,
+          "interval": "approximate pointwise paired whole-seed ratio bootstrap; not mean of individual ratios"
+        },
+        "diagnostics": {
+          "basis_condition": 1.4142135623730956,
+          "gram_condition": 2.0000000000000004,
+          "groundtruth_fit_residual": 6.661338147750939e-15,
+          "warning": "Full Gram retained: separate component energies are descriptive and need not sum to total energy on non-orthogonal windows"
+        }
+      },
+      "timesfm": {
+        "metrics": {
+          "L": {
+            "value": 0.48522450319471166,
+            "lo": 0.3787180758601828,
+            "hi": 0.5941311226753692,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "S": {
+            "value": 0.003291835791939792,
+            "lo": 0.0029774988087269607,
+            "hi": 0.0036385773440079667,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "G": {
+            "value": 0.48193266740277185,
+            "lo": 0.3755032310614414,
+            "hi": 0.5906814288364804,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "pure_phi": {
+            "value": 0.0019299129589115764,
+            "lo": 0.0016138730718552334,
+            "hi": 0.0022880700011776098,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "pure_psi": {
+            "value": 0.0008481874710091796,
+            "lo": 0.0007359847804907297,
+            "hi": 0.0009694819591821311,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "background": {
+            "value": 1.2845449233163568e-14,
+            "lo": 8.494741985365438e-15,
+            "hi": 1.7675809018908018e-14,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "J": {
+            "value": 0.4838354529797513,
+            "lo": 0.37738096627816764,
+            "hi": 0.5927116845531646,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "component_sum_direct_discrepancy": {
+            "value": 0.4748646914958954,
+            "lo": 0.3718231149017811,
+            "hi": 0.5812981382012367,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "off_target_energy": {
+            "value": 0.503915250391666,
+            "lo": 0.33483486696167303,
+            "hi": 0.6981001631498011,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "target_derivative_error": {
+            "value": 0.6322629333114245,
+            "lo": 0.49482596381681443,
+            "hi": 0.7775831168562708,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "total_derivative_error": {
+            "value": 1.4409865701947604,
+            "lo": 1.097933296133462,
+            "hi": 1.8080377432196761,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_offset_energy": {
+            "value": 0.07923696627518118,
+            "lo": 0.03967696680693403,
+            "hi": 0.1347925552575985,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_residual_energy": {
+            "value": 0.22557142021648835,
+            "lo": 0.15751472352340404,
+            "hi": 0.30076935669809246,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_cross_energy": {
+            "value": 4.930078149533718e-16,
+            "lo": 3.0409288552167036e-16,
+            "hi": 6.998832708117425e-16,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_energy_closure_error": {
+            "value": -5.7415057368005986e-09,
+            "lo": -2.113558358663131e-08,
+            "hi": 9.314488719771928e-09,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          }
+        },
+        "residual_fraction": {
+          "value": 0.0067841499558789565,
+          "lo": 0.005734691163464423,
+          "hi": 0.008373284567571583,
+          "excluded_bootstrap_draws": 0,
+          "interval": "approximate pointwise paired whole-seed ratio bootstrap; not mean of individual ratios"
+        },
+        "diagnostics": {
+          "basis_condition": 1.4142135623730956,
+          "gram_condition": 2.0000000000000004,
+          "groundtruth_fit_residual": 6.661338147750939e-15,
+          "warning": "Full Gram retained: separate component energies are descriptive and need not sum to total energy on non-orthogonal windows"
+        }
+      },
+      "chronos2": {
+        "metrics": {
+          "L": {
+            "value": 0.0005942842976147774,
+            "lo": 0.0005403062427675415,
+            "hi": 0.0006503417268817893,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "S": {
+            "value": 0.00042285482068073774,
+            "lo": 0.0003917403552412993,
+            "hi": 0.00045507152118986745,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "G": {
+            "value": 0.00017142947693403964,
+            "lo": 0.00011732264180122618,
+            "hi": 0.00022669932752503524,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "pure_phi": {
+            "value": 0.0001354905816137364,
+            "lo": 0.00011562731008766407,
+            "hi": 0.00015491564378993346,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "pure_psi": {
+            "value": 0.00028797003456299664,
+            "lo": 0.0002531850706708739,
+            "hi": 0.00032609012564672687,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "background": {
+            "value": 5.291926630731144e-16,
+            "lo": 3.2931881424771553e-16,
+            "hi": 7.635542480800629e-16,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "J": {
+            "value": 0.00038255398952641084,
+            "lo": 0.0003315513078140215,
+            "hi": 0.0004363006155895957,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "component_sum_direct_discrepancy": {
+            "value": 0.0004046411195304245,
+            "lo": 0.0003671740429126658,
+            "hi": 0.00044509503568406216,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "off_target_energy": {
+            "value": 0.0007758978343293202,
+            "lo": 0.0006098876464844168,
+            "hi": 0.0009788842114678534,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "target_derivative_error": {
+            "value": 0.0018362585606788574,
+            "lo": 0.0014324770270412277,
+            "hi": 0.00225961553166687,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "total_derivative_error": {
+            "value": 0.0076509759235766864,
+            "lo": 0.007008175352614509,
+            "hi": 0.008365278505388133,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_offset_energy": {
+            "value": 0.00026714514182876487,
+            "lo": 0.00019712339709640275,
+            "hi": 0.00034600024842571783,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_residual_energy": {
+            "value": 0.00477167438673975,
+            "lo": 0.004364774414199782,
+            "hi": 0.00521701186210537,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_cross_energy": {
+            "value": 3.7053264016369904e-16,
+            "lo": 2.6932510530917793e-16,
+            "hi": 4.739397656047521e-16,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_energy_closure_error": {
+            "value": -3.4708159012829085e-09,
+            "lo": -1.3755545890871954e-08,
+            "hi": 7.009630265343451e-09,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          }
+        },
+        "residual_fraction": {
+          "value": 0.711536250205348,
+          "lo": 0.644755175054721,
+          "hi": 0.7872882625654862,
+          "excluded_bootstrap_draws": 0,
+          "interval": "approximate pointwise paired whole-seed ratio bootstrap; not mean of individual ratios"
+        },
+        "diagnostics": {
+          "basis_condition": 1.4142135623730956,
+          "gram_condition": 2.0000000000000004,
+          "groundtruth_fit_residual": 6.661338147750939e-15,
+          "warning": "Full Gram retained: separate component energies are descriptive and need not sum to total energy on non-orthogonal windows"
+        }
+      }
+    },
+    "p40_20_c512": {
+      "bolt": {
+        "metrics": {
+          "L": {
+            "value": 0.6050780081310151,
+            "lo": 0.5062903006630779,
+            "hi": 0.7163557628380861,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "S": {
+            "value": 0.6929956914436952,
+            "lo": 0.6224468231560719,
+            "hi": 0.7671353949243663,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "G": {
+            "value": -0.08791768331268007,
+            "lo": -0.16462744213583266,
+            "hi": -0.006194088824030349,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "pure_phi": {
+            "value": 0.5361215761328503,
+            "lo": 0.4599025848812411,
+            "hi": 0.6117866483588373,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "pure_psi": {
+            "value": 0.15441733644041772,
+            "lo": 0.1372054499024457,
+            "hi": 0.17288599886714995,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "background": {
+            "value": 7.413202989184536e-15,
+            "lo": 5.810200055057532e-15,
+            "hi": 9.101405855483287e-15,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "J": {
+            "value": 0.2598085518443811,
+            "lo": 0.1690153489199941,
+            "hi": 0.35875724920294716,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "component_sum_direct_discrepancy": {
+            "value": 0.24322092533111572,
+            "lo": 0.21625666432082652,
+            "hi": 0.2726671352982521,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "off_target_energy": {
+            "value": 0.3225953586685024,
+            "lo": 0.13095096106064907,
+            "hi": 0.6539732908315877,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "target_derivative_error": {
+            "value": 0.28435999164960013,
+            "lo": 0.21475835081686534,
+            "hi": 0.37627391762933843,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "total_derivative_error": {
+            "value": 0.8746341357661865,
+            "lo": 0.5701514852600069,
+            "hi": 1.3733024155048064,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_offset_energy": {
+            "value": 0.012182398571176822,
+            "lo": 0.0075455487905018645,
+            "hi": 0.018260086426915158,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_residual_energy": {
+            "value": 0.25023442230494597,
+            "lo": 0.1793428585258407,
+            "hi": 0.36076434680120156,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_cross_energy": {
+            "value": -0.009348326853696552,
+            "lo": -0.036754356335618424,
+            "hi": 0.014340805215786092,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_energy_closure_error": {
+            "value": 1.0258993003858947e-08,
+            "lo": -2.2588028999636026e-09,
+            "hi": 2.438919079770713e-08,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          }
+        },
+        "residual_fraction": {
+          "value": 1.1452997500012323,
+          "lo": 1.0088706772680758,
+          "hi": 1.30571570309269,
+          "excluded_bootstrap_draws": 0,
+          "interval": "approximate pointwise paired whole-seed ratio bootstrap; not mean of individual ratios"
+        },
+        "diagnostics": {
+          "basis_condition": 1.7169783429745813,
+          "gram_condition": 2.948014630243738,
+          "groundtruth_fit_residual": 5.329070518200751e-15,
+          "warning": "Full Gram retained: separate component energies are descriptive and need not sum to total energy on non-orthogonal windows"
+        }
+      },
+      "timesfm": {
+        "metrics": {
+          "L": {
+            "value": 4.715139113888064e-05,
+            "lo": 4.435046736994069e-05,
+            "hi": 5.016046089727036e-05,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "S": {
+            "value": 4.948524054978344e-05,
+            "lo": 4.6545405453120956e-05,
+            "hi": 5.256204294881745e-05,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "G": {
+            "value": -2.333849410902796e-06,
+            "lo": -5.013475499150465e-06,
+            "hi": 5.289077504410873e-07,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "pure_phi": {
+            "value": 1.7811177872470777e-05,
+            "lo": 1.5393193594054544e-05,
+            "hi": 2.0421296162394308e-05,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "pure_psi": {
+            "value": 2.4838557492500835e-05,
+            "lo": 2.218767932336595e-05,
+            "hi": 2.7722757525019848e-05,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "background": {
+            "value": 1.2845449233163568e-14,
+            "lo": 8.494741985365438e-15,
+            "hi": 1.7675809018908018e-14,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "J": {
+            "value": 2.582652345639484e-05,
+            "lo": 2.345313591991332e-05,
+            "hi": 2.832732806455957e-05,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "component_sum_direct_discrepancy": {
+            "value": 1.9598712242441252e-05,
+            "lo": 1.7599318334760027e-05,
+            "hi": 2.180563096771948e-05,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "off_target_energy": {
+            "value": 1.6944354585469455e-05,
+            "lo": 1.3486394981031812e-05,
+            "hi": 2.0677264170443227e-05,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "target_derivative_error": {
+            "value": 4.581880471021395e-05,
+            "lo": 3.7007445497010226e-05,
+            "hi": 5.4979683905825746e-05,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "total_derivative_error": {
+            "value": 0.00010908483905865051,
+            "lo": 9.906316808279361e-05,
+            "hi": 0.00011959174547867619,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_offset_energy": {
+            "value": 4.805353078362352e-06,
+            "lo": 3.466330337198306e-06,
+            "hi": 6.224065304729799e-06,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_residual_energy": {
+            "value": 3.994741581616263e-05,
+            "lo": 3.7104875210661617e-05,
+            "hi": 4.306502724550356e-05,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_cross_energy": {
+            "value": -0.0010436892723876656,
+            "lo": -0.001280519506738434,
+            "hi": -0.0007994636305498862,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_energy_closure_error": {
+            "value": 1.949287091836431e-09,
+            "lo": -8.452387674714114e-09,
+            "hi": 1.1864563062447253e-08,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          }
+        },
+        "residual_fraction": {
+          "value": 1.049496936453659,
+          "lo": 0.989058733377876,
+          "hi": 1.1083552340780514,
+          "excluded_bootstrap_draws": 0,
+          "interval": "approximate pointwise paired whole-seed ratio bootstrap; not mean of individual ratios"
+        },
+        "diagnostics": {
+          "basis_condition": 1.7169783429745813,
+          "gram_condition": 2.948014630243738,
+          "groundtruth_fit_residual": 5.329070518200751e-15,
+          "warning": "Full Gram retained: separate component energies are descriptive and need not sum to total energy on non-orthogonal windows"
+        }
+      },
+      "chronos2": {
+        "metrics": {
+          "L": {
+            "value": 0.0004891720213427728,
+            "lo": 0.00045275533897487725,
+            "hi": 0.0005248779131793767,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "S": {
+            "value": 0.000442242836301072,
+            "lo": 0.0004122252338063144,
+            "hi": 0.00047380812783343014,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "G": {
+            "value": 4.692918504170086e-05,
+            "lo": 9.691433289080992e-06,
+            "hi": 8.460232598447013e-05,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "pure_phi": {
+            "value": 0.00010282671502785422,
+            "lo": 8.904084369786601e-05,
+            "hi": 0.00011592715983636183,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "pure_psi": {
+            "value": 0.0003210497440548648,
+            "lo": 0.00028582653911883344,
+            "hi": 0.00035998600811487755,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "background": {
+            "value": 5.291926630731144e-16,
+            "lo": 3.2931881424771553e-16,
+            "hi": 7.635542480800629e-16,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "J": {
+            "value": 0.0002772337918014133,
+            "lo": 0.00024193272415089535,
+            "hi": 0.0003127110892874791,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "component_sum_direct_discrepancy": {
+            "value": 0.0003915333072654903,
+            "lo": 0.0003631110994319897,
+            "hi": 0.0004194548841041978,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "off_target_energy": {
+            "value": 0.000554672580146946,
+            "lo": 0.00042795343700127627,
+            "hi": 0.0006962263081008251,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "target_derivative_error": {
+            "value": 0.001016078181876703,
+            "lo": 0.0008233518252256845,
+            "hi": 0.0012414606249122459,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "total_derivative_error": {
+            "value": 0.006185029701857012,
+            "lo": 0.0057886664669851975,
+            "hi": 0.006600180531923277,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_offset_energy": {
+            "value": 0.00021408669672567154,
+            "lo": 0.00014798970700763842,
+            "hi": 0.0002881143801499072,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_residual_energy": {
+            "value": 0.004546019230423911,
+            "lo": 0.004264066554784131,
+            "hi": 0.004856307928626423,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_cross_energy": {
+            "value": 0.0005567559718857918,
+            "lo": -0.0012558606077073893,
+            "hi": 0.0024668407292480553,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          },
+          "derivative_energy_closure_error": {
+            "value": 1.8152613519236995e-09,
+            "lo": -6.470226028990825e-09,
+            "hi": 1.0322628004648785e-08,
+            "interval": "approximate pointwise whole-seed mean bootstrap"
+          }
+        },
+        "residual_fraction": {
+          "value": 0.9040640449695373,
+          "lo": 0.8365217523153429,
+          "hi": 0.9791961962125104,
+          "excluded_bootstrap_draws": 0,
+          "interval": "approximate pointwise paired whole-seed ratio bootstrap; not mean of individual ratios"
+        },
+        "diagnostics": {
+          "basis_condition": 1.7169783429745813,
+          "gram_condition": 2.948014630243738,
+          "groundtruth_fit_residual": 5.329070518200751e-15,
+          "warning": "Full Gram retained: separate component energies are descriptive and need not sum to total energy on non-orthogonal windows"
+        }
+      }
+    }
+  },
+  "primary_ranking_flip": false,
+  "sensitivity_ranking_flip": true,
+  "positive_gain_evidence": {
+    "c128/G_timesfm32": true,
+    "c128/G_bolt40": false,
+    "c512/G_timesfm32": true,
+    "c512/G_bolt40": false
+  },
+  "inference": "global Holm22 exact two-sided conditional sign tests; approximate pointwise mean/ratio bootstrap CIs; q is not mean superiority",
+  "limitation": "Nonsignificant G does not establish absence. Descriptive J can be nonzero for a separable frequency-biased forecast with G=0; no hidden mechanism established"
+}

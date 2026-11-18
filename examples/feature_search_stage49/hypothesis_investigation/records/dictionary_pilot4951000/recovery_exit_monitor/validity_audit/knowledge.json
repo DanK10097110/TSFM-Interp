@@ -1,0 +1,24 @@
+{
+  "question": "Which causal response comparisons are actually scorable?",
+  "exact_results": {
+    "cells": 3520,
+    "groups": 176,
+    "group_table": "groups.json",
+    "cell_table": "cells.json",
+    "missing": [],
+    "invalid_geometry": 2048,
+    "zero_selected_response": 1882
+  },
+  "controls": [
+    "Raw fallback values retained but excluded as null evidence",
+    "Natural-input reach is distinct from selected-edit reach",
+    "Zero response effect is distinct from zero activation edit"
+  ],
+  "limitations": [
+    "Independently sampled +/- nulls are not calibrated smooth response maps; no semantic selectivity claim is supported by this battery",
+    "Actual perturbed edit norms were not saved; separate cached-state audit reports proxies"
+  ],
+  "next_step": "Use saved-difference audit for response reconstruction; any new causal test needs reviewed matched smooth controls.",
+  "status": "posthoc_validity_correction",
+  "supersedes": "conservative-null wording and interpretations of zero effect as inactive/harmless"
+}

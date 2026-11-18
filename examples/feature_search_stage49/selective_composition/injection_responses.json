@@ -1,0 +1,2178 @@
+[
+  {
+    "model": "bolt",
+    "source": "monash_electricity_hourly:T000241",
+    "domain": "monash_electricity_hourly",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.7117316844542521,
+    "gain": 0.3998826253288339,
+    "clean_loss": 0.8213105295556831,
+    "injected_loss": 1.03603409642238
+  },
+  {
+    "model": "bolt",
+    "source": "monash_electricity_hourly:T000241",
+    "domain": "monash_electricity_hourly",
+    "policy": "output_selected",
+    "config": [
+      "output_free",
+      1,
+      "none",
+      "none",
+      1.0
+    ],
+    "response_nmse": 1.0331531475612912,
+    "gain": 0.38003868508996685,
+    "clean_loss": 0.6392307607557379,
+    "injected_loss": 1.03603409642238
+  },
+  {
+    "model": "bolt",
+    "source": "monash_electricity_hourly:T000241",
+    "domain": "monash_electricity_hourly",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "equal",
+      1.0
+    ],
+    "response_nmse": 0.7189073304888661,
+    "gain": 0.3987581861285927,
+    "clean_loss": 0.7000418845076564,
+    "injected_loss": 1.03603409642238
+  },
+  {
+    "model": "bolt",
+    "source": "monash_electricity_hourly:T000241",
+    "domain": "monash_electricity_hourly",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "confidence",
+      1.0
+    ],
+    "response_nmse": 0.7005686532458422,
+    "gain": 0.5475718334967267,
+    "clean_loss": 1.1976255294078382,
+    "injected_loss": 1.03603409642238
+  },
+  {
+    "model": "bolt",
+    "source": "monash_electricity_hourly:T000068",
+    "domain": "monash_electricity_hourly",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.8963123811960021,
+    "gain": 0.17763174608819274,
+    "clean_loss": 0.4334278094745545,
+    "injected_loss": 0.4870161874772021
+  },
+  {
+    "model": "bolt",
+    "source": "monash_electricity_hourly:T000068",
+    "domain": "monash_electricity_hourly",
+    "policy": "output_selected",
+    "config": [
+      "output_free",
+      1,
+      "none",
+      "none",
+      1.0
+    ],
+    "response_nmse": 1.3624582760789805,
+    "gain": 0.14867303662792714,
+    "clean_loss": 0.5837747064390693,
+    "injected_loss": 0.4870161874772021
+  },
+  {
+    "model": "bolt",
+    "source": "monash_electricity_hourly:T000068",
+    "domain": "monash_electricity_hourly",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "equal",
+      1.0
+    ],
+    "response_nmse": 0.9045220662549701,
+    "gain": 0.16769752396618784,
+    "clean_loss": 0.4391799766010619,
+    "injected_loss": 0.4870161874772021
+  },
+  {
+    "model": "bolt",
+    "source": "monash_electricity_hourly:T000068",
+    "domain": "monash_electricity_hourly",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "confidence",
+      1.0
+    ],
+    "response_nmse": 0.8265500640271299,
+    "gain": 0.33348575499129673,
+    "clean_loss": 0.18116283712012515,
+    "injected_loss": 0.4870161874772021
+  },
+  {
+    "model": "bolt",
+    "source": "monash_electricity_hourly:T000129",
+    "domain": "monash_electricity_hourly",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.30350660921345674,
+    "gain": 0.8013275694025538,
+    "clean_loss": 0.19263486119240655,
+    "injected_loss": 0.3838445394676571
+  },
+  {
+    "model": "bolt",
+    "source": "monash_electricity_hourly:T000129",
+    "domain": "monash_electricity_hourly",
+    "policy": "output_selected",
+    "config": [
+      "output_free",
+      1,
+      "none",
+      "none",
+      1.0
+    ],
+    "response_nmse": 0.12842227056161945,
+    "gain": 0.9207915853241024,
+    "clean_loss": 0.19263486119240655,
+    "injected_loss": 0.2112813306598255
+  },
+  {
+    "model": "bolt",
+    "source": "monash_electricity_hourly:T000129",
+    "domain": "monash_electricity_hourly",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "equal",
+      1.0
+    ],
+    "response_nmse": 0.3033356597672289,
+    "gain": 0.7631382314346853,
+    "clean_loss": 0.19263486119240655,
+    "injected_loss": 0.38200148156357744
+  },
+  {
+    "model": "bolt",
+    "source": "monash_electricity_hourly:T000129",
+    "domain": "monash_electricity_hourly",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "confidence",
+      1.0
+    ],
+    "response_nmse": 0.5179571826059234,
+    "gain": 0.3229602200224544,
+    "clean_loss": 0.19263486119240655,
+    "injected_loss": 0.5447334077486293
+  },
+  {
+    "model": "bolt",
+    "source": "monash_electricity_hourly:T000140",
+    "domain": "monash_electricity_hourly",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 1.0869765909141351,
+    "gain": 0.5336544587901826,
+    "clean_loss": 1.411656718479923,
+    "injected_loss": 1.469841116164437
+  },
+  {
+    "model": "bolt",
+    "source": "monash_electricity_hourly:T000140",
+    "domain": "monash_electricity_hourly",
+    "policy": "output_selected",
+    "config": [
+      "output_free",
+      1,
+      "none",
+      "none",
+      1.0
+    ],
+    "response_nmse": 1.4058026473634053,
+    "gain": 0.428483562961616,
+    "clean_loss": 0.8375221408393583,
+    "injected_loss": 1.469841116164437
+  },
+  {
+    "model": "bolt",
+    "source": "monash_electricity_hourly:T000140",
+    "domain": "monash_electricity_hourly",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "equal",
+      1.0
+    ],
+    "response_nmse": 1.183495633373474,
+    "gain": 0.524747755610201,
+    "clean_loss": 1.166961477600915,
+    "injected_loss": 1.469841116164437
+  },
+  {
+    "model": "bolt",
+    "source": "monash_electricity_hourly:T000140",
+    "domain": "monash_electricity_hourly",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "confidence",
+      1.0
+    ],
+    "response_nmse": 1.1688528447010924,
+    "gain": 0.6250965351088371,
+    "clean_loss": 1.5600688933192293,
+    "injected_loss": 1.469841116164437
+  },
+  {
+    "model": "bolt",
+    "source": "m4_hourly:T000235",
+    "domain": "m4_hourly",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.3864454623311288,
+    "gain": 0.5599533800718985,
+    "clean_loss": 0.0009808147460457354,
+    "injected_loss": 0.2950937266147476
+  },
+  {
+    "model": "bolt",
+    "source": "m4_hourly:T000235",
+    "domain": "m4_hourly",
+    "policy": "output_selected",
+    "config": [
+      "hybrid",
+      3,
+      "none",
+      "none",
+      1.0
+    ],
+    "response_nmse": 0.38571918027091795,
+    "gain": 0.5716414913167974,
+    "clean_loss": 0.0012359614355681935,
+    "injected_loss": 0.2950937266147476
+  },
+  {
+    "model": "bolt",
+    "source": "m4_hourly:T000235",
+    "domain": "m4_hourly",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "equal",
+      0.5
+    ],
+    "response_nmse": 0.39866708850475663,
+    "gain": 0.5615998830421175,
+    "clean_loss": 0.0015054689349649046,
+    "injected_loss": 0.2950937266147476
+  },
+  {
+    "model": "bolt",
+    "source": "m4_hourly:T000235",
+    "domain": "m4_hourly",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.3764665848635795,
+    "gain": 0.5864306169782,
+    "clean_loss": 0.007871001762401676,
+    "injected_loss": 0.2950937266147476
+  },
+  {
+    "model": "bolt",
+    "source": "m4_hourly:T000066",
+    "domain": "m4_hourly",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.3127899940254906,
+    "gain": 0.5405787213077261,
+    "clean_loss": 0.09499972474390087,
+    "injected_loss": 0.22918608916086938
+  },
+  {
+    "model": "bolt",
+    "source": "m4_hourly:T000066",
+    "domain": "m4_hourly",
+    "policy": "output_selected",
+    "config": [
+      "hybrid",
+      3,
+      "none",
+      "none",
+      1.0
+    ],
+    "response_nmse": 0.44475713446274395,
+    "gain": 0.5648644758715073,
+    "clean_loss": 0.11449557969752465,
+    "injected_loss": 0.22918608916086938
+  },
+  {
+    "model": "bolt",
+    "source": "m4_hourly:T000066",
+    "domain": "m4_hourly",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "equal",
+      0.5
+    ],
+    "response_nmse": 0.31647879434830456,
+    "gain": 0.5481769303517187,
+    "clean_loss": 0.08194409967547162,
+    "injected_loss": 0.22918608916086938
+  },
+  {
+    "model": "bolt",
+    "source": "m4_hourly:T000066",
+    "domain": "m4_hourly",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.3624436487151448,
+    "gain": 0.59871059759,
+    "clean_loss": 0.0764145987800187,
+    "injected_loss": 0.22918608916086938
+  },
+  {
+    "model": "bolt",
+    "source": "m4_hourly:T000212",
+    "domain": "m4_hourly",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.6270563747992405,
+    "gain": 0.6971155117496783,
+    "clean_loss": 0.0021098169206063616,
+    "injected_loss": 0.5334419193571689
+  },
+  {
+    "model": "bolt",
+    "source": "m4_hourly:T000212",
+    "domain": "m4_hourly",
+    "policy": "output_selected",
+    "config": [
+      "hybrid",
+      3,
+      "none",
+      "none",
+      1.0
+    ],
+    "response_nmse": 0.6375072824915021,
+    "gain": 0.6955062800492964,
+    "clean_loss": 0.0008089025867307371,
+    "injected_loss": 0.5334419193571689
+  },
+  {
+    "model": "bolt",
+    "source": "m4_hourly:T000212",
+    "domain": "m4_hourly",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "equal",
+      0.5
+    ],
+    "response_nmse": 0.6375859519747096,
+    "gain": 0.6974380266843138,
+    "clean_loss": 0.0018179827973241146,
+    "injected_loss": 0.5334419193571689
+  },
+  {
+    "model": "bolt",
+    "source": "m4_hourly:T000212",
+    "domain": "m4_hourly",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.6087116406634864,
+    "gain": 0.7008005285631319,
+    "clean_loss": 0.012640401994387344,
+    "injected_loss": 0.5334419193571689
+  },
+  {
+    "model": "bolt",
+    "source": "m4_hourly:T000262",
+    "domain": "m4_hourly",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.4457835805854964,
+    "gain": 0.5588598753779949,
+    "clean_loss": 0.0029246641958993592,
+    "injected_loss": 0.35058797431076416
+  },
+  {
+    "model": "bolt",
+    "source": "m4_hourly:T000262",
+    "domain": "m4_hourly",
+    "policy": "output_selected",
+    "config": [
+      "hybrid",
+      3,
+      "none",
+      "none",
+      1.0
+    ],
+    "response_nmse": 0.44765971746902294,
+    "gain": 0.5660954529508966,
+    "clean_loss": 0.0011724345492072977,
+    "injected_loss": 0.35058797431076416
+  },
+  {
+    "model": "bolt",
+    "source": "m4_hourly:T000262",
+    "domain": "m4_hourly",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "equal",
+      0.5
+    ],
+    "response_nmse": 0.45746820746977496,
+    "gain": 0.5616437101425806,
+    "clean_loss": 0.001966327588215585,
+    "injected_loss": 0.35058797431076416
+  },
+  {
+    "model": "bolt",
+    "source": "m4_hourly:T000262",
+    "domain": "m4_hourly",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.42373674773662073,
+    "gain": 0.5712952936151297,
+    "clean_loss": 0.013143005480658809,
+    "injected_loss": 0.35058797431076416
+  },
+  {
+    "model": "bolt",
+    "source": "monash_pedestrian_counts:T000034",
+    "domain": "monash_pedestrian_counts",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 1.6727853381689715,
+    "gain": 0.27524615390010887,
+    "clean_loss": 0.11822126179167637,
+    "injected_loss": 1.358892827422054
+  },
+  {
+    "model": "bolt",
+    "source": "monash_pedestrian_counts:T000034",
+    "domain": "monash_pedestrian_counts",
+    "policy": "output_selected",
+    "config": [
+      "hybrid",
+      1,
+      "none",
+      "none",
+      1.0
+    ],
+    "response_nmse": 0.2895854279488511,
+    "gain": 0.76746574001916,
+    "clean_loss": 0.11822126179167637,
+    "injected_loss": 0.28550819689295487
+  },
+  {
+    "model": "bolt",
+    "source": "monash_pedestrian_counts:T000034",
+    "domain": "monash_pedestrian_counts",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      3,
+      "0",
+      "confidence",
+      1.0
+    ],
+    "response_nmse": 1.6801267138279357,
+    "gain": 0.01597309623743186,
+    "clean_loss": 0.11822126179167637,
+    "injected_loss": 1.2425018361206543
+  },
+  {
+    "model": "bolt",
+    "source": "monash_pedestrian_counts:T000034",
+    "domain": "monash_pedestrian_counts",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "3",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 2.0323995504260353,
+    "gain": 0.24148503667420929,
+    "clean_loss": 0.11822126179167637,
+    "injected_loss": 1.6772122578685207
+  },
+  {
+    "model": "bolt",
+    "source": "monash_pedestrian_counts:T000019",
+    "domain": "monash_pedestrian_counts",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.7067848761311839,
+    "gain": 0.48203522895228657,
+    "clean_loss": 0.2295559620973839,
+    "injected_loss": 0.7536837563417931
+  },
+  {
+    "model": "bolt",
+    "source": "monash_pedestrian_counts:T000019",
+    "domain": "monash_pedestrian_counts",
+    "policy": "output_selected",
+    "config": [
+      "hybrid",
+      1,
+      "none",
+      "none",
+      1.0
+    ],
+    "response_nmse": 0.8440155261399289,
+    "gain": 0.5697115272777774,
+    "clean_loss": 0.1609970998957197,
+    "injected_loss": 0.7536837563417931
+  },
+  {
+    "model": "bolt",
+    "source": "monash_pedestrian_counts:T000019",
+    "domain": "monash_pedestrian_counts",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      3,
+      "0",
+      "confidence",
+      1.0
+    ],
+    "response_nmse": 0.6283243252334804,
+    "gain": 0.5839787594257688,
+    "clean_loss": 0.19575196978754944,
+    "injected_loss": 0.7536837563417931
+  },
+  {
+    "model": "bolt",
+    "source": "monash_pedestrian_counts:T000019",
+    "domain": "monash_pedestrian_counts",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "3",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.6704643380064673,
+    "gain": 0.5314731222309724,
+    "clean_loss": 0.18666456672959467,
+    "injected_loss": 0.7536837563417931
+  },
+  {
+    "model": "bolt",
+    "source": "monash_pedestrian_counts:T000050",
+    "domain": "monash_pedestrian_counts",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.7775530856820628,
+    "gain": 0.5287867790262103,
+    "clean_loss": 0.2026826999861796,
+    "injected_loss": 0.72702838439655
+  },
+  {
+    "model": "bolt",
+    "source": "monash_pedestrian_counts:T000050",
+    "domain": "monash_pedestrian_counts",
+    "policy": "output_selected",
+    "config": [
+      "hybrid",
+      1,
+      "none",
+      "none",
+      1.0
+    ],
+    "response_nmse": 0.8391681414968741,
+    "gain": 0.483217491328612,
+    "clean_loss": 0.1752285888960265,
+    "injected_loss": 0.72702838439655
+  },
+  {
+    "model": "bolt",
+    "source": "monash_pedestrian_counts:T000050",
+    "domain": "monash_pedestrian_counts",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      3,
+      "0",
+      "confidence",
+      1.0
+    ],
+    "response_nmse": 0.7059589807459715,
+    "gain": 0.6195986084393762,
+    "clean_loss": 0.1243823353559004,
+    "injected_loss": 0.72702838439655
+  },
+  {
+    "model": "bolt",
+    "source": "monash_pedestrian_counts:T000050",
+    "domain": "monash_pedestrian_counts",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "3",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.7771815592972953,
+    "gain": 0.5008348893072219,
+    "clean_loss": 0.2222465187022247,
+    "injected_loss": 0.72702838439655
+  },
+  {
+    "model": "bolt",
+    "source": "monash_pedestrian_counts:T000013",
+    "domain": "monash_pedestrian_counts",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.8077242810210167,
+    "gain": 0.4872944461248585,
+    "clean_loss": 0.10804202366314165,
+    "injected_loss": 0.8509426844510625
+  },
+  {
+    "model": "bolt",
+    "source": "monash_pedestrian_counts:T000013",
+    "domain": "monash_pedestrian_counts",
+    "policy": "output_selected",
+    "config": [
+      "hybrid",
+      1,
+      "none",
+      "none",
+      1.0
+    ],
+    "response_nmse": 0.8077242810210167,
+    "gain": 0.4872944461248585,
+    "clean_loss": 0.10804202366314165,
+    "injected_loss": 0.8509426844510625
+  },
+  {
+    "model": "bolt",
+    "source": "monash_pedestrian_counts:T000013",
+    "domain": "monash_pedestrian_counts",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      3,
+      "0",
+      "confidence",
+      1.0
+    ],
+    "response_nmse": 0.8077242810210167,
+    "gain": 0.4872944461248585,
+    "clean_loss": 0.10804202366314165,
+    "injected_loss": 0.8509426844510625
+  },
+  {
+    "model": "bolt",
+    "source": "monash_pedestrian_counts:T000013",
+    "domain": "monash_pedestrian_counts",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "3",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.8077242810210167,
+    "gain": 0.4872944461248585,
+    "clean_loss": 0.10804202366314165,
+    "injected_loss": 0.8509426844510625
+  },
+  {
+    "model": "bolt",
+    "source": "monash_traffic:T000026",
+    "domain": "monash_traffic",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 1.2607475367406187,
+    "gain": 0.5837344307306775,
+    "clean_loss": 0.42009073146765546,
+    "injected_loss": 0.9586731229236664
+  },
+  {
+    "model": "bolt",
+    "source": "monash_traffic:T000026",
+    "domain": "monash_traffic",
+    "policy": "output_selected",
+    "config": [
+      "hybrid",
+      2,
+      "none",
+      "none",
+      1.0
+    ],
+    "response_nmse": 0.46889520514384164,
+    "gain": 1.1579971324254232,
+    "clean_loss": 0.8224857764217527,
+    "injected_loss": 0.25819659824904473
+  },
+  {
+    "model": "bolt",
+    "source": "monash_traffic:T000026",
+    "domain": "monash_traffic",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      1,
+      "3",
+      "equal",
+      1.0
+    ],
+    "response_nmse": 0.9300739707019293,
+    "gain": 0.7912874528635097,
+    "clean_loss": 0.34967358372825474,
+    "injected_loss": 0.5717402099439166
+  },
+  {
+    "model": "bolt",
+    "source": "monash_traffic:T000026",
+    "domain": "monash_traffic",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 2.409299063217696,
+    "gain": 0.7743333778562475,
+    "clean_loss": 1.0925117484581757,
+    "injected_loss": 1.494336647126245
+  },
+  {
+    "model": "bolt",
+    "source": "monash_traffic:T000784",
+    "domain": "monash_traffic",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.8752619966343981,
+    "gain": 0.5087115967787461,
+    "clean_loss": 0.16305598786224762,
+    "injected_loss": 0.6504065827137903
+  },
+  {
+    "model": "bolt",
+    "source": "monash_traffic:T000784",
+    "domain": "monash_traffic",
+    "policy": "output_selected",
+    "config": [
+      "hybrid",
+      2,
+      "none",
+      "none",
+      1.0
+    ],
+    "response_nmse": 1.0703044106312152,
+    "gain": 0.5466368209499602,
+    "clean_loss": 0.36267722791553136,
+    "injected_loss": 0.6504065827137903
+  },
+  {
+    "model": "bolt",
+    "source": "monash_traffic:T000784",
+    "domain": "monash_traffic",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      1,
+      "3",
+      "equal",
+      1.0
+    ],
+    "response_nmse": 0.8519957266402984,
+    "gain": 0.5489988925071928,
+    "clean_loss": 0.16091308612789115,
+    "injected_loss": 0.6504065827137903
+  },
+  {
+    "model": "bolt",
+    "source": "monash_traffic:T000784",
+    "domain": "monash_traffic",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.8816488634234498,
+    "gain": 0.5501519504328951,
+    "clean_loss": 0.19742387327561275,
+    "injected_loss": 0.6504065827137903
+  },
+  {
+    "model": "bolt",
+    "source": "monash_traffic:T000772",
+    "domain": "monash_traffic",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.6366617120529148,
+    "gain": 0.5578669908947269,
+    "clean_loss": 0.10415509115562606,
+    "injected_loss": 0.44363640253058084
+  },
+  {
+    "model": "bolt",
+    "source": "monash_traffic:T000772",
+    "domain": "monash_traffic",
+    "policy": "output_selected",
+    "config": [
+      "hybrid",
+      2,
+      "none",
+      "none",
+      1.0
+    ],
+    "response_nmse": 0.60665213407724,
+    "gain": 0.5897973964687059,
+    "clean_loss": 0.18307100402673776,
+    "injected_loss": 0.44363640253058084
+  },
+  {
+    "model": "bolt",
+    "source": "monash_traffic:T000772",
+    "domain": "monash_traffic",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      1,
+      "3",
+      "equal",
+      1.0
+    ],
+    "response_nmse": 0.633574411373906,
+    "gain": 0.6143655857012479,
+    "clean_loss": 0.1489664639259552,
+    "injected_loss": 0.44363640253058084
+  },
+  {
+    "model": "bolt",
+    "source": "monash_traffic:T000772",
+    "domain": "monash_traffic",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.6373180007952541,
+    "gain": 0.5827575133073476,
+    "clean_loss": 0.13193999040073304,
+    "injected_loss": 0.44363640253058084
+  },
+  {
+    "model": "bolt",
+    "source": "monash_traffic:T000600",
+    "domain": "monash_traffic",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.5460385945313607,
+    "gain": 0.5398453071950067,
+    "clean_loss": 0.05747715384569222,
+    "injected_loss": 0.4155725117694823
+  },
+  {
+    "model": "bolt",
+    "source": "monash_traffic:T000600",
+    "domain": "monash_traffic",
+    "policy": "output_selected",
+    "config": [
+      "hybrid",
+      2,
+      "none",
+      "none",
+      1.0
+    ],
+    "response_nmse": 0.726205533628158,
+    "gain": 0.6138884369897685,
+    "clean_loss": 0.2336035285511031,
+    "injected_loss": 0.4155725117694823
+  },
+  {
+    "model": "bolt",
+    "source": "monash_traffic:T000600",
+    "domain": "monash_traffic",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      1,
+      "3",
+      "equal",
+      1.0
+    ],
+    "response_nmse": 0.539566404368856,
+    "gain": 0.6064998155693538,
+    "clean_loss": 0.09015050852532643,
+    "injected_loss": 0.4155725117694823
+  },
+  {
+    "model": "bolt",
+    "source": "monash_traffic:T000600",
+    "domain": "monash_traffic",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.5561350354786688,
+    "gain": 0.5788957253262195,
+    "clean_loss": 0.08331051536122011,
+    "injected_loss": 0.4155725117694823
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_electricity_hourly:T000241",
+    "domain": "monash_electricity_hourly",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.2103758376480085,
+    "gain": 0.8027464941829066,
+    "clean_loss": 0.9524843879319673,
+    "injected_loss": 0.24563665010790817
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_electricity_hourly:T000241",
+    "domain": "monash_electricity_hourly",
+    "policy": "output_selected",
+    "config": [
+      "output_free",
+      1,
+      "none",
+      "none",
+      1.0
+    ],
+    "response_nmse": 0.09760660142474657,
+    "gain": 0.7679084642995719,
+    "clean_loss": 0.5084476463787083,
+    "injected_loss": 0.24563665010790817
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_electricity_hourly:T000241",
+    "domain": "monash_electricity_hourly",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "confidence",
+      0.5
+    ],
+    "response_nmse": 0.251246674772518,
+    "gain": 0.8332217344187913,
+    "clean_loss": 1.1517170597138464,
+    "injected_loss": 0.24563665010790817
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_electricity_hourly:T000241",
+    "domain": "monash_electricity_hourly",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.1600099264042219,
+    "gain": 0.751424514005123,
+    "clean_loss": 0.5525503413464928,
+    "injected_loss": 0.24563665010790817
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_electricity_hourly:T000068",
+    "domain": "monash_electricity_hourly",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.23690825736487742,
+    "gain": 0.8911172593441855,
+    "clean_loss": 0.24363396439852827,
+    "injected_loss": 0.20279788202532142
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_electricity_hourly:T000068",
+    "domain": "monash_electricity_hourly",
+    "policy": "output_selected",
+    "config": [
+      "output_free",
+      1,
+      "none",
+      "none",
+      1.0
+    ],
+    "response_nmse": 0.14327935608563308,
+    "gain": 0.7808365885569047,
+    "clean_loss": 0.4226693167982172,
+    "injected_loss": 0.20279788202532142
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_electricity_hourly:T000068",
+    "domain": "monash_electricity_hourly",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "confidence",
+      0.5
+    ],
+    "response_nmse": 0.1614614693023994,
+    "gain": 0.9460197177871815,
+    "clean_loss": 0.1986962692467564,
+    "injected_loss": 0.20279788202532142
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_electricity_hourly:T000068",
+    "domain": "monash_electricity_hourly",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.24227106853214617,
+    "gain": 0.8437505892965005,
+    "clean_loss": 0.2985193050004161,
+    "injected_loss": 0.20279788202532142
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_electricity_hourly:T000129",
+    "domain": "monash_electricity_hourly",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.5099421785707106,
+    "gain": 1.0822211513742512,
+    "clean_loss": 0.40992699932364113,
+    "injected_loss": 0.5973754423301588
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_electricity_hourly:T000129",
+    "domain": "monash_electricity_hourly",
+    "policy": "output_selected",
+    "config": [
+      "output_free",
+      1,
+      "none",
+      "none",
+      1.0
+    ],
+    "response_nmse": 0.095205421718587,
+    "gain": 1.0370207022044462,
+    "clean_loss": 0.40992699932364113,
+    "injected_loss": 0.2463672642986242
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_electricity_hourly:T000129",
+    "domain": "monash_electricity_hourly",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "confidence",
+      0.5
+    ],
+    "response_nmse": 0.21026540241629285,
+    "gain": 1.004942213142182,
+    "clean_loss": 0.40992699932364113,
+    "injected_loss": 0.39135732703260684
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_electricity_hourly:T000129",
+    "domain": "monash_electricity_hourly",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.4616059320012411,
+    "gain": 1.0420884614824697,
+    "clean_loss": 0.40992699932364113,
+    "injected_loss": 0.625734555528957
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_electricity_hourly:T000140",
+    "domain": "monash_electricity_hourly",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.20385078440440238,
+    "gain": 0.6925808693540241,
+    "clean_loss": 1.1286919248804672,
+    "injected_loss": 0.6190563105239312
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_electricity_hourly:T000140",
+    "domain": "monash_electricity_hourly",
+    "policy": "output_selected",
+    "config": [
+      "output_free",
+      1,
+      "none",
+      "none",
+      1.0
+    ],
+    "response_nmse": 0.2758071393285812,
+    "gain": 0.6631249904643405,
+    "clean_loss": 0.8004492570373376,
+    "injected_loss": 0.6190563105239312
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_electricity_hourly:T000140",
+    "domain": "monash_electricity_hourly",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "confidence",
+      0.5
+    ],
+    "response_nmse": 0.2276751877358096,
+    "gain": 0.7232407310704246,
+    "clean_loss": 1.2057380825402944,
+    "injected_loss": 0.6190563105239312
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_electricity_hourly:T000140",
+    "domain": "monash_electricity_hourly",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.20698065527517767,
+    "gain": 0.6557388743148077,
+    "clean_loss": 0.8579703840121322,
+    "injected_loss": 0.6190563105239312
+  },
+  {
+    "model": "timesfm",
+    "source": "m4_hourly:T000235",
+    "domain": "m4_hourly",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.02031740246285892,
+    "gain": 0.9570836996574439,
+    "clean_loss": 0.001146712988233647,
+    "injected_loss": 0.01490632852466798
+  },
+  {
+    "model": "timesfm",
+    "source": "m4_hourly:T000235",
+    "domain": "m4_hourly",
+    "policy": "output_selected",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.02031740246285892,
+    "gain": 0.9570836996574439,
+    "clean_loss": 0.001146712988233647,
+    "injected_loss": 0.01490632852466798
+  },
+  {
+    "model": "timesfm",
+    "source": "m4_hourly:T000235",
+    "domain": "m4_hourly",
+    "policy": "fusion_selected",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.02031740246285892,
+    "gain": 0.9570836996574439,
+    "clean_loss": 0.001146712988233647,
+    "injected_loss": 0.01490632852466798
+  },
+  {
+    "model": "timesfm",
+    "source": "m4_hourly:T000235",
+    "domain": "m4_hourly",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.017536327127841707,
+    "gain": 0.9846910798238243,
+    "clean_loss": 0.00378757712901055,
+    "injected_loss": 0.01490632852466798
+  },
+  {
+    "model": "timesfm",
+    "source": "m4_hourly:T000066",
+    "domain": "m4_hourly",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.09915089852437654,
+    "gain": 0.9800075562819553,
+    "clean_loss": 0.08284421000498904,
+    "injected_loss": 0.08979376456498625
+  },
+  {
+    "model": "timesfm",
+    "source": "m4_hourly:T000066",
+    "domain": "m4_hourly",
+    "policy": "output_selected",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.09915089852437654,
+    "gain": 0.9800075562819553,
+    "clean_loss": 0.08284421000498904,
+    "injected_loss": 0.08979376456498625
+  },
+  {
+    "model": "timesfm",
+    "source": "m4_hourly:T000066",
+    "domain": "m4_hourly",
+    "policy": "fusion_selected",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.09915089852437654,
+    "gain": 0.9800075562819553,
+    "clean_loss": 0.08284421000498904,
+    "injected_loss": 0.08979376456498625
+  },
+  {
+    "model": "timesfm",
+    "source": "m4_hourly:T000066",
+    "domain": "m4_hourly",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.07320476273313248,
+    "gain": 1.0109557221287035,
+    "clean_loss": 0.05568076731885972,
+    "injected_loss": 0.08979376456498625
+  },
+  {
+    "model": "timesfm",
+    "source": "m4_hourly:T000212",
+    "domain": "m4_hourly",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.07474307810291841,
+    "gain": 0.7610423055038967,
+    "clean_loss": 0.0026187740653664166,
+    "injected_loss": 0.06732755640345761
+  },
+  {
+    "model": "timesfm",
+    "source": "m4_hourly:T000212",
+    "domain": "m4_hourly",
+    "policy": "output_selected",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.07474307810291841,
+    "gain": 0.7610423055038967,
+    "clean_loss": 0.0026187740653664166,
+    "injected_loss": 0.06732755640345761
+  },
+  {
+    "model": "timesfm",
+    "source": "m4_hourly:T000212",
+    "domain": "m4_hourly",
+    "policy": "fusion_selected",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.07474307810291841,
+    "gain": 0.7610423055038967,
+    "clean_loss": 0.0026187740653664166,
+    "injected_loss": 0.06732755640345761
+  },
+  {
+    "model": "timesfm",
+    "source": "m4_hourly:T000212",
+    "domain": "m4_hourly",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.07645412367280255,
+    "gain": 0.7662522102918294,
+    "clean_loss": 0.009273423668955052,
+    "injected_loss": 0.06732755640345761
+  },
+  {
+    "model": "timesfm",
+    "source": "m4_hourly:T000262",
+    "domain": "m4_hourly",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.09596901094673974,
+    "gain": 0.7448508284543047,
+    "clean_loss": 0.00043358451530708215,
+    "injected_loss": 0.07381462633565956
+  },
+  {
+    "model": "timesfm",
+    "source": "m4_hourly:T000262",
+    "domain": "m4_hourly",
+    "policy": "output_selected",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.09596901094673974,
+    "gain": 0.7448508284543047,
+    "clean_loss": 0.00043358451530708215,
+    "injected_loss": 0.07381462633565956
+  },
+  {
+    "model": "timesfm",
+    "source": "m4_hourly:T000262",
+    "domain": "m4_hourly",
+    "policy": "fusion_selected",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.09596901094673974,
+    "gain": 0.7448508284543047,
+    "clean_loss": 0.00043358451530708215,
+    "injected_loss": 0.07381462633565956
+  },
+  {
+    "model": "timesfm",
+    "source": "m4_hourly:T000262",
+    "domain": "m4_hourly",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.08535349516732675,
+    "gain": 0.7659783595416741,
+    "clean_loss": 0.004937085341129884,
+    "injected_loss": 0.07381462633565956
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_pedestrian_counts:T000034",
+    "domain": "monash_pedestrian_counts",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.7463763818017969,
+    "gain": 0.8802884906377113,
+    "clean_loss": 0.05988561593718827,
+    "injected_loss": 0.6928950357238182
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_pedestrian_counts:T000034",
+    "domain": "monash_pedestrian_counts",
+    "policy": "output_selected",
+    "config": [
+      "output_locked",
+      1,
+      "none",
+      "none",
+      1.0
+    ],
+    "response_nmse": 0.44118240876585063,
+    "gain": 0.9420725461779879,
+    "clean_loss": 0.05988561593718827,
+    "injected_loss": 0.44103097896424936
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_pedestrian_counts:T000034",
+    "domain": "monash_pedestrian_counts",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.4063995701954872,
+    "gain": 0.7052686782906978,
+    "clean_loss": 0.05988561593718827,
+    "injected_loss": 0.344804054391992
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_pedestrian_counts:T000034",
+    "domain": "monash_pedestrian_counts",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.4063995701954872,
+    "gain": 0.7052686782906978,
+    "clean_loss": 0.05988561593718827,
+    "injected_loss": 0.344804054391992
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_pedestrian_counts:T000019",
+    "domain": "monash_pedestrian_counts",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.3033957612667565,
+    "gain": 0.8074574945525855,
+    "clean_loss": 0.2122079259815155,
+    "injected_loss": 0.2544786522600697
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_pedestrian_counts:T000019",
+    "domain": "monash_pedestrian_counts",
+    "policy": "output_selected",
+    "config": [
+      "output_locked",
+      1,
+      "none",
+      "none",
+      1.0
+    ],
+    "response_nmse": 0.18561205666661887,
+    "gain": 0.8520395667937469,
+    "clean_loss": 0.20742991488218665,
+    "injected_loss": 0.2544786522600697
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_pedestrian_counts:T000019",
+    "domain": "monash_pedestrian_counts",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.25298675587206637,
+    "gain": 0.7775942968009205,
+    "clean_loss": 0.1625893712325069,
+    "injected_loss": 0.2544786522600697
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_pedestrian_counts:T000019",
+    "domain": "monash_pedestrian_counts",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.25298675587206637,
+    "gain": 0.7775942968009205,
+    "clean_loss": 0.1625893712325069,
+    "injected_loss": 0.2544786522600697
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_pedestrian_counts:T000050",
+    "domain": "monash_pedestrian_counts",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.057606345766972704,
+    "gain": 0.7977851196036394,
+    "clean_loss": 0.17797717569053167,
+    "injected_loss": 0.09661281291067865
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_pedestrian_counts:T000050",
+    "domain": "monash_pedestrian_counts",
+    "policy": "output_selected",
+    "config": [
+      "output_locked",
+      1,
+      "none",
+      "none",
+      1.0
+    ],
+    "response_nmse": 0.09333109788563787,
+    "gain": 0.771371350445679,
+    "clean_loss": 0.26266573489734996,
+    "injected_loss": 0.09661281291067865
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_pedestrian_counts:T000050",
+    "domain": "monash_pedestrian_counts",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.06163090730365262,
+    "gain": 0.7698696688582612,
+    "clean_loss": 0.16284200228626836,
+    "injected_loss": 0.09661281291067865
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_pedestrian_counts:T000050",
+    "domain": "monash_pedestrian_counts",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.06163090730365262,
+    "gain": 0.7698696688582612,
+    "clean_loss": 0.16284200228626836,
+    "injected_loss": 0.09661281291067865
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_pedestrian_counts:T000013",
+    "domain": "monash_pedestrian_counts",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.28439932804370016,
+    "gain": 0.7417609962412591,
+    "clean_loss": 0.18643809990377186,
+    "injected_loss": 0.44345038007808735
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_pedestrian_counts:T000013",
+    "domain": "monash_pedestrian_counts",
+    "policy": "output_selected",
+    "config": [
+      "output_locked",
+      1,
+      "none",
+      "none",
+      1.0
+    ],
+    "response_nmse": 0.28439932804370016,
+    "gain": 0.7417609962412591,
+    "clean_loss": 0.18643809990377186,
+    "injected_loss": 0.44345038007808735
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_pedestrian_counts:T000013",
+    "domain": "monash_pedestrian_counts",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.28439932804370016,
+    "gain": 0.7417609962412591,
+    "clean_loss": 0.18643809990377186,
+    "injected_loss": 0.44345038007808735
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_pedestrian_counts:T000013",
+    "domain": "monash_pedestrian_counts",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.28439932804370016,
+    "gain": 0.7417609962412591,
+    "clean_loss": 0.18643809990377186,
+    "injected_loss": 0.44345038007808735
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_traffic:T000026",
+    "domain": "monash_traffic",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.2633004081900158,
+    "gain": 0.7515618069978911,
+    "clean_loss": 0.2550158360208357,
+    "injected_loss": 0.2878388226634966
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_traffic:T000026",
+    "domain": "monash_traffic",
+    "policy": "output_selected",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.2633004081900158,
+    "gain": 0.7515618069978911,
+    "clean_loss": 0.2550158360208357,
+    "injected_loss": 0.2878388226634966
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_traffic:T000026",
+    "domain": "monash_traffic",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      2,
+      "10",
+      "learned",
+      0.5
+    ],
+    "response_nmse": 0.28508244518964987,
+    "gain": 0.8232384768853854,
+    "clean_loss": 0.3132435222038619,
+    "injected_loss": 0.27084164621859064
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_traffic:T000026",
+    "domain": "monash_traffic",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.493501279616526,
+    "gain": 0.5922495300678924,
+    "clean_loss": 0.2393102479508028,
+    "injected_loss": 0.4729370768420727
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_traffic:T000784",
+    "domain": "monash_traffic",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.08413716676490318,
+    "gain": 0.8168657910142068,
+    "clean_loss": 0.11866284510989376,
+    "injected_loss": 0.18189170824230325
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_traffic:T000784",
+    "domain": "monash_traffic",
+    "policy": "output_selected",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.08413716676490318,
+    "gain": 0.8168657910142068,
+    "clean_loss": 0.11866284510989376,
+    "injected_loss": 0.18189170824230325
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_traffic:T000784",
+    "domain": "monash_traffic",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      2,
+      "10",
+      "learned",
+      0.5
+    ],
+    "response_nmse": 0.07184145794345603,
+    "gain": 0.8288065152906813,
+    "clean_loss": 0.1485565683936333,
+    "injected_loss": 0.18189170824230325
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_traffic:T000784",
+    "domain": "monash_traffic",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.06121992395993407,
+    "gain": 0.8434319434887566,
+    "clean_loss": 0.23224239487489354,
+    "injected_loss": 0.18189170824230325
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_traffic:T000772",
+    "domain": "monash_traffic",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.19550500700275486,
+    "gain": 0.8150316922630515,
+    "clean_loss": 0.12626487762046626,
+    "injected_loss": 0.25588161763367234
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_traffic:T000772",
+    "domain": "monash_traffic",
+    "policy": "output_selected",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.19550500700275486,
+    "gain": 0.8150316922630515,
+    "clean_loss": 0.12626487762046626,
+    "injected_loss": 0.25588161763367234
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_traffic:T000772",
+    "domain": "monash_traffic",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      2,
+      "10",
+      "learned",
+      0.5
+    ],
+    "response_nmse": 0.16658414873882119,
+    "gain": 0.8493625379655936,
+    "clean_loss": 0.12726257461807813,
+    "injected_loss": 0.25588161763367234
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_traffic:T000772",
+    "domain": "monash_traffic",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.168667467774944,
+    "gain": 0.7915911030926476,
+    "clean_loss": 0.1292206510331782,
+    "injected_loss": 0.25588161763367234
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_traffic:T000600",
+    "domain": "monash_traffic",
+    "policy": "native",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.28849877935374646,
+    "gain": 0.6514430708502041,
+    "clean_loss": 0.05926150351071021,
+    "injected_loss": 0.34872756869822197
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_traffic:T000600",
+    "domain": "monash_traffic",
+    "policy": "output_selected",
+    "config": [
+      "native",
+      0,
+      "none",
+      "none",
+      0.0
+    ],
+    "response_nmse": 0.28849877935374646,
+    "gain": 0.6514430708502041,
+    "clean_loss": 0.05926150351071021,
+    "injected_loss": 0.34872756869822197
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_traffic:T000600",
+    "domain": "monash_traffic",
+    "policy": "fusion_selected",
+    "config": [
+      "fusion",
+      2,
+      "10",
+      "learned",
+      0.5
+    ],
+    "response_nmse": 0.22529173653320295,
+    "gain": 0.6681980046083548,
+    "clean_loss": 0.10092431776219919,
+    "injected_loss": 0.34872756869822197
+  },
+  {
+    "model": "timesfm",
+    "source": "monash_traffic:T000600",
+    "domain": "monash_traffic",
+    "policy": "geometry_selected",
+    "config": [
+      "fusion",
+      1,
+      "0",
+      "learned",
+      1.0
+    ],
+    "response_nmse": 0.25917678939989097,
+    "gain": 0.6488255824318385,
+    "clean_loss": 0.07382304481813518,
+    "injected_loss": 0.34872756869822197
+  }
+]

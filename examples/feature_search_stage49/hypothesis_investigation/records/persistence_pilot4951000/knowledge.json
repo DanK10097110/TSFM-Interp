@@ -1,0 +1,54 @@
+{
+  "question": "Does selective tone continuation trade persistence accuracy for risk under indistinguishable future changes, and does visible evidence alter behavior?",
+  "design": {
+    "seeds": [
+      4951000,
+      4951001,
+      4951002,
+      4951003,
+      4951004,
+      4951005,
+      4951006,
+      4951007
+    ],
+    "source_split": "first4 FIT,last4 TEST",
+    "context": 128,
+    "horizon": 32,
+    "rows": 64,
+    "unique_histories": 32,
+    "protocol_sha256": "1b2b6e734d40733aaee1c249ba2bfbb34fbaa8d78be68b36ba15269e5c7cc160"
+  },
+  "exact_findings": {
+    "status": "failed instrumentation; no forecast conclusions",
+    "failure": "Exact duplicate-batch identity failed for Bolt at first query",
+    "execution": {
+      "bolt": {
+        "valid": false,
+        "returncode": 1,
+        "reason": null,
+        "seconds": 13.9252587830415,
+        "peak_rss_bytes": 1077493760
+      }
+    },
+    "session": 67762,
+    "timesfm_launched": false
+  },
+  "controls": {
+    "exact_repeat_and_self_patch_reached": true,
+    "duplicate_batch_gate_failed": true,
+    "targets_isolated": true,
+    "tolerance_not_relaxed": true,
+    "failed_run_preserved": true
+  },
+  "limitations": [
+    "Original failed worker did not persist the unequal vectors; quantified in a separately frozen calibration.",
+    "No behavioral results may be inferred from this failed attempt."
+  ],
+  "evidence_class": "instrumentation failure",
+  "next_decision": {
+    "action": "Calibration completed separately; use fixed singleton geometry with every original exact gate retained.",
+    "calibration": "tsfm_lens/runs/persistence_pilot4951000/calibration_batch_geometry",
+    "recovery": "tsfm_lens/runs/persistence_pilot4951000/singleton_geometry"
+  },
+  "source_edits": "No prior source, ROADMAP or FINDINGS edited; no commit"
+}

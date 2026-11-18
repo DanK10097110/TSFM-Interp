@@ -1,0 +1,2314 @@
+{
+  "status": "complete",
+  "question": "Do other marginal quantiles track a component missed by the median?",
+  "exact_findings": [
+    {
+      "model": "bolt",
+      "policy": "native",
+      "period": 24.0,
+      "amplitude": 0.1,
+      "n_sources": 8,
+      "median_nmse": 0.6660991060051737,
+      "central_quantile_average_nmse": 0.6197848920098019,
+      "outer_midpoint_nmse": 0.5540052189241869,
+      "oracle_best_quantile_nmse": 0.45365117999939797,
+      "quantile_shift_disagreement": 0.05887823445358226,
+      "interval_width_change_energy": 0.565163741502049,
+      "crossing_fraction": 0.000732421875,
+      "source_scores": [
+        {
+          "source": "m4_hourly:T000172",
+          "median_nmse": 0.0024779565793328676,
+          "central_quantile_average_nmse": 0.002502335608223979,
+          "outer_midpoint_nmse": 0.0025243040365129665,
+          "oracle_best_quantile_nmse": 0.0020340262881019915,
+          "quantile_shift_disagreement": 0.0027706411938253875,
+          "interval_width_change_energy": 0.03308439729173738,
+          "crossing_fraction": 0.0048828125
+        },
+        {
+          "source": "monash_electricity_hourly:T000221",
+          "median_nmse": 1.4969146983674484,
+          "central_quantile_average_nmse": 1.2082138782271827,
+          "outer_midpoint_nmse": 0.7972577946568052,
+          "oracle_best_quantile_nmse": 0.363372555415548,
+          "quantile_shift_disagreement": 0.1653255594152616,
+          "interval_width_change_energy": 1.3458531890514909,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_pedestrian_counts:T000028",
+          "median_nmse": 0.3410658289756304,
+          "central_quantile_average_nmse": 0.3001286251275018,
+          "outer_midpoint_nmse": 0.24908626190012792,
+          "oracle_best_quantile_nmse": 0.26361650591048547,
+          "quantile_shift_disagreement": 0.06503212839098568,
+          "interval_width_change_energy": 0.5143189408649989,
+          "crossing_fraction": 0.0009765625
+        },
+        {
+          "source": "monash_traffic:T000099",
+          "median_nmse": 0.011406669951471379,
+          "central_quantile_average_nmse": 0.010826522897490837,
+          "outer_midpoint_nmse": 0.010307728189385733,
+          "oracle_best_quantile_nmse": 0.0076555541470385464,
+          "quantile_shift_disagreement": 0.007103042398424646,
+          "interval_width_change_energy": 0.08139489863481522,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951000",
+          "median_nmse": 0.032547125578509827,
+          "central_quantile_average_nmse": 0.0333305610056947,
+          "outer_midpoint_nmse": 0.03595530380728346,
+          "oracle_best_quantile_nmse": 0.02757518260971946,
+          "quantile_shift_disagreement": 0.02039268853895367,
+          "interval_width_change_energy": 0.22438421207215958,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951001",
+          "median_nmse": 0.4772467907680609,
+          "central_quantile_average_nmse": 0.4761473321557082,
+          "outer_midpoint_nmse": 0.47400225411877783,
+          "oracle_best_quantile_nmse": 0.41459333110928176,
+          "quantile_shift_disagreement": 0.01029890140987842,
+          "interval_width_change_energy": 0.10300306149741183,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951002",
+          "median_nmse": 2.361725445928979,
+          "central_quantile_average_nmse": 2.312945014310615,
+          "outer_midpoint_nmse": 2.232420991162924,
+          "oracle_best_quantile_nmse": 1.9922218214146123,
+          "quantile_shift_disagreement": 0.16677620484117486,
+          "interval_width_change_energy": 1.841318356657987,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951003",
+          "median_nmse": 0.6054083318919569,
+          "central_quantile_average_nmse": 0.6141848667459977,
+          "outer_midpoint_nmse": 0.6304871135216777,
+          "oracle_best_quantile_nmse": 0.5581404631003961,
+          "quantile_shift_disagreement": 0.033326709440153805,
+          "interval_width_change_energy": 0.3779528759457913,
+          "crossing_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "model": "bolt",
+      "policy": "native",
+      "period": 24.0,
+      "amplitude": 0.5,
+      "n_sources": 8,
+      "median_nmse": 0.5084661949435744,
+      "central_quantile_average_nmse": 0.4981060448073799,
+      "outer_midpoint_nmse": 0.4803285722525162,
+      "oracle_best_quantile_nmse": 0.3831084997746286,
+      "quantile_shift_disagreement": 0.06639133631214005,
+      "interval_width_change_energy": 0.7224971083639811,
+      "crossing_fraction": 0.0009765625,
+      "source_scores": [
+        {
+          "source": "m4_hourly:T000172",
+          "median_nmse": 0.0018206211633120463,
+          "central_quantile_average_nmse": 0.0019236300833176973,
+          "outer_midpoint_nmse": 0.002322997026720319,
+          "oracle_best_quantile_nmse": 0.0014944513080836473,
+          "quantile_shift_disagreement": 0.0017440549338664621,
+          "interval_width_change_energy": 0.020443811624289064,
+          "crossing_fraction": 0.0078125
+        },
+        {
+          "source": "monash_electricity_hourly:T000221",
+          "median_nmse": 0.9879558897323573,
+          "central_quantile_average_nmse": 0.9434954761526247,
+          "outer_midpoint_nmse": 0.8551060261267972,
+          "oracle_best_quantile_nmse": 0.4722987413118865,
+          "quantile_shift_disagreement": 0.051266799054593006,
+          "interval_width_change_energy": 0.47716840359382917,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_pedestrian_counts:T000028",
+          "median_nmse": 0.2721771870668623,
+          "central_quantile_average_nmse": 0.2690564795848367,
+          "outer_midpoint_nmse": 0.2711060470279437,
+          "oracle_best_quantile_nmse": 0.16591016793715116,
+          "quantile_shift_disagreement": 0.144423065493549,
+          "interval_width_change_energy": 1.5650291587442504,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_traffic:T000099",
+          "median_nmse": 0.008935624852621435,
+          "central_quantile_average_nmse": 0.008507249566062424,
+          "outer_midpoint_nmse": 0.008394139626152219,
+          "oracle_best_quantile_nmse": 0.00545876975774453,
+          "quantile_shift_disagreement": 0.008410678165195166,
+          "interval_width_change_energy": 0.09494755681525682,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951000",
+          "median_nmse": 0.039115359427065066,
+          "central_quantile_average_nmse": 0.039279837111781825,
+          "outer_midpoint_nmse": 0.04091282955847897,
+          "oracle_best_quantile_nmse": 0.03714343281940465,
+          "quantile_shift_disagreement": 0.01939495138336796,
+          "interval_width_change_energy": 0.2123321150978593,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951001",
+          "median_nmse": 0.587528554390257,
+          "central_quantile_average_nmse": 0.5690643882753808,
+          "outer_midpoint_nmse": 0.5351290285913561,
+          "oracle_best_quantile_nmse": 0.5538558062283063,
+          "quantile_shift_disagreement": 0.04848632157022883,
+          "interval_width_change_energy": 0.530762738218932,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951002",
+          "median_nmse": 1.4457605801236986,
+          "central_quantile_average_nmse": 1.4275988506749056,
+          "outer_midpoint_nmse": 1.396513648995106,
+          "oracle_best_quantile_nmse": 1.1591217434571885,
+          "quantile_shift_disagreement": 0.17236912130992776,
+          "interval_width_change_energy": 1.925645210779603,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951003",
+          "median_nmse": 0.7244357427924212,
+          "central_quantile_average_nmse": 0.7259224470101296,
+          "outer_midpoint_nmse": 0.7331438610675751,
+          "oracle_best_quantile_nmse": 0.6695848853772631,
+          "quantile_shift_disagreement": 0.08503569858639214,
+          "interval_width_change_energy": 0.9536478720378283,
+          "crossing_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "model": "bolt",
+      "policy": "native",
+      "period": 24.0,
+      "amplitude": 2.0,
+      "n_sources": 8,
+      "median_nmse": 0.13858954381808197,
+      "central_quantile_average_nmse": 0.14146322976503817,
+      "outer_midpoint_nmse": 0.14778252441162051,
+      "oracle_best_quantile_nmse": 0.11516307344825868,
+      "quantile_shift_disagreement": 0.04040430183630338,
+      "interval_width_change_energy": 0.4518965012557138,
+      "crossing_fraction": 0.0,
+      "source_scores": [
+        {
+          "source": "m4_hourly:T000172",
+          "median_nmse": 0.001060323939686146,
+          "central_quantile_average_nmse": 0.0010933644487378601,
+          "outer_midpoint_nmse": 0.0012936667987428615,
+          "oracle_best_quantile_nmse": 0.0005505225010743886,
+          "quantile_shift_disagreement": 0.0012618763086510163,
+          "interval_width_change_energy": 0.014884921656303968,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_electricity_hourly:T000221",
+          "median_nmse": 0.07869468450527212,
+          "central_quantile_average_nmse": 0.09174015277151176,
+          "outer_midpoint_nmse": 0.11850323886211592,
+          "oracle_best_quantile_nmse": 0.025526364602771676,
+          "quantile_shift_disagreement": 0.03366047888279687,
+          "interval_width_change_energy": 0.35913540819852985,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_pedestrian_counts:T000028",
+          "median_nmse": 0.09346733792879947,
+          "central_quantile_average_nmse": 0.10001519598005679,
+          "outer_midpoint_nmse": 0.11587737095317649,
+          "oracle_best_quantile_nmse": 0.012695080363836988,
+          "quantile_shift_disagreement": 0.04995859137182115,
+          "interval_width_change_energy": 0.5763568027967196,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_traffic:T000099",
+          "median_nmse": 0.004233314198895258,
+          "central_quantile_average_nmse": 0.0043292183943336796,
+          "outer_midpoint_nmse": 0.00513664836786342,
+          "oracle_best_quantile_nmse": 0.002170368135756319,
+          "quantile_shift_disagreement": 0.006639406412063395,
+          "interval_width_change_energy": 0.0780485033785073,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951000",
+          "median_nmse": 0.018806172928422668,
+          "central_quantile_average_nmse": 0.018570273552834967,
+          "outer_midpoint_nmse": 0.019232253532480554,
+          "oracle_best_quantile_nmse": 0.01612782615410156,
+          "quantile_shift_disagreement": 0.009766628643559178,
+          "interval_width_change_energy": 0.110475528139398,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951001",
+          "median_nmse": 0.13957242415797907,
+          "central_quantile_average_nmse": 0.13490597993971556,
+          "outer_midpoint_nmse": 0.12998268055832246,
+          "oracle_best_quantile_nmse": 0.13417849108703178,
+          "quantile_shift_disagreement": 0.060753118521358396,
+          "interval_width_change_energy": 0.6660207791821364,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951002",
+          "median_nmse": 0.39789394616235996,
+          "central_quantile_average_nmse": 0.4046603377687385,
+          "outer_midpoint_nmse": 0.41193995206589124,
+          "oracle_best_quantile_nmse": 0.3731976168392217,
+          "quantile_shift_disagreement": 0.018851411639002696,
+          "interval_width_change_energy": 0.19694013538128724,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951003",
+          "median_nmse": 0.3749881467232411,
+          "central_quantile_average_nmse": 0.37639131526437614,
+          "outer_midpoint_nmse": 0.38029438415437117,
+          "oracle_best_quantile_nmse": 0.3568583179022751,
+          "quantile_shift_disagreement": 0.1423429029111743,
+          "interval_width_change_energy": 1.613309931312828,
+          "crossing_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "model": "bolt",
+      "policy": "native",
+      "period": 19.2,
+      "amplitude": 0.1,
+      "n_sources": 8,
+      "median_nmse": 2.5675212280679705,
+      "central_quantile_average_nmse": 2.5120652628795126,
+      "outer_midpoint_nmse": 2.437528928900409,
+      "oracle_best_quantile_nmse": 2.161041132950336,
+      "quantile_shift_disagreement": 0.11833117451637658,
+      "interval_width_change_energy": 1.2056196401813448,
+      "crossing_fraction": 0.0,
+      "source_scores": [
+        {
+          "source": "m4_hourly:T000172",
+          "median_nmse": 1.4175363864819683,
+          "central_quantile_average_nmse": 1.4203580429126736,
+          "outer_midpoint_nmse": 1.4197099945242375,
+          "oracle_best_quantile_nmse": 1.2817962147589745,
+          "quantile_shift_disagreement": 0.020230734690391265,
+          "interval_width_change_energy": 0.23810227847952228,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_electricity_hourly:T000221",
+          "median_nmse": 1.9105101741422001,
+          "central_quantile_average_nmse": 1.7396726402964227,
+          "outer_midpoint_nmse": 1.5956075740051063,
+          "oracle_best_quantile_nmse": 1.3647026381574612,
+          "quantile_shift_disagreement": 0.2215801775807912,
+          "interval_width_change_energy": 2.013942201251385,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_pedestrian_counts:T000028",
+          "median_nmse": 2.0433925947820697,
+          "central_quantile_average_nmse": 2.088930372500953,
+          "outer_midpoint_nmse": 2.153583017831235,
+          "oracle_best_quantile_nmse": 1.8568668598398947,
+          "quantile_shift_disagreement": 0.15863750607679333,
+          "interval_width_change_energy": 1.4937195065366826,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_traffic:T000099",
+          "median_nmse": 1.9652552687034355,
+          "central_quantile_average_nmse": 1.950986432405124,
+          "outer_midpoint_nmse": 1.9299836255199918,
+          "oracle_best_quantile_nmse": 1.6896542006506257,
+          "quantile_shift_disagreement": 0.10861879096556909,
+          "interval_width_change_energy": 1.2431359147930259,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951000",
+          "median_nmse": 1.838762578764052,
+          "central_quantile_average_nmse": 1.821242747079468,
+          "outer_midpoint_nmse": 1.7976881179561013,
+          "oracle_best_quantile_nmse": 1.62966474823505,
+          "quantile_shift_disagreement": 0.02533640615968848,
+          "interval_width_change_energy": 0.26165892841073035,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951001",
+          "median_nmse": 1.4649428307636447,
+          "central_quantile_average_nmse": 1.4551294165292092,
+          "outer_midpoint_nmse": 1.4478272267293462,
+          "oracle_best_quantile_nmse": 1.3092158141254093,
+          "quantile_shift_disagreement": 0.044948246394469,
+          "interval_width_change_energy": 0.4967869995837349,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951002",
+          "median_nmse": 8.94938150791664,
+          "central_quantile_average_nmse": 8.711190617477438,
+          "outer_midpoint_nmse": 8.307965331719826,
+          "oracle_best_quantile_nmse": 7.425277601174085,
+          "quantile_shift_disagreement": 0.3382630799019561,
+          "interval_width_change_energy": 3.579688368283641,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951003",
+          "median_nmse": 0.9503884829897558,
+          "central_quantile_average_nmse": 0.9090118338348131,
+          "outer_midpoint_nmse": 0.847866542917427,
+          "oracle_best_quantile_nmse": 0.7311509866611863,
+          "quantile_shift_disagreement": 0.02903445436135417,
+          "interval_width_change_energy": 0.31792292411203704,
+          "crossing_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "model": "bolt",
+      "policy": "native",
+      "period": 19.2,
+      "amplitude": 0.5,
+      "n_sources": 8,
+      "median_nmse": 2.0169628887601845,
+      "central_quantile_average_nmse": 1.9808968263778164,
+      "outer_midpoint_nmse": 1.9370578562894312,
+      "oracle_best_quantile_nmse": 1.653533874647636,
+      "quantile_shift_disagreement": 0.3856305997455159,
+      "interval_width_change_energy": 4.1595102632634475,
+      "crossing_fraction": 0.0,
+      "source_scores": [
+        {
+          "source": "m4_hourly:T000172",
+          "median_nmse": 1.9641968483255188,
+          "central_quantile_average_nmse": 1.9945174863668012,
+          "outer_midpoint_nmse": 2.0323508483914243,
+          "oracle_best_quantile_nmse": 1.7078149310274182,
+          "quantile_shift_disagreement": 0.3360058026429581,
+          "interval_width_change_energy": 3.8842674671846162,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_electricity_hourly:T000221",
+          "median_nmse": 2.1238323570564273,
+          "central_quantile_average_nmse": 1.9860510314086262,
+          "outer_midpoint_nmse": 1.8791940056619434,
+          "oracle_best_quantile_nmse": 1.4337854219265327,
+          "quantile_shift_disagreement": 0.9521624604517529,
+          "interval_width_change_energy": 9.485870060746782,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_pedestrian_counts:T000028",
+          "median_nmse": 1.9092697811143586,
+          "central_quantile_average_nmse": 1.8702285319794507,
+          "outer_midpoint_nmse": 1.8053618417613047,
+          "oracle_best_quantile_nmse": 1.6002616426791092,
+          "quantile_shift_disagreement": 0.44785958773311463,
+          "interval_width_change_energy": 4.882389826676061,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_traffic:T000099",
+          "median_nmse": 1.5948931716569992,
+          "central_quantile_average_nmse": 1.6270536583689532,
+          "outer_midpoint_nmse": 1.6953033419272585,
+          "oracle_best_quantile_nmse": 1.2658697787517812,
+          "quantile_shift_disagreement": 0.5863095609674808,
+          "interval_width_change_energy": 6.630802319757279,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951000",
+          "median_nmse": 1.7587383396704404,
+          "central_quantile_average_nmse": 1.7443141050844964,
+          "outer_midpoint_nmse": 1.7301021121899072,
+          "oracle_best_quantile_nmse": 1.5732041607955276,
+          "quantile_shift_disagreement": 0.14552135828571883,
+          "interval_width_change_energy": 1.5624881490698055,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951001",
+          "median_nmse": 1.527372677055546,
+          "central_quantile_average_nmse": 1.5047698862658798,
+          "outer_midpoint_nmse": 1.475103620730569,
+          "oracle_best_quantile_nmse": 1.3817963212483662,
+          "quantile_shift_disagreement": 0.379453873975097,
+          "interval_width_change_energy": 4.233781710764812,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951002",
+          "median_nmse": 4.597290456814008,
+          "central_quantile_average_nmse": 4.48492924015944,
+          "outer_midpoint_nmse": 4.277706472314846,
+          "oracle_best_quantile_nmse": 3.7693618577036747,
+          "quantile_shift_disagreement": 0.18268614448166234,
+          "interval_width_change_energy": 1.9752737853801345,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951003",
+          "median_nmse": 0.6601094783881766,
+          "central_quantile_average_nmse": 0.6353106713888836,
+          "outer_midpoint_nmse": 0.6013406073381966,
+          "oracle_best_quantile_nmse": 0.496176883048679,
+          "quantile_shift_disagreement": 0.05504600942634251,
+          "interval_width_change_energy": 0.6212087865280946,
+          "crossing_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "model": "bolt",
+      "policy": "native",
+      "period": 19.2,
+      "amplitude": 2.0,
+      "n_sources": 8,
+      "median_nmse": 0.8528435690482532,
+      "central_quantile_average_nmse": 0.8358095245532398,
+      "outer_midpoint_nmse": 0.8146507858738485,
+      "oracle_best_quantile_nmse": 0.7270198066617368,
+      "quantile_shift_disagreement": 0.22633329002274272,
+      "interval_width_change_energy": 2.5461797027777164,
+      "crossing_fraction": 0.0,
+      "source_scores": [
+        {
+          "source": "m4_hourly:T000172",
+          "median_nmse": 0.8581488500444068,
+          "central_quantile_average_nmse": 0.8431226984198743,
+          "outer_midpoint_nmse": 0.8160852273181953,
+          "oracle_best_quantile_nmse": 0.7900627998688741,
+          "quantile_shift_disagreement": 0.14489171757355146,
+          "interval_width_change_energy": 1.696310081637339,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_electricity_hourly:T000221",
+          "median_nmse": 0.6125856669027068,
+          "central_quantile_average_nmse": 0.58803689397166,
+          "outer_midpoint_nmse": 0.5624780382380806,
+          "oracle_best_quantile_nmse": 0.5163051860624333,
+          "quantile_shift_disagreement": 0.3280413257581467,
+          "interval_width_change_energy": 3.667868448342127,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_pedestrian_counts:T000028",
+          "median_nmse": 1.053467037469612,
+          "central_quantile_average_nmse": 1.041059384345869,
+          "outer_midpoint_nmse": 1.0307066119119916,
+          "oracle_best_quantile_nmse": 0.8147718983173008,
+          "quantile_shift_disagreement": 0.22216973161248516,
+          "interval_width_change_energy": 2.540644579090902,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_traffic:T000099",
+          "median_nmse": 0.8316496510677404,
+          "central_quantile_average_nmse": 0.8156217799215857,
+          "outer_midpoint_nmse": 0.7945339130161888,
+          "oracle_best_quantile_nmse": 0.6973189265958963,
+          "quantile_shift_disagreement": 0.22163878903464704,
+          "interval_width_change_energy": 2.5537860389734224,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951000",
+          "median_nmse": 0.9060415028781517,
+          "central_quantile_average_nmse": 0.8995480440736169,
+          "outer_midpoint_nmse": 0.8965603499013959,
+          "oracle_best_quantile_nmse": 0.8718908156161418,
+          "quantile_shift_disagreement": 0.29481796779962255,
+          "interval_width_change_energy": 3.3001742968666727,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951001",
+          "median_nmse": 1.129001011663268,
+          "central_quantile_average_nmse": 1.1067371280730238,
+          "outer_midpoint_nmse": 1.0864216302022842,
+          "oracle_best_quantile_nmse": 0.9369005773252103,
+          "quantile_shift_disagreement": 0.49147404764368996,
+          "interval_width_change_energy": 5.388957429315075,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951002",
+          "median_nmse": 0.8965520488205195,
+          "central_quantile_average_nmse": 0.8713788644911451,
+          "outer_midpoint_nmse": 0.8278556313259685,
+          "oracle_best_quantile_nmse": 0.7580604507642046,
+          "quantile_shift_disagreement": 0.02294930099839209,
+          "interval_width_change_energy": 0.24323228604159952,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951003",
+          "median_nmse": 0.5353027835396194,
+          "central_quantile_average_nmse": 0.520971403129143,
+          "outer_midpoint_nmse": 0.5025648850766833,
+          "oracle_best_quantile_nmse": 0.4308477987438336,
+          "quantile_shift_disagreement": 0.08468343976140669,
+          "interval_width_change_energy": 0.9784644619545977,
+          "crossing_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "model": "bolt",
+      "policy": "locked",
+      "period": 24.0,
+      "amplitude": 0.1,
+      "n_sources": 8,
+      "median_nmse": 0.7374028547315878,
+      "central_quantile_average_nmse": 0.6848394801468034,
+      "outer_midpoint_nmse": 0.6101245780752066,
+      "oracle_best_quantile_nmse": 0.496389401046862,
+      "quantile_shift_disagreement": 0.05711850159505562,
+      "interval_width_change_energy": 0.5161140321190596,
+      "crossing_fraction": 0.0009765625,
+      "source_scores": [
+        {
+          "source": "m4_hourly:T000172",
+          "median_nmse": 0.08186098410818794,
+          "central_quantile_average_nmse": 0.08286708273439146,
+          "outer_midpoint_nmse": 0.0865158100746859,
+          "oracle_best_quantile_nmse": 0.07018227599639296,
+          "quantile_shift_disagreement": 0.003035137803437727,
+          "interval_width_change_energy": 0.03649815643735665,
+          "crossing_fraction": 0.005859375
+        },
+        {
+          "source": "monash_electricity_hourly:T000221",
+          "median_nmse": 1.7797966930818854,
+          "central_quantile_average_nmse": 1.4265506710810898,
+          "outer_midpoint_nmse": 0.9186166575238559,
+          "oracle_best_quantile_nmse": 0.4056565427674134,
+          "quantile_shift_disagreement": 0.2229117028362262,
+          "interval_width_change_energy": 1.862345930506689,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_pedestrian_counts:T000028",
+          "median_nmse": 0.26911811168872707,
+          "central_quantile_average_nmse": 0.23095405538442368,
+          "outer_midpoint_nmse": 0.19061528315330128,
+          "oracle_best_quantile_nmse": 0.22796793766984436,
+          "quantile_shift_disagreement": 0.08032029778632928,
+          "interval_width_change_energy": 0.6433862966003012,
+          "crossing_fraction": 0.001953125
+        },
+        {
+          "source": "monash_traffic:T000099",
+          "median_nmse": 0.08617625047538004,
+          "central_quantile_average_nmse": 0.09303306098792685,
+          "outer_midpoint_nmse": 0.10617945283660007,
+          "oracle_best_quantile_nmse": 0.08056411831609825,
+          "quantile_shift_disagreement": 0.007111773923242092,
+          "interval_width_change_energy": 0.07647042807186366,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951000",
+          "median_nmse": 0.099921592753004,
+          "central_quantile_average_nmse": 0.10524296341411624,
+          "outer_midpoint_nmse": 0.11629303051058876,
+          "oracle_best_quantile_nmse": 0.09284912920684715,
+          "quantile_shift_disagreement": 0.02065007271216935,
+          "interval_width_change_energy": 0.22356011393696895,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951001",
+          "median_nmse": 0.4640810671297878,
+          "central_quantile_average_nmse": 0.46351316874897935,
+          "outer_midpoint_nmse": 0.46220016899386984,
+          "oracle_best_quantile_nmse": 0.4063773782235832,
+          "quantile_shift_disagreement": 0.009753143772571386,
+          "interval_width_change_energy": 0.09739152458855016,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951002",
+          "median_nmse": 2.495994021191756,
+          "central_quantile_average_nmse": 2.444081294993711,
+          "outer_midpoint_nmse": 2.3499685868904328,
+          "oracle_best_quantile_nmse": 2.105683513284734,
+          "quantile_shift_disagreement": 0.08195206140867632,
+          "interval_width_change_energy": 0.8354746385135385,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951003",
+          "median_nmse": 0.6222741174239746,
+          "central_quantile_average_nmse": 0.6324735438297887,
+          "outer_midpoint_nmse": 0.6506076346183183,
+          "oracle_best_quantile_nmse": 0.5818343129099828,
+          "quantile_shift_disagreement": 0.0312138225177926,
+          "interval_width_change_energy": 0.3537851682972093,
+          "crossing_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "model": "bolt",
+      "policy": "locked",
+      "period": 24.0,
+      "amplitude": 0.5,
+      "n_sources": 8,
+      "median_nmse": 0.5583580312362426,
+      "central_quantile_average_nmse": 0.5500121847320261,
+      "outer_midpoint_nmse": 0.5361389906500412,
+      "oracle_best_quantile_nmse": 0.42009006158128914,
+      "quantile_shift_disagreement": 0.06135447981331693,
+      "interval_width_change_energy": 0.6506091418711674,
+      "crossing_fraction": 0.001953125,
+      "source_scores": [
+        {
+          "source": "m4_hourly:T000172",
+          "median_nmse": 0.08630865441645291,
+          "central_quantile_average_nmse": 0.08824562401719467,
+          "outer_midpoint_nmse": 0.09380263884032573,
+          "oracle_best_quantile_nmse": 0.08081420394160166,
+          "quantile_shift_disagreement": 0.0018538197291935437,
+          "interval_width_change_energy": 0.021013162394232524,
+          "crossing_fraction": 0.015625
+        },
+        {
+          "source": "monash_electricity_hourly:T000221",
+          "median_nmse": 1.0760554934410291,
+          "central_quantile_average_nmse": 1.033929273863121,
+          "outer_midpoint_nmse": 0.949634612533109,
+          "oracle_best_quantile_nmse": 0.48478621809341815,
+          "quantile_shift_disagreement": 0.06972141766370885,
+          "interval_width_change_energy": 0.6619073630330389,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_pedestrian_counts:T000028",
+          "median_nmse": 0.2508838603970992,
+          "central_quantile_average_nmse": 0.245522457835941,
+          "outer_midpoint_nmse": 0.24630525633236616,
+          "oracle_best_quantile_nmse": 0.15371678430163999,
+          "quantile_shift_disagreement": 0.15834570444560608,
+          "interval_width_change_energy": 1.657630663832236,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_traffic:T000099",
+          "median_nmse": 0.07779948139219517,
+          "central_quantile_average_nmse": 0.08433281204956034,
+          "outer_midpoint_nmse": 0.09657043997892187,
+          "oracle_best_quantile_nmse": 0.06781080712537904,
+          "quantile_shift_disagreement": 0.00858401322056947,
+          "interval_width_change_energy": 0.09065318109149961,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951000",
+          "median_nmse": 0.105092369739275,
+          "central_quantile_average_nmse": 0.10940648590195627,
+          "outer_midpoint_nmse": 0.11797727699592167,
+          "oracle_best_quantile_nmse": 0.10219765418054053,
+          "quantile_shift_disagreement": 0.01802196648492366,
+          "interval_width_change_energy": 0.19234010367657084,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951001",
+          "median_nmse": 0.5449203525533646,
+          "central_quantile_average_nmse": 0.5270041659675393,
+          "outer_midpoint_nmse": 0.4945098912770083,
+          "oracle_best_quantile_nmse": 0.5129569358187182,
+          "quantile_shift_disagreement": 0.04168532391064077,
+          "interval_width_change_energy": 0.4518355390141162,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951002",
+          "median_nmse": 1.620012641592566,
+          "central_quantile_average_nmse": 1.603207027312373,
+          "outer_midpoint_nmse": 1.5741729536237006,
+          "oracle_best_quantile_nmse": 1.2833783244923567,
+          "quantile_shift_disagreement": 0.11700182102565676,
+          "interval_width_change_energy": 1.2875363412902234,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951003",
+          "median_nmse": 0.7057913963579587,
+          "central_quantile_average_nmse": 0.7084496309085226,
+          "outer_midpoint_nmse": 0.7161388556189766,
+          "oracle_best_quantile_nmse": 0.6750595646966592,
+          "quantile_shift_disagreement": 0.07562177202623625,
+          "interval_width_change_energy": 0.8419567806374217,
+          "crossing_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "model": "bolt",
+      "policy": "locked",
+      "period": 24.0,
+      "amplitude": 2.0,
+      "n_sources": 8,
+      "median_nmse": 0.21417341701186154,
+      "central_quantile_average_nmse": 3.2180784740473274,
+      "outer_midpoint_nmse": 50.96213927693447,
+      "oracle_best_quantile_nmse": 0.19061322022483002,
+      "quantile_shift_disagreement": 22.929566023273154,
+      "interval_width_change_energy": 203.24062131934738,
+      "crossing_fraction": 0.0145263671875,
+      "source_scores": [
+        {
+          "source": "m4_hourly:T000172",
+          "median_nmse": 0.1273562155583371,
+          "central_quantile_average_nmse": 24.10035755268364,
+          "outer_midpoint_nmse": 405.9346455321053,
+          "oracle_best_quantile_nmse": 0.12173112967391925,
+          "quantile_shift_disagreement": 183.25997150257461,
+          "interval_width_change_energy": 1624.0208651404384,
+          "crossing_fraction": 0.1162109375
+        },
+        {
+          "source": "monash_electricity_hourly:T000221",
+          "median_nmse": 0.10903013766603464,
+          "central_quantile_average_nmse": 0.11763257085926151,
+          "outer_midpoint_nmse": 0.14007647582213775,
+          "oracle_best_quantile_nmse": 0.09435679635327034,
+          "quantile_shift_disagreement": 0.012771313791163997,
+          "interval_width_change_energy": 0.10748506301052752,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_pedestrian_counts:T000028",
+          "median_nmse": 0.20267047746757036,
+          "central_quantile_average_nmse": 0.21121202002078004,
+          "outer_midpoint_nmse": 0.23212477864090242,
+          "oracle_best_quantile_nmse": 0.1351909922391635,
+          "quantile_shift_disagreement": 0.039093256606677874,
+          "interval_width_change_energy": 0.4502721821496303,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_traffic:T000099",
+          "median_nmse": 0.1003893360248609,
+          "central_quantile_average_nmse": 0.10433491635802214,
+          "outer_midpoint_nmse": 0.11319284151225047,
+          "oracle_best_quantile_nmse": 0.0963426248726121,
+          "quantile_shift_disagreement": 0.0036857943295970554,
+          "interval_width_change_energy": 0.04020993827598475,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951000",
+          "median_nmse": 0.14663268938860063,
+          "central_quantile_average_nmse": 0.15667972105992667,
+          "outer_midpoint_nmse": 0.17426859438687262,
+          "oracle_best_quantile_nmse": 0.13836007649553325,
+          "quantile_shift_disagreement": 0.0029790416192040517,
+          "interval_width_change_energy": 0.023474197938523365,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951001",
+          "median_nmse": 0.20641224857258433,
+          "central_quantile_average_nmse": 0.21923324930915156,
+          "outer_midpoint_nmse": 0.24405399817723816,
+          "oracle_best_quantile_nmse": 0.20580955466423922,
+          "quantile_shift_disagreement": 0.023052405384645647,
+          "interval_width_change_energy": 0.22087448048838004,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951002",
+          "median_nmse": 0.4400479704738458,
+          "central_quantile_average_nmse": 0.4503927702244186,
+          "outer_midpoint_nmse": 0.4678528408570126,
+          "oracle_best_quantile_nmse": 0.37819503064914983,
+          "quantile_shift_disagreement": 0.02441612549408055,
+          "interval_width_change_energy": 0.2599186740926195,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951003",
+          "median_nmse": 0.38084826094305846,
+          "central_quantile_average_nmse": 0.3847849918634216,
+          "outer_midpoint_nmse": 0.39089915397407876,
+          "oracle_best_quantile_nmse": 0.35491955685075277,
+          "quantile_shift_disagreement": 0.07055874638522736,
+          "interval_width_change_energy": 0.8018708783849328,
+          "crossing_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "model": "bolt",
+      "policy": "locked",
+      "period": 19.2,
+      "amplitude": 0.1,
+      "n_sources": 8,
+      "median_nmse": 2.4073381468985615,
+      "central_quantile_average_nmse": 2.357170065957347,
+      "outer_midpoint_nmse": 2.2948056473276783,
+      "oracle_best_quantile_nmse": 2.0141060449313395,
+      "quantile_shift_disagreement": 0.11942785266950581,
+      "interval_width_change_energy": 1.2180931702448508,
+      "crossing_fraction": 0.0,
+      "source_scores": [
+        {
+          "source": "m4_hourly:T000172",
+          "median_nmse": 1.339824648530213,
+          "central_quantile_average_nmse": 1.341171814665104,
+          "outer_midpoint_nmse": 1.3393032590572174,
+          "oracle_best_quantile_nmse": 1.2150673617705627,
+          "quantile_shift_disagreement": 0.020290885050349917,
+          "interval_width_change_energy": 0.2389195667533387,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_electricity_hourly:T000221",
+          "median_nmse": 1.8972882611682729,
+          "central_quantile_average_nmse": 1.7274474549072105,
+          "outer_midpoint_nmse": 1.5833913989059365,
+          "oracle_best_quantile_nmse": 1.3599434697440531,
+          "quantile_shift_disagreement": 0.21310030375752004,
+          "interval_width_change_energy": 1.921410034612742,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_pedestrian_counts:T000028",
+          "median_nmse": 2.0378347191980746,
+          "central_quantile_average_nmse": 2.0735699497130904,
+          "outer_midpoint_nmse": 2.1250897887583298,
+          "oracle_best_quantile_nmse": 1.8447501674943945,
+          "quantile_shift_disagreement": 0.15497033920542652,
+          "interval_width_change_energy": 1.4549611086473024,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_traffic:T000099",
+          "median_nmse": 1.9270897979205743,
+          "central_quantile_average_nmse": 1.9129951432229215,
+          "outer_midpoint_nmse": 1.8940555351527908,
+          "oracle_best_quantile_nmse": 1.6546589319319416,
+          "quantile_shift_disagreement": 0.1074053739861295,
+          "interval_width_change_energy": 1.226760228517271,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951000",
+          "median_nmse": 1.7837940331822326,
+          "central_quantile_average_nmse": 1.7651364490108121,
+          "outer_midpoint_nmse": 1.7410828283955582,
+          "oracle_best_quantile_nmse": 1.5786256531470504,
+          "quantile_shift_disagreement": 0.0265447751302143,
+          "interval_width_change_energy": 0.27273535785751607,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951001",
+          "median_nmse": 1.4593059974502245,
+          "central_quantile_average_nmse": 1.449322620839217,
+          "outer_midpoint_nmse": 1.4416416746884217,
+          "oracle_best_quantile_nmse": 1.3053452060671034,
+          "quantile_shift_disagreement": 0.04372131056528556,
+          "interval_width_change_energy": 0.48283765203102363,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951002",
+          "median_nmse": 8.168040235592535,
+          "central_quantile_average_nmse": 7.968444809629896,
+          "outer_midpoint_nmse": 7.6508577151317345,
+          "oracle_best_quantile_nmse": 6.658163490345729,
+          "quantile_shift_disagreement": 0.37227371633047346,
+          "interval_width_change_energy": 3.978468511106311,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951003",
+          "median_nmse": 0.6455274821463657,
+          "central_quantile_average_nmse": 0.6192722856705251,
+          "outer_midpoint_nmse": 0.5830229785314374,
+          "oracle_best_quantile_nmse": 0.4962940789498806,
+          "quantile_shift_disagreement": 0.017116117330647173,
+          "interval_width_change_energy": 0.16865290243330053,
+          "crossing_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "model": "bolt",
+      "policy": "locked",
+      "period": 19.2,
+      "amplitude": 0.5,
+      "n_sources": 8,
+      "median_nmse": 1.8952791666416369,
+      "central_quantile_average_nmse": 1.8666608491216015,
+      "outer_midpoint_nmse": 1.8356323815501234,
+      "oracle_best_quantile_nmse": 1.5546547364907388,
+      "quantile_shift_disagreement": 0.36555203672725567,
+      "interval_width_change_energy": 3.9154081950054516,
+      "crossing_fraction": 0.0,
+      "source_scores": [
+        {
+          "source": "m4_hourly:T000172",
+          "median_nmse": 1.8841294956215326,
+          "central_quantile_average_nmse": 1.9166740239992976,
+          "outer_midpoint_nmse": 1.959581456599866,
+          "oracle_best_quantile_nmse": 1.6322823036856091,
+          "quantile_shift_disagreement": 0.33632927245764177,
+          "interval_width_change_energy": 3.881744706182161,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_electricity_hourly:T000221",
+          "median_nmse": 2.0106662932960075,
+          "central_quantile_average_nmse": 1.8917967295978295,
+          "outer_midpoint_nmse": 1.812800252379939,
+          "oracle_best_quantile_nmse": 1.366141111330575,
+          "quantile_shift_disagreement": 0.8361196047840554,
+          "interval_width_change_energy": 8.166120250443402,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_pedestrian_counts:T000028",
+          "median_nmse": 1.8334041643556778,
+          "central_quantile_average_nmse": 1.792104165687984,
+          "outer_midpoint_nmse": 1.7247661355671458,
+          "oracle_best_quantile_nmse": 1.5278882640357851,
+          "quantile_shift_disagreement": 0.4544375817069144,
+          "interval_width_change_energy": 4.935603437525506,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_traffic:T000099",
+          "median_nmse": 1.4732440531485098,
+          "central_quantile_average_nmse": 1.505531028781907,
+          "outer_midpoint_nmse": 1.5718601918414363,
+          "oracle_best_quantile_nmse": 1.2063003438471465,
+          "quantile_shift_disagreement": 0.5317992628887815,
+          "interval_width_change_energy": 6.005419121207559,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951000",
+          "median_nmse": 1.687897427728575,
+          "central_quantile_average_nmse": 1.6773703129320623,
+          "outer_midpoint_nmse": 1.6681567878262864,
+          "oracle_best_quantile_nmse": 1.5226866063761169,
+          "quantile_shift_disagreement": 0.14119321004691804,
+          "interval_width_change_energy": 1.4991490769629825,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951001",
+          "median_nmse": 1.4783208715441059,
+          "central_quantile_average_nmse": 1.458373987204015,
+          "outer_midpoint_nmse": 1.4316976120105434,
+          "oracle_best_quantile_nmse": 1.3450740745880516,
+          "quantile_shift_disagreement": 0.33221246444256725,
+          "interval_width_change_energy": 3.68578708804342,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951002",
+          "median_nmse": 4.396983086761194,
+          "central_quantile_average_nmse": 4.304893351001767,
+          "outer_midpoint_nmse": 4.141014584442818,
+          "oracle_best_quantile_nmse": 3.521051914094758,
+          "quantile_shift_disagreement": 0.24760435410670192,
+          "interval_width_change_energy": 2.6602605412398677,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951003",
+          "median_nmse": 0.39758794067749326,
+          "central_quantile_average_nmse": 0.38654319376794954,
+          "outer_midpoint_nmse": 0.3751820317329517,
+          "oracle_best_quantile_nmse": 0.31581327396786824,
+          "quantile_shift_disagreement": 0.044720543384464975,
+          "interval_width_change_energy": 0.4891813384387148,
+          "crossing_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "model": "bolt",
+      "policy": "locked",
+      "period": 19.2,
+      "amplitude": 2.0,
+      "n_sources": 8,
+      "median_nmse": 0.786318335700145,
+      "central_quantile_average_nmse": 0.7826193268154913,
+      "outer_midpoint_nmse": 0.7830526970908834,
+      "oracle_best_quantile_nmse": 0.7015498921028774,
+      "quantile_shift_disagreement": 0.11049204575090792,
+      "interval_width_change_energy": 1.1987454364891685,
+      "crossing_fraction": 0.0006103515625,
+      "source_scores": [
+        {
+          "source": "m4_hourly:T000172",
+          "median_nmse": 0.936709577681937,
+          "central_quantile_average_nmse": 0.9360247974521827,
+          "outer_midpoint_nmse": 0.9338676057481894,
+          "oracle_best_quantile_nmse": 0.8416575987495173,
+          "quantile_shift_disagreement": 0.0934778577556617,
+          "interval_width_change_energy": 1.0782599957536083,
+          "crossing_fraction": 0.0029296875
+        },
+        {
+          "source": "monash_electricity_hourly:T000221",
+          "median_nmse": 0.8349677148249631,
+          "central_quantile_average_nmse": 0.8154454952973353,
+          "outer_midpoint_nmse": 0.7962740587101849,
+          "oracle_best_quantile_nmse": 0.7189719764212215,
+          "quantile_shift_disagreement": 0.12526917279723562,
+          "interval_width_change_energy": 1.36571102261794,
+          "crossing_fraction": 0.0009765625
+        },
+        {
+          "source": "monash_pedestrian_counts:T000028",
+          "median_nmse": 0.7241066951213977,
+          "central_quantile_average_nmse": 0.7243300970932369,
+          "outer_midpoint_nmse": 0.7324785157420564,
+          "oracle_best_quantile_nmse": 0.6012461351705144,
+          "quantile_shift_disagreement": 0.14584881647234246,
+          "interval_width_change_energy": 1.6210648768925793,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_traffic:T000099",
+          "median_nmse": 0.8622742872594333,
+          "central_quantile_average_nmse": 0.8600207129901307,
+          "outer_midpoint_nmse": 0.8598353844151996,
+          "oracle_best_quantile_nmse": 0.7734583699636706,
+          "quantile_shift_disagreement": 0.09960881873205157,
+          "interval_width_change_energy": 1.1264450953606444,
+          "crossing_fraction": 0.0009765625
+        },
+        {
+          "source": "syn:4951000",
+          "median_nmse": 0.8313372140106325,
+          "central_quantile_average_nmse": 0.831020286700562,
+          "outer_midpoint_nmse": 0.8357600120707271,
+          "oracle_best_quantile_nmse": 0.7861667026883561,
+          "quantile_shift_disagreement": 0.14275964791499682,
+          "interval_width_change_energy": 1.5223410717367183,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951001",
+          "median_nmse": 0.884564063190418,
+          "central_quantile_average_nmse": 0.8841744266453271,
+          "outer_midpoint_nmse": 0.8970737759690319,
+          "oracle_best_quantile_nmse": 0.8052506225387978,
+          "quantile_shift_disagreement": 0.22491357071269902,
+          "interval_width_change_energy": 2.32106294195598,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951002",
+          "median_nmse": 0.7810636516156967,
+          "central_quantile_average_nmse": 0.7729587749477935,
+          "outer_midpoint_nmse": 0.7655623266392766,
+          "oracle_best_quantile_nmse": 0.6969192985656991,
+          "quantile_shift_disagreement": 0.015516156253054187,
+          "interval_width_change_energy": 0.14902693453161692,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951003",
+          "median_nmse": 0.43552348189668155,
+          "central_quantile_average_nmse": 0.43698002339736197,
+          "outer_midpoint_nmse": 0.4435698974324016,
+          "oracle_best_quantile_nmse": 0.3887284327252426,
+          "quantile_shift_disagreement": 0.03654232536922193,
+          "interval_width_change_energy": 0.4060515530642611,
+          "crossing_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "model": "timesfm",
+      "policy": "native",
+      "period": 24.0,
+      "amplitude": 0.1,
+      "n_sources": 8,
+      "median_nmse": 0.4146651357594174,
+      "central_quantile_average_nmse": 0.3898863253614145,
+      "outer_midpoint_nmse": 0.3718845530737463,
+      "oracle_best_quantile_nmse": 0.3286866939499946,
+      "quantile_shift_disagreement": 0.04255118411895149,
+      "interval_width_change_energy": 0.3247279406938164,
+      "crossing_fraction": 0.0140380859375,
+      "source_scores": [
+        {
+          "source": "m4_hourly:T000172",
+          "median_nmse": 0.0012048644906041514,
+          "central_quantile_average_nmse": 0.0011872495173022737,
+          "outer_midpoint_nmse": 0.0011815542335187259,
+          "oracle_best_quantile_nmse": 0.0011146590758974908,
+          "quantile_shift_disagreement": 0.00011203887752499516,
+          "interval_width_change_energy": 0.0007325311802181273,
+          "crossing_fraction": 0.0732421875
+        },
+        {
+          "source": "monash_electricity_hourly:T000221",
+          "median_nmse": 0.4934243117276508,
+          "central_quantile_average_nmse": 0.34926479299056684,
+          "outer_midpoint_nmse": 0.19574232452184237,
+          "oracle_best_quantile_nmse": 0.21451406209354107,
+          "quantile_shift_disagreement": 0.13268241949130827,
+          "interval_width_change_energy": 0.6659068602795781,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_pedestrian_counts:T000028",
+          "median_nmse": 0.16803522903815113,
+          "central_quantile_average_nmse": 0.15015525338161914,
+          "outer_midpoint_nmse": 0.12393092788340695,
+          "oracle_best_quantile_nmse": 0.10176338506764918,
+          "quantile_shift_disagreement": 0.05849781311420973,
+          "interval_width_change_energy": 0.5996343873580819,
+          "crossing_fraction": 0.005859375
+        },
+        {
+          "source": "monash_traffic:T000099",
+          "median_nmse": 0.04373729450531952,
+          "central_quantile_average_nmse": 0.050020399308149326,
+          "outer_midpoint_nmse": 0.06431265847934325,
+          "oracle_best_quantile_nmse": 0.017514188948262226,
+          "quantile_shift_disagreement": 0.023136914879475324,
+          "interval_width_change_energy": 0.2634045455768108,
+          "crossing_fraction": 0.00390625
+        },
+        {
+          "source": "syn:4951000",
+          "median_nmse": 0.03395376161943815,
+          "central_quantile_average_nmse": 0.035323695193140166,
+          "outer_midpoint_nmse": 0.035488370552584886,
+          "oracle_best_quantile_nmse": 0.03249654272333073,
+          "quantile_shift_disagreement": 0.002571042700609428,
+          "interval_width_change_energy": 0.025524685991548435,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951001",
+          "median_nmse": 1.7695368035290229,
+          "central_quantile_average_nmse": 1.7675096147758158,
+          "outer_midpoint_nmse": 1.8040833164109609,
+          "oracle_best_quantile_nmse": 1.6162867520097355,
+          "quantile_shift_disagreement": 0.07864619665878894,
+          "interval_width_change_energy": 0.6769192623584804,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951002",
+          "median_nmse": 0.020401828105801045,
+          "central_quantile_average_nmse": 0.020642063269041132,
+          "outer_midpoint_nmse": 0.023292964631970094,
+          "oracle_best_quantile_nmse": 0.015879872003037462,
+          "quantile_shift_disagreement": 0.01302393714972331,
+          "interval_width_change_energy": 0.13583018292679555,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951003",
+          "median_nmse": 0.7870269930593514,
+          "central_quantile_average_nmse": 0.7449875344556811,
+          "outer_midpoint_nmse": 0.7270443078763433,
+          "oracle_best_quantile_nmse": 0.629924089678503,
+          "quantile_shift_disagreement": 0.03173911007997195,
+          "interval_width_change_energy": 0.2298710698790175,
+          "crossing_fraction": 0.029296875
+        }
+      ]
+    },
+    {
+      "model": "timesfm",
+      "policy": "native",
+      "period": 24.0,
+      "amplitude": 0.5,
+      "n_sources": 8,
+      "median_nmse": 0.18806199819100272,
+      "central_quantile_average_nmse": 0.17597890614472575,
+      "outer_midpoint_nmse": 0.1674814530928268,
+      "oracle_best_quantile_nmse": 0.1290896319234049,
+      "quantile_shift_disagreement": 0.02875915962056282,
+      "interval_width_change_energy": 0.252138782026893,
+      "crossing_fraction": 0.0177001953125,
+      "source_scores": [
+        {
+          "source": "m4_hourly:T000172",
+          "median_nmse": 0.0010478634039958058,
+          "central_quantile_average_nmse": 0.0010428018634723482,
+          "outer_midpoint_nmse": 0.0010783850263932535,
+          "oracle_best_quantile_nmse": 0.0009626755391779285,
+          "quantile_shift_disagreement": 0.00010059120626642722,
+          "interval_width_change_energy": 0.000712665672450108,
+          "crossing_fraction": 0.08984375
+        },
+        {
+          "source": "monash_electricity_hourly:T000221",
+          "median_nmse": 0.3975703147221274,
+          "central_quantile_average_nmse": 0.2930532140071517,
+          "outer_midpoint_nmse": 0.19276686169269538,
+          "oracle_best_quantile_nmse": 0.14883873910475273,
+          "quantile_shift_disagreement": 0.07525821822551881,
+          "interval_width_change_energy": 0.4096940967623638,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_pedestrian_counts:T000028",
+          "median_nmse": 0.20949980923681027,
+          "central_quantile_average_nmse": 0.21622586516773754,
+          "outer_midpoint_nmse": 0.22691929642821967,
+          "oracle_best_quantile_nmse": 0.10254726769989804,
+          "quantile_shift_disagreement": 0.08001626350975508,
+          "interval_width_change_energy": 0.8305763448966705,
+          "crossing_fraction": 0.0029296875
+        },
+        {
+          "source": "monash_traffic:T000099",
+          "median_nmse": 0.07072708492448937,
+          "central_quantile_average_nmse": 0.07786736230833681,
+          "outer_midpoint_nmse": 0.09369203832356529,
+          "oracle_best_quantile_nmse": 0.02053070632388426,
+          "quantile_shift_disagreement": 0.032347162068704166,
+          "interval_width_change_energy": 0.36260870752679697,
+          "crossing_fraction": 0.0009765625
+        },
+        {
+          "source": "syn:4951000",
+          "median_nmse": 0.030634705230228234,
+          "central_quantile_average_nmse": 0.03190643484628024,
+          "outer_midpoint_nmse": 0.03213963974679425,
+          "oracle_best_quantile_nmse": 0.029600141979261647,
+          "quantile_shift_disagreement": 0.0030738814202521123,
+          "interval_width_change_energy": 0.030409308584346373,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951001",
+          "median_nmse": 0.5578915003465369,
+          "central_quantile_average_nmse": 0.5542683953147138,
+          "outer_midpoint_nmse": 0.5638752294938791,
+          "oracle_best_quantile_nmse": 0.5037706033929563,
+          "quantile_shift_disagreement": 0.01270755858379366,
+          "interval_width_change_energy": 0.11529874692056562,
+          "crossing_fraction": 0.0009765625
+        },
+        {
+          "source": "syn:4951002",
+          "median_nmse": 0.040017390389452484,
+          "central_quantile_average_nmse": 0.03998790099896067,
+          "outer_midpoint_nmse": 0.04060996356894077,
+          "oracle_best_quantile_nmse": 0.03879967686929134,
+          "quantile_shift_disagreement": 0.009776782796165562,
+          "interval_width_change_energy": 0.1043753223367475,
+          "crossing_fraction": 0.009765625
+        },
+        {
+          "source": "syn:4951003",
+          "median_nmse": 0.19710731727438116,
+          "central_quantile_average_nmse": 0.19347927465115294,
+          "outer_midpoint_nmse": 0.18877021046212683,
+          "oracle_best_quantile_nmse": 0.18766724447801678,
+          "quantile_shift_disagreement": 0.016792819154046727,
+          "interval_width_change_energy": 0.16343506351520284,
+          "crossing_fraction": 0.037109375
+        }
+      ]
+    },
+    {
+      "model": "timesfm",
+      "policy": "native",
+      "period": 24.0,
+      "amplitude": 2.0,
+      "n_sources": 8,
+      "median_nmse": 0.053279564608787564,
+      "central_quantile_average_nmse": 0.05207497319972703,
+      "outer_midpoint_nmse": 0.054068358389427196,
+      "oracle_best_quantile_nmse": 0.030386034663853572,
+      "quantile_shift_disagreement": 0.01630699438098002,
+      "interval_width_change_energy": 0.16036473786736374,
+      "crossing_fraction": 0.0250244140625,
+      "source_scores": [
+        {
+          "source": "m4_hourly:T000172",
+          "median_nmse": 0.0005819900693526273,
+          "central_quantile_average_nmse": 0.000572934961866483,
+          "outer_midpoint_nmse": 0.0005850194507773786,
+          "oracle_best_quantile_nmse": 0.00040147537309486917,
+          "quantile_shift_disagreement": 0.0001067647539597055,
+          "interval_width_change_energy": 0.000944160081355613,
+          "crossing_fraction": 0.11328125
+        },
+        {
+          "source": "monash_electricity_hourly:T000221",
+          "median_nmse": 0.11763233371513537,
+          "central_quantile_average_nmse": 0.08797956292601186,
+          "outer_midpoint_nmse": 0.05787186441311167,
+          "oracle_best_quantile_nmse": 0.05179134055826144,
+          "quantile_shift_disagreement": 0.026385231468742384,
+          "interval_width_change_energy": 0.18614265798750704,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_pedestrian_counts:T000028",
+          "median_nmse": 0.11427170364128492,
+          "central_quantile_average_nmse": 0.13194211520194368,
+          "outer_midpoint_nmse": 0.17012242443246853,
+          "oracle_best_quantile_nmse": 0.02449645794133031,
+          "quantile_shift_disagreement": 0.07819596307562307,
+          "interval_width_change_energy": 0.8243086873099693,
+          "crossing_fraction": 0.0009765625
+        },
+        {
+          "source": "monash_traffic:T000099",
+          "median_nmse": 0.021646154338689536,
+          "central_quantile_average_nmse": 0.024765707453898028,
+          "outer_midpoint_nmse": 0.03131208082768292,
+          "oracle_best_quantile_nmse": 0.004427401021163463,
+          "quantile_shift_disagreement": 0.013429071005748682,
+          "interval_width_change_energy": 0.14691005289821604,
+          "crossing_fraction": 0.0009765625
+        },
+        {
+          "source": "syn:4951000",
+          "median_nmse": 0.009058872390100661,
+          "central_quantile_average_nmse": 0.009165058856652145,
+          "outer_midpoint_nmse": 0.009619763296655348,
+          "oracle_best_quantile_nmse": 0.008277221361518594,
+          "quantile_shift_disagreement": 0.00033276710127195163,
+          "interval_width_change_energy": 0.002448123560117491,
+          "crossing_fraction": 0.00390625
+        },
+        {
+          "source": "syn:4951001",
+          "median_nmse": 0.11162673008721628,
+          "central_quantile_average_nmse": 0.11121004904013537,
+          "outer_midpoint_nmse": 0.1112740301618058,
+          "oracle_best_quantile_nmse": 0.10707227204970328,
+          "quantile_shift_disagreement": 0.0014827545507356734,
+          "interval_width_change_energy": 0.013215139241665971,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951002",
+          "median_nmse": 0.03367882851610922,
+          "central_quantile_average_nmse": 0.03347148129213767,
+          "outer_midpoint_nmse": 0.03413539782241938,
+          "oracle_best_quantile_nmse": 0.03160048134512493,
+          "quantile_shift_disagreement": 0.0025254905079434287,
+          "interval_width_change_energy": 0.025660785286301464,
+          "crossing_fraction": 0.01171875
+        },
+        {
+          "source": "syn:4951003",
+          "median_nmse": 0.017739904112411865,
+          "central_quantile_average_nmse": 0.017492875865171023,
+          "outer_midpoint_nmse": 0.017626286710496594,
+          "oracle_best_quantile_nmse": 0.015021627660631694,
+          "quantile_shift_disagreement": 0.007997912583815273,
+          "interval_width_change_energy": 0.08328829657377693,
+          "crossing_fraction": 0.0693359375
+        }
+      ]
+    },
+    {
+      "model": "timesfm",
+      "policy": "native",
+      "period": 19.2,
+      "amplitude": 0.1,
+      "n_sources": 8,
+      "median_nmse": 1.9717594022240545,
+      "central_quantile_average_nmse": 1.9689040160935263,
+      "outer_midpoint_nmse": 1.9955714669919964,
+      "oracle_best_quantile_nmse": 1.801664427855226,
+      "quantile_shift_disagreement": 0.19941615001775526,
+      "interval_width_change_energy": 2.0900612011323614,
+      "crossing_fraction": 0.003173828125,
+      "source_scores": [
+        {
+          "source": "m4_hourly:T000172",
+          "median_nmse": 1.0550377568791536,
+          "central_quantile_average_nmse": 0.9857991627318474,
+          "outer_midpoint_nmse": 0.9070899662978885,
+          "oracle_best_quantile_nmse": 0.8854130242160299,
+          "quantile_shift_disagreement": 0.8196950437434987,
+          "interval_width_change_energy": 9.154484955793212,
+          "crossing_fraction": 0.005859375
+        },
+        {
+          "source": "monash_electricity_hourly:T000221",
+          "median_nmse": 2.2080018049895815,
+          "central_quantile_average_nmse": 2.22921979698544,
+          "outer_midpoint_nmse": 2.4127614474314028,
+          "oracle_best_quantile_nmse": 2.03569829845491,
+          "quantile_shift_disagreement": 0.22651290090621726,
+          "interval_width_change_energy": 1.8852404025255627,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_pedestrian_counts:T000028",
+          "median_nmse": 1.4788939040055307,
+          "central_quantile_average_nmse": 1.5372857821207837,
+          "outer_midpoint_nmse": 1.6202851368959412,
+          "oracle_best_quantile_nmse": 1.2488206144939658,
+          "quantile_shift_disagreement": 0.10261924742646772,
+          "interval_width_change_energy": 1.026156982256114,
+          "crossing_fraction": 0.0048828125
+        },
+        {
+          "source": "monash_traffic:T000099",
+          "median_nmse": 2.115204258226911,
+          "central_quantile_average_nmse": 2.1301719662660177,
+          "outer_midpoint_nmse": 2.1284794670208558,
+          "oracle_best_quantile_nmse": 1.734331092545351,
+          "quantile_shift_disagreement": 0.12190707808420667,
+          "interval_width_change_energy": 1.3025157394453664,
+          "crossing_fraction": 0.001953125
+        },
+        {
+          "source": "syn:4951000",
+          "median_nmse": 2.977477312693582,
+          "central_quantile_average_nmse": 3.0041052507167665,
+          "outer_midpoint_nmse": 3.0476380793126117,
+          "oracle_best_quantile_nmse": 2.8334725672628505,
+          "quantile_shift_disagreement": 0.08220898672969837,
+          "interval_width_change_energy": 0.8537083758637323,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951001",
+          "median_nmse": 5.5822776974428745,
+          "central_quantile_average_nmse": 5.515159330467165,
+          "outer_midpoint_nmse": 5.499076175083539,
+          "oracle_best_quantile_nmse": 5.351966621269775,
+          "quantile_shift_disagreement": 0.20352368442599952,
+          "interval_width_change_energy": 2.0863287529038455,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951002",
+          "median_nmse": 0.20870231427807454,
+          "central_quantile_average_nmse": 0.2005278790197158,
+          "outer_midpoint_nmse": 0.19627130311211738,
+          "oracle_best_quantile_nmse": 0.18848863878656621,
+          "quantile_shift_disagreement": 0.03308758360161648,
+          "interval_width_change_energy": 0.3674999003958758,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951003",
+          "median_nmse": 0.1484801692767293,
+          "central_quantile_average_nmse": 0.1489629604404747,
+          "outer_midpoint_nmse": 0.15297016078161635,
+          "oracle_best_quantile_nmse": 0.1351245658123586,
+          "quantile_shift_disagreement": 0.005774675224337274,
+          "interval_width_change_energy": 0.044554499875183784,
+          "crossing_fraction": 0.0126953125
+        }
+      ]
+    },
+    {
+      "model": "timesfm",
+      "policy": "native",
+      "period": 19.2,
+      "amplitude": 0.5,
+      "n_sources": 8,
+      "median_nmse": 1.108195472802549,
+      "central_quantile_average_nmse": 1.067045219039546,
+      "outer_midpoint_nmse": 1.0230871750622539,
+      "oracle_best_quantile_nmse": 0.8199606398036022,
+      "quantile_shift_disagreement": 0.1670932470609505,
+      "interval_width_change_energy": 1.7279081133923855,
+      "crossing_fraction": 0.0062255859375,
+      "source_scores": [
+        {
+          "source": "m4_hourly:T000172",
+          "median_nmse": 0.08538414286608118,
+          "central_quantile_average_nmse": 0.0861623056797294,
+          "outer_midpoint_nmse": 0.08968510988925571,
+          "oracle_best_quantile_nmse": 0.08412910596432438,
+          "quantile_shift_disagreement": 0.0956358572354868,
+          "interval_width_change_energy": 1.043452871209179,
+          "crossing_fraction": 0.0009765625
+        },
+        {
+          "source": "monash_electricity_hourly:T000221",
+          "median_nmse": 3.063172178777238,
+          "central_quantile_average_nmse": 2.7446228055750934,
+          "outer_midpoint_nmse": 2.3572434591339584,
+          "oracle_best_quantile_nmse": 1.5520768142892074,
+          "quantile_shift_disagreement": 0.25519798344138206,
+          "interval_width_change_energy": 2.0191418562835692,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_pedestrian_counts:T000028",
+          "median_nmse": 1.5765228080302587,
+          "central_quantile_average_nmse": 1.6284137097449887,
+          "outer_midpoint_nmse": 1.7034645302337088,
+          "oracle_best_quantile_nmse": 1.2819592058344302,
+          "quantile_shift_disagreement": 0.30813215006976036,
+          "interval_width_change_energy": 3.3377749355004536,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_traffic:T000099",
+          "median_nmse": 1.8287723948468764,
+          "central_quantile_average_nmse": 1.7914853151695214,
+          "outer_midpoint_nmse": 1.7502974251777648,
+          "oracle_best_quantile_nmse": 1.4726101997499854,
+          "quantile_shift_disagreement": 0.4902788596592753,
+          "interval_width_change_energy": 5.411745146334841,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951000",
+          "median_nmse": 0.9615336093934849,
+          "central_quantile_average_nmse": 0.9560734929582622,
+          "outer_midpoint_nmse": 0.95327997594925,
+          "oracle_best_quantile_nmse": 0.8897108686102818,
+          "quantile_shift_disagreement": 0.10130773549105407,
+          "interval_width_change_energy": 1.1013101157587024,
+          "crossing_fraction": 0.0009765625
+        },
+        {
+          "source": "syn:4951001",
+          "median_nmse": 0.9455600955436783,
+          "central_quantile_average_nmse": 0.9374576157055479,
+          "outer_midpoint_nmse": 0.943829030625345,
+          "oracle_best_quantile_nmse": 0.9191429412514498,
+          "quantile_shift_disagreement": 0.03462244246242673,
+          "interval_width_change_energy": 0.3602480598184584,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951002",
+          "median_nmse": 0.22344785780741194,
+          "central_quantile_average_nmse": 0.21470517835535566,
+          "outer_midpoint_nmse": 0.2099301940659643,
+          "oracle_best_quantile_nmse": 0.19256509882483272,
+          "quantile_shift_disagreement": 0.04274415499506069,
+          "interval_width_change_energy": 0.4714159660550623,
+          "crossing_fraction": 0.00390625
+        },
+        {
+          "source": "syn:4951003",
+          "median_nmse": 0.18117069515536294,
+          "central_quantile_average_nmse": 0.17744132912786986,
+          "outer_midpoint_nmse": 0.17696767542278485,
+          "oracle_best_quantile_nmse": 0.16749088390430608,
+          "quantile_shift_disagreement": 0.008826793133157951,
+          "interval_width_change_energy": 0.07817595617881634,
+          "crossing_fraction": 0.0439453125
+        }
+      ]
+    },
+    {
+      "model": "timesfm",
+      "policy": "native",
+      "period": 19.2,
+      "amplitude": 2.0,
+      "n_sources": 8,
+      "median_nmse": 0.15116309852796067,
+      "central_quantile_average_nmse": 0.14849765823911415,
+      "outer_midpoint_nmse": 0.14530387726802418,
+      "oracle_best_quantile_nmse": 0.10380841467167994,
+      "quantile_shift_disagreement": 0.030395853640926975,
+      "interval_width_change_energy": 0.32131864619058464,
+      "crossing_fraction": 0.0125732421875,
+      "source_scores": [
+        {
+          "source": "m4_hourly:T000172",
+          "median_nmse": 0.05880979497517765,
+          "central_quantile_average_nmse": 0.05840724340643509,
+          "outer_midpoint_nmse": 0.05841762124895109,
+          "oracle_best_quantile_nmse": 0.0531136315762664,
+          "quantile_shift_disagreement": 0.012976158487947323,
+          "interval_width_change_energy": 0.14000591052151765,
+          "crossing_fraction": 0.0087890625
+        },
+        {
+          "source": "monash_electricity_hourly:T000221",
+          "median_nmse": 0.2836685765468166,
+          "central_quantile_average_nmse": 0.2479353204876108,
+          "outer_midpoint_nmse": 0.20468225574560234,
+          "oracle_best_quantile_nmse": 0.14515774711863602,
+          "quantile_shift_disagreement": 0.14047640093319427,
+          "interval_width_change_energy": 1.4998165357354933,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_pedestrian_counts:T000028",
+          "median_nmse": 0.39686505710140313,
+          "central_quantile_average_nmse": 0.41177358582437806,
+          "outer_midpoint_nmse": 0.42773251218914043,
+          "oracle_best_quantile_nmse": 0.19815926972947753,
+          "quantile_shift_disagreement": 0.037038641775112215,
+          "interval_width_change_energy": 0.38104058891186643,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_traffic:T000099",
+          "median_nmse": 0.07683915960960704,
+          "central_quantile_average_nmse": 0.07606711699662208,
+          "outer_midpoint_nmse": 0.07572630873236874,
+          "oracle_best_quantile_nmse": 0.06372566393819361,
+          "quantile_shift_disagreement": 0.03529782908476539,
+          "interval_width_change_energy": 0.3728883131486546,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951000",
+          "median_nmse": 0.15023680843373288,
+          "central_quantile_average_nmse": 0.14959955157453467,
+          "outer_midpoint_nmse": 0.14708861569454806,
+          "oracle_best_quantile_nmse": 0.13589978730033858,
+          "quantile_shift_disagreement": 0.010349313492402137,
+          "interval_width_change_energy": 0.11281810910006765,
+          "crossing_fraction": 0.0009765625
+        },
+        {
+          "source": "syn:4951001",
+          "median_nmse": 0.1348824534418369,
+          "central_quantile_average_nmse": 0.13405928757502394,
+          "outer_midpoint_nmse": 0.13463537891032049,
+          "oracle_best_quantile_nmse": 0.12997383113204541,
+          "quantile_shift_disagreement": 0.0014665457023969627,
+          "interval_width_change_energy": 0.011554165765916903,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951002",
+          "median_nmse": 0.07269207964123867,
+          "central_quantile_average_nmse": 0.07488352556640407,
+          "outer_midpoint_nmse": 0.07873884766347714,
+          "oracle_best_quantile_nmse": 0.07120322903551832,
+          "quantile_shift_disagreement": 0.002046723686994121,
+          "interval_width_change_energy": 0.0165240663125151,
+          "crossing_fraction": 0.0302734375
+        },
+        {
+          "source": "syn:4951003",
+          "median_nmse": 0.035310858473872615,
+          "central_quantile_average_nmse": 0.03525563448190445,
+          "outer_midpoint_nmse": 0.03540947795978539,
+          "oracle_best_quantile_nmse": 0.03323415754296364,
+          "quantile_shift_disagreement": 0.003515215964603373,
+          "interval_width_change_energy": 0.035901480028645454,
+          "crossing_fraction": 0.060546875
+        }
+      ]
+    },
+    {
+      "model": "timesfm",
+      "policy": "locked",
+      "period": 24.0,
+      "amplitude": 0.1,
+      "n_sources": 8,
+      "median_nmse": 0.5853236109871528,
+      "central_quantile_average_nmse": 0.5190438470181065,
+      "outer_midpoint_nmse": 0.46207650886296214,
+      "oracle_best_quantile_nmse": 0.3879779048183855,
+      "quantile_shift_disagreement": 0.0804590071632639,
+      "interval_width_change_energy": 0.6131443393982994,
+      "crossing_fraction": 0.0108642578125,
+      "source_scores": [
+        {
+          "source": "m4_hourly:T000172",
+          "median_nmse": 0.07667924096639336,
+          "central_quantile_average_nmse": 0.07769420964080608,
+          "outer_midpoint_nmse": 0.08001293043858834,
+          "oracle_best_quantile_nmse": 0.07398264821160525,
+          "quantile_shift_disagreement": 0.045070226173594324,
+          "interval_width_change_energy": 0.4766870963570789,
+          "crossing_fraction": 0.052734375
+        },
+        {
+          "source": "monash_electricity_hourly:T000221",
+          "median_nmse": 1.2414854339695962,
+          "central_quantile_average_nmse": 0.8011244782173752,
+          "outer_midpoint_nmse": 0.3515526557335265,
+          "oracle_best_quantile_nmse": 0.27102009243790004,
+          "quantile_shift_disagreement": 0.22992260049199534,
+          "interval_width_change_energy": 0.913528226110499,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_pedestrian_counts:T000028",
+          "median_nmse": 0.2624020797543445,
+          "central_quantile_average_nmse": 0.21178787486506645,
+          "outer_midpoint_nmse": 0.1640503656360107,
+          "oracle_best_quantile_nmse": 0.09810644916119954,
+          "quantile_shift_disagreement": 0.0874220258190212,
+          "interval_width_change_energy": 0.7622084110679744,
+          "crossing_fraction": 0.0068359375
+        },
+        {
+          "source": "monash_traffic:T000099",
+          "median_nmse": 0.19947516863484027,
+          "central_quantile_average_nmse": 0.20915536251961522,
+          "outer_midpoint_nmse": 0.2211968886615043,
+          "oracle_best_quantile_nmse": 0.0762720450407312,
+          "quantile_shift_disagreement": 0.05703764442570804,
+          "interval_width_change_energy": 0.6162145969072771,
+          "crossing_fraction": 0.001953125
+        },
+        {
+          "source": "syn:4951000",
+          "median_nmse": 0.10083499482005823,
+          "central_quantile_average_nmse": 0.10031661440154518,
+          "outer_midpoint_nmse": 0.10007622906458877,
+          "oracle_best_quantile_nmse": 0.0961724281126543,
+          "quantile_shift_disagreement": 0.01738160755407643,
+          "interval_width_change_energy": 0.18301523181051185,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951001",
+          "median_nmse": 1.7989678777520182,
+          "central_quantile_average_nmse": 1.7993520187375203,
+          "outer_midpoint_nmse": 1.8452403733454346,
+          "oracle_best_quantile_nmse": 1.6430944276832573,
+          "quantile_shift_disagreement": 0.0762188331359672,
+          "interval_width_change_energy": 0.646957634431517,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951002",
+          "median_nmse": 0.1104390361742627,
+          "central_quantile_average_nmse": 0.10356840055798366,
+          "outer_midpoint_nmse": 0.10092901876660287,
+          "oracle_best_quantile_nmse": 0.10182775500926856,
+          "quantile_shift_disagreement": 0.09091847480886493,
+          "interval_width_change_energy": 0.9975873993024756,
+          "crossing_fraction": 0.0009765625
+        },
+        {
+          "source": "syn:4951003",
+          "median_nmse": 0.8923050558257088,
+          "central_quantile_average_nmse": 0.849351817204939,
+          "outer_midpoint_nmse": 0.8335536092574414,
+          "oracle_best_quantile_nmse": 0.7433473928904676,
+          "quantile_shift_disagreement": 0.03970064489688378,
+          "interval_width_change_energy": 0.308956119199061,
+          "crossing_fraction": 0.0244140625
+        }
+      ]
+    },
+    {
+      "model": "timesfm",
+      "policy": "locked",
+      "period": 24.0,
+      "amplitude": 0.5,
+      "n_sources": 8,
+      "median_nmse": 0.32874235438503824,
+      "central_quantile_average_nmse": 0.30670573574782756,
+      "outer_midpoint_nmse": 0.28448302132473935,
+      "oracle_best_quantile_nmse": 0.21315214619071793,
+      "quantile_shift_disagreement": 0.08015738929113202,
+      "interval_width_change_energy": 0.8178950705797898,
+      "crossing_fraction": 0.0068359375,
+      "source_scores": [
+        {
+          "source": "m4_hourly:T000172",
+          "median_nmse": 0.03271644532005744,
+          "central_quantile_average_nmse": 0.03167331419687059,
+          "outer_midpoint_nmse": 0.030989248313338727,
+          "oracle_best_quantile_nmse": 0.028155076916957907,
+          "quantile_shift_disagreement": 0.0970516659600252,
+          "interval_width_change_energy": 1.1602365166430864,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_electricity_hourly:T000221",
+          "median_nmse": 0.8909801550118543,
+          "central_quantile_average_nmse": 0.7163560075142485,
+          "outer_midpoint_nmse": 0.5007783035501475,
+          "oracle_best_quantile_nmse": 0.30213159492139263,
+          "quantile_shift_disagreement": 0.08486952547652062,
+          "interval_width_change_energy": 0.468149646904497,
+          "crossing_fraction": 0.001953125
+        },
+        {
+          "source": "monash_pedestrian_counts:T000028",
+          "median_nmse": 0.48892472018575256,
+          "central_quantile_average_nmse": 0.49266544488879366,
+          "outer_midpoint_nmse": 0.4991832828634384,
+          "oracle_best_quantile_nmse": 0.3215432488598489,
+          "quantile_shift_disagreement": 0.0806963813127689,
+          "interval_width_change_energy": 0.8288493912424717,
+          "crossing_fraction": 0.001953125
+        },
+        {
+          "source": "monash_traffic:T000099",
+          "median_nmse": 0.15932342526804916,
+          "central_quantile_average_nmse": 0.16853269219227068,
+          "outer_midpoint_nmse": 0.1884098707109006,
+          "oracle_best_quantile_nmse": 0.09035176135680023,
+          "quantile_shift_disagreement": 0.046435038580048826,
+          "interval_width_change_energy": 0.47757808030809923,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951000",
+          "median_nmse": 0.07283016158892856,
+          "central_quantile_average_nmse": 0.0723184146324751,
+          "outer_midpoint_nmse": 0.0734757440975729,
+          "oracle_best_quantile_nmse": 0.06721996659508961,
+          "quantile_shift_disagreement": 0.04691462326250968,
+          "interval_width_change_energy": 0.5097802242489329,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951001",
+          "median_nmse": 0.6028098706934641,
+          "central_quantile_average_nmse": 0.5950158900248727,
+          "outer_midpoint_nmse": 0.6082090584575985,
+          "oracle_best_quantile_nmse": 0.5364548232391898,
+          "quantile_shift_disagreement": 0.01850390510431839,
+          "interval_width_change_energy": 0.17889804970295206,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951002",
+          "median_nmse": 0.1187729943655912,
+          "central_quantile_average_nmse": 0.12018242707750719,
+          "outer_midpoint_nmse": 0.1260089361448503,
+          "oracle_best_quantile_nmse": 0.11577348057717539,
+          "quantile_shift_disagreement": 0.23626639405481467,
+          "interval_width_change_energy": 2.6047107279290906,
+          "crossing_fraction": 0.0146484375
+        },
+        {
+          "source": "syn:4951003",
+          "median_nmse": 0.2635810626466087,
+          "central_quantile_average_nmse": 0.25690169545558206,
+          "outer_midpoint_nmse": 0.24880972646006805,
+          "oracle_best_quantile_nmse": 0.24358721705928893,
+          "quantile_shift_disagreement": 0.030521580578049805,
+          "interval_width_change_energy": 0.3149579276591883,
+          "crossing_fraction": 0.0361328125
+        }
+      ]
+    },
+    {
+      "model": "timesfm",
+      "policy": "locked",
+      "period": 24.0,
+      "amplitude": 2.0,
+      "n_sources": 8,
+      "median_nmse": 0.11479253941474862,
+      "central_quantile_average_nmse": 0.11125778740056957,
+      "outer_midpoint_nmse": 0.10949207431434384,
+      "oracle_best_quantile_nmse": 0.07624682951865804,
+      "quantile_shift_disagreement": 0.027480051939605493,
+      "interval_width_change_energy": 0.2868289761373559,
+      "crossing_fraction": 0.0123291015625,
+      "source_scores": [
+        {
+          "source": "m4_hourly:T000172",
+          "median_nmse": 0.009392086039222185,
+          "central_quantile_average_nmse": 0.00990801153024481,
+          "outer_midpoint_nmse": 0.011215792938100471,
+          "oracle_best_quantile_nmse": 0.0063995043077406935,
+          "quantile_shift_disagreement": 0.016195951420805883,
+          "interval_width_change_energy": 0.1817579965087411,
+          "crossing_fraction": 0.0205078125
+        },
+        {
+          "source": "monash_electricity_hourly:T000221",
+          "median_nmse": 0.3398086413400018,
+          "central_quantile_average_nmse": 0.2993860820139017,
+          "outer_midpoint_nmse": 0.25031887152914395,
+          "oracle_best_quantile_nmse": 0.11613463828426351,
+          "quantile_shift_disagreement": 0.018507153523471875,
+          "interval_width_change_energy": 0.17477211746292012,
+          "crossing_fraction": 0.0009765625
+        },
+        {
+          "source": "monash_pedestrian_counts:T000028",
+          "median_nmse": 0.10646670479678573,
+          "central_quantile_average_nmse": 0.11788715593435714,
+          "outer_midpoint_nmse": 0.13849376707712088,
+          "oracle_best_quantile_nmse": 0.08303355766809586,
+          "quantile_shift_disagreement": 0.04114592158125402,
+          "interval_width_change_energy": 0.41271968362964634,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_traffic:T000099",
+          "median_nmse": 0.007343316638291965,
+          "central_quantile_average_nmse": 0.007731896883298975,
+          "outer_midpoint_nmse": 0.010211085233682247,
+          "oracle_best_quantile_nmse": 0.006910871698258918,
+          "quantile_shift_disagreement": 0.0039594671919170555,
+          "interval_width_change_energy": 0.03443599333913896,
+          "crossing_fraction": 0.0029296875
+        },
+        {
+          "source": "syn:4951000",
+          "median_nmse": 0.032884763260839056,
+          "central_quantile_average_nmse": 0.03174530360313462,
+          "outer_midpoint_nmse": 0.03176092820564123,
+          "oracle_best_quantile_nmse": 0.028441973046577668,
+          "quantile_shift_disagreement": 0.007108042345326665,
+          "interval_width_change_energy": 0.07089463792693797,
+          "crossing_fraction": 0.009765625
+        },
+        {
+          "source": "syn:4951001",
+          "median_nmse": 0.13292124138530337,
+          "central_quantile_average_nmse": 0.1340475324157578,
+          "outer_midpoint_nmse": 0.13912366636377443,
+          "oracle_best_quantile_nmse": 0.12032506562696564,
+          "quantile_shift_disagreement": 0.004569265244376755,
+          "interval_width_change_energy": 0.04313812846055676,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951002",
+          "median_nmse": 0.18808908014944992,
+          "central_quantile_average_nmse": 0.18705965678212894,
+          "outer_midpoint_nmse": 0.19108982869962615,
+          "oracle_best_quantile_nmse": 0.16376790026884896,
+          "quantile_shift_disagreement": 0.0867422613942419,
+          "interval_width_change_energy": 0.9258185393874099,
+          "crossing_fraction": 0.0048828125
+        },
+        {
+          "source": "syn:4951003",
+          "median_nmse": 0.10143448170809498,
+          "central_quantile_average_nmse": 0.10229666004173267,
+          "outer_midpoint_nmse": 0.1037226544676613,
+          "oracle_best_quantile_nmse": 0.08496112524851303,
+          "quantile_shift_disagreement": 0.041612352815449796,
+          "interval_width_change_energy": 0.45109471238349635,
+          "crossing_fraction": 0.0595703125
+        }
+      ]
+    },
+    {
+      "model": "timesfm",
+      "policy": "locked",
+      "period": 19.2,
+      "amplitude": 0.1,
+      "n_sources": 8,
+      "median_nmse": 2.043722148619935,
+      "central_quantile_average_nmse": 2.0344498772427118,
+      "outer_midpoint_nmse": 2.0513363373957763,
+      "oracle_best_quantile_nmse": 1.8573412859313922,
+      "quantile_shift_disagreement": 0.21388012488207087,
+      "interval_width_change_energy": 2.2182272573663786,
+      "crossing_fraction": 0.004150390625,
+      "source_scores": [
+        {
+          "source": "m4_hourly:T000172",
+          "median_nmse": 0.953979973947888,
+          "central_quantile_average_nmse": 0.9039998664251411,
+          "outer_midpoint_nmse": 0.8479610027791555,
+          "oracle_best_quantile_nmse": 0.766944299065252,
+          "quantile_shift_disagreement": 0.8752169201154276,
+          "interval_width_change_energy": 9.758402528796715,
+          "crossing_fraction": 0.0068359375
+        },
+        {
+          "source": "monash_electricity_hourly:T000221",
+          "median_nmse": 2.6474505839316516,
+          "central_quantile_average_nmse": 2.5790181734476745,
+          "outer_midpoint_nmse": 2.6341967373325774,
+          "oracle_best_quantile_nmse": 2.4327477433026656,
+          "quantile_shift_disagreement": 0.2117904322869965,
+          "interval_width_change_energy": 1.5684667118535645,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_pedestrian_counts:T000028",
+          "median_nmse": 1.4897160271036118,
+          "central_quantile_average_nmse": 1.5583379622287927,
+          "outer_midpoint_nmse": 1.6634725115485087,
+          "oracle_best_quantile_nmse": 1.2501319621446487,
+          "quantile_shift_disagreement": 0.11712097813381415,
+          "interval_width_change_energy": 1.1553059591700197,
+          "crossing_fraction": 0.005859375
+        },
+        {
+          "source": "monash_traffic:T000099",
+          "median_nmse": 2.1483966902309053,
+          "central_quantile_average_nmse": 2.175025938520486,
+          "outer_midpoint_nmse": 2.193300514201706,
+          "oracle_best_quantile_nmse": 1.7544600669102381,
+          "quantile_shift_disagreement": 0.13584840995320063,
+          "interval_width_change_energy": 1.4393700906435685,
+          "crossing_fraction": 0.0029296875
+        },
+        {
+          "source": "syn:4951000",
+          "median_nmse": 2.7694036389641488,
+          "central_quantile_average_nmse": 2.79847607365036,
+          "outer_midpoint_nmse": 2.835235502480435,
+          "oracle_best_quantile_nmse": 2.6155559857695176,
+          "quantile_shift_disagreement": 0.09429401406632552,
+          "interval_width_change_energy": 0.9814655139069104,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951001",
+          "median_nmse": 5.507553832271649,
+          "central_quantile_average_nmse": 5.442605269637843,
+          "outer_midpoint_nmse": 5.4330623525008255,
+          "oracle_best_quantile_nmse": 5.266769254193782,
+          "quantile_shift_disagreement": 0.2074942879102651,
+          "interval_width_change_energy": 2.141046788393584,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951002",
+          "median_nmse": 0.470720505490254,
+          "central_quantile_average_nmse": 0.46713820988644217,
+          "outer_midpoint_nmse": 0.4568638408059299,
+          "oracle_best_quantile_nmse": 0.43752017202581467,
+          "quantile_shift_disagreement": 0.051938007085838074,
+          "interval_width_change_energy": 0.5687251839511958,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951003",
+          "median_nmse": 0.3625559370193694,
+          "central_quantile_average_nmse": 0.3509975241449541,
+          "outer_midpoint_nmse": 0.3465982375170703,
+          "oracle_best_quantile_nmse": 0.33460080403922027,
+          "quantile_shift_disagreement": 0.017337949504699333,
+          "interval_width_change_energy": 0.13303528221547425,
+          "crossing_fraction": 0.017578125
+        }
+      ]
+    },
+    {
+      "model": "timesfm",
+      "policy": "locked",
+      "period": 19.2,
+      "amplitude": 0.5,
+      "n_sources": 8,
+      "median_nmse": 1.2026226816389842,
+      "central_quantile_average_nmse": 1.1755626431495687,
+      "outer_midpoint_nmse": 1.151940261553757,
+      "oracle_best_quantile_nmse": 0.9030996652853835,
+      "quantile_shift_disagreement": 0.17115353252014553,
+      "interval_width_change_energy": 1.75479129704237,
+      "crossing_fraction": 0.00439453125,
+      "source_scores": [
+        {
+          "source": "m4_hourly:T000172",
+          "median_nmse": 0.1460566644332411,
+          "central_quantile_average_nmse": 0.14697010363882326,
+          "outer_midpoint_nmse": 0.1519153063693262,
+          "oracle_best_quantile_nmse": 0.1265302967807966,
+          "quantile_shift_disagreement": 0.1261716940463673,
+          "interval_width_change_energy": 1.3841370572535565,
+          "crossing_fraction": 0.0048828125
+        },
+        {
+          "source": "monash_electricity_hourly:T000221",
+          "median_nmse": 3.2165426490105524,
+          "central_quantile_average_nmse": 2.981192052831177,
+          "outer_midpoint_nmse": 2.6942624218822013,
+          "oracle_best_quantile_nmse": 1.7610106471443627,
+          "quantile_shift_disagreement": 0.21182914541341175,
+          "interval_width_change_energy": 1.6107730987871365,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_pedestrian_counts:T000028",
+          "median_nmse": 1.5662602139534663,
+          "central_quantile_average_nmse": 1.6293819133954148,
+          "outer_midpoint_nmse": 1.7280187357903176,
+          "oracle_best_quantile_nmse": 1.2481906109187189,
+          "quantile_shift_disagreement": 0.31921931825376626,
+          "interval_width_change_energy": 3.4309533923442332,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_traffic:T000099",
+          "median_nmse": 1.8099674216511383,
+          "central_quantile_average_nmse": 1.8155965975306703,
+          "outer_midpoint_nmse": 1.8515539418461922,
+          "oracle_best_quantile_nmse": 1.4150691950716807,
+          "quantile_shift_disagreement": 0.355534594801958,
+          "interval_width_change_energy": 3.8125519237452994,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951000",
+          "median_nmse": 0.8533960799713265,
+          "central_quantile_average_nmse": 0.8495000251423854,
+          "outer_midpoint_nmse": 0.8416104166106073,
+          "oracle_best_quantile_nmse": 0.7926651666042004,
+          "quantile_shift_disagreement": 0.1500954332408801,
+          "interval_width_change_energy": 1.636127902418855,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951001",
+          "median_nmse": 0.9743821453239531,
+          "central_quantile_average_nmse": 0.9639563497459902,
+          "outer_midpoint_nmse": 0.9716932764161582,
+          "oracle_best_quantile_nmse": 0.9477732131256764,
+          "quantile_shift_disagreement": 0.05360165120177549,
+          "interval_width_change_energy": 0.5667573656739985,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951002",
+          "median_nmse": 0.6053119686232254,
+          "central_quantile_average_nmse": 0.5781955395782777,
+          "outer_midpoint_nmse": 0.549903799387472,
+          "oracle_best_quantile_nmse": 0.5268595079837741,
+          "quantile_shift_disagreement": 0.1160428852847854,
+          "interval_width_change_energy": 1.2198686524095188,
+          "crossing_fraction": 0.009765625
+        },
+        {
+          "source": "syn:4951003",
+          "median_nmse": 0.44906431014497017,
+          "central_quantile_average_nmse": 0.4397085633338108,
+          "outer_midpoint_nmse": 0.42656419412778185,
+          "oracle_best_quantile_nmse": 0.4066986846538575,
+          "quantile_shift_disagreement": 0.03673353791822005,
+          "interval_width_change_energy": 0.37716098370636364,
+          "crossing_fraction": 0.0205078125
+        }
+      ]
+    },
+    {
+      "model": "timesfm",
+      "policy": "locked",
+      "period": 19.2,
+      "amplitude": 2.0,
+      "n_sources": 8,
+      "median_nmse": 0.24436064700279855,
+      "central_quantile_average_nmse": 0.24102516478437913,
+      "outer_midpoint_nmse": 0.23953646505702303,
+      "oracle_best_quantile_nmse": 0.18213954601045468,
+      "quantile_shift_disagreement": 0.057105751137558045,
+      "interval_width_change_energy": 0.6163572994766311,
+      "crossing_fraction": 0.0242919921875,
+      "source_scores": [
+        {
+          "source": "m4_hourly:T000172",
+          "median_nmse": 0.1323526480152741,
+          "central_quantile_average_nmse": 0.12884676890629856,
+          "outer_midpoint_nmse": 0.12771955191553147,
+          "oracle_best_quantile_nmse": 0.12089426510132228,
+          "quantile_shift_disagreement": 0.07309326079443311,
+          "interval_width_change_energy": 0.814742064087967,
+          "crossing_fraction": 0.029296875
+        },
+        {
+          "source": "monash_electricity_hourly:T000221",
+          "median_nmse": 0.47211361138933516,
+          "central_quantile_average_nmse": 0.4427324794303419,
+          "outer_midpoint_nmse": 0.41098636361925617,
+          "oracle_best_quantile_nmse": 0.26786404403184505,
+          "quantile_shift_disagreement": 0.07457160321451753,
+          "interval_width_change_energy": 0.8025486114532328,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "monash_pedestrian_counts:T000028",
+          "median_nmse": 0.4530760382366573,
+          "central_quantile_average_nmse": 0.4693530781137849,
+          "outer_midpoint_nmse": 0.49215543860493993,
+          "oracle_best_quantile_nmse": 0.2660166819577673,
+          "quantile_shift_disagreement": 0.06902228171347759,
+          "interval_width_change_energy": 0.7063169207610881,
+          "crossing_fraction": 0.005859375
+        },
+        {
+          "source": "monash_traffic:T000099",
+          "median_nmse": 0.1686745188410812,
+          "central_quantile_average_nmse": 0.16588570784042345,
+          "outer_midpoint_nmse": 0.16252297889079814,
+          "oracle_best_quantile_nmse": 0.15403395603712508,
+          "quantile_shift_disagreement": 0.07551294410874491,
+          "interval_width_change_energy": 0.8101249489842034,
+          "crossing_fraction": 0.0166015625
+        },
+        {
+          "source": "syn:4951000",
+          "median_nmse": 0.2815616649492316,
+          "central_quantile_average_nmse": 0.2758375091563824,
+          "outer_midpoint_nmse": 0.2721627610031223,
+          "oracle_best_quantile_nmse": 0.24517819991055834,
+          "quantile_shift_disagreement": 0.07904062968559283,
+          "interval_width_change_energy": 0.8900230911150779,
+          "crossing_fraction": 0.025390625
+        },
+        {
+          "source": "syn:4951001",
+          "median_nmse": 0.14940364717909185,
+          "central_quantile_average_nmse": 0.14820300961920643,
+          "outer_midpoint_nmse": 0.15155673253181584,
+          "oracle_best_quantile_nmse": 0.1437708256374164,
+          "quantile_shift_disagreement": 0.01996996765371476,
+          "interval_width_change_energy": 0.2145605294537023,
+          "crossing_fraction": 0.0
+        },
+        {
+          "source": "syn:4951002",
+          "median_nmse": 0.24376220638577975,
+          "central_quantile_average_nmse": 0.24552398579268725,
+          "outer_midpoint_nmse": 0.2445007085868228,
+          "oracle_best_quantile_nmse": 0.21318968242803277,
+          "quantile_shift_disagreement": 0.03328883935291882,
+          "interval_width_change_energy": 0.34913115152444263,
+          "crossing_fraction": 0.0244140625
+        },
+        {
+          "source": "syn:4951003",
+          "median_nmse": 0.053940841025937346,
+          "central_quantile_average_nmse": 0.051818779415908255,
+          "outer_midpoint_nmse": 0.05468718530389757,
+          "oracle_best_quantile_nmse": 0.04616871297957017,
+          "quantile_shift_disagreement": 0.03234648257706481,
+          "interval_width_change_energy": 0.3434110784333348,
+          "crossing_fraction": 0.0927734375
+        }
+      ]
+    }
+  ],
+  "controls": "Exact quantile repeat; exact median versus establishedNative singleton path; exact native/locked background identity; uncorrected crossingrate.",
+  "limitations": "Reused8 pilot backgrounds; no trained distributional decoder or modelcalibration claim; differences of quantiles are not quantiles of a difference; centralaverage is not an exact mean; rowwise bestquantile is only optimistic ceiling.",
+  "evidence": "Descriptive marginalquantile counterfactual response;8backgrounds",
+  "next_decision": "Check whether fixed alternative location summaries improve consistently before any new distributional interpretation."
+}

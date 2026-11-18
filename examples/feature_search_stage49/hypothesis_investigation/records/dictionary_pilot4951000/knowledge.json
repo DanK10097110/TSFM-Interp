@@ -1,0 +1,22 @@
+{
+  "question": "Bounded direct-coordinate versus sparse-dictionary spectral pilot",
+  "exact_results": {
+    "queue": "queue.json",
+    "completed_stages": 0,
+    "elapsed_seconds": 12.388512288918719
+  },
+  "controls": [
+    "FIT-only models/scalers/probes; source weighting; normalized targets and metadata controls",
+    "native exact self/repeat/saved-state gates; nuisance response and matched random edits"
+  ],
+  "limitations": [
+    "spectral cache; four TEST real sources/domain; no learned-concept or general monosemanticity claim",
+    "nested SAE has 1.25x estimated forward dense matmul FLOPs; equal optimizer steps/parameters are not equal compute"
+  ],
+  "next_step": "Coordinator reviews stage records before any expansion or claim.",
+  "status": "stopped_failure",
+  "slot": {
+    "id": 1,
+    "released": true
+  }
+}

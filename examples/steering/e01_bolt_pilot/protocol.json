@@ -1,0 +1,29 @@
+{
+  "out": "runs/steering_e01b_bolt_pilot",
+  "train": 128,
+  "calibration": 8,
+  "test": 8,
+  "seed": 5160000,
+  "dictionary": 512,
+  "k": 16,
+  "steps": 200,
+  "horizon": 32,
+  "threads": 2,
+  "ridge": 0.001,
+  "radius": 0.2,
+  "budgets": [
+    1,
+    8,
+    32
+  ],
+  "doses": [
+    0.2
+  ],
+  "shifted": false,
+  "evidence": "causal within-model; exploratory fresh synthetic seeds; not sealed confirmation",
+  "intervention": "native decoder head input; original hidden + signed decoder combination",
+  "test_selection": "no test-based selection; all methods and doses reported",
+  "success": "full requested change relative RMS error < 0.1; no crossing postprocessing",
+  "scope": "width is not calibration; seasonal prior is an external desired edit",
+  "source_sha256": "9967428c36b22b68022fb21c7a0ba3ef2fb97129514f5885f122d18ec0f8f916"
+}

@@ -1,0 +1,187 @@
+{
+  "question": "Is the failed exact identity due to nondeterminism, batch-position arithmetic or batchmate interference?",
+  "design": {
+    "model": "bolt",
+    "query_ids": [
+      0,
+      1,
+      4,
+      5
+    ],
+    "tests": "Repeat singleton, duplicate and mixed batches; reorder history positions; compare changed batchmates at fixed positions",
+    "protocol_sha256": "601d1efddc2120df0f66e30beb8e47eb0648c065a5e751ed98c7a9961ab9e95b",
+    "session": 92676
+  },
+  "exact_findings": {
+    "comparisons": [
+      {
+        "comparison": "singleton_repeat",
+        "exact_count": 4,
+        "n": 4,
+        "max_abs": 0.0,
+        "max_abs_over_reference_rms": 0.0,
+        "max_rms_relative": 0.0
+      },
+      {
+        "comparison": "duplicate_batch_repeat",
+        "exact_count": 4,
+        "n": 4,
+        "max_abs": 0.0,
+        "max_abs_over_reference_rms": 0.0,
+        "max_rms_relative": 0.0
+      },
+      {
+        "comparison": "duplicate_positions",
+        "exact_count": 0,
+        "n": 4,
+        "max_abs": 4.76837158203125e-06,
+        "max_abs_over_reference_rms": 1.7896231083120558e-06,
+        "max_rms_relative": 9.870286781275215e-07
+      },
+      {
+        "comparison": "singleton_to_duplicate_position0",
+        "exact_count": 0,
+        "n": 4,
+        "max_abs": 3.5762786865234375e-06,
+        "max_abs_over_reference_rms": 1.5790796862298028e-06,
+        "max_rms_relative": 8.922834885563915e-07
+      },
+      {
+        "comparison": "singleton_to_duplicate_position1",
+        "exact_count": 0,
+        "n": 4,
+        "max_abs": 4.76837158203125e-06,
+        "max_abs_over_reference_rms": 1.0889239390274235e-06,
+        "max_rms_relative": 7.008240699669021e-07
+      },
+      {
+        "comparison": "mixed_batch_repeat",
+        "exact_count": 4,
+        "n": 4,
+        "max_abs": 0.0,
+        "max_abs_over_reference_rms": 0.0,
+        "max_rms_relative": 0.0
+      },
+      {
+        "comparison": "mixed_position_change",
+        "exact_count": 0,
+        "n": 4,
+        "max_abs": 4.76837158203125e-06,
+        "max_abs_over_reference_rms": 1.7896231083120558e-06,
+        "max_rms_relative": 9.870286781275215e-07
+      },
+      {
+        "comparison": "singleton_to_mixed_position0",
+        "exact_count": 0,
+        "n": 4,
+        "max_abs": 3.5762786865234375e-06,
+        "max_abs_over_reference_rms": 1.5790796862298028e-06,
+        "max_rms_relative": 8.922834885563915e-07
+      }
+    ],
+    "batchmate_change": [
+      {
+        "query": 0,
+        "position": 0,
+        "exact": true,
+        "max_abs": 0.0,
+        "rms_abs": 0.0,
+        "reference_rms": 5.667237258981862,
+        "max_abs_over_reference_rms": 0.0,
+        "rms_relative": 0.0
+      },
+      {
+        "query": 0,
+        "position": 1,
+        "exact": true,
+        "max_abs": 0.0,
+        "rms_abs": 0.0,
+        "reference_rms": 5.667237896863179,
+        "max_abs_over_reference_rms": 0.0,
+        "rms_relative": 0.0
+      },
+      {
+        "query": 1,
+        "position": 0,
+        "exact": true,
+        "max_abs": 0.0,
+        "rms_abs": 0.0,
+        "reference_rms": 1.642116291313553,
+        "max_abs_over_reference_rms": 0.0,
+        "rms_relative": 0.0
+      },
+      {
+        "query": 1,
+        "position": 1,
+        "exact": true,
+        "max_abs": 0.0,
+        "rms_abs": 0.0,
+        "reference_rms": 1.6421159536013763,
+        "max_abs_over_reference_rms": 0.0,
+        "rms_relative": 0.0
+      },
+      {
+        "query": 4,
+        "position": 0,
+        "exact": true,
+        "max_abs": 0.0,
+        "rms_abs": 0.0,
+        "reference_rms": 5.562256085106434,
+        "max_abs_over_reference_rms": 0.0,
+        "rms_relative": 0.0
+      },
+      {
+        "query": 4,
+        "position": 1,
+        "exact": true,
+        "max_abs": 0.0,
+        "rms_abs": 0.0,
+        "reference_rms": 5.562256249828378,
+        "max_abs_over_reference_rms": 0.0,
+        "rms_relative": 0.0
+      },
+      {
+        "query": 5,
+        "position": 0,
+        "exact": true,
+        "max_abs": 0.0,
+        "rms_abs": 0.0,
+        "reference_rms": 2.264787387859222,
+        "max_abs_over_reference_rms": 0.0,
+        "rms_relative": 0.0
+      },
+      {
+        "query": 5,
+        "position": 1,
+        "exact": true,
+        "max_abs": 0.0,
+        "rms_abs": 0.0,
+        "reference_rms": 2.2647861812189998,
+        "max_abs_over_reference_rms": 0.0,
+        "rms_relative": 0.0
+      }
+    ],
+    "execution": {
+      "valid": true,
+      "returncode": 0,
+      "reason": null,
+      "seconds": 14.124408150091767,
+      "peak_rss_bytes": 1066049536
+    }
+  },
+  "controls": {
+    "no_target_access": true,
+    "no_tolerance_substitution": true,
+    "full_forecast_arrays": "bolt_forecasts.npz",
+    "native_source_unchanged": true
+  },
+  "limitations": [
+    "Four synthetic histories from two seeds; only Bolt calibrated.",
+    "Stable numerical position effects are supported in these probes; kernel-level origin is not established."
+  ],
+  "evidence_class": "descriptive instrument calibration",
+  "next_decision": {
+    "action": "Fix geometry at batch size1 for every call and duplicate control; original exact equality requirements retained.",
+    "recovery": "tsfm_lens/runs/persistence_pilot4951000/singleton_geometry"
+  }
+}

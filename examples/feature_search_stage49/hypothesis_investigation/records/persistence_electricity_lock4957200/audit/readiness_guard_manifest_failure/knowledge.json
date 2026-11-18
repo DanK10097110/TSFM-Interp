@@ -1,0 +1,16 @@
+{
+  "question": "Can readiness audit hash all artifacts after enabling native target-denial hooks?",
+  "design": "One process checked immutable cohort identity, then installed target audit hooks and verified two denied roots, then attempted full manifest hashing.",
+  "exact_findings": {
+    "status": "FAILED manifest phase only",
+    "error_type": "PermissionError",
+    "error": "Native worker cannot open evaluation targets or labels",
+    "cause": "The active target-denial hook also blocked final manifest hashing of evaluation/targets.npz.",
+    "native_launched": false,
+    "cohort_identity_and_two_denial_gates_completed": true
+  },
+  "controls": "Guard remained active; no bypass or weakened target-isolation rule.",
+  "limitations": "Readiness tooling sequencing failure, not a native/model result.",
+  "evidence_class": "failed preparation instrumentation",
+  "next_decision": "Keep this record; hash final artifacts in a fresh non-worker process. Do not alter frozen source or launch native."
+}

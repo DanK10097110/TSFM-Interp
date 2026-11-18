@@ -1,0 +1,5231 @@
+{
+  "question": "Does trained TimesFM hidden improve Bolt fusion-response prediction beyond both random families under matched local FIT?",
+  "evidence_class": "Prospectively frozen conditional synthetic predictive feature-efficiency comparison; extrapolation and correctness are separate descriptive axes.",
+  "events": [
+    {
+      "unix_time": 1794854445.914922,
+      "experiment": "prepare",
+      "status": "complete; native held",
+      "design": {
+        "version": 1,
+        "status": "PREPARED; HOLD NATIVE until a NEW slot grant for this protocol",
+        "namespace": "4962000..4962051;4954000 namespace belongs to Carson and is not used",
+        "fit_seeds": [
+          4962000,
+          4962001,
+          4962002,
+          4962003,
+          4962004,
+          4962005,
+          4962006,
+          4962007,
+          4962008,
+          4962009,
+          4962010,
+          4962011,
+          4962012,
+          4962013,
+          4962014,
+          4962015,
+          4962016,
+          4962017,
+          4962018,
+          4962019
+        ],
+        "test_seeds": [
+          4962020,
+          4962021,
+          4962022,
+          4962023,
+          4962024,
+          4962025,
+          4962026,
+          4962027,
+          4962028,
+          4962029,
+          4962030,
+          4962031,
+          4962032,
+          4962033,
+          4962034,
+          4962035,
+          4962036,
+          4962037,
+          4962038,
+          4962039,
+          4962040,
+          4962041,
+          4962042,
+          4962043,
+          4962044,
+          4962045,
+          4962046,
+          4962047,
+          4962048,
+          4962049,
+          4962050,
+          4962051
+        ],
+        "rows": 260,
+        "fit_rows": 96,
+        "test_rows": 160,
+        "conditions": [
+          {
+            "name": "anchor",
+            "frequencies": [
+              5.35,
+              17.35
+            ],
+            "amplitudes": [
+              0.5,
+              8.0
+            ]
+          },
+          {
+            "name": "weaker",
+            "frequencies": [
+              5.35,
+              17.35
+            ],
+            "amplitudes": [
+              0.5,
+              2.0
+            ]
+          },
+          {
+            "name": "shifted_frequency",
+            "frequencies": [
+              7.35,
+              23.35
+            ],
+            "amplitudes": [
+              0.5,
+              8.0
+            ]
+          },
+          {
+            "name": "shifted_weaker",
+            "frequencies": [
+              7.35,
+              23.35
+            ],
+            "amplitudes": [
+              0.5,
+              2.0
+            ]
+          },
+          {
+            "name": "shifted_balanced",
+            "frequencies": [
+              7.35,
+              23.35
+            ],
+            "amplitudes": [
+              0.5,
+              0.5
+            ]
+          }
+        ],
+        "omitted_fit": "First4 FIT sources omit shifted_balanced from fitting only; capture all260 rows. The omitted4 FIT rows are not TEST or used for selection.",
+        "primary": {
+          "axis": "local_FIT",
+          "A": "timesfm",
+          "B": "bolt",
+          "endpoint": "fusion_response",
+          "aggregate": "Within each of32 TEST seeds average all5 conditions equally, then average sources equally.",
+          "trained_arm": "input+Aforecast+Ahidden",
+          "random_arms": "input+Aforecast+random: RFF and ReLU-MLP, each average squared loss over all3 frozen initialization seeds; no best seed/family selection and no prediction ensemble.",
+          "family_size": 2,
+          "paired_source_CI_coverage": 0.975,
+          "bootstrap_draws": 4000,
+          "bootstrap_seed": 4951000,
+          "required": "BOTH random-minus-trained paired-source intervals must have lower>0 AND trained mean loss must be>=5% lower than EACH random-family mean loss.",
+          "minimum_relative_reduction": 0.05,
+          "relative_denominator": "Each random-family mean loss; zero denominator is not scorable and cannot pass.",
+          "no_rescue": "A pass in one family, a descriptive condition, a frozen-extrapolation arm, or a forecast control cannot rescue failure of this primary."
+        },
+        "axes": {
+          "local_FIT": "Recompute preprocessing and fit readouts on exactly20 newFIT sources/96 rows; four whole-source folds choose only added rank/alpha. NewTEST labels never enter fitting.",
+          "frozen_extrapolation": "Apply original oldFIT frozen trained/random coefficients and preprocessing support without updates; summarize ALL and each condition on the same32 new TEST sources. Descriptive axis, no success claim or tuning.",
+          "controls": "Forecast targets Bolt->TimesFM and TimesFM->Bolt are descriptive controls. Local input-only and fixed input+Aforecast baseline are retained."
+        },
+        "local_fixed_base": "Source model Aforecast values are native outputs, not a trainable model. Input+Aforecast kernel recipe is fixed to prior selected choices (rbf2.0+pca16 for forecast, rbf0.5+pca16 for fusion response). Refit centers/PCA/support on localFIT only. Baseline ridge alpha remains0.001. All learned/random additions use equal block weight1/3.",
+        "base_specs": [
+          {
+            "key": "bolt_to_timesfm__forecast__input",
+            "A": "bolt",
+            "B": "timesfm",
+            "endpoint": "forecast",
+            "arm": "input",
+            "kernel": "rbf0.5",
+            "alpha": 0.001,
+            "cv_loss": 0.031718762251994895
+          },
+          {
+            "key": "bolt_to_timesfm__forecast__input+A_forecast",
+            "A": "bolt",
+            "B": "timesfm",
+            "endpoint": "forecast",
+            "arm": "input+A_forecast",
+            "kernel": "rbf2.0+pca16",
+            "alpha": 0.001,
+            "cv_loss": 0.018963286521288425
+          },
+          {
+            "key": "timesfm_to_bolt__forecast__input",
+            "A": "timesfm",
+            "B": "bolt",
+            "endpoint": "forecast",
+            "arm": "input",
+            "kernel": "rbf0.5",
+            "alpha": 0.001,
+            "cv_loss": 0.02537509280177499
+          },
+          {
+            "key": "timesfm_to_bolt__forecast__input+A_forecast",
+            "A": "timesfm",
+            "B": "bolt",
+            "endpoint": "forecast",
+            "arm": "input+A_forecast",
+            "kernel": "rbf2.0+pca16",
+            "alpha": 0.001,
+            "cv_loss": 0.013092730977671182
+          },
+          {
+            "key": "timesfm_to_bolt__fusion_response__input",
+            "A": "timesfm",
+            "B": "bolt",
+            "endpoint": "fusion_response",
+            "arm": "input",
+            "kernel": "rbf0.5",
+            "alpha": 0.001,
+            "cv_loss": 0.002453045729696738
+          },
+          {
+            "key": "timesfm_to_bolt__fusion_response__input+A_forecast",
+            "A": "timesfm",
+            "B": "bolt",
+            "endpoint": "fusion_response",
+            "arm": "input+A_forecast",
+            "kernel": "rbf0.5+pca16",
+            "alpha": 0.001,
+            "cv_loss": 0.0025257951404711364
+          }
+        ],
+        "budget": {
+          "widths": {
+            "bolt": 4608,
+            "timesfm": 5120
+          },
+          "ranks": [
+            8,
+            16
+          ],
+          "alphas": [
+            0.001,
+            0.01,
+            0.1,
+            1.0
+          ],
+          "initialization_seeds": [
+            4953000,
+            4953001,
+            4953002
+          ],
+          "random_families": [
+            "rff",
+            "mlp_relu"
+          ],
+          "candidates_per_added_arm": 8,
+          "fit_sources": 20,
+          "fit_rows": 96
+        },
+        "maps": "Identical frozen random_features implementation from4953000: full normalized128 history plus2 normalizer values, FIT standardization; RFF gamma1/median distance or untrained affine/ReLU; same widths. Readout budget matched, not pretraining FLOPs/parameters.",
+        "normalization": "Identical history mean/SD targets and inverse for all arms. No physical-scale disadvantage to hidden baselines.",
+        "behavior": "Report source means/CIs by ALL and condition for normalized response energy, exact-zero response fraction, tree eligibility, native/fused true-future MSE, gain, and correction dot. Verify gain=2*dot-energy. Emulating a response does not establish its correctness or semantic equivalence.",
+        "alignment_null": "Omitted from this bounded primary; optional future reuse-only alignment audit cannot change the frozen primary decision.",
+        "resources": {
+          "cpu_threads": 1,
+          "model_seconds": 900,
+          "resident_bytes": 3221225472,
+          "serial_workers": true,
+          "gpu": false
+        },
+        "capture": {
+          "bolt": {
+            "first": "0",
+            "half": "3",
+            "shape": [
+              9,
+              512
+            ]
+          },
+          "timesfm": {
+            "first": "0",
+            "half": "10",
+            "shape": [
+              4,
+              1280
+            ]
+          },
+          "batch": 1,
+          "normalization": "Original native baseline; fusion leaves/zero use original full-context native normalizer and matching inverse.",
+          "fusion": "First block; depth1; equal leaf weights; affine zero correction; pure blend1. No random edits, deeper trees, stability sweeps, or other native endpoints. Tree abstention yields exact native forecast."
+        },
+        "checkpoints": {
+          "bolt": {
+            "repo": "amazon/chronos-bolt-small",
+            "path": "/common/home/djk255/.cache/huggingface/hub/models--amazon--chronos-bolt-small/snapshots/772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+            "revision": "772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+            "weights": {
+              "model.safetensors": "06a6a19bbe74bc10a9cd193bd4bf2bf638ae07f7e0d51653ae7ab8ea968a21dd"
+            }
+          },
+          "timesfm": {
+            "repo": "google/timesfm-2.5-200m-pytorch",
+            "path": "/common/home/djk255/.cache/huggingface/hub/models--google--timesfm-2.5-200m-pytorch/snapshots/1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+            "revision": "1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+            "weights": {
+              "model.safetensors": "2f776efe6245e42b24bc4153ffdf61810140210e4bd3b01fb21f7aa779ab6ce8"
+            }
+          }
+        },
+        "gates": "Exact repeat, full-context locked-normalizer identity, first-block self patch and half-depth self patch on every row; input leaf closure <=2e-6 relative max(1,maxabs(history)). Native cuts/shapes/checkpoint hashes must match.",
+        "natural_leg": "NONE; no natural-context expansion authorized or prepared.",
+        "evidence": "Prospectively frozen synthetic predictive feature-efficiency comparison; no causal or equivalent-semantics claim, no information beyond deterministic full input.",
+        "code_hashes": {
+          "experiments/feature_search/comparability_conditions.py": "27070b2a910093b0ee29e11954b99cdec93aa6d84c105dcf33a47ef0abf1d141",
+          "experiments/feature_search/comparability_conditions_audit.py": "f94df8e43bb2e029c6b2e3bab084d45dd53021f26a7db572135b01a70045954d",
+          "experiments/feature_search/comparability_core.py": "afd96282dd04520d53d6872b9b258800c3602a176e1cfbddf439d1a85d89e186",
+          "experiments/feature_search/comparability_pilot.py": "cda64ef12f4fd1100d4c04ad83c96c3923ac5218a2997d9c81f6c18537816b02",
+          "experiments/feature_search/comparability_random_features.py": "45ccd621e286a7aef45176f09ec87b351a7f292d3f9beedb59c44ca60ef8763c",
+          "experiments/feature_search/comparability_replication.py": "cc999b25ae114082bef3a7caf822d4c47667e2281b431faaf8ac6edaa2970387",
+          "experiments/feature_search/selective_study.py": "d87ed477e46d72604fa6824fcc5b146880142a730fc52f0f70bf933b652604eb",
+          "experiments/feature_search/selective_tree.py": "0d96de5655995d55f9dc6c1510d5951db916656642b5d22c2bf4721d664f75f1",
+          "experiments/feature_search/coherence_study.py": "e9bd4dc10d57cfbc30cb4b01cfafe96789cccb6d34fe85616699ecfef799aec7",
+          "experiments/feature_search/real_background_poc.py": "c88868ab339608f52afa8041d89cf3b48aa4260e87fb497b64fa7bf058b3eda6",
+          "experiments/feature_search/homogeneous_normalizer.py": "2670effb2dfc0b631d368a69cab4263a8d2a90eb1208acc93d246a5c0ef55051",
+          "tests/test_comparability_conditions.py": "a3deffbdd124c6052073f1865bbfbc309aba6e0b3b684bb7e318f1de06dd50f1",
+          "tsfm_lens/extraction/hooks.py": "6f161d02a472c246691caed21bd301a201d7219d3aeef90de2854baa7bdc4281"
+        },
+        "upstream_hashes": {
+          "runs/comparability_replication4952000/protocol.json": "9c275b040420c3e6a1a0c590d72fc1e97ac16e2e086cf5cf333f5a5f1efa9c45",
+          "runs/comparability_replication4952000/fit_support.npz": "933a0a4f49d0ac4837e0b21a8f7da371ce2e914c27c64cbcc878bde5dea2407c",
+          "runs/comparability_replication4952000/fit_rows.json": "d5a12d42e35290a783e8dc9cc96db31b6073c12921696772aed9678ea0c61f78",
+          "runs/comparability_replication4952000/frozen_probes.npz": "94dcbb08c293a43a18f839210253e814628c2aa2f34444ee36ff3dff62acc3bd",
+          "runs/comparability_replication4952000/probe_specs.json": "6a434209c74e0c122f43928b1399288eb84c72bf43aeaaa0e174f16a589cf8d2",
+          "runs/comparability_random4953000/protocol.json": "c493a1febacc468e605ee85cd7bdc27adcccba47f91540489eb6e180c11d8afd",
+          "runs/comparability_random4953000/frozen_random_probes.npz": "b240b47b0be1e0832f1f6de57fc6379b61a5335973e808ed73fb6e832c181624",
+          "runs/comparability_random4953000/probe_specs.json": "08fbacc99f054d2e8ee4d1d277d24acf9609c0ab0cac7fadaefda08b1a859e3d",
+          "runs/comparability_random4953000/plant_audit.json": "604412678815f76edf4fc5dfa3262f7b3725273341649ed55ae0effb1daa94e7",
+          "runs/comparability_random4953000/arithmetic_replay.json": "4b08407bee1f49a9022e0523c026acac78c8edc280541a9853d7fea340fd024c"
+        },
+        "artifact_hashes": {
+          "inputs.npz": "1a0f1bd8aa4e98fa68c33532992792a1102ec7acbf2693cc026e1ca8e3650e60",
+          "targets.npz": "4f00eb79d4fad3947765554e2dfc7c46b090c038483fc67a4fb651d51be1decf",
+          "rows.json": "fbb17dba6b55afd703b0cb67d1489040dd454e17529f29b538ac6cc0efbc48eb",
+          "plans.json": "234762a54ad53c54963c79befbe9d71817e6dbee86677e0ca385484b279d3ce2"
+        }
+      },
+      "exact_findings": {
+        "rows": 260,
+        "fit_rows": 96,
+        "test_rows": 160,
+        "fit_sources": 20,
+        "test_sources": 32
+      },
+      "controls": [
+        "Source disjointness",
+        "Frozen thresholds/bases/maps",
+        "No natural leg"
+      ],
+      "limitations": [
+        "No native outcomes captured yet",
+        "Local and extrapolation estimands remain separate"
+      ],
+      "next_decision": "Run tests and isolated plants, then request a native slot."
+    },
+    {
+      "unix_time": 1794854455.7866755,
+      "experiment": "validation",
+      "status": "passed",
+      "artifact": "validation.log",
+      "next_decision": "Isolated plants before requesting slot."
+    },
+    {
+      "unix_time": 1794854554.716634,
+      "experiment": "isolated_plants",
+      "status": "passed",
+      "exact_findings": {
+        "planted": 29,
+        "detected": 29
+      },
+      "controls": "Separate subprocesses/shadow copies; no original source edits; collection errors excluded",
+      "next_decision": "Request slot only if all passed; no launch yet."
+    },
+    {
+      "unix_time": 1794854590.421457,
+      "experiment": "readiness_review",
+      "status": "ready; native HOLD",
+      "exact_findings": {
+        "clean_tests": 11,
+        "plants_detected": 29,
+        "plants_total": 29,
+        "native_calls": 0,
+        "scientific_inputs_unchanged_after_fixture_fix": true
+      },
+      "failed_instrumentation_run": "runs/comparability_conditions4962000_preflight_failed",
+      "controls": "Original failed preflight preserved; corrected source-overlap fixture preserves source counts; source and checkpoint bindings frozen.",
+      "next_decision": "Request a NEW native slot. Sequential workers only after explicit grant."
+    },
+    {
+      "unix_time": 1794854882.6662436,
+      "experiment": "launcher_readiness",
+      "status": "ready_waiting_explicit_slot2_grant",
+      "exact_findings": {
+        "frozen_bindings_verified": true,
+        "tests_and_plants_bound": true,
+        "grant_file_present": false,
+        "native_calls": 0
+      },
+      "next_decision": "Wait for user to confirm cached T5-small process returned0 and explicitly grant slot2. Slot1 remains assigned to Hume SAE TimesFM."
+    },
+    {
+      "unix_time": 1794854897.8092892,
+      "experiment": "slot_grant",
+      "status": "slot2_granted_native_launching",
+      "controls": {
+        "cpu_threads": 1,
+        "resident_bytes": 3221225472,
+        "seconds_per_model": 900,
+        "serial_models": [
+          "bolt",
+          "timesfm"
+        ]
+      },
+      "next_decision": "Release slot2 immediately after both captures; subsequent analysis/audit reuse-only."
+    },
+    {
+      "unix_time": 1794854998.112126,
+      "experiment": "native_bolt",
+      "status": "complete",
+      "exact_findings": {
+        "model": "bolt",
+        "rows": 260,
+        "gates": {
+          "repeat": 0.0,
+          "normalizer_identity": 0.0,
+          "first_self": 0.0,
+          "half_self": 0.0,
+          "input_closure": 1.1722681847459171e-07
+        },
+        "seconds": 99.02326157898642,
+        "peak_rss_bytes": 1083682816,
+        "sha256": "45e63300e89b0667936df5087275507e00a0fb01336ce2c0f0ba2eb4d64e8c95"
+      },
+      "evidence_class": "Instrumentation validity only",
+      "next_decision": "Finish serial capture, then local FIT and frozen extrapolation."
+    },
+    {
+      "unix_time": 1794855417.5605059,
+      "experiment": "native_timesfm",
+      "status": "complete",
+      "exact_findings": {
+        "model": "timesfm",
+        "rows": 260,
+        "gates": {
+          "repeat": 0.0,
+          "normalizer_identity": 0.0,
+          "first_self": 0.0,
+          "half_self": 0.0,
+          "input_closure": 1.1722681847459171e-07
+        },
+        "seconds": 416.94767250993755,
+        "peak_rss_bytes": 1659674624,
+        "sha256": "5f3a85f11282e16759281629a9c5522954fdda4d294f87b592366bc3be536afd"
+      },
+      "evidence_class": "Instrumentation validity only",
+      "next_decision": "Finish serial capture, then local FIT and frozen extrapolation."
+    },
+    {
+      "unix_time": 1794855432.1037536,
+      "experiment": "native_slot_release",
+      "status": "slot2_released_before_analysis",
+      "exact_findings": {
+        "workers": {
+          "bolt": {
+            "model": "bolt",
+            "rows": 260,
+            "gates": {
+              "repeat": 0.0,
+              "normalizer_identity": 0.0,
+              "first_self": 0.0,
+              "half_self": 0.0,
+              "input_closure": 1.1722681847459171e-07
+            },
+            "seconds": 99.02326157898642,
+            "peak_rss_bytes": 1083682816,
+            "sha256": "45e63300e89b0667936df5087275507e00a0fb01336ce2c0f0ba2eb4d64e8c95"
+          },
+          "timesfm": {
+            "model": "timesfm",
+            "rows": 260,
+            "gates": {
+              "repeat": 0.0,
+              "normalizer_identity": 0.0,
+              "first_self": 0.0,
+              "half_self": 0.0,
+              "input_closure": 1.1722681847459171e-07
+            },
+            "seconds": 416.94767250993755,
+            "peak_rss_bytes": 1659674624,
+            "sha256": "5f3a85f11282e16759281629a9c5522954fdda4d294f87b592366bc3be536afd"
+          }
+        },
+        "execution": {
+          "bolt": {
+            "returncode": 0,
+            "seconds": 100.96807512792293,
+            "peak_rss_bytes": 1078546432,
+            "failure": null
+          },
+          "timesfm": {
+            "returncode": 0,
+            "seconds": 419.15689425193705,
+            "peak_rss_bytes": 1651564544,
+            "failure": null
+          }
+        }
+      },
+      "controls": "Both workers return0; exact repeat/normalizer/self-patch gates0; input closure passes.",
+      "next_decision": "Coordinator may allocate slot2 to Plato now. Only cached analysis/audit proceeds; no further native without coordination."
+    },
+    {
+      "unix_time": 1794855474.695966,
+      "experiment": "local_fit",
+      "status": "complete",
+      "exact_findings": {
+        "probes": 27,
+        "sources": 20,
+        "rows": 96
+      },
+      "controls": [
+        "TEST excluded before target construction",
+        "Fixed source-forecast recipe",
+        "Eight choices per added arm"
+      ],
+      "next_decision": "Score once on32 TEST sources; frozen extrapolation remains separate."
+    },
+    {
+      "unix_time": 1794855476.3244348,
+      "experiment": "local_FIT_TEST",
+      "status": "complete",
+      "evidence_class": "Prospectively frozen conditional predictive feature-efficiency comparison",
+      "exact_findings": {
+        "passed": true,
+        "families": {
+          "rff": {
+            "gain": {
+              "mean": 0.0007073627355068375,
+              "low": 0.0005316431668598855,
+              "high": 0.0008913284578756916,
+              "n_sources": 32
+            },
+            "random_mean_loss": 0.0029625792146836614,
+            "relative_reduction": 0.23876584700280104,
+            "passed": true
+          },
+          "mlp_relu": {
+            "gain": {
+              "mean": 0.00018943784920643812,
+              "low": 9.106597229230112e-05,
+              "high": 0.00029783215257174787,
+              "n_sources": 32
+            },
+            "random_mean_loss": 0.002444654328383262,
+            "relative_reduction": 0.0774906484761468,
+            "passed": true
+          }
+        },
+        "coverage": 0.975,
+        "minimum_relative_reduction": 0.05
+      },
+      "controls": {
+        "behavior_artifact": "behavior_correctness.json",
+        "all_arms": "local_results.json"
+      },
+      "limitations": [
+        "Synthetic conditions only",
+        "No causal or equivalent semantics",
+        "Bootstrap conditions on localFIT and3 fixed initializations"
+      ],
+      "next_decision": "Review BOTH-family result; frozen extrapolation cannot rescue a failed primary."
+    },
+    {
+      "unix_time": 1794855477.9230413,
+      "experiment": "frozen_extrapolation",
+      "status": "complete",
+      "evidence_class": "Descriptive condition-shift generalization with unchanged old probes",
+      "exact_findings": {
+        "artifact": "frozen_extrapolation.json",
+        "condition_cells": 18
+      },
+      "limitations": [
+        "Not the local-FIT primary",
+        "No TEST adaptation"
+      ],
+      "next_decision": "Compare axes without conflating extrapolation and feature efficiency."
+    },
+    {
+      "unix_time": 1794855486.6303568,
+      "experiment": "independent_arithmetic_and_distillation",
+      "status": "complete",
+      "evidence_class": "Prospectively frozen synthetic predictive feature-efficiency comparison plus descriptive extrapolation/correctness axes",
+      "exact_findings": {
+        "primary": {
+          "passed": true,
+          "families": {
+            "rff": {
+              "gain": {
+                "mean": 0.0007073627355068375,
+                "low": 0.0005316431668598855,
+                "high": 0.0008913284578756916,
+                "n_sources": 32
+              },
+              "random_mean_loss": 0.0029625792146836614,
+              "relative_reduction": 0.23876584700280104,
+              "passed": true
+            },
+            "mlp_relu": {
+              "gain": {
+                "mean": 0.00018943784920643812,
+                "low": 9.106597229230112e-05,
+                "high": 0.00029783215257174787,
+                "n_sources": 32
+              },
+              "random_mean_loss": 0.002444654328383262,
+              "relative_reduction": 0.0774906484761468,
+              "passed": true
+            }
+          },
+          "coverage": 0.975,
+          "minimum_relative_reduction": 0.05
+        },
+        "condition_summaries": [
+          {
+            "case": "ALL",
+            "local_base": 0.0028021117236147076,
+            "local_trained": 0.002255216479176824,
+            "local_random": {
+              "rff": 0.0029625792146836614,
+              "mlp_relu": 0.002444654328383262
+            },
+            "frozen_trained": 0.008939279249758535,
+            "frozen_random": {
+              "rff": 0.009122526992164476,
+              "mlp_relu": 0.009073278200092379
+            }
+          },
+          {
+            "case": "anchor",
+            "local_base": 0.002423760578606608,
+            "local_trained": 0.0015731935453913576,
+            "local_random": {
+              "rff": 0.002584483801175049,
+              "mlp_relu": 0.002159645780113411
+            },
+            "frozen_trained": 0.0026207836690238647,
+            "frozen_random": {
+              "rff": 0.0031705834501674908,
+              "mlp_relu": 0.00315016536022884
+            }
+          },
+          {
+            "case": "weaker",
+            "local_base": 0.006789017217567483,
+            "local_trained": 0.0056556168387413685,
+            "local_random": {
+              "rff": 0.007511278503072322,
+              "mlp_relu": 0.005608950371716232
+            },
+            "frozen_trained": 0.026426468616641472,
+            "frozen_random": {
+              "rff": 0.02882444489778727,
+              "mlp_relu": 0.02875015452262698
+            }
+          },
+          {
+            "case": "shifted_frequency",
+            "local_base": 0.0005870863591527446,
+            "local_trained": 0.00044113324536860057,
+            "local_random": {
+              "rff": 0.0005576633245886051,
+              "mlp_relu": 0.0005280296538826059
+            },
+            "frozen_trained": 0.003363227814696856,
+            "frozen_random": {
+              "rff": 0.0024019511987517493,
+              "mlp_relu": 0.0026915396683401343
+            }
+          },
+          {
+            "case": "shifted_weaker",
+            "local_base": 0.0017288407488560541,
+            "local_trained": 0.001423124172677519,
+            "local_random": {
+              "rff": 0.0017088972946694453,
+              "mlp_relu": 0.001569793427243665
+            },
+            "frozen_trained": 0.005628004941627635,
+            "frozen_random": {
+              "rff": 0.004915966612493415,
+              "mlp_relu": 0.005002138153738784
+            }
+          },
+          {
+            "case": "shifted_balanced",
+            "local_base": 0.002481853713890649,
+            "local_trained": 0.002183014593705274,
+            "local_random": {
+              "rff": 0.0024505731499128857,
+              "mlp_relu": 0.002356852408960396
+            },
+            "frozen_trained": 0.006657911206802839,
+            "frozen_random": {
+              "rff": 0.006299688801622457,
+              "mlp_relu": 0.005772393295527159
+            }
+          }
+        ],
+        "arithmetic_intervals": 422,
+        "arithmetic_max_error": 3.3306690738754696e-16
+      },
+      "controls": [
+        "Independent physical-unit loss/source-CI replay",
+        "Both-family decision replay",
+        "Three arithmetic plants"
+      ],
+      "limitations": [
+        "Synthetic five-condition scope",
+        "Conditional on localFIT and3 random maps",
+        "No causal/equivalent-semantic conclusion"
+      ],
+      "next_decision": "The frozen BOTH-family primary passed; interpret the condition heterogeneity and frozen-transfer differences before considering another bounded study. No further native work without explicit slot coordination; no natural expansion."
+    },
+    {
+      "unix_time": 1794855837.6492455,
+      "experiment": "saved_confound_audit_and_branch_closure",
+      "status": "complete",
+      "question": "Could denominators, small responses or fitting budgets explain the primary?",
+      "design": "Saved predictions only; no fits or model calls; all sensitivity analyses post-hoc.",
+      "exact_findings": {
+        "evidence_class": "Post-hoc descriptive saved-data sensitivity; no selection, refitting or primary revision",
+        "denominator": "Primary is ratio of source-mean loss difference to source-mean random loss; never mean per-row ratios. All arms use identical history variance. Energy ratios here divide by aggregate energy, not tiny individual responses.",
+        "all_normalized": {
+          "loss": {
+            "input+A_forecast": 0.0028021117236147076,
+            "trained": 0.002255216479176824,
+            "rff": 0.0029625792146836614,
+            "mlp_relu": 0.002444654328383262
+          },
+          "zero_response_loss": 0.010583971848408265,
+          "loss_over_mean_response_energy": {
+            "input+A_forecast": 0.26475048911209265,
+            "trained": 0.2130784653887745,
+            "rff": 0.27991185701511545,
+            "mlp_relu": 0.2309770248256014
+          },
+          "contrasts": {
+            "rff": {
+              "gain": {
+                "mean": 0.0007073627355068375,
+                "low": 0.0005316431668598855,
+                "high": 0.0008913284578756916,
+                "n_sources": 32
+              },
+              "relative_reduction": 0.23876584700280096
+            },
+            "mlp_relu": {
+              "gain": {
+                "mean": 0.00018943784920643812,
+                "low": 9.106597229230112e-05,
+                "high": 0.00029783215257174787,
+                "n_sources": 32
+              },
+              "relative_reduction": 0.07749064847614676
+            }
+          }
+        },
+        "all_physical": {
+          "loss": {
+            "input+A_forecast": 0.023081760997077448,
+            "trained": 0.016059960350893437,
+            "rff": 0.024217354920932233,
+            "mlp_relu": 0.02043228904369359
+          },
+          "zero_response_loss": 0.0627656052610732,
+          "loss_over_mean_response_energy": {
+            "input+A_forecast": 0.3677453742550396,
+            "trained": 0.2558719904650344,
+            "rff": 0.38583798913752637,
+            "mlp_relu": 0.32553321136163016
+          },
+          "contrasts": {
+            "rff": {
+              "gain": {
+                "mean": 0.008157394570038798,
+                "low": 0.005452856289975543,
+                "high": 0.010891754386189115,
+                "n_sources": 32
+              },
+              "relative_reduction": 0.3368408563475264
+            },
+            "mlp_relu": {
+              "gain": {
+                "mean": 0.004372328692800154,
+                "low": 0.002959475198318479,
+                "high": 0.005836511426391541,
+                "n_sources": 32
+              },
+              "relative_reduction": 0.21399113351666627
+            }
+          }
+        },
+        "response_energy_quantiles": {
+          "min": 0.00012931074947764644,
+          "p05": 0.0002772191860327747,
+          "median": 0.0045602787137202574,
+          "p95": 0.04339661622206992,
+          "max": 0.06276680071881016
+        },
+        "exact_zero_responses": 0,
+        "history_variance_range": [
+          0.24048412640537842,
+          32.4790202252846
+        ],
+        "by_condition": {
+          "anchor": {
+            "loss": {
+              "input+A_forecast": 0.002423760578606608,
+              "trained": 0.0015731935453913576,
+              "rff": 0.002584483801175049,
+              "mlp_relu": 0.002159645780113411
+            },
+            "zero_response_loss": 0.006316194190251501,
+            "loss_over_mean_response_energy": {
+              "input+A_forecast": 0.38373750166634724,
+              "trained": 0.24907301739066948,
+              "rff": 0.40918371464322234,
+              "mlp_relu": 0.3419220047804479
+            },
+            "contrasts": {
+              "rff": {
+                "gain": {
+                  "mean": 0.0010112902557836913,
+                  "low": 0.0006599424796243134,
+                  "high": 0.00135952522174614,
+                  "n_sources": 32
+                },
+                "relative_reduction": 0.39129293645559043
+              },
+              "mlp_relu": {
+                "gain": {
+                  "mean": 0.0005864522347220535,
+                  "low": 0.0004168540195331541,
+                  "high": 0.0007602620981993231,
+                  "n_sources": 32
+                },
+                "relative_reduction": 0.2715501959266934
+              }
+            }
+          },
+          "weaker": {
+            "loss": {
+              "input+A_forecast": 0.006789017217567483,
+              "trained": 0.0056556168387413685,
+              "rff": 0.007511278503072321,
+              "mlp_relu": 0.005608950371716232
+            },
+            "zero_response_loss": 0.03682835874191244,
+            "loss_over_mean_response_energy": {
+              "input+A_forecast": 0.18434210617811908,
+              "trained": 0.1535668987688285,
+              "rff": 0.20395365853010783,
+              "mlp_relu": 0.1522997647281245
+            },
+            "contrasts": {
+              "rff": {
+                "gain": {
+                  "mean": 0.0018556616643309533,
+                  "low": 0.0012554623893071763,
+                  "high": 0.0025112759484750224,
+                  "n_sources": 32
+                },
+                "relative_reduction": 0.2470500412908316
+              },
+              "mlp_relu": {
+                "gain": {
+                  "mean": -4.666646702513673e-05,
+                  "low": -0.00028648380896876055,
+                  "high": 0.0001960968123647211,
+                  "n_sources": 32
+                },
+                "relative_reduction": -0.008319999987958049
+              }
+            }
+          },
+          "shifted_frequency": {
+            "loss": {
+              "input+A_forecast": 0.0005870863591527446,
+              "trained": 0.00044113324536860057,
+              "rff": 0.0005576633245886051,
+              "mlp_relu": 0.000528029653882606
+            },
+            "zero_response_loss": 0.0007353983557639593,
+            "loss_over_mean_response_energy": {
+              "input+A_forecast": 0.7983242749337633,
+              "trained": 0.5998561757869786,
+              "rff": 0.7583146198488351,
+              "mlp_relu": 0.7180185402156211
+            },
+            "contrasts": {
+              "rff": {
+                "gain": {
+                  "mean": 0.00011653007922000455,
+                  "low": 4.747006507617475e-06,
+                  "high": 0.0002332950415734707,
+                  "n_sources": 32
+                },
+                "relative_reduction": 0.20896134653640744
+              },
+              "mlp_relu": {
+                "gain": {
+                  "mean": 8.689640851400535e-05,
+                  "low": 5.7555827245033426e-06,
+                  "high": 0.0001652809264886371,
+                  "n_sources": 32
+                },
+                "relative_reduction": 0.1645672887404249
+              }
+            }
+          },
+          "shifted_weaker": {
+            "loss": {
+              "input+A_forecast": 0.0017288407488560541,
+              "trained": 0.001423124172677519,
+              "rff": 0.0017088972946694453,
+              "mlp_relu": 0.001569793427243665
+            },
+            "zero_response_loss": 0.0037019071694185716,
+            "loss_over_mean_response_energy": {
+              "input+A_forecast": 0.46701353376389204,
+              "trained": 0.38442999987518256,
+              "rff": 0.46162618792460103,
+              "mlp_relu": 0.4240499168136136
+            },
+            "contrasts": {
+              "rff": {
+                "gain": {
+                  "mean": 0.00028577312199192623,
+                  "low": 0.00015126216143628677,
+                  "high": 0.0004317310929543908,
+                  "n_sources": 32
+                },
+                "relative_reduction": 0.16722662203476885
+              },
+              "mlp_relu": {
+                "gain": {
+                  "mean": 0.00014666925456614596,
+                  "low": 2.0551614979055622e-05,
+                  "high": 0.0003227616662310755,
+                  "n_sources": 32
+                },
+                "relative_reduction": 0.09343220070915731
+              }
+            }
+          },
+          "shifted_balanced": {
+            "loss": {
+              "input+A_forecast": 0.002481853713890649,
+              "trained": 0.002183014593705274,
+              "rff": 0.0024505731499128852,
+              "mlp_relu": 0.0023568524089603964
+            },
+            "zero_response_loss": 0.005338000784694853,
+            "loss_over_mean_response_energy": {
+              "input+A_forecast": 0.46494067985277077,
+              "trained": 0.40895733847856036,
+              "rff": 0.45908070244934823,
+              "mlp_relu": 0.4415234287184778
+            },
+            "contrasts": {
+              "rff": {
+                "gain": {
+                  "mean": 0.0002675585562076118,
+                  "low": 5.142566865810496e-05,
+                  "high": 0.0005042448720961765,
+                  "n_sources": 32
+                },
+                "relative_reduction": 0.10918203205528584
+              },
+              "mlp_relu": {
+                "gain": {
+                  "mean": 0.0001738378152551225,
+                  "low": 5.798051740846895e-06,
+                  "high": 0.0003480905935097366,
+                  "n_sources": 32
+                },
+                "relative_reduction": 0.07375846471939332
+              }
+            }
+          }
+        },
+        "leave_one_condition_out": {
+          "anchor": {
+            "loss": {
+              "input+A_forecast": 0.002896699509866732,
+              "trained": 0.0024257222126231903,
+              "rff": 0.003057103068060814,
+              "mlp_relu": 0.002515906465450725
+            },
+            "zero_response_loss": 0.011650916262947456,
+            "loss_over_mean_response_energy": {
+              "input+A_forecast": 0.24862418066456202,
+              "trained": 0.20820012416856298,
+              "rff": 0.26239164363262074,
+              "mlp_relu": 0.21594065296408277
+            },
+            "contrasts": {
+              "rff": {
+                "gain": {
+                  "mean": 0.0006313808554376239,
+                  "low": 0.00045935997605275766,
+                  "high": 0.0008123083030032006,
+                  "n_sources": 32
+                },
+                "relative_reduction": 0.20652913604189416
+              },
+              "mlp_relu": {
+                "gain": {
+                  "mean": 9.018425282753426e-05,
+                  "low": -2.0126906368482407e-05,
+                  "high": 0.00020558157329383768,
+                  "n_sources": 32
+                },
+                "relative_reduction": 0.03584563021955512
+              }
+            }
+          },
+          "weaker": {
+            "loss": {
+              "input+A_forecast": 0.0018053853501265138,
+              "trained": 0.0014051163892856878,
+              "rff": 0.0018254043925864962,
+              "mlp_relu": 0.0016535803175500195
+            },
+            "zero_response_loss": 0.004022875125032221,
+            "loss_over_mean_response_energy": {
+              "input+A_forecast": 0.4487798636583465,
+              "trained": 0.34928163207015617,
+              "rff": 0.45375616588940865,
+              "mlp_relu": 0.41104440634029754
+            },
+            "contrasts": {
+              "rff": {
+                "gain": {
+                  "mean": 0.0004202880033008085,
+                  "low": 0.0002768133232348438,
+                  "high": 0.0005621520616507966,
+                  "n_sources": 32
+                },
+                "relative_reduction": 0.23024377776657137
+              },
+              "mlp_relu": {
+                "gain": {
+                  "mean": 0.0002484639282643318,
+                  "low": 0.0001568531348254572,
+                  "high": 0.000354172944831176,
+                  "n_sources": 32
+                },
+                "relative_reduction": 0.15025815536584353
+              }
+            }
+          },
+          "shifted_frequency": {
+            "loss": {
+              "input+A_forecast": 0.0033558680647301983,
+              "trained": 0.00270873728762888,
+              "rff": 0.0035638081872074252,
+              "mlp_relu": 0.0029238104970084264
+            },
+            "zero_response_loss": 0.013046115221569343,
+            "loss_over_mean_response_energy": {
+              "input+A_forecast": 0.2572312146363609,
+              "trained": 0.20762788321465098,
+              "rff": 0.27317006838291036,
+              "mlp_relu": 0.22411349642033251
+            },
+            "contrasts": {
+              "rff": {
+                "gain": {
+                  "mean": 0.0008550708995785456,
+                  "low": 0.0006398114261460684,
+                  "high": 0.0010777506695755197,
+                  "n_sources": 32
+                },
+                "relative_reduction": 0.2399317961746344
+              },
+              "mlp_relu": {
+                "gain": {
+                  "mean": 0.0002150732093795463,
+                  "low": 0.00010100276744838688,
+                  "high": 0.00033939464409080757,
+                  "n_sources": 32
+                },
+                "relative_reduction": 0.07355921650859526
+              }
+            }
+          },
+          "shifted_weaker": {
+            "loss": {
+              "input+A_forecast": 0.003070429467304371,
+              "trained": 0.0024632395558016502,
+              "rff": 0.0032759996946872152,
+              "mlp_relu": 0.0026633695536681613
+            },
+            "zero_response_loss": 0.012304488018155691,
+            "loss_over_mean_response_energy": {
+              "input+A_forecast": 0.24953736090228604,
+              "trained": 0.2001903331668133,
+              "rff": 0.2662442915018785,
+              "mlp_relu": 0.21645513000933228
+            },
+            "contrasts": {
+              "rff": {
+                "gain": {
+                  "mean": 0.0008127601388855653,
+                  "low": 0.0006081475944943064,
+                  "high": 0.0010309904596676504,
+                  "n_sources": 32
+                },
+                "relative_reduction": 0.24809530361179274
+              },
+              "mlp_relu": {
+                "gain": {
+                  "mean": 0.00020012999786651116,
+                  "low": 9.359479793247376e-05,
+                  "high": 0.000310763130846651,
+                  "n_sources": 32
+                },
+                "relative_reduction": 0.07514165564852963
+              }
+            }
+          },
+          "shifted_balanced": {
+            "loss": {
+              "input+A_forecast": 0.0028821762260457223,
+              "trained": 0.002273266950544711,
+              "rff": 0.003090580730876355,
+              "mlp_relu": 0.002466604808238978
+            },
+            "zero_response_loss": 0.011895464614336621,
+            "loss_over_mean_response_energy": {
+              "input+A_forecast": 0.2422920263721413,
+              "trained": 0.19110367053716676,
+              "rff": 0.2598116871493639,
+              "mlp_relu": 0.20735674378503746
+            },
+            "contrasts": {
+              "rff": {
+                "gain": {
+                  "mean": 0.0008173137803316439,
+                  "low": 0.0006085879295675587,
+                  "high": 0.001032329151733113,
+                  "n_sources": 32
+                },
+                "relative_reduction": 0.2644531405267285
+              },
+              "mlp_relu": {
+                "gain": {
+                  "mean": 0.00019333785769426703,
+                  "low": 8.637385603925262e-05,
+                  "high": 0.0003079252915710092,
+                  "n_sources": 32
+                },
+                "relative_reduction": 0.07838217822671802
+              }
+            }
+          }
+        },
+        "fitting_budget": [
+          {
+            "arm": "input",
+            "rank": null,
+            "alpha": 0.001,
+            "cv_loss": null,
+            "weighted_kernel_trace": 0.36690445894425544,
+            "effective_df_including_intercept": 33.107334683364186
+          },
+          {
+            "arm": "input+A_forecast",
+            "rank": null,
+            "alpha": 0.001,
+            "cv_loss": null,
+            "weighted_kernel_trace": 0.6828566632433011,
+            "effective_df_including_intercept": 28.313481456809733
+          },
+          {
+            "arm": "trained",
+            "rank": 16,
+            "alpha": 0.001,
+            "cv_loss": 0.00382675062711541,
+            "weighted_kernel_trace": 0.7708712549599827,
+            "effective_df_including_intercept": 27.982280830561642
+          },
+          {
+            "arm": "rff_4953000",
+            "rank": 8,
+            "alpha": 0.001,
+            "cv_loss": 0.004475488500252037,
+            "weighted_kernel_trace": 0.7325850618324343,
+            "effective_df_including_intercept": 25.81956047627819
+          },
+          {
+            "arm": "rff_4953001",
+            "rank": 8,
+            "alpha": 0.001,
+            "cv_loss": 0.004475957974770723,
+            "weighted_kernel_trace": 0.7327978969844717,
+            "effective_df_including_intercept": 25.806994550593934
+          },
+          {
+            "arm": "rff_4953002",
+            "rank": 8,
+            "alpha": 0.001,
+            "cv_loss": 0.004511895139559268,
+            "weighted_kernel_trace": 0.7340021882835595,
+            "effective_df_including_intercept": 25.812525227556478
+          },
+          {
+            "arm": "mlp_relu_4953000",
+            "rank": 16,
+            "alpha": 0.001,
+            "cv_loss": 0.004207999966993522,
+            "weighted_kernel_trace": 0.7812139912101942,
+            "effective_df_including_intercept": 27.073867799189536
+          },
+          {
+            "arm": "mlp_relu_4953001",
+            "rank": 16,
+            "alpha": 0.001,
+            "cv_loss": 0.00416698888389287,
+            "weighted_kernel_trace": 0.7810451851718411,
+            "effective_df_including_intercept": 27.052976846725777
+          },
+          {
+            "arm": "mlp_relu_4953002",
+            "rank": 16,
+            "alpha": 0.001,
+            "cv_loss": 0.004157474325998313,
+            "weighted_kernel_trace": 0.7813875767396246,
+            "effective_df_including_intercept": 27.051069777652508
+          }
+        ],
+        "budget_caveat": "Same 20 sources/96 rows, widths, rank grid and eight choices per added arm; each random family averages three separately selected losses, not an ensemble prediction. Equal grids need not yield equal effective degrees of freedom. No matched pretraining architecture/compute; intervals condition on this FIT sample and three fixed random maps.",
+        "primary_replay_matches": true,
+        "alternative_explanations": [
+          "Task-conditioned learned feature geometry or regularization can improve finite-sample prediction without adding information beyond deterministic full inputs.",
+          "The five-condition mixture and history-variance weighting affect the estimand; leave-condition-out and physical-unit results are descriptive sensitivity checks, not new primary tests.",
+          "Only two random-map families and three initializations were tested; architecture, pretraining data/compute, retained variance and effective complexity are not matched.",
+          "The fixed base recipe and small localFIT sample can favor particular features; conditional TEST intervals omit training-set and initialization-distribution uncertainty.",
+          "Weak frozen transfer and harmful anchor fusion limit claims of generalization or correct semantics. Prediction does not establish cross-model causal equivalence."
+        ]
+      },
+      "controls": [
+        "Replayed original primary from saved predictions",
+        "Preserved all original scientific artifacts and completion manifest"
+      ],
+      "limitations": [
+        "Task-conditioned learned feature geometry or regularization can improve finite-sample prediction without adding information beyond deterministic full inputs.",
+        "The five-condition mixture and history-variance weighting affect the estimand; leave-condition-out and physical-unit results are descriptive sensitivity checks, not new primary tests.",
+        "Only two random-map families and three initializations were tested; architecture, pretraining data/compute, retained variance and effective complexity are not matched.",
+        "The fixed base recipe and small localFIT sample can favor particular features; conditional TEST intervals omit training-set and initialization-distribution uncertainty.",
+        "Weak frozen transfer and harmful anchor fusion limit claims of generalization or correct semantics. Prediction does not establish cross-model causal equivalence."
+      ],
+      "evidence_class": "Post-hoc descriptive saved-data sensitivity; no selection, refitting or primary revision",
+      "next_decision": "Close native branch; no broad expansion or further new-model calls."
+    }
+  ],
+  "status": "complete_native_branch_closed",
+  "design": {
+    "version": 1,
+    "status": "PREPARED; HOLD NATIVE until a NEW slot grant for this protocol",
+    "namespace": "4962000..4962051;4954000 namespace belongs to Carson and is not used",
+    "fit_seeds": [
+      4962000,
+      4962001,
+      4962002,
+      4962003,
+      4962004,
+      4962005,
+      4962006,
+      4962007,
+      4962008,
+      4962009,
+      4962010,
+      4962011,
+      4962012,
+      4962013,
+      4962014,
+      4962015,
+      4962016,
+      4962017,
+      4962018,
+      4962019
+    ],
+    "test_seeds": [
+      4962020,
+      4962021,
+      4962022,
+      4962023,
+      4962024,
+      4962025,
+      4962026,
+      4962027,
+      4962028,
+      4962029,
+      4962030,
+      4962031,
+      4962032,
+      4962033,
+      4962034,
+      4962035,
+      4962036,
+      4962037,
+      4962038,
+      4962039,
+      4962040,
+      4962041,
+      4962042,
+      4962043,
+      4962044,
+      4962045,
+      4962046,
+      4962047,
+      4962048,
+      4962049,
+      4962050,
+      4962051
+    ],
+    "rows": 260,
+    "fit_rows": 96,
+    "test_rows": 160,
+    "conditions": [
+      {
+        "name": "anchor",
+        "frequencies": [
+          5.35,
+          17.35
+        ],
+        "amplitudes": [
+          0.5,
+          8.0
+        ]
+      },
+      {
+        "name": "weaker",
+        "frequencies": [
+          5.35,
+          17.35
+        ],
+        "amplitudes": [
+          0.5,
+          2.0
+        ]
+      },
+      {
+        "name": "shifted_frequency",
+        "frequencies": [
+          7.35,
+          23.35
+        ],
+        "amplitudes": [
+          0.5,
+          8.0
+        ]
+      },
+      {
+        "name": "shifted_weaker",
+        "frequencies": [
+          7.35,
+          23.35
+        ],
+        "amplitudes": [
+          0.5,
+          2.0
+        ]
+      },
+      {
+        "name": "shifted_balanced",
+        "frequencies": [
+          7.35,
+          23.35
+        ],
+        "amplitudes": [
+          0.5,
+          0.5
+        ]
+      }
+    ],
+    "omitted_fit": "First4 FIT sources omit shifted_balanced from fitting only; capture all260 rows. The omitted4 FIT rows are not TEST or used for selection.",
+    "primary": {
+      "axis": "local_FIT",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "fusion_response",
+      "aggregate": "Within each of32 TEST seeds average all5 conditions equally, then average sources equally.",
+      "trained_arm": "input+Aforecast+Ahidden",
+      "random_arms": "input+Aforecast+random: RFF and ReLU-MLP, each average squared loss over all3 frozen initialization seeds; no best seed/family selection and no prediction ensemble.",
+      "family_size": 2,
+      "paired_source_CI_coverage": 0.975,
+      "bootstrap_draws": 4000,
+      "bootstrap_seed": 4951000,
+      "required": "BOTH random-minus-trained paired-source intervals must have lower>0 AND trained mean loss must be>=5% lower than EACH random-family mean loss.",
+      "minimum_relative_reduction": 0.05,
+      "relative_denominator": "Each random-family mean loss; zero denominator is not scorable and cannot pass.",
+      "no_rescue": "A pass in one family, a descriptive condition, a frozen-extrapolation arm, or a forecast control cannot rescue failure of this primary."
+    },
+    "axes": {
+      "local_FIT": "Recompute preprocessing and fit readouts on exactly20 newFIT sources/96 rows; four whole-source folds choose only added rank/alpha. NewTEST labels never enter fitting.",
+      "frozen_extrapolation": "Apply original oldFIT frozen trained/random coefficients and preprocessing support without updates; summarize ALL and each condition on the same32 new TEST sources. Descriptive axis, no success claim or tuning.",
+      "controls": "Forecast targets Bolt->TimesFM and TimesFM->Bolt are descriptive controls. Local input-only and fixed input+Aforecast baseline are retained."
+    },
+    "local_fixed_base": "Source model Aforecast values are native outputs, not a trainable model. Input+Aforecast kernel recipe is fixed to prior selected choices (rbf2.0+pca16 for forecast, rbf0.5+pca16 for fusion response). Refit centers/PCA/support on localFIT only. Baseline ridge alpha remains0.001. All learned/random additions use equal block weight1/3.",
+    "base_specs": [
+      {
+        "key": "bolt_to_timesfm__forecast__input",
+        "A": "bolt",
+        "B": "timesfm",
+        "endpoint": "forecast",
+        "arm": "input",
+        "kernel": "rbf0.5",
+        "alpha": 0.001,
+        "cv_loss": 0.031718762251994895
+      },
+      {
+        "key": "bolt_to_timesfm__forecast__input+A_forecast",
+        "A": "bolt",
+        "B": "timesfm",
+        "endpoint": "forecast",
+        "arm": "input+A_forecast",
+        "kernel": "rbf2.0+pca16",
+        "alpha": 0.001,
+        "cv_loss": 0.018963286521288425
+      },
+      {
+        "key": "timesfm_to_bolt__forecast__input",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "forecast",
+        "arm": "input",
+        "kernel": "rbf0.5",
+        "alpha": 0.001,
+        "cv_loss": 0.02537509280177499
+      },
+      {
+        "key": "timesfm_to_bolt__forecast__input+A_forecast",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "forecast",
+        "arm": "input+A_forecast",
+        "kernel": "rbf2.0+pca16",
+        "alpha": 0.001,
+        "cv_loss": 0.013092730977671182
+      },
+      {
+        "key": "timesfm_to_bolt__fusion_response__input",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "fusion_response",
+        "arm": "input",
+        "kernel": "rbf0.5",
+        "alpha": 0.001,
+        "cv_loss": 0.002453045729696738
+      },
+      {
+        "key": "timesfm_to_bolt__fusion_response__input+A_forecast",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "fusion_response",
+        "arm": "input+A_forecast",
+        "kernel": "rbf0.5+pca16",
+        "alpha": 0.001,
+        "cv_loss": 0.0025257951404711364
+      }
+    ],
+    "budget": {
+      "widths": {
+        "bolt": 4608,
+        "timesfm": 5120
+      },
+      "ranks": [
+        8,
+        16
+      ],
+      "alphas": [
+        0.001,
+        0.01,
+        0.1,
+        1.0
+      ],
+      "initialization_seeds": [
+        4953000,
+        4953001,
+        4953002
+      ],
+      "random_families": [
+        "rff",
+        "mlp_relu"
+      ],
+      "candidates_per_added_arm": 8,
+      "fit_sources": 20,
+      "fit_rows": 96
+    },
+    "maps": "Identical frozen random_features implementation from4953000: full normalized128 history plus2 normalizer values, FIT standardization; RFF gamma1/median distance or untrained affine/ReLU; same widths. Readout budget matched, not pretraining FLOPs/parameters.",
+    "normalization": "Identical history mean/SD targets and inverse for all arms. No physical-scale disadvantage to hidden baselines.",
+    "behavior": "Report source means/CIs by ALL and condition for normalized response energy, exact-zero response fraction, tree eligibility, native/fused true-future MSE, gain, and correction dot. Verify gain=2*dot-energy. Emulating a response does not establish its correctness or semantic equivalence.",
+    "alignment_null": "Omitted from this bounded primary; optional future reuse-only alignment audit cannot change the frozen primary decision.",
+    "resources": {
+      "cpu_threads": 1,
+      "model_seconds": 900,
+      "resident_bytes": 3221225472,
+      "serial_workers": true,
+      "gpu": false
+    },
+    "capture": {
+      "bolt": {
+        "first": "0",
+        "half": "3",
+        "shape": [
+          9,
+          512
+        ]
+      },
+      "timesfm": {
+        "first": "0",
+        "half": "10",
+        "shape": [
+          4,
+          1280
+        ]
+      },
+      "batch": 1,
+      "normalization": "Original native baseline; fusion leaves/zero use original full-context native normalizer and matching inverse.",
+      "fusion": "First block; depth1; equal leaf weights; affine zero correction; pure blend1. No random edits, deeper trees, stability sweeps, or other native endpoints. Tree abstention yields exact native forecast."
+    },
+    "checkpoints": {
+      "bolt": {
+        "repo": "amazon/chronos-bolt-small",
+        "path": "/common/home/djk255/.cache/huggingface/hub/models--amazon--chronos-bolt-small/snapshots/772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "revision": "772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "weights": {
+          "model.safetensors": "06a6a19bbe74bc10a9cd193bd4bf2bf638ae07f7e0d51653ae7ab8ea968a21dd"
+        }
+      },
+      "timesfm": {
+        "repo": "google/timesfm-2.5-200m-pytorch",
+        "path": "/common/home/djk255/.cache/huggingface/hub/models--google--timesfm-2.5-200m-pytorch/snapshots/1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+        "revision": "1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+        "weights": {
+          "model.safetensors": "2f776efe6245e42b24bc4153ffdf61810140210e4bd3b01fb21f7aa779ab6ce8"
+        }
+      }
+    },
+    "gates": "Exact repeat, full-context locked-normalizer identity, first-block self patch and half-depth self patch on every row; input leaf closure <=2e-6 relative max(1,maxabs(history)). Native cuts/shapes/checkpoint hashes must match.",
+    "natural_leg": "NONE; no natural-context expansion authorized or prepared.",
+    "evidence": "Prospectively frozen synthetic predictive feature-efficiency comparison; no causal or equivalent-semantics claim, no information beyond deterministic full input.",
+    "code_hashes": {
+      "experiments/feature_search/comparability_conditions.py": "27070b2a910093b0ee29e11954b99cdec93aa6d84c105dcf33a47ef0abf1d141",
+      "experiments/feature_search/comparability_conditions_audit.py": "f94df8e43bb2e029c6b2e3bab084d45dd53021f26a7db572135b01a70045954d",
+      "experiments/feature_search/comparability_core.py": "afd96282dd04520d53d6872b9b258800c3602a176e1cfbddf439d1a85d89e186",
+      "experiments/feature_search/comparability_pilot.py": "cda64ef12f4fd1100d4c04ad83c96c3923ac5218a2997d9c81f6c18537816b02",
+      "experiments/feature_search/comparability_random_features.py": "45ccd621e286a7aef45176f09ec87b351a7f292d3f9beedb59c44ca60ef8763c",
+      "experiments/feature_search/comparability_replication.py": "cc999b25ae114082bef3a7caf822d4c47667e2281b431faaf8ac6edaa2970387",
+      "experiments/feature_search/selective_study.py": "d87ed477e46d72604fa6824fcc5b146880142a730fc52f0f70bf933b652604eb",
+      "experiments/feature_search/selective_tree.py": "0d96de5655995d55f9dc6c1510d5951db916656642b5d22c2bf4721d664f75f1",
+      "experiments/feature_search/coherence_study.py": "e9bd4dc10d57cfbc30cb4b01cfafe96789cccb6d34fe85616699ecfef799aec7",
+      "experiments/feature_search/real_background_poc.py": "c88868ab339608f52afa8041d89cf3b48aa4260e87fb497b64fa7bf058b3eda6",
+      "experiments/feature_search/homogeneous_normalizer.py": "2670effb2dfc0b631d368a69cab4263a8d2a90eb1208acc93d246a5c0ef55051",
+      "tests/test_comparability_conditions.py": "a3deffbdd124c6052073f1865bbfbc309aba6e0b3b684bb7e318f1de06dd50f1",
+      "tsfm_lens/extraction/hooks.py": "6f161d02a472c246691caed21bd301a201d7219d3aeef90de2854baa7bdc4281"
+    },
+    "upstream_hashes": {
+      "runs/comparability_replication4952000/protocol.json": "9c275b040420c3e6a1a0c590d72fc1e97ac16e2e086cf5cf333f5a5f1efa9c45",
+      "runs/comparability_replication4952000/fit_support.npz": "933a0a4f49d0ac4837e0b21a8f7da371ce2e914c27c64cbcc878bde5dea2407c",
+      "runs/comparability_replication4952000/fit_rows.json": "d5a12d42e35290a783e8dc9cc96db31b6073c12921696772aed9678ea0c61f78",
+      "runs/comparability_replication4952000/frozen_probes.npz": "94dcbb08c293a43a18f839210253e814628c2aa2f34444ee36ff3dff62acc3bd",
+      "runs/comparability_replication4952000/probe_specs.json": "6a434209c74e0c122f43928b1399288eb84c72bf43aeaaa0e174f16a589cf8d2",
+      "runs/comparability_random4953000/protocol.json": "c493a1febacc468e605ee85cd7bdc27adcccba47f91540489eb6e180c11d8afd",
+      "runs/comparability_random4953000/frozen_random_probes.npz": "b240b47b0be1e0832f1f6de57fc6379b61a5335973e808ed73fb6e832c181624",
+      "runs/comparability_random4953000/probe_specs.json": "08fbacc99f054d2e8ee4d1d277d24acf9609c0ab0cac7fadaefda08b1a859e3d",
+      "runs/comparability_random4953000/plant_audit.json": "604412678815f76edf4fc5dfa3262f7b3725273341649ed55ae0effb1daa94e7",
+      "runs/comparability_random4953000/arithmetic_replay.json": "4b08407bee1f49a9022e0523c026acac78c8edc280541a9853d7fea340fd024c"
+    },
+    "artifact_hashes": {
+      "inputs.npz": "1a0f1bd8aa4e98fa68c33532992792a1102ec7acbf2693cc026e1ca8e3650e60",
+      "targets.npz": "4f00eb79d4fad3947765554e2dfc7c46b090c038483fc67a4fb651d51be1decf",
+      "rows.json": "fbb17dba6b55afd703b0cb67d1489040dd454e17529f29b538ac6cc0efbc48eb",
+      "plans.json": "234762a54ad53c54963c79befbe9d71817e6dbee86677e0ca385484b279d3ce2"
+    }
+  },
+  "exact_findings": {
+    "primary": {
+      "passed": true,
+      "families": {
+        "rff": {
+          "gain": {
+            "mean": 0.0007073627355068375,
+            "low": 0.0005316431668598855,
+            "high": 0.0008913284578756916,
+            "n_sources": 32
+          },
+          "random_mean_loss": 0.0029625792146836614,
+          "relative_reduction": 0.23876584700280104,
+          "passed": true
+        },
+        "mlp_relu": {
+          "gain": {
+            "mean": 0.00018943784920643812,
+            "low": 9.106597229230112e-05,
+            "high": 0.00029783215257174787,
+            "n_sources": 32
+          },
+          "random_mean_loss": 0.002444654328383262,
+          "relative_reduction": 0.0774906484761468,
+          "passed": true
+        }
+      },
+      "coverage": 0.975,
+      "minimum_relative_reduction": 0.05
+    },
+    "condition_summaries": [
+      {
+        "case": "ALL",
+        "local_base": 0.0028021117236147076,
+        "local_trained": 0.002255216479176824,
+        "local_random": {
+          "rff": 0.0029625792146836614,
+          "mlp_relu": 0.002444654328383262
+        },
+        "frozen_trained": 0.008939279249758535,
+        "frozen_random": {
+          "rff": 0.009122526992164476,
+          "mlp_relu": 0.009073278200092379
+        }
+      },
+      {
+        "case": "anchor",
+        "local_base": 0.002423760578606608,
+        "local_trained": 0.0015731935453913576,
+        "local_random": {
+          "rff": 0.002584483801175049,
+          "mlp_relu": 0.002159645780113411
+        },
+        "frozen_trained": 0.0026207836690238647,
+        "frozen_random": {
+          "rff": 0.0031705834501674908,
+          "mlp_relu": 0.00315016536022884
+        }
+      },
+      {
+        "case": "weaker",
+        "local_base": 0.006789017217567483,
+        "local_trained": 0.0056556168387413685,
+        "local_random": {
+          "rff": 0.007511278503072322,
+          "mlp_relu": 0.005608950371716232
+        },
+        "frozen_trained": 0.026426468616641472,
+        "frozen_random": {
+          "rff": 0.02882444489778727,
+          "mlp_relu": 0.02875015452262698
+        }
+      },
+      {
+        "case": "shifted_frequency",
+        "local_base": 0.0005870863591527446,
+        "local_trained": 0.00044113324536860057,
+        "local_random": {
+          "rff": 0.0005576633245886051,
+          "mlp_relu": 0.0005280296538826059
+        },
+        "frozen_trained": 0.003363227814696856,
+        "frozen_random": {
+          "rff": 0.0024019511987517493,
+          "mlp_relu": 0.0026915396683401343
+        }
+      },
+      {
+        "case": "shifted_weaker",
+        "local_base": 0.0017288407488560541,
+        "local_trained": 0.001423124172677519,
+        "local_random": {
+          "rff": 0.0017088972946694453,
+          "mlp_relu": 0.001569793427243665
+        },
+        "frozen_trained": 0.005628004941627635,
+        "frozen_random": {
+          "rff": 0.004915966612493415,
+          "mlp_relu": 0.005002138153738784
+        }
+      },
+      {
+        "case": "shifted_balanced",
+        "local_base": 0.002481853713890649,
+        "local_trained": 0.002183014593705274,
+        "local_random": {
+          "rff": 0.0024505731499128857,
+          "mlp_relu": 0.002356852408960396
+        },
+        "frozen_trained": 0.006657911206802839,
+        "frozen_random": {
+          "rff": 0.006299688801622457,
+          "mlp_relu": 0.005772393295527159
+        }
+      }
+    ],
+    "local_results": [
+      {
+        "axis": "local_FIT",
+        "A": "bolt",
+        "B": "timesfm",
+        "endpoint": "forecast",
+        "case": "ALL",
+        "losses": {
+          "input": {
+            "mean": 0.03378777722220612,
+            "low": 0.028730923793687475,
+            "high": 0.03945310293252622,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.05295205930782393,
+            "low": 0.044142763575206016,
+            "high": 0.06256983299988256,
+            "n_sources": 32
+          },
+          "trained": {
+            "mean": 0.024098445950134384,
+            "low": 0.019337570541858515,
+            "high": 0.029581708141473904,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.02742232318642877,
+            "low": 0.021863365990139962,
+            "high": 0.03374435074474052,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.02639094917888403,
+            "low": 0.021092853775777937,
+            "high": 0.03242804233289635,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.027219990287114592,
+            "low": 0.02171210021020983,
+            "high": 0.03348819089912975,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.021119279479387555,
+            "low": 0.017138035816902947,
+            "high": 0.025516139473289966,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.020974760203517837,
+            "low": 0.017043540321103137,
+            "high": 0.025453400519730888,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.021316024963080063,
+            "low": 0.01730781529366095,
+            "high": 0.025825615405826376,
+            "n_sources": 32
+          }
+        },
+        "response_or_forecast_energy": 0.6278349705117519
+      },
+      {
+        "axis": "local_FIT",
+        "A": "bolt",
+        "B": "timesfm",
+        "endpoint": "forecast",
+        "case": "anchor",
+        "losses": {
+          "input": {
+            "mean": 0.018275283617636806,
+            "low": 0.013368710947358614,
+            "high": 0.02425438445957716,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.011410484514509597,
+            "low": 0.007943592461392536,
+            "high": 0.01585525285301981,
+            "n_sources": 32
+          },
+          "trained": {
+            "mean": 0.011211242526452586,
+            "low": 0.008060163294045191,
+            "high": 0.01518994543226184,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.011677272251521646,
+            "low": 0.008219932704168114,
+            "high": 0.01614535328958006,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.01163941207146131,
+            "low": 0.008217852955979033,
+            "high": 0.016064780355566292,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.011683253666885093,
+            "low": 0.008207420580989172,
+            "high": 0.01616494813613849,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.010837030445678148,
+            "low": 0.007891937679922426,
+            "high": 0.01458698991976951,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.010902018685342074,
+            "low": 0.007924054146728346,
+            "high": 0.014656770409186034,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.010959648783976723,
+            "low": 0.007937047826315732,
+            "high": 0.014776684316596771,
+            "n_sources": 32
+          }
+        },
+        "response_or_forecast_energy": 0.5634701457200058
+      },
+      {
+        "axis": "local_FIT",
+        "A": "bolt",
+        "B": "timesfm",
+        "endpoint": "forecast",
+        "case": "weaker",
+        "losses": {
+          "input": {
+            "mean": 0.046536210857099664,
+            "low": 0.038121838576871694,
+            "high": 0.054967644201612306,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.026754648800912877,
+            "low": 0.020758582993624246,
+            "high": 0.033032716506169825,
+            "n_sources": 32
+          },
+          "trained": {
+            "mean": 0.02578998259011736,
+            "low": 0.020139191797387185,
+            "high": 0.031729088755903516,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.02317862857433836,
+            "low": 0.018480927198972857,
+            "high": 0.028030953107053114,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.023501912521747548,
+            "low": 0.018676271438953024,
+            "high": 0.02853362751002743,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.023342312952750417,
+            "low": 0.018550270963552155,
+            "high": 0.02832271074804186,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.023250490973770792,
+            "low": 0.018411845457173805,
+            "high": 0.028284916029155407,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.023540562149074705,
+            "low": 0.01858265806780868,
+            "high": 0.028639053236993,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.023287312863250635,
+            "low": 0.01843826599065721,
+            "high": 0.028379405839412793,
+            "n_sources": 32
+          }
+        },
+        "response_or_forecast_energy": 0.48920513863922527
+      },
+      {
+        "axis": "local_FIT",
+        "A": "bolt",
+        "B": "timesfm",
+        "endpoint": "forecast",
+        "case": "shifted_frequency",
+        "losses": {
+          "input": {
+            "mean": 0.018187251701870938,
+            "low": 0.0107294280510728,
+            "high": 0.027320992054885772,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.0311271178188394,
+            "low": 0.014380824984246818,
+            "high": 0.05220295880937324,
+            "n_sources": 32
+          },
+          "trained": {
+            "mean": 0.0201910230904034,
+            "low": 0.010309876477284678,
+            "high": 0.03262463363554798,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.02108977555937403,
+            "low": 0.011160365013786618,
+            "high": 0.033313109889541725,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.0200243237294312,
+            "low": 0.010742496146754798,
+            "high": 0.031558944704279335,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.020631804209854103,
+            "low": 0.010896705440403717,
+            "high": 0.032652703325888315,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.01605311679510127,
+            "low": 0.009197134229051928,
+            "high": 0.024484082126644848,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.016059870778791004,
+            "low": 0.00916072613880208,
+            "high": 0.024606530519789033,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.016286156895342817,
+            "low": 0.009168317096683202,
+            "high": 0.02509492516693198,
+            "n_sources": 32
+          }
+        },
+        "response_or_forecast_energy": 0.6635186680419841
+      },
+      {
+        "axis": "local_FIT",
+        "A": "bolt",
+        "B": "timesfm",
+        "endpoint": "forecast",
+        "case": "shifted_weaker",
+        "losses": {
+          "input": {
+            "mean": 0.025835627934209654,
+            "low": 0.019952200416450138,
+            "high": 0.032214567911508396,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.04140888315123181,
+            "low": 0.029550285645479738,
+            "high": 0.05439320303871508,
+            "n_sources": 32
+          },
+          "trained": {
+            "mean": 0.02211739666320702,
+            "low": 0.016049991551973175,
+            "high": 0.028777793623309133,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.02483524703679129,
+            "low": 0.017605221347621023,
+            "high": 0.03266781552953676,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.023909487154090286,
+            "low": 0.017024730462886394,
+            "high": 0.03138030590641291,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.024530806457358216,
+            "low": 0.017630616230993268,
+            "high": 0.03210324541295571,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.019410415125133987,
+            "low": 0.014427421204276399,
+            "high": 0.024756805139367066,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.019226593128374946,
+            "low": 0.014252281186802841,
+            "high": 0.024591119418025033,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.01950018258844675,
+            "low": 0.014504281753740885,
+            "high": 0.024952941772304497,
+            "n_sources": 32
+          }
+        },
+        "response_or_forecast_energy": 0.7104556991671436
+      },
+      {
+        "axis": "local_FIT",
+        "A": "bolt",
+        "B": "timesfm",
+        "endpoint": "forecast",
+        "case": "shifted_balanced",
+        "losses": {
+          "input": {
+            "mean": 0.06010451200021352,
+            "low": 0.05010966895277143,
+            "high": 0.0707546349491545,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.15405916225362593,
+            "low": 0.13249411718930135,
+            "high": 0.17559912737505312,
+            "n_sources": 32
+          },
+          "trained": {
+            "mean": 0.04118258488049156,
+            "low": 0.033985491653091816,
+            "high": 0.04863310603399387,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.05633069251011853,
+            "low": 0.04468127134336879,
+            "high": 0.06867601950503463,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.05287961041768979,
+            "low": 0.04227688290945467,
+            "high": 0.06436302737207313,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.05591177414872514,
+            "low": 0.04422599707850493,
+            "high": 0.06866682851471993,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.036045344057253584,
+            "low": 0.028735306420419368,
+            "high": 0.04403190323413431,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.035144756276006446,
+            "low": 0.02815916591191029,
+            "high": 0.04295211474551409,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.03654682368438339,
+            "low": 0.02910944591470691,
+            "high": 0.044763627985981845,
+            "n_sources": 32
+          }
+        },
+        "response_or_forecast_energy": 0.7125252009904005
+      },
+      {
+        "axis": "local_FIT",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "forecast",
+        "case": "ALL",
+        "losses": {
+          "input": {
+            "mean": 0.009096882173478316,
+            "low": 0.007853527719402573,
+            "high": 0.010440434477487425,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.006759218317587163,
+            "low": 0.005481971637045892,
+            "high": 0.008153887297419796,
+            "n_sources": 32
+          },
+          "trained": {
+            "mean": 0.005392676091153752,
+            "low": 0.004451014911229065,
+            "high": 0.00642349858741451,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.005992918597120886,
+            "low": 0.0048784374678810475,
+            "high": 0.007231974429377212,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.006008404164330284,
+            "low": 0.004907882545112336,
+            "high": 0.0072204229540093956,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.006015570244540859,
+            "low": 0.0048959938640278445,
+            "high": 0.007257294007824764,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.004906975476961581,
+            "low": 0.004002637190734684,
+            "high": 0.005878484417407996,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.004943624936339198,
+            "low": 0.004003647420571283,
+            "high": 0.005941451327750127,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.004967849571231366,
+            "low": 0.004031230514603947,
+            "high": 0.005977977710131305,
+            "n_sources": 32
+          }
+        },
+        "response_or_forecast_energy": 0.1782552243671923
+      },
+      {
+        "axis": "local_FIT",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "forecast",
+        "case": "anchor",
+        "losses": {
+          "input": {
+            "mean": 0.005940473537868767,
+            "low": 0.004796577548168841,
+            "high": 0.0074105474970379125,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.0049217630926959785,
+            "low": 0.0032905075691914204,
+            "high": 0.006909605365053097,
+            "n_sources": 32
+          },
+          "trained": {
+            "mean": 0.00379314114066546,
+            "low": 0.0027794834999186123,
+            "high": 0.005213011619909534,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.004270373049532189,
+            "low": 0.002963363328782037,
+            "high": 0.005967923604888788,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.004179299194724039,
+            "low": 0.002889764563051785,
+            "high": 0.005866690055420891,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.0042009333069675265,
+            "low": 0.002895603484045997,
+            "high": 0.005935286168115366,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.003314146820558406,
+            "low": 0.0022372197659797626,
+            "high": 0.004854818202443497,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.003252823264347329,
+            "low": 0.002193300561249695,
+            "high": 0.004751088524605125,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.003280748435030701,
+            "low": 0.00221224258619996,
+            "high": 0.004815428749739003,
+            "n_sources": 32
+          }
+        },
+        "response_or_forecast_energy": 0.41174998255618905
+      },
+      {
+        "axis": "local_FIT",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "forecast",
+        "case": "weaker",
+        "losses": {
+          "input": {
+            "mean": 0.03160050880887871,
+            "low": 0.02662446417321037,
+            "high": 0.03680906461068591,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.02121424769985532,
+            "low": 0.016735769512545517,
+            "high": 0.026042849338617627,
+            "n_sources": 32
+          },
+          "trained": {
+            "mean": 0.017432980123335204,
+            "low": 0.013851169152068887,
+            "high": 0.021327640648711736,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.019608180777406115,
+            "low": 0.015431352976038776,
+            "high": 0.0241160428372277,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.019840856115834443,
+            "low": 0.01563740283331137,
+            "high": 0.024336731628750448,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.019778052628482912,
+            "low": 0.01555048839523224,
+            "high": 0.024302316657440922,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.016344190641681945,
+            "low": 0.012825786542425163,
+            "high": 0.020157808989941517,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.01648634707635313,
+            "low": 0.012919151791995372,
+            "high": 0.020357839810686108,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.016586160579201495,
+            "low": 0.012977062488936968,
+            "high": 0.020480539662320666,
+            "n_sources": 32
+          }
+        },
+        "response_or_forecast_energy": 0.38904635364543366
+      },
+      {
+        "axis": "local_FIT",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "forecast",
+        "case": "shifted_frequency",
+        "losses": {
+          "input": {
+            "mean": 0.001074592833343649,
+            "low": 0.0007111760145130718,
+            "high": 0.001470438729269211,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.0011435479272955758,
+            "low": 0.0007314624685146082,
+            "high": 0.0015892425384342697,
+            "n_sources": 32
+          },
+          "trained": {
+            "mean": 0.00098945305640109,
+            "low": 0.0006170247670618,
+            "high": 0.0013879198330538202,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.000827607113536569,
+            "low": 0.0005265126540113204,
+            "high": 0.001145327779271076,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.0007471355372017439,
+            "low": 0.000488747838530723,
+            "high": 0.0010135672942925532,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.0008249827754315979,
+            "low": 0.0005273414868483651,
+            "high": 0.0011353755918790782,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.0007354145657861119,
+            "low": 0.0004786393836833204,
+            "high": 0.0010101551405037547,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.0007575406538543817,
+            "low": 0.0004896915414920479,
+            "high": 0.0010427318572133952,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.0007638889561452207,
+            "low": 0.0004934298724438497,
+            "high": 0.0010540252963396543,
+            "n_sources": 32
+          }
+        },
+        "response_or_forecast_energy": 0.02585151356235914
+      },
+      {
+        "axis": "local_FIT",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "forecast",
+        "case": "shifted_weaker",
+        "losses": {
+          "input": {
+            "mean": 0.001520284939723222,
+            "low": 0.0011483030798841256,
+            "high": 0.0019287215896067714,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.0017723059268478017,
+            "low": 0.0012574644151468024,
+            "high": 0.0023192161312746928,
+            "n_sources": 32
+          },
+          "trained": {
+            "mean": 0.0015199707739325784,
+            "low": 0.0010906520672464388,
+            "high": 0.001956503063071242,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.0012685744644955173,
+            "low": 0.000887633328007012,
+            "high": 0.0016727220690723927,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.0012515668340332999,
+            "low": 0.0008916144553561194,
+            "high": 0.0016341628177523502,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.001322085257461833,
+            "low": 0.0009332206029976645,
+            "high": 0.001732128442669904,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.0011886245804532164,
+            "low": 0.0008496546102898517,
+            "high": 0.0015529494694999253,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.0012296006988011534,
+            "low": 0.0008623830689447983,
+            "high": 0.0016274998275596485,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.0012008573991515612,
+            "low": 0.0008477390300183843,
+            "high": 0.0015778579414450452,
+            "n_sources": 32
+          }
+        },
+        "response_or_forecast_energy": 0.02950067681612326
+      },
+      {
+        "axis": "local_FIT",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "forecast",
+        "case": "shifted_balanced",
+        "losses": {
+          "input": {
+            "mean": 0.005348550747577215,
+            "low": 0.003997282701041522,
+            "high": 0.006873643592340186,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.004744226941241141,
+            "low": 0.003730655782466735,
+            "high": 0.005873772508941667,
+            "n_sources": 32
+          },
+          "trained": {
+            "mean": 0.003227835361434432,
+            "low": 0.002437598659262439,
+            "high": 0.004116265221452546,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.003989857580634036,
+            "low": 0.0029792907064147105,
+            "high": 0.005088194326815954,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.004023163139857892,
+            "low": 0.003029318322053938,
+            "high": 0.0051049214397557285,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.003951797254360423,
+            "low": 0.0029534291943036054,
+            "high": 0.005060465107663723,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.002952500776328226,
+            "low": 0.0022817428362408676,
+            "high": 0.003722339006219208,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.002991812988339996,
+            "low": 0.002315353278056298,
+            "high": 0.003740931422639281,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.003007592486627852,
+            "low": 0.0023159430143236334,
+            "high": 0.003771677056167789,
+            "n_sources": 32
+          }
+        },
+        "response_or_forecast_energy": 0.03512759525585641
+      },
+      {
+        "axis": "local_FIT",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "fusion_response",
+        "case": "ALL",
+        "losses": {
+          "input": {
+            "mean": 0.0034516161821032086,
+            "low": 0.0029917104009357307,
+            "high": 0.0038970634561298154,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.0028021117236147076,
+            "low": 0.002471965205825573,
+            "high": 0.0031473672616263108,
+            "n_sources": 32
+          },
+          "trained": {
+            "mean": 0.002255216479176824,
+            "low": 0.0019985150856597217,
+            "high": 0.0025221368279382296,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.0029608563734766103,
+            "low": 0.0026122176532605034,
+            "high": 0.0033188916782326654,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.0029654068473457234,
+            "low": 0.0026138659637409546,
+            "high": 0.00332292451040254,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.0029614744232286504,
+            "low": 0.002614343329245299,
+            "high": 0.0033223748510579146,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.002438638658312448,
+            "low": 0.0021451578777524167,
+            "high": 0.002749352819401146,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.0024658145916854907,
+            "low": 0.0021717995376116937,
+            "high": 0.0027750755803891956,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.0024295097351518472,
+            "low": 0.002133816074896035,
+            "high": 0.002738002145780418,
+            "n_sources": 32
+          }
+        },
+        "response_or_forecast_energy": 0.010583971848408267
+      },
+      {
+        "axis": "local_FIT",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "fusion_response",
+        "case": "anchor",
+        "losses": {
+          "input": {
+            "mean": 0.0021062845767061507,
+            "low": 0.0017591800920631106,
+            "high": 0.0025023056099232528,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.002423760578606608,
+            "low": 0.002058956916678104,
+            "high": 0.0028353659764779704,
+            "n_sources": 32
+          },
+          "trained": {
+            "mean": 0.0015731935453913576,
+            "low": 0.001388453595255091,
+            "high": 0.0017681397402598848,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.002570224030023419,
+            "low": 0.0021827860768871264,
+            "high": 0.002999707335797065,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.0025791083182559547,
+            "low": 0.002193252449917628,
+            "high": 0.003008030942148718,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.0026041190552457726,
+            "low": 0.0022076360225359165,
+            "high": 0.0030389735820988374,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.0021584197028714862,
+            "low": 0.0018866817292248507,
+            "high": 0.0024662352522920065,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.0021752066523512215,
+            "low": 0.0018986997375933573,
+            "high": 0.0024887329759470385,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.002145310985117525,
+            "low": 0.0018847916445994153,
+            "high": 0.0024400945156208757,
+            "n_sources": 32
+          }
+        },
+        "response_or_forecast_energy": 0.006316194190251501
+      },
+      {
+        "axis": "local_FIT",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "fusion_response",
+        "case": "weaker",
+        "losses": {
+          "input": {
+            "mean": 0.010502565987187091,
+            "low": 0.008674731990142391,
+            "high": 0.01237998336466955,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.006789017217567483,
+            "low": 0.0056722017924295525,
+            "high": 0.008034450149925152,
+            "n_sources": 32
+          },
+          "trained": {
+            "mean": 0.0056556168387413685,
+            "low": 0.004759208667409455,
+            "high": 0.0066669439998347105,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.0075057698663942695,
+            "low": 0.0062305164810485866,
+            "high": 0.00884010083292073,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.007536338311612129,
+            "low": 0.00625492408586675,
+            "high": 0.00887431137778895,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.007491727331210566,
+            "low": 0.006220752067459579,
+            "high": 0.008821509049564764,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.0056073806072956195,
+            "low": 0.00469477120489914,
+            "high": 0.006615869029785465,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.005627547384423831,
+            "low": 0.004704014332631398,
+            "high": 0.006642093190059087,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.005591923123429245,
+            "low": 0.004657911412730947,
+            "high": 0.00663144719462029,
+            "n_sources": 32
+          }
+        },
+        "response_or_forecast_energy": 0.03682835874191244
+      },
+      {
+        "axis": "local_FIT",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "fusion_response",
+        "case": "shifted_frequency",
+        "losses": {
+          "input": {
+            "mean": 0.0006002507978280943,
+            "low": 0.0004603305380575274,
+            "high": 0.0007529753332035623,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.0005870863591527446,
+            "low": 0.000442862834426619,
+            "high": 0.000743806393183313,
+            "n_sources": 32
+          },
+          "trained": {
+            "mean": 0.00044113324536860057,
+            "low": 0.0003204912104563133,
+            "high": 0.0005690304411998798,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.0005558721586716095,
+            "low": 0.00042325959695167114,
+            "high": 0.000713074136813958,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.0005598120122035427,
+            "low": 0.000429422658726897,
+            "high": 0.0007142689728808434,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.0005573058028906633,
+            "low": 0.0004253399824033228,
+            "high": 0.0007125164404790923,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.0005299136080201085,
+            "low": 0.0004078968065224576,
+            "high": 0.0006623744931962477,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.0005222742452336241,
+            "low": 0.00040599346728068566,
+            "high": 0.0006488394617633553,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.0005319011083940851,
+            "low": 0.00041157556341628445,
+            "high": 0.0006627984608954039,
+            "n_sources": 32
+          }
+        },
+        "response_or_forecast_energy": 0.0007353983557639593
+      },
+      {
+        "axis": "local_FIT",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "fusion_response",
+        "case": "shifted_weaker",
+        "losses": {
+          "input": {
+            "mean": 0.0016360766748151952,
+            "low": 0.0012483288184416644,
+            "high": 0.002056450880532788,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.0017288407488560541,
+            "low": 0.0012930929219373776,
+            "high": 0.002223949847839724,
+            "n_sources": 32
+          },
+          "trained": {
+            "mean": 0.001423124172677519,
+            "low": 0.0010552300775045955,
+            "high": 0.0018250446602563132,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.0017079715111233858,
+            "low": 0.0012744048561544002,
+            "high": 0.002184783401185763,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.0017016859825694963,
+            "low": 0.0012705253031972275,
+            "high": 0.0021699996273133407,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.001717034390315454,
+            "low": 0.0012851169660275923,
+            "high": 0.0021885930432849186,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.0015811920482376402,
+            "low": 0.0011604909492842783,
+            "high": 0.0020436257161785686,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.0015661088158134212,
+            "low": 0.0011563039321617337,
+            "high": 0.0020090159675664014,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.0015620794176799337,
+            "low": 0.0011502023311099122,
+            "high": 0.0020144490614239534,
+            "n_sources": 32
+          }
+        },
+        "response_or_forecast_energy": 0.003701907169418572
+      },
+      {
+        "axis": "local_FIT",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "fusion_response",
+        "case": "shifted_balanced",
+        "losses": {
+          "input": {
+            "mean": 0.002412902873979512,
+            "low": 0.0018126013267306949,
+            "high": 0.0030934813232616275,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.002481853713890649,
+            "low": 0.0018839551750107748,
+            "high": 0.0031270704372257188,
+            "n_sources": 32
+          },
+          "trained": {
+            "mean": 0.002183014593705274,
+            "low": 0.0016602910791489354,
+            "high": 0.0027539749166690234,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.0024644443011703696,
+            "low": 0.0018569768448724311,
+            "high": 0.0031582775256981093,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.002450089612087493,
+            "low": 0.0018436671400035803,
+            "high": 0.0031401340156643385,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.002437185536480795,
+            "low": 0.0018286452401550014,
+            "high": 0.0031255035880696086,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.002316287325137385,
+            "low": 0.0017252901554746926,
+            "high": 0.0029707766956690437,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.002437935860605356,
+            "low": 0.0018327094680725409,
+            "high": 0.003114261019060083,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.0023163340411384474,
+            "low": 0.0017376609218125267,
+            "high": 0.0029635480388286164,
+            "n_sources": 32
+          }
+        },
+        "response_or_forecast_energy": 0.005338000784694853
+      }
+    ],
+    "frozen_extrapolation": [
+      {
+        "axis": "frozen_extrapolation_descriptive",
+        "A": "bolt",
+        "B": "timesfm",
+        "endpoint": "forecast",
+        "case": "ALL",
+        "losses": {
+          "input": {
+            "mean": 0.433634376805591,
+            "low": 0.4114239154764239,
+            "high": 0.4555818983236948,
+            "n_sources": 32
+          },
+          "input+A_hidden": {
+            "mean": 0.4453405092629512,
+            "low": 0.4232625868364863,
+            "high": 0.4676456629605869,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.43367145410883,
+            "low": 0.4100976668741335,
+            "high": 0.4565727315568986,
+            "n_sources": 32
+          },
+          "input+B_hidden": {
+            "mean": 0.40906731562756465,
+            "low": 0.38700169368690795,
+            "high": 0.43049933039239474,
+            "n_sources": 32
+          },
+          "input+A_forecast+A_hidden": {
+            "mean": 0.4364301369315645,
+            "low": 0.412928531455867,
+            "high": 0.4592870970427125,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.4358298837765041,
+            "low": 0.4126949366343899,
+            "high": 0.45807399798119847,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.44088554621408205,
+            "low": 0.4179497461535134,
+            "high": 0.4633234584342786,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.4370052477395746,
+            "low": 0.4140329465956291,
+            "high": 0.45916573724955456,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.43756808076432263,
+            "low": 0.4146263955222818,
+            "high": 0.4595053380498109,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.441065367924516,
+            "low": 0.4178317987338597,
+            "high": 0.463560500581877,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.43846554358850404,
+            "low": 0.41565040165619976,
+            "high": 0.4605719648519334,
+            "n_sources": 32
+          }
+        }
+      },
+      {
+        "axis": "frozen_extrapolation_descriptive",
+        "A": "bolt",
+        "B": "timesfm",
+        "endpoint": "forecast",
+        "case": "anchor",
+        "losses": {
+          "input": {
+            "mean": 0.021088464471245155,
+            "low": 0.014979118992891246,
+            "high": 0.02783876572411851,
+            "n_sources": 32
+          },
+          "input+A_hidden": {
+            "mean": 0.015804489595500897,
+            "low": 0.01155611945946952,
+            "high": 0.020297323327682682,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.014173824035189726,
+            "low": 0.0098986680629083,
+            "high": 0.018887647308846733,
+            "n_sources": 32
+          },
+          "input+B_hidden": {
+            "mean": 0.015562926079133548,
+            "low": 0.011293288124154038,
+            "high": 0.020245682725549035,
+            "n_sources": 32
+          },
+          "input+A_forecast+A_hidden": {
+            "mean": 0.015054954444148873,
+            "low": 0.010653076887237427,
+            "high": 0.01984990549564103,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.013839767559480527,
+            "low": 0.009697023286267356,
+            "high": 0.018405531464689897,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.013779236762265078,
+            "low": 0.009700904013364854,
+            "high": 0.018310382159524012,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.013794606993504249,
+            "low": 0.00965821096628618,
+            "high": 0.01839266920587192,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.014096313010390061,
+            "low": 0.009968303870158728,
+            "high": 0.018688804841332302,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.01411517585492375,
+            "low": 0.009988236416632285,
+            "high": 0.0186910650876129,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.014188948665552804,
+            "low": 0.010011254259066536,
+            "high": 0.01881011059981874,
+            "n_sources": 32
+          }
+        }
+      },
+      {
+        "axis": "frozen_extrapolation_descriptive",
+        "A": "bolt",
+        "B": "timesfm",
+        "endpoint": "forecast",
+        "case": "weaker",
+        "losses": {
+          "input": {
+            "mean": 0.050251286300513745,
+            "low": 0.040690018743029556,
+            "high": 0.059926161498541054,
+            "n_sources": 32
+          },
+          "input+A_hidden": {
+            "mean": 0.04431850092719318,
+            "low": 0.03576870252190479,
+            "high": 0.053058695238804056,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.05119471596011173,
+            "low": 0.041229798296928896,
+            "high": 0.061621152632035645,
+            "n_sources": 32
+          },
+          "input+B_hidden": {
+            "mean": 0.04489439056400764,
+            "low": 0.03659118980165157,
+            "high": 0.05306561854302505,
+            "n_sources": 32
+          },
+          "input+A_forecast+A_hidden": {
+            "mean": 0.04863493898584471,
+            "low": 0.03893927175199454,
+            "high": 0.0586531981065875,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.04570924747357652,
+            "low": 0.036528103491985785,
+            "high": 0.055156456563183354,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.045677020802585434,
+            "low": 0.03652433254594155,
+            "high": 0.055096022222084304,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.04565682259507407,
+            "low": 0.03638002780576824,
+            "high": 0.055243760085145366,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.04616516773404411,
+            "low": 0.0369020737939095,
+            "high": 0.0557702110291162,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.04625943316272758,
+            "low": 0.037041334571778085,
+            "high": 0.055786951326457695,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.0464458629361261,
+            "low": 0.037080967730902026,
+            "high": 0.05608350461083931,
+            "n_sources": 32
+          }
+        }
+      },
+      {
+        "axis": "frozen_extrapolation_descriptive",
+        "A": "bolt",
+        "B": "timesfm",
+        "endpoint": "forecast",
+        "case": "shifted_frequency",
+        "losses": {
+          "input": {
+            "mean": 0.6645710186760899,
+            "low": 0.6211408077655737,
+            "high": 0.7079701862456849,
+            "n_sources": 32
+          },
+          "input+A_hidden": {
+            "mean": 0.6942047248726482,
+            "low": 0.6491724939184018,
+            "high": 0.7415785895819829,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.6743130965635521,
+            "low": 0.6281277240737777,
+            "high": 0.7210462685480477,
+            "n_sources": 32
+          },
+          "input+B_hidden": {
+            "mean": 0.662418684248208,
+            "low": 0.619396538776534,
+            "high": 0.7051802334048815,
+            "n_sources": 32
+          },
+          "input+A_forecast+A_hidden": {
+            "mean": 0.6851750607161226,
+            "low": 0.6391633508187361,
+            "high": 0.7325794790581446,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.6776558770984242,
+            "low": 0.6313293437426089,
+            "high": 0.7245937279713914,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.6857213476619706,
+            "low": 0.639927524749931,
+            "high": 0.7318270407797051,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.6794120989687205,
+            "low": 0.6340311904007687,
+            "high": 0.7254004134014573,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.6795651216360187,
+            "low": 0.6346760299047198,
+            "high": 0.7247997236880263,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.6845512235751883,
+            "low": 0.6387231469656646,
+            "high": 0.7312497717347853,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.6804403093518216,
+            "low": 0.6351324943335092,
+            "high": 0.7258874090388806,
+            "n_sources": 32
+          }
+        }
+      },
+      {
+        "axis": "frozen_extrapolation_descriptive",
+        "A": "bolt",
+        "B": "timesfm",
+        "endpoint": "forecast",
+        "case": "shifted_weaker",
+        "losses": {
+          "input": {
+            "mean": 0.7148061772427191,
+            "low": 0.6663427575327902,
+            "high": 0.7639643751975284,
+            "n_sources": 32
+          },
+          "input+A_hidden": {
+            "mean": 0.7374743196971911,
+            "low": 0.6887796109563137,
+            "high": 0.7868154404043005,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.720431372605588,
+            "low": 0.6696487171789824,
+            "high": 0.7718863925995021,
+            "n_sources": 32
+          },
+          "input+B_hidden": {
+            "mean": 0.6995258782978206,
+            "low": 0.65006051659717,
+            "high": 0.7495070641005636,
+            "n_sources": 32
+          },
+          "input+A_forecast+A_hidden": {
+            "mean": 0.7267408854184587,
+            "low": 0.675081433378378,
+            "high": 0.7791426611079162,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.7244430150519782,
+            "low": 0.674123286514577,
+            "high": 0.7750711440898811,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.7334943431901801,
+            "low": 0.6840322406331724,
+            "high": 0.7838407251632626,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.7265477103419099,
+            "low": 0.6764292597471536,
+            "high": 0.7766461440098207,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.7272581572853885,
+            "low": 0.6777289565326914,
+            "high": 0.7767422468051424,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.7328696609494905,
+            "low": 0.682400593110343,
+            "high": 0.7837460364814502,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.7279800227640584,
+            "low": 0.678087056481914,
+            "high": 0.7782171658394503,
+            "n_sources": 32
+          }
+        }
+      },
+      {
+        "axis": "frozen_extrapolation_descriptive",
+        "A": "bolt",
+        "B": "timesfm",
+        "endpoint": "forecast",
+        "case": "shifted_balanced",
+        "losses": {
+          "input": {
+            "mean": 0.7174549373373871,
+            "low": 0.6906095599207056,
+            "high": 0.745821748005105,
+            "n_sources": 32
+          },
+          "input+A_hidden": {
+            "mean": 0.7349005112222231,
+            "low": 0.7012575793599555,
+            "high": 0.7712497781418018,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.7082442613797086,
+            "low": 0.6763000113659215,
+            "high": 0.7407820922258884,
+            "n_sources": 32
+          },
+          "input+B_hidden": {
+            "mean": 0.6229346989486533,
+            "low": 0.5960207410255113,
+            "high": 0.6506801273216778,
+            "n_sources": 32
+          },
+          "input+A_forecast+A_hidden": {
+            "mean": 0.7065448450932478,
+            "low": 0.6747374582117632,
+            "high": 0.7397302819458097,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.7175015116990611,
+            "low": 0.6876278937825594,
+            "high": 0.7472926144377728,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.725755782653409,
+            "low": 0.6958148937256429,
+            "high": 0.7557006804175338,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.7196149997986641,
+            "low": 0.6902201696156619,
+            "high": 0.749609485015655,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.7207556441557718,
+            "low": 0.6899437542885534,
+            "high": 0.7509721479650198,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.7275313460802502,
+            "low": 0.6970510538110326,
+            "high": 0.7582381397476723,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.7232725742249613,
+            "low": 0.694020408710407,
+            "high": 0.7530746749639385,
+            "n_sources": 32
+          }
+        }
+      },
+      {
+        "axis": "frozen_extrapolation_descriptive",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "forecast",
+        "case": "ALL",
+        "losses": {
+          "input": {
+            "mean": 0.023567300039397616,
+            "low": 0.020522940800815407,
+            "high": 0.026797090329136915,
+            "n_sources": 32
+          },
+          "input+A_hidden": {
+            "mean": 0.03077898035986833,
+            "low": 0.025923216184255533,
+            "high": 0.03637987821646871,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.09074279074117422,
+            "low": 0.08208471128144836,
+            "high": 0.10009629964647361,
+            "n_sources": 32
+          },
+          "input+B_hidden": {
+            "mean": 0.026176658873195695,
+            "low": 0.023498220494719495,
+            "high": 0.028954820486806133,
+            "n_sources": 32
+          },
+          "input+A_forecast+A_hidden": {
+            "mean": 0.07774653558505756,
+            "low": 0.06964918585204688,
+            "high": 0.08631665601949923,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.06200931446178937,
+            "low": 0.05527350832138928,
+            "high": 0.06937495745343183,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.062071003967929805,
+            "low": 0.05526019394891851,
+            "high": 0.06950666776299858,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.06218051756529557,
+            "low": 0.05545679443588421,
+            "high": 0.069417609841881,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.060214447195846274,
+            "low": 0.05364990800683001,
+            "high": 0.06749245830480138,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.057568275866084595,
+            "low": 0.05138320436157883,
+            "high": 0.06438915396140636,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.05994819982179871,
+            "low": 0.05319670598549539,
+            "high": 0.06735876701019779,
+            "n_sources": 32
+          }
+        }
+      },
+      {
+        "axis": "frozen_extrapolation_descriptive",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "forecast",
+        "case": "anchor",
+        "losses": {
+          "input": {
+            "mean": 0.003215646153490722,
+            "low": 0.0027387929136606717,
+            "high": 0.0036960140726874546,
+            "n_sources": 32
+          },
+          "input+A_hidden": {
+            "mean": 0.005305654449838342,
+            "low": 0.004447035322134202,
+            "high": 0.006187650137910816,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.004523908700265388,
+            "low": 0.0031462356001091397,
+            "high": 0.006165327689828195,
+            "n_sources": 32
+          },
+          "input+B_hidden": {
+            "mean": 0.001719158453035281,
+            "low": 0.0014291657286653056,
+            "high": 0.0020406867143526832,
+            "n_sources": 32
+          },
+          "input+A_forecast+A_hidden": {
+            "mean": 0.003223093038549142,
+            "low": 0.0021735628395986367,
+            "high": 0.004420476095421107,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.003462798175603022,
+            "low": 0.0023344651075965107,
+            "high": 0.0047880806311518765,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.0034976409637821645,
+            "low": 0.002364135093670454,
+            "high": 0.004830211624515304,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.0034083670711843677,
+            "low": 0.002313790927476295,
+            "high": 0.0046933362632701255,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.0032923162752297626,
+            "low": 0.002211531171353926,
+            "high": 0.004556513925233262,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.0032682719355821535,
+            "low": 0.0022075354517437427,
+            "high": 0.004512929991676077,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.0032831932794601905,
+            "low": 0.0022154036302985546,
+            "high": 0.004537811946144168,
+            "n_sources": 32
+          }
+        }
+      },
+      {
+        "axis": "frozen_extrapolation_descriptive",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "forecast",
+        "case": "weaker",
+        "losses": {
+          "input": {
+            "mean": 0.028317028188954062,
+            "low": 0.02355249356550077,
+            "high": 0.03335978542846758,
+            "n_sources": 32
+          },
+          "input+A_hidden": {
+            "mean": 0.020277146711775246,
+            "low": 0.016219066636629136,
+            "high": 0.024801118711383813,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.0313864347009989,
+            "low": 0.023534372261037058,
+            "high": 0.04025065544409314,
+            "n_sources": 32
+          },
+          "input+B_hidden": {
+            "mean": 0.021154750887142162,
+            "low": 0.016821158271414147,
+            "high": 0.025981314190256365,
+            "n_sources": 32
+          },
+          "input+A_forecast+A_hidden": {
+            "mean": 0.02672530086206356,
+            "low": 0.020280001780563887,
+            "high": 0.03410371351773306,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.028912311289693536,
+            "low": 0.021790368144240395,
+            "high": 0.03693611599854602,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.02910366615004764,
+            "low": 0.021895130285271357,
+            "high": 0.037274527736879,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.028677157357430923,
+            "low": 0.0216778663332187,
+            "high": 0.03658720063967323,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.027870533363017598,
+            "low": 0.020930453780759795,
+            "high": 0.035676210841150476,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.027698792410723667,
+            "low": 0.020875150077499172,
+            "high": 0.035398646507614685,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.027876353819060395,
+            "low": 0.02100788144907114,
+            "high": 0.035677188466679846,
+            "n_sources": 32
+          }
+        }
+      },
+      {
+        "axis": "frozen_extrapolation_descriptive",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "forecast",
+        "case": "shifted_frequency",
+        "losses": {
+          "input": {
+            "mean": 0.025677410633974523,
+            "low": 0.021115465189713575,
+            "high": 0.03035146998117679,
+            "n_sources": 32
+          },
+          "input+A_hidden": {
+            "mean": 0.03365719017264212,
+            "low": 0.027979187180073452,
+            "high": 0.03951011903762565,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.05019585483781707,
+            "low": 0.043022255582121534,
+            "high": 0.0582251237645874,
+            "n_sources": 32
+          },
+          "input+B_hidden": {
+            "mean": 0.03054576306896188,
+            "low": 0.02695503998356788,
+            "high": 0.034041963407167586,
+            "n_sources": 32
+          },
+          "input+A_forecast+A_hidden": {
+            "mean": 0.04565660030273323,
+            "low": 0.03796879166513818,
+            "high": 0.05425016382065856,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.03467778615511238,
+            "low": 0.027920896772966986,
+            "high": 0.042247937543862676,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.03352714732297117,
+            "low": 0.027135970766539712,
+            "high": 0.040755373672565286,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.034288231790774615,
+            "low": 0.027832298982806637,
+            "high": 0.04153017323396438,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.03510585410124141,
+            "low": 0.028396994011334182,
+            "high": 0.04266756567037602,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.03185664519024673,
+            "low": 0.02561886465755658,
+            "high": 0.038867096793347176,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.03459077736003242,
+            "low": 0.028120144267901034,
+            "high": 0.04187026120187777,
+            "n_sources": 32
+          }
+        }
+      },
+      {
+        "axis": "frozen_extrapolation_descriptive",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "forecast",
+        "case": "shifted_weaker",
+        "losses": {
+          "input": {
+            "mean": 0.027316704210443892,
+            "low": 0.022560726278707505,
+            "high": 0.03229692146813978,
+            "n_sources": 32
+          },
+          "input+A_hidden": {
+            "mean": 0.03822785365452244,
+            "low": 0.031260201805851213,
+            "high": 0.04576679648035929,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.08456724458892602,
+            "low": 0.07219361200207068,
+            "high": 0.09775387878116124,
+            "n_sources": 32
+          },
+          "input+B_hidden": {
+            "mean": 0.032803935085890856,
+            "low": 0.02889202329060316,
+            "high": 0.03691498584164256,
+            "n_sources": 32
+          },
+          "input+A_forecast+A_hidden": {
+            "mean": 0.07418783695624058,
+            "low": 0.06285080192203926,
+            "high": 0.08617254157599842,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.05608039295773526,
+            "low": 0.047458466289489944,
+            "high": 0.0656354465575857,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.05532230442509456,
+            "low": 0.04668862022404226,
+            "high": 0.06492829529651527,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.05573030529194851,
+            "low": 0.0469823880111235,
+            "high": 0.06535682105204937,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.055344548736741064,
+            "low": 0.046759475904515915,
+            "high": 0.06493045734479601,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.051526723901084634,
+            "low": 0.0436034680447834,
+            "high": 0.06030114968270582,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.05451174049019633,
+            "low": 0.04576477430684203,
+            "high": 0.06413380095534976,
+            "n_sources": 32
+          }
+        }
+      },
+      {
+        "axis": "frozen_extrapolation_descriptive",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "forecast",
+        "case": "shifted_balanced",
+        "losses": {
+          "input": {
+            "mean": 0.033309711010124886,
+            "low": 0.024330084807723827,
+            "high": 0.04303958206941781,
+            "n_sources": 32
+          },
+          "input+A_hidden": {
+            "mean": 0.05642705681056351,
+            "low": 0.039957508405574695,
+            "high": 0.0747951947171971,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.2830405108778638,
+            "low": 0.25448812910339297,
+            "high": 0.3142918690113185,
+            "n_sources": 32
+          },
+          "input+B_hidden": {
+            "mean": 0.0446596868709483,
+            "low": 0.03674490520660896,
+            "high": 0.052921458880176075,
+            "n_sources": 32
+          },
+          "input+A_forecast+A_hidden": {
+            "mean": 0.23893984676570135,
+            "low": 0.21175681035335508,
+            "high": 0.26866255348109025,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.18691328373080265,
+            "low": 0.1639362919113413,
+            "high": 0.21283963344380302,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.1889042609777535,
+            "low": 0.1651990625776923,
+            "high": 0.21553885906186646,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.18879852631513944,
+            "low": 0.1656254369640597,
+            "high": 0.21446390157352455,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.17945898350300155,
+            "low": 0.15686271885885644,
+            "high": 0.2049122369733108,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.1734909458927858,
+            "low": 0.1511078913067565,
+            "high": 0.1980025908155501,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.1794789341602442,
+            "low": 0.15596359533088847,
+            "high": 0.20550536334864078,
+            "n_sources": 32
+          }
+        }
+      },
+      {
+        "axis": "frozen_extrapolation_descriptive",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "fusion_response",
+        "case": "ALL",
+        "losses": {
+          "input": {
+            "mean": 0.008871328374250633,
+            "low": 0.008188039514585053,
+            "high": 0.009525010555256485,
+            "n_sources": 32
+          },
+          "input+A_hidden": {
+            "mean": 0.008520588957356964,
+            "low": 0.007785256126919495,
+            "high": 0.009204856930378773,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.009121005017610314,
+            "low": 0.008350608782394058,
+            "high": 0.009884975846677576,
+            "n_sources": 32
+          },
+          "input+B_hidden": {
+            "mean": 0.009497468007466715,
+            "low": 0.008698389247354001,
+            "high": 0.01027335634303345,
+            "n_sources": 32
+          },
+          "input+A_forecast+A_hidden": {
+            "mean": 0.008939279249758535,
+            "low": 0.008139548567279066,
+            "high": 0.009704928541091892,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.00910928090670832,
+            "low": 0.008331721551467221,
+            "high": 0.009882555500296857,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.009167028366971954,
+            "low": 0.008381092268702773,
+            "high": 0.00994520039646118,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.009091271702813155,
+            "low": 0.00831227229909466,
+            "high": 0.009851038891793179,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.009046306500382042,
+            "low": 0.008268279864653203,
+            "high": 0.009803300300587717,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.009104297831907816,
+            "low": 0.008325384965846505,
+            "high": 0.009863250577740672,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.00906923026798728,
+            "low": 0.008295061715906722,
+            "high": 0.009832338836331894,
+            "n_sources": 32
+          }
+        }
+      },
+      {
+        "axis": "frozen_extrapolation_descriptive",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "fusion_response",
+        "case": "anchor",
+        "losses": {
+          "input": {
+            "mean": 0.0031096854069061057,
+            "low": 0.002484917353760258,
+            "high": 0.003801673569267762,
+            "n_sources": 32
+          },
+          "input+A_hidden": {
+            "mean": 0.0022838350609281164,
+            "low": 0.0017558281101505528,
+            "high": 0.0028845234760719626,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.003200191052635995,
+            "low": 0.002608054949115718,
+            "high": 0.00386526277179362,
+            "n_sources": 32
+          },
+          "input+B_hidden": {
+            "mean": 0.0029111444388006274,
+            "low": 0.002307448147627315,
+            "high": 0.0035867255175507764,
+            "n_sources": 32
+          },
+          "input+A_forecast+A_hidden": {
+            "mean": 0.0026207836690238647,
+            "low": 0.002076273367031434,
+            "high": 0.0032281522840756065,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.0031746904174753798,
+            "low": 0.0025886268324876037,
+            "high": 0.0038339834019911812,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.003179435284233171,
+            "low": 0.002593841779176993,
+            "high": 0.003833805378880209,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.0031576246487939204,
+            "low": 0.002577660612308622,
+            "high": 0.00380456250481774,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.003150875952114095,
+            "low": 0.0025814613404891796,
+            "high": 0.003785965548500075,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.0031414113905637794,
+            "low": 0.002572885211744127,
+            "high": 0.003775055274234529,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.0031582087380086464,
+            "low": 0.00258434955458236,
+            "high": 0.003800496981511617,
+            "n_sources": 32
+          }
+        }
+      },
+      {
+        "axis": "frozen_extrapolation_descriptive",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "fusion_response",
+        "case": "weaker",
+        "losses": {
+          "input": {
+            "mean": 0.028006152910162584,
+            "low": 0.024442351993276365,
+            "high": 0.03164211129267693,
+            "n_sources": 32
+          },
+          "input+A_hidden": {
+            "mean": 0.02492431187811765,
+            "low": 0.021721678920791045,
+            "high": 0.02826104170904342,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.02880202291503809,
+            "low": 0.0251147910159689,
+            "high": 0.032629191051731975,
+            "n_sources": 32
+          },
+          "input+B_hidden": {
+            "mean": 0.026439666169973224,
+            "low": 0.022921586131104028,
+            "high": 0.030081704185001827,
+            "n_sources": 32
+          },
+          "input+A_forecast+A_hidden": {
+            "mean": 0.026426468616641472,
+            "low": 0.023056265557472113,
+            "high": 0.02989829484037913,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.02882549424684796,
+            "low": 0.025142865136318856,
+            "high": 0.03260654868384743,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.028916910269715164,
+            "low": 0.02518839555840944,
+            "high": 0.0327567494290283,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.02873093017679869,
+            "low": 0.02506846823708422,
+            "high": 0.03251101231279104,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.028756046995745913,
+            "low": 0.025130524830604822,
+            "high": 0.03250105111390939,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.028730105785851702,
+            "low": 0.02511407610726795,
+            "high": 0.032428259211475435,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.028764310786283324,
+            "low": 0.02514163681113074,
+            "high": 0.032498456977999704,
+            "n_sources": 32
+          }
+        }
+      },
+      {
+        "axis": "frozen_extrapolation_descriptive",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "fusion_response",
+        "case": "shifted_frequency",
+        "losses": {
+          "input": {
+            "mean": 0.002583673050730034,
+            "low": 0.0021400231496008803,
+            "high": 0.003083092281936102,
+            "n_sources": 32
+          },
+          "input+A_hidden": {
+            "mean": 0.003192794118621697,
+            "low": 0.0025623116459021758,
+            "high": 0.0039002870051722412,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.0030831680970286428,
+            "low": 0.002543301551135731,
+            "high": 0.00369191385559954,
+            "n_sources": 32
+          },
+          "input+B_hidden": {
+            "mean": 0.004345528227970423,
+            "low": 0.003594708902836983,
+            "high": 0.0051674558708396925,
+            "n_sources": 32
+          },
+          "input+A_forecast+A_hidden": {
+            "mean": 0.003363227814696856,
+            "low": 0.0027854170044288697,
+            "high": 0.004030388792128347,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.0023876752463444957,
+            "low": 0.0018940890462790898,
+            "high": 0.002958216047308557,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.0024581554392565878,
+            "low": 0.0019675083439908455,
+            "high": 0.003023145667797786,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.0023600229106541647,
+            "low": 0.001903852543925371,
+            "high": 0.0028894676475708257,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.0026497207054815225,
+            "low": 0.002111835352224538,
+            "high": 0.0032639442016300082,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.0027357369508101545,
+            "low": 0.002192261237300624,
+            "high": 0.0033546857162913223,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.0026891613487287245,
+            "low": 0.0021525172272094085,
+            "high": 0.003298911662806727,
+            "n_sources": 32
+          }
+        }
+      },
+      {
+        "axis": "frozen_extrapolation_descriptive",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "fusion_response",
+        "case": "shifted_weaker",
+        "losses": {
+          "input": {
+            "mean": 0.004547460773890887,
+            "low": 0.0036770809650049714,
+            "high": 0.0055207767596626885,
+            "n_sources": 32
+          },
+          "input+A_hidden": {
+            "mean": 0.005076679201156516,
+            "low": 0.003756392115902641,
+            "high": 0.006604196069398864,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.005146048783094433,
+            "low": 0.00414513613460278,
+            "high": 0.006329860998902182,
+            "n_sources": 32
+          },
+          "input+B_hidden": {
+            "mean": 0.0056427135739975515,
+            "low": 0.004100952311742974,
+            "high": 0.0074385076556696605,
+            "n_sources": 32
+          },
+          "input+A_forecast+A_hidden": {
+            "mean": 0.005628004941627635,
+            "low": 0.00437582743827826,
+            "high": 0.0070637843412941145,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.004914923617871762,
+            "low": 0.0037797462692759068,
+            "high": 0.006241337076192755,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.004925208628676896,
+            "low": 0.003792680819959826,
+            "high": 0.00625154376363139,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.004907767590931589,
+            "low": 0.003808682628768765,
+            "high": 0.006190375945526939,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.004962080623675725,
+            "low": 0.003915737420312681,
+            "high": 0.006184531372838316,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.005064877514383009,
+            "low": 0.004012263019180444,
+            "high": 0.0063091232458612305,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.004979456323157617,
+            "low": 0.003934852444771422,
+            "high": 0.00619230141900132,
+            "n_sources": 32
+          }
+        }
+      },
+      {
+        "axis": "frozen_extrapolation_descriptive",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "fusion_response",
+        "case": "shifted_balanced",
+        "losses": {
+          "input": {
+            "mean": 0.006109669729563559,
+            "low": 0.004516130851512254,
+            "high": 0.007835792437486982,
+            "n_sources": 32
+          },
+          "input+A_hidden": {
+            "mean": 0.007125324527960833,
+            "low": 0.0048431706936430865,
+            "high": 0.009582177104421318,
+            "n_sources": 32
+          },
+          "input+A_forecast": {
+            "mean": 0.005373594240254419,
+            "low": 0.0038690043237372736,
+            "high": 0.006984670385316036,
+            "n_sources": 32
+          },
+          "input+B_hidden": {
+            "mean": 0.008148287626591748,
+            "low": 0.005439108248769136,
+            "high": 0.01112143059886327,
+            "n_sources": 32
+          },
+          "input+A_forecast+A_hidden": {
+            "mean": 0.006657911206802839,
+            "low": 0.0047201132639523614,
+            "high": 0.008733568071775093,
+            "n_sources": 32
+          },
+          "rff_4953000": {
+            "mean": 0.006243621005002005,
+            "low": 0.004480856495205682,
+            "high": 0.008104925538250454,
+            "n_sources": 32
+          },
+          "rff_4953001": {
+            "mean": 0.006355432212977953,
+            "low": 0.0045601955280110225,
+            "high": 0.008253537972284184,
+            "n_sources": 32
+          },
+          "rff_4953002": {
+            "mean": 0.006300013186887412,
+            "low": 0.004550470089778111,
+            "high": 0.008156063018176922,
+            "n_sources": 32
+          },
+          "mlp_relu_4953000": {
+            "mean": 0.00571280822489295,
+            "low": 0.00416766656697127,
+            "high": 0.007373068616785794,
+            "n_sources": 32
+          },
+          "mlp_relu_4953001": {
+            "mean": 0.005849357517930438,
+            "low": 0.004269082240038195,
+            "high": 0.007536236259215401,
+            "n_sources": 32
+          },
+          "mlp_relu_4953002": {
+            "mean": 0.00575501414375809,
+            "low": 0.004186874747229572,
+            "high": 0.007419415826857647,
+            "n_sources": 32
+          }
+        }
+      }
+    ],
+    "behavior_correctness": [
+      {
+        "model": "bolt",
+        "case": "ALL",
+        "metrics": {
+          "native_loss": {
+            "mean": 1.2284501517714113,
+            "low": 1.2122809292537282,
+            "high": 1.2433632669848704,
+            "n_sources": 32
+          },
+          "fusion_loss": {
+            "mean": 1.209694204743684,
+            "low": 1.1932216868146615,
+            "high": 1.2253074991959747,
+            "n_sources": 32
+          },
+          "correctness_gain": {
+            "mean": 0.018755947027727225,
+            "low": 0.013099566087507428,
+            "high": 0.024187037562897865,
+            "n_sources": 32
+          },
+          "response_energy": {
+            "mean": 0.010583971848408265,
+            "low": 0.00973680626611183,
+            "high": 0.011396465194104137,
+            "n_sources": 32
+          },
+          "correction_dot": {
+            "mean": 0.014669959438067752,
+            "low": 0.011670413625449558,
+            "high": 0.01750847330155919,
+            "n_sources": 32
+          }
+        },
+        "exact_zero_response_fraction": 0.0,
+        "tree_eligible": 160,
+        "rows": 160
+      },
+      {
+        "model": "bolt",
+        "case": "anchor",
+        "metrics": {
+          "native_loss": {
+            "mean": 1.5226603574322595,
+            "low": 1.4835407809889114,
+            "high": 1.5626379628980362,
+            "n_sources": 32
+          },
+          "fusion_loss": {
+            "mean": 1.5350268805539975,
+            "low": 1.4961386832120573,
+            "high": 1.5743643865534231,
+            "n_sources": 32
+          },
+          "correctness_gain": {
+            "mean": -0.012366523121737735,
+            "low": -0.021839621902196113,
+            "high": -0.002852499294619093,
+            "n_sources": 32
+          },
+          "response_energy": {
+            "mean": 0.0063161941902515,
+            "low": 0.005283007918585853,
+            "high": 0.0074758920513263594,
+            "n_sources": 32
+          },
+          "correction_dot": {
+            "mean": -0.003025164465743135,
+            "low": -0.007752389743063599,
+            "high": 0.0017837603366960488,
+            "n_sources": 32
+          }
+        },
+        "exact_zero_response_fraction": 0.0,
+        "tree_eligible": 32,
+        "rows": 32
+      },
+      {
+        "model": "bolt",
+        "case": "weaker",
+        "metrics": {
+          "native_loss": {
+            "mean": 1.494590772766682,
+            "low": 1.4594414396776425,
+            "high": 1.5287441327271083,
+            "n_sources": 32
+          },
+          "fusion_loss": {
+            "mean": 1.457229645175923,
+            "low": 1.4220129059015356,
+            "high": 1.4926599821869408,
+            "n_sources": 32
+          },
+          "correctness_gain": {
+            "mean": 0.0373611275907589,
+            "low": 0.021881242204746784,
+            "high": 0.05313515413003952,
+            "n_sources": 32
+          },
+          "response_energy": {
+            "mean": 0.03682835874191244,
+            "low": 0.032819359223591305,
+            "high": 0.040864010189705785,
+            "n_sources": 32
+          },
+          "correction_dot": {
+            "mean": 0.03709474316633569,
+            "low": 0.028760637259392766,
+            "high": 0.04589971160312091,
+            "n_sources": 32
+          }
+        },
+        "exact_zero_response_fraction": 0.0,
+        "tree_eligible": 32,
+        "rows": 32
+      },
+      {
+        "model": "bolt",
+        "case": "shifted_frequency",
+        "metrics": {
+          "native_loss": {
+            "mean": 1.0508570606755494,
+            "low": 1.036295891428193,
+            "high": 1.0661360197861771,
+            "n_sources": 32
+          },
+          "fusion_loss": {
+            "mean": 1.0492769674595495,
+            "low": 1.0355157610380272,
+            "high": 1.0635328070218273,
+            "n_sources": 32
+          },
+          "correctness_gain": {
+            "mean": 0.0015800932159999136,
+            "low": -0.0020819020677976256,
+            "high": 0.005183254364534682,
+            "n_sources": 32
+          },
+          "response_energy": {
+            "mean": 0.000735398355763959,
+            "low": 0.0004904095125200632,
+            "high": 0.0010243224979164314,
+            "n_sources": 32
+          },
+          "correction_dot": {
+            "mean": 0.001157745785881934,
+            "low": -0.0007445113590046564,
+            "high": 0.0030509353273641066,
+            "n_sources": 32
+          }
+        },
+        "exact_zero_response_fraction": 0.0,
+        "tree_eligible": 32,
+        "rows": 32
+      },
+      {
+        "model": "bolt",
+        "case": "shifted_weaker",
+        "metrics": {
+          "native_loss": {
+            "mean": 1.0527119090090555,
+            "low": 1.0377907837623157,
+            "high": 1.0685671731246156,
+            "n_sources": 32
+          },
+          "fusion_loss": {
+            "mean": 1.0327855157501111,
+            "low": 1.0205604167579838,
+            "high": 1.0458268087016547,
+            "n_sources": 32
+          },
+          "correctness_gain": {
+            "mean": 0.019926393258944408,
+            "low": 0.010585445082152149,
+            "high": 0.03025441146303268,
+            "n_sources": 32
+          },
+          "response_energy": {
+            "mean": 0.0037019071694185716,
+            "low": 0.002988035810905884,
+            "high": 0.004453911097163693,
+            "n_sources": 32
+          },
+          "correction_dot": {
+            "mean": 0.01181415021418152,
+            "low": 0.006895605047527649,
+            "high": 0.01724285074339643,
+            "n_sources": 32
+          }
+        },
+        "exact_zero_response_fraction": 0.0,
+        "tree_eligible": 32,
+        "rows": 32
+      },
+      {
+        "model": "bolt",
+        "case": "shifted_balanced",
+        "metrics": {
+          "native_loss": {
+            "mean": 1.0214306589735098,
+            "low": 0.9982705193170246,
+            "high": 1.0457809229309967,
+            "n_sources": 32
+          },
+          "fusion_loss": {
+            "mean": 0.9741520147788391,
+            "low": 0.9537074738034387,
+            "high": 0.9957052628153897,
+            "n_sources": 32
+          },
+          "correctness_gain": {
+            "mean": 0.047278644194670635,
+            "low": 0.03517041376643961,
+            "high": 0.059829323173175825,
+            "n_sources": 32
+          },
+          "response_energy": {
+            "mean": 0.005338000784694852,
+            "low": 0.003928871778974746,
+            "high": 0.006836704089097895,
+            "n_sources": 32
+          },
+          "correction_dot": {
+            "mean": 0.02630832248968276,
+            "low": 0.01982128067879376,
+            "high": 0.03315445491236782,
+            "n_sources": 32
+          }
+        },
+        "exact_zero_response_fraction": 0.0,
+        "tree_eligible": 32,
+        "rows": 32
+      },
+      {
+        "model": "timesfm",
+        "case": "ALL",
+        "metrics": {
+          "native_loss": {
+            "mean": 0.24926207309534565,
+            "low": 0.22919655958819904,
+            "high": 0.26908375607192014,
+            "n_sources": 32
+          },
+          "fusion_loss": {
+            "mean": 0.2446646443922178,
+            "low": 0.2237255943818493,
+            "high": 0.26462544780669356,
+            "n_sources": 32
+          },
+          "correctness_gain": {
+            "mean": 0.004597428703127857,
+            "low": -0.0002754411768592259,
+            "high": 0.009387224975203112,
+            "n_sources": 32
+          },
+          "response_energy": {
+            "mean": 0.014080902027713147,
+            "low": 0.012938826899170254,
+            "high": 0.015259307339995712,
+            "n_sources": 32
+          },
+          "correction_dot": {
+            "mean": 0.009339165365420505,
+            "low": 0.006716011656873841,
+            "high": 0.011951652680552479,
+            "n_sources": 32
+          }
+        },
+        "exact_zero_response_fraction": 0.0,
+        "tree_eligible": 160,
+        "rows": 160
+      },
+      {
+        "model": "timesfm",
+        "case": "anchor",
+        "metrics": {
+          "native_loss": {
+            "mean": 0.31996076843094445,
+            "low": 0.2878154604777386,
+            "high": 0.35354716426016025,
+            "n_sources": 32
+          },
+          "fusion_loss": {
+            "mean": 0.3505836483894057,
+            "low": 0.3067432963240403,
+            "high": 0.39932898577121745,
+            "n_sources": 32
+          },
+          "correctness_gain": {
+            "mean": -0.030622879958461247,
+            "low": -0.04804099007640062,
+            "high": -0.01512881866879609,
+            "n_sources": 32
+          },
+          "response_energy": {
+            "mean": 0.009170775310057631,
+            "low": 0.007059421144316951,
+            "high": 0.011557007348367617,
+            "n_sources": 32
+          },
+          "correction_dot": {
+            "mean": -0.010726052324201811,
+            "low": -0.0187911482722587,
+            "high": -0.003357406315605641,
+            "n_sources": 32
+          }
+        },
+        "exact_zero_response_fraction": 0.0,
+        "tree_eligible": 32,
+        "rows": 32
+      },
+      {
+        "model": "timesfm",
+        "case": "weaker",
+        "metrics": {
+          "native_loss": {
+            "mean": 0.43815518738997294,
+            "low": 0.37549019785592597,
+            "high": 0.5030868348531872,
+            "n_sources": 32
+          },
+          "fusion_loss": {
+            "mean": 0.40822541064631757,
+            "low": 0.3616124225496131,
+            "high": 0.4545764524138101,
+            "n_sources": 32
+          },
+          "correctness_gain": {
+            "mean": 0.029929776743655396,
+            "low": 0.0050654212425199855,
+            "high": 0.05575373263737308,
+            "n_sources": 32
+          },
+          "response_energy": {
+            "mean": 0.020147752751400454,
+            "low": 0.01608571345861661,
+            "high": 0.02461139723663257,
+            "n_sources": 32
+          },
+          "correction_dot": {
+            "mean": 0.02503876474752794,
+            "low": 0.011345990840735875,
+            "high": 0.03959418386960799,
+            "n_sources": 32
+          }
+        },
+        "exact_zero_response_fraction": 0.0,
+        "tree_eligible": 32,
+        "rows": 32
+      },
+      {
+        "model": "timesfm",
+        "case": "shifted_frequency",
+        "metrics": {
+          "native_loss": {
+            "mean": 0.1394452583448491,
+            "low": 0.1291764509691728,
+            "high": 0.14942540232908733,
+            "n_sources": 32
+          },
+          "fusion_loss": {
+            "mean": 0.12809051834723997,
+            "low": 0.11407834765829057,
+            "high": 0.14368243958206828,
+            "n_sources": 32
+          },
+          "correctness_gain": {
+            "mean": 0.011354739997609156,
+            "low": 0.0016295605871564764,
+            "high": 0.021087980209020564,
+            "n_sources": 32
+          },
+          "response_energy": {
+            "mean": 0.011605694966976533,
+            "low": 0.01024229865194172,
+            "high": 0.01300106366989858,
+            "n_sources": 32
+          },
+          "correction_dot": {
+            "mean": 0.011480217482292845,
+            "low": 0.006318004914151655,
+            "high": 0.01659176244148037,
+            "n_sources": 32
+          }
+        },
+        "exact_zero_response_fraction": 0.0,
+        "tree_eligible": 32,
+        "rows": 32
+      },
+      {
+        "model": "timesfm",
+        "case": "shifted_weaker",
+        "metrics": {
+          "native_loss": {
+            "mean": 0.16063952595504888,
+            "low": 0.14353352000380337,
+            "high": 0.17853010552371015,
+            "n_sources": 32
+          },
+          "fusion_loss": {
+            "mean": 0.1499754131698068,
+            "low": 0.130674456530825,
+            "high": 0.17065430520199848,
+            "n_sources": 32
+          },
+          "correctness_gain": {
+            "mean": 0.01066411278524207,
+            "low": 0.0021188797108305816,
+            "high": 0.019985214222062814,
+            "n_sources": 32
+          },
+          "response_energy": {
+            "mean": 0.014131845302326555,
+            "low": 0.011401271195190119,
+            "high": 0.017096308101734285,
+            "n_sources": 32
+          },
+          "correction_dot": {
+            "mean": 0.012397979043784313,
+            "low": 0.007949165346171355,
+            "high": 0.017584063983929685,
+            "n_sources": 32
+          }
+        },
+        "exact_zero_response_fraction": 0.0,
+        "tree_eligible": 32,
+        "rows": 32
+      },
+      {
+        "model": "timesfm",
+        "case": "shifted_balanced",
+        "metrics": {
+          "native_loss": {
+            "mean": 0.18810962535591294,
+            "low": 0.17068481213206477,
+            "high": 0.2059772978391622,
+            "n_sources": 32
+          },
+          "fusion_loss": {
+            "mean": 0.18644823140831904,
+            "low": 0.16374022485101133,
+            "high": 0.20919949068155297,
+            "n_sources": 32
+          },
+          "correctness_gain": {
+            "mean": 0.0016613939475939106,
+            "low": -0.011523538955842643,
+            "high": 0.013889978889263346,
+            "n_sources": 32
+          },
+          "response_energy": {
+            "mean": 0.015348441807804567,
+            "low": 0.01326698690338618,
+            "high": 0.017630769840901745,
+            "n_sources": 32
+          },
+          "correction_dot": {
+            "mean": 0.008504917877699237,
+            "low": 0.0014941365185868636,
+            "high": 0.015077497919163099,
+            "n_sources": 32
+          }
+        },
+        "exact_zero_response_fraction": 0.0,
+        "tree_eligible": 32,
+        "rows": 32
+      }
+    ]
+  },
+  "controls": {
+    "validation": {
+      "passed": true,
+      "returncode": 0,
+      "protocol_sha256": "b4501f642de106978f449faf398d405825a1de1ef3a1924b43e3637fbe5c5cf2",
+      "test_sha256": "a3deffbdd124c6052073f1865bbfbc309aba6e0b3b684bb7e318f1de06dd50f1"
+    },
+    "plant_audit": {
+      "passed": true,
+      "planted": 29,
+      "detected": 29,
+      "records": [
+        {
+          "name": "wrong_seed_namespace",
+          "test": "test_namespace_and_waveforms",
+          "original_text": "for seed in range(4962000,4962052):",
+          "mutant_text": "for seed in range(4954000,4954052):",
+          "mutant_sha256": "12bef6329e635fd3acf7719ae9998346896bedbad4d64b88fdda98b8d2d552ef",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/wrong_seed_namespace/pytest.log"
+        },
+        {
+          "name": "wrong_shifted_frequency",
+          "test": "test_namespace_and_waveforms",
+          "original_text": "('shifted_frequency',7.35,23.35,8.)",
+          "mutant_text": "('shifted_frequency',8.35,23.35,8.)",
+          "mutant_sha256": "ff72542f072dbe57245f0fb1077a101601713d97d7934b53aa7ff54d9597a3d4",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/wrong_shifted_frequency/pytest.log"
+        },
+        {
+          "name": "fit_test_boundary",
+          "test": "test_namespace_and_waveforms",
+          "original_text": "split='fit' if seed<4962020 else 'test'",
+          "mutant_text": "split='fit' if seed<4962019 else 'test'",
+          "mutant_sha256": "e4c567910fd0443711f21885f7f34660bf7bbc0e9e32191123cff5571c23ad9b",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/fit_test_boundary/pytest.log"
+        },
+        {
+          "name": "fit_budget100_not96",
+          "test": "test_exact_local_budget_and_whole_sources",
+          "original_text": "not (seed<4962004 and case=='shifted_balanced')",
+          "mutant_text": "not (seed<4962000 and case=='shifted_balanced')",
+          "mutant_sha256": "634c1b95876472645ccdea149c3b1a3ca160d81d52a150f7dbb3863ceada173e",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/fit_budget100_not96/pytest.log"
+        },
+        {
+          "name": "source_overlap_guard_disabled",
+          "test": "test_exact_local_budget_and_whole_sources",
+          "original_text": "    assert not ({rows[i]['source'] for i in fit}&{rows[i]['source'] for i in test})",
+          "mutant_text": "    pass # planted missing source-overlap guard",
+          "mutant_sha256": "f91d4e574216b05ada2956a377c129e311fe735ef0a274c98a0e8e77f1b0ae3e",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/source_overlap_guard_disabled/pytest.log"
+        },
+        {
+          "name": "either_family_rescues",
+          "test": "test_primary_both_families_and_fixed_coverage",
+          "original_text": "passed=all(v['passed'] for v in results.values())",
+          "mutant_text": "passed=any(v['passed'] for v in results.values())",
+          "mutant_sha256": "43b658b54c582746d383d6fdd3510c2c895a95aee3b45a523873a08d423fa979",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/either_family_rescues/pytest.log"
+        },
+        {
+          "name": "uncorrected_interval",
+          "test": "test_primary_both_families_and_fixed_coverage",
+          "original_text": "COVERAGE=.975",
+          "mutant_text": "COVERAGE=.95",
+          "mutant_sha256": "2f3a8c236bef14f8844bcbe38ca5d09735c9486e2a7caf1f6d9b06d269c6078d",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/uncorrected_interval/pytest.log"
+        },
+        {
+          "name": "row_instead_of_source_n",
+          "test": "test_primary_both_families_and_fixed_coverage",
+          "original_text": "list(group_values(loss-trained_loss,rows,np.arange(len(rows))).values())",
+          "mutant_text": "list(loss-trained_loss)",
+          "mutant_sha256": "2ffd9f1278689990d761ccd0784e62f534443ba9a71fb4d24ef6adcdbbb4cec4",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/row_instead_of_source_n/pytest.log"
+        },
+        {
+          "name": "minimum_reduction_removed",
+          "test": "test_primary_five_percent_random_denominator",
+          "original_text": "MIN_REDUCTION=.05",
+          "mutant_text": "MIN_REDUCTION=0.",
+          "mutant_sha256": "fdcc4c6d39f4d16535022e993a3b0aaaeb788629fe2792cf6908ba72daaf36a0",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/minimum_reduction_removed/pytest.log"
+        },
+        {
+          "name": "wrong_reduction_denominator",
+          "test": "test_primary_five_percent_random_denominator",
+          "original_text": "relative=gain['mean']/random_mean if random_mean>0 else None",
+          "mutant_text": "relative=gain['mean']/float(np.mean(trained_loss)) if random_mean>0 else None",
+          "mutant_sha256": "51b53ee47d31f9d330612488751ae30dfdafdea7c963b87cb261394b907c9db5",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/wrong_reduction_denominator/pytest.log"
+        },
+        {
+          "name": "interval_gate_removed",
+          "test": "test_primary_interval_and_initialization_average",
+          "original_text": "random_mean>0 and gain['low']>0 and relative>=MIN_REDUCTION",
+          "mutant_text": "random_mean>0 and relative>=MIN_REDUCTION",
+          "mutant_sha256": "60906bd26289ea2bc6bc6cf7f6f682ca8f49260d29c0e93172b0baccece827e3",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/interval_gate_removed/pytest.log"
+        },
+        {
+          "name": "first_random_seed_only",
+          "test": "test_primary_interval_and_initialization_average",
+          "original_text": "loss=np.mean(np.asarray(random_losses[family]),axis=0)",
+          "mutant_text": "loss=np.asarray(random_losses[family])[0]",
+          "mutant_sha256": "f3c5c4d2ba53b57ac52f943f33c91388cecbca6304736fd447d7f6bb42e92ee4",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/first_random_seed_only/pytest.log"
+        },
+        {
+          "name": "energy_called_correctness",
+          "test": "test_response_energy_is_not_correctness",
+          "original_text": "gain=native_loss-fusion_loss",
+          "mutant_text": "gain=energy",
+          "mutant_sha256": "776e9c28be2621773905d3681faa2080ab26e96ac52fa033c127f7c16b179670",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/energy_called_correctness/pytest.log"
+        },
+        {
+          "name": "response_sign_reversed",
+          "test": "test_response_energy_is_not_correctness",
+          "original_text": "delta=fusion-native",
+          "mutant_text": "delta=native-fusion",
+          "mutant_sha256": "15d2ef13302a9508abd7b3b66362d463dadba6e2ef6866c4b8d14366a4ef63c4",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/response_sign_reversed/pytest.log"
+        },
+        {
+          "name": "missing_grant_bypassed",
+          "test": "test_old_or_missing_slot_grant_is_rejected",
+          "original_text": "if not path.exists():raise RuntimeError('Native HOLD: new slot grant required')",
+          "mutant_text": "if not path.exists():return",
+          "mutant_sha256": "4efee044e192d5e2e5497f8aee61f63f4ec06f857bebd67418ee68fcf6cdb258",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/missing_grant_bypassed/pytest.log"
+        },
+        {
+          "name": "old_grant_accepted",
+          "test": "test_old_or_missing_slot_grant_is_rejected",
+          "original_text": "grant.get('protocol_sha256')!=sha(out/'protocol.json')",
+          "mutant_text": "False",
+          "mutant_sha256": "9651a3430c43bfab954db3409983a116e68c3e13c3d4e60a2687c9aaa7ed6711",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/old_grant_accepted/pytest.log"
+        },
+        {
+          "name": "invalid_slot_accepted",
+          "test": "test_old_or_missing_slot_grant_is_rejected",
+          "original_text": "grant.get('slot') not in (1,2)",
+          "mutant_text": "grant.get('slot') not in (1,2,3)",
+          "mutant_sha256": "c6d1ec9ee3b153212ff3f5dc25add17dc4fabe224f233d0dbdde59a3ed6490d2",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/invalid_slot_accepted/pytest.log"
+        },
+        {
+          "name": "failed_tests_accepted",
+          "test": "test_readiness_binds_tests_and_plants_to_protocol",
+          "original_text": "not record['passed'] or record.get('protocol_sha256')!=sha(out/'protocol.json')",
+          "mutant_text": "record.get('protocol_sha256')!=sha(out/'protocol.json')",
+          "mutant_sha256": "2fb8b913d14b470041301a446655a1bedf8d6d0f1563b55de119d3b91ceec99c",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/failed_tests_accepted/pytest.log"
+        },
+        {
+          "name": "old_tests_accepted",
+          "test": "test_readiness_binds_tests_and_plants_to_protocol",
+          "original_text": "not record['passed'] or record.get('protocol_sha256')!=sha(out/'protocol.json')",
+          "mutant_text": "not record['passed']",
+          "mutant_sha256": "49f7f337f2cf7e0dfdc7a44e34dd8197a8e3763d88bdef8ec06720aa1426447d",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/old_tests_accepted/pytest.log"
+        },
+        {
+          "name": "test_label_selected_hyperparameter",
+          "test": "test_local_selection_ignores_test_labels",
+          "original_text": "    pick=stable_argmin(scores)",
+          "mutant_text": "    pick=stable_argmin(scores)\n    if np.max(abs(y))>1e8: pick=(pick+1)%len(candidates)",
+          "mutant_sha256": "8643f6732c3a98ca129cd5718f55e9473d8321639d9e9a6da516cf4d9d7cdc0f",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/test_label_selected_hyperparameter/pytest.log"
+        },
+        {
+          "name": "rank_grid_changed",
+          "test": "test_prepare_fixed_base_and_no_native",
+          "original_text": "ranks=[8,16]",
+          "mutant_text": "ranks=[8,32]",
+          "mutant_sha256": "23b997738233c705bc29974c062ac74254b348668ed7280f579d0fd3609e4a64",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/rank_grid_changed/pytest.log"
+        },
+        {
+          "name": "fixed_sourceforecast_base_changed",
+          "test": "test_prepare_fixed_base_and_no_native",
+          "original_text": "    return {s['arm']:s for s in p['base_specs'] if (s['A'],s['B'],s['endpoint'])==(a,b,ep)}",
+          "mutant_text": "    result={s['arm']:s for s in p['base_specs'] if (s['A'],s['B'],s['endpoint'])==(a,b,ep)}\n    result['input+A_forecast']=dict(result['input+A_forecast'],kernel='rbf2.0+pca16')\n    return result",
+          "mutant_sha256": "ca185c7e108df298d0ab9af456c363c15b8b478c4e8834d8c9f31f4f0553ec0a",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/fixed_sourceforecast_base_changed/pytest.log"
+        },
+        {
+          "name": "alpha_grid_changed",
+          "test": "test_prepare_fixed_base_and_no_native",
+          "original_text": "alphas=list(ALPHAS)",
+          "mutant_text": "alphas=[.01,.1,1.]",
+          "mutant_sha256": "9644d55d81ecfff6d23ef6f2d5a8f518561a5a9edc1dea154b69415119080b74",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/alpha_grid_changed/pytest.log"
+        },
+        {
+          "name": "width_budget_changed",
+          "test": "test_prepare_fixed_base_and_no_native",
+          "original_text": "widths=dict(bolt=4608,timesfm=5120)",
+          "mutant_text": "widths=dict(bolt=4608,timesfm=1024)",
+          "mutant_sha256": "577a7ede5acec785f3ce0031635c705a20e36fa70df07963d8dce31f3a190e14",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/width_budget_changed/pytest.log"
+        },
+        {
+          "name": "natural_expansion_added",
+          "test": "test_prepare_fixed_base_and_no_native",
+          "original_text": "natural_leg='NONE; no natural-context expansion authorized or prepared.'",
+          "mutant_text": "natural_leg='EXPANSION; planted unsupported natural leg'",
+          "mutant_sha256": "02398c8b6784b12aac6c33faff14fcacd9f20132a63f70f905bcee08c689a38c",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/natural_expansion_added/pytest.log"
+        },
+        {
+          "name": "random_seed_grid_changed",
+          "test": "test_prepare_fixed_base_and_no_native",
+          "original_text": "initialization_seeds=list(SEEDS)",
+          "mutant_text": "initialization_seeds=list(SEEDS)[:1]",
+          "mutant_sha256": "3c636963bc15b4b31f8b321299f79ebe5e184464acfe0545471c57ee8796bfec",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/random_seed_grid_changed/pytest.log"
+        },
+        {
+          "name": "native_import_on_prepare",
+          "test": "test_prepare_fixed_base_and_no_native",
+          "original_text": "if __name__=='__main__':main()",
+          "mutant_text": "import types\nsys.modules['torch']=types.ModuleType('torch')\nif __name__=='__main__':main()",
+          "mutant_sha256": "2dc6a1988a8bfc95c1637aa2aad04ac4dce88af9a42453ddff9b6e0d5260f5c0",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/native_import_on_prepare/pytest.log"
+        },
+        {
+          "name": "all_rows_enter_local_fit",
+          "test": "test_mock_pipeline_keeps_fit_and_axes_separate",
+          "original_text": "allrows=read(out/'rows.json');ids,_=fit_ids(allrows);rows=[allrows[i] for i in ids]",
+          "mutant_text": "allrows=read(out/'rows.json');ids=np.arange(len(allrows));rows=[allrows[i] for i in ids]",
+          "mutant_sha256": "90796ca21806e5fb2e96aaf1c9be24e5e906b1ecf7989e10a6df3a44cf2d0a50",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/all_rows_enter_local_fit/pytest.log"
+        },
+        {
+          "name": "axes_conflated",
+          "test": "test_mock_pipeline_keeps_fit_and_axes_separate",
+          "original_text": "axis='frozen_extrapolation_descriptive'",
+          "mutant_text": "axis='local_FIT'",
+          "mutant_sha256": "3a2c05e655c2fae0cd820ab70eeaa9c51e0ce67407252dbb0c47b069d48550aa",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/axes_conflated/pytest.log"
+        }
+      ],
+      "originals_unchanged": true,
+      "protocol_sha256": "b4501f642de106978f449faf398d405825a1de1ef3a1924b43e3637fbe5c5cf2"
+    },
+    "arithmetic_audit": {
+      "passed": true,
+      "intervals": 422,
+      "max_error": 3.3306690738754696e-16
+    },
+    "native": {
+      "bolt": {
+        "model": "bolt",
+        "rows": 260,
+        "gates": {
+          "repeat": 0.0,
+          "normalizer_identity": 0.0,
+          "first_self": 0.0,
+          "half_self": 0.0,
+          "input_closure": 1.1722681847459171e-07
+        },
+        "seconds": 99.02326157898642,
+        "peak_rss_bytes": 1083682816,
+        "sha256": "45e63300e89b0667936df5087275507e00a0fb01336ce2c0f0ba2eb4d64e8c95"
+      },
+      "timesfm": {
+        "model": "timesfm",
+        "rows": 260,
+        "gates": {
+          "repeat": 0.0,
+          "normalizer_identity": 0.0,
+          "first_self": 0.0,
+          "half_self": 0.0,
+          "input_closure": 1.1722681847459171e-07
+        },
+        "seconds": 416.94767250993755,
+        "peak_rss_bytes": 1659674624,
+        "sha256": "5f3a85f11282e16759281629a9c5522954fdda4d294f87b592366bc3be536afd"
+      }
+    },
+    "execution": {
+      "bolt": {
+        "returncode": 0,
+        "seconds": 100.96807512792293,
+        "peak_rss_bytes": 1078546432,
+        "failure": null
+      },
+      "timesfm": {
+        "returncode": 0,
+        "seconds": 419.15689425193705,
+        "peak_rss_bytes": 1651564544,
+        "failure": null
+      }
+    }
+  },
+  "limitations": [
+    "Five synthetic conditions only; no natural-data expansion.",
+    "Twenty-source localFIT uncertainty and random-family universality are not covered by source bootstrap.",
+    "Predicting an intervention response does not establish correctness or shared semantics."
+  ],
+  "next_decision": "Native branch closed by user; no broad expansion and no further new-model calls.",
+  "failed_instrumentation_runs": [
+    {
+      "run": "runs/comparability_conditions4962000_preflight_failed",
+      "diagnosis": "Source-overlap-disabled plant survived because initial fixture also violated source count. Corrected whole-source substitution isolates guard.",
+      "initial_detected": 24,
+      "initial_total": 25,
+      "final_detected": 29,
+      "final_total": 29,
+      "scientific_inputs_unchanged": true
+    }
+  ],
+  "report": "report.md",
+  "report_source_sha256": "8d5d29c37dcd6023de8a393a9b6c6db837ccb4afd4b58982585cd1d6f60498ee",
+  "confound_diagnostics": "confound_diagnostics.json",
+  "alternative_explanations": [
+    "Task-conditioned learned feature geometry or regularization can improve finite-sample prediction without adding information beyond deterministic full inputs.",
+    "The five-condition mixture and history-variance weighting affect the estimand; leave-condition-out and physical-unit results are descriptive sensitivity checks, not new primary tests.",
+    "Only two random-map families and three initializations were tested; architecture, pretraining data/compute, retained variance and effective complexity are not matched.",
+    "The fixed base recipe and small localFIT sample can favor particular features; conditional TEST intervals omit training-set and initialization-distribution uncertainty.",
+    "Weak frozen transfer and harmful anchor fusion limit claims of generalization or correct semantics. Prediction does not establish cross-model causal equivalence."
+  ]
+}

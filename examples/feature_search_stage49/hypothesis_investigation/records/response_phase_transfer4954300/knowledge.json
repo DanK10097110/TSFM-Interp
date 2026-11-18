@@ -1,0 +1,958 @@
+{
+  "status": "complete_audited",
+  "question": "Does a frozen old-source full phase map predict fresh weak-tone responses beyond attenuation and identity?",
+  "design": {
+    "question": "Does a frozen old-source full phase map predict fresh weak-tone responses beyond attenuation and identity?",
+    "stage": "prepared_capture_held",
+    "nodes": 400,
+    "source_count": 16,
+    "phases": 4,
+    "context": 128,
+    "horizon": 32,
+    "seeds": [
+      4954300,
+      4954301,
+      4954302,
+      4954303,
+      4954304,
+      4954305,
+      4954306,
+      4954307,
+      4954308,
+      4954309,
+      4954310,
+      4954311,
+      4954312,
+      4954313,
+      4954314,
+      4954315
+    ],
+    "offsets": [
+      -0.12,
+      0.0,
+      0.12
+    ],
+    "amplitude_peak_background_sd": 0.1,
+    "policies": [
+      "native",
+      "locked"
+    ],
+    "training_sources": [
+      "syn:4954000",
+      "syn:4954001",
+      "syn:4954002",
+      "syn:4954003",
+      "syn:4954004",
+      "syn:4954005",
+      "syn:4954006",
+      "syn:4954007",
+      "syn:4954008",
+      "syn:4954009",
+      "syn:4954010",
+      "syn:4954011",
+      "syn:4954012",
+      "syn:4954013",
+      "syn:4954014",
+      "syn:4954015"
+    ],
+    "predictors": [
+      "zero",
+      "identity",
+      "scalar_bounded",
+      "scalar_unconstrained",
+      "complex_linear",
+      "full_H"
+    ],
+    "fit_objective": "Equal-source mean of phase-pooled waveform NMSE on all16 OLD sources, separately model/policy/center. Scalar is waveform least-squares, bounded[0,1] primary, unconstrained diagnostic. Complex qI+rJ also waveform-fitted. FullH equals frozen old meanH. Zero is explicitly scored.",
+    "primary_family": [
+      {
+        "model": "bolt",
+        "policy": "native",
+        "period": 19.2,
+        "baseline": "scalar_bounded"
+      },
+      {
+        "model": "bolt",
+        "policy": "native",
+        "period": 19.2,
+        "baseline": "identity"
+      },
+      {
+        "model": "timesfm",
+        "policy": "native",
+        "period": 19.2,
+        "baseline": "scalar_bounded"
+      },
+      {
+        "model": "timesfm",
+        "policy": "native",
+        "period": 19.2,
+        "baseline": "identity"
+      }
+    ],
+    "inference": "Native19.2 fullH vs bounded scalar and vs identity, two models = family4. Paired source differences (baseline NMSE minus fullH NMSE),16384 common type-stratified source bootstrap draws seed4954300. Report ordinary95% and Bonferroni98.75% percentile CIs; approximate family coverage, no p-values or automatic threshold claims. Fresh synthetic generalization, not sealed confirmation.",
+    "descriptive": "Locked normalization,24h,unconstrained scalar,zero,complexlinear,all nearby metrics and all horizon decompositions are descriptive. Source-specific fullH is same-data oracle only, never predictive.",
+    "nearby": "All fixed center maps evaluated at exact nearby frequency. Compare fullH constant versus principal-delay transported fullH ONLY at offsets+/-0.12, equally pool the two offsets within source. No fresh fitting/selection/interpolation.",
+    "horizon_analysis": "After primary scoring, reuse each phase delta on windows[0:16],[16:32],[0:32], preserving absolute forecast timestamps; H and joint-DC H, odd/even/offband. Apply also to old arrays after primary. No causal patch or LTI claim.",
+    "normalization": "Frozen native normalization and background-locked normalization/inverse on identical inputs, batches<=4.",
+    "controls": "Exact background repeat and native/locked identity in forecasts and transient endpoint hidden state, self-patch, same-batch forecast replay; finite checks, input phase/closure gates, hashes. Save forecasts only; endpoint hidden used for identity gates and discarded.",
+    "cpu_threads": 1,
+    "worker_cap": 3221225472,
+    "seconds_per_model": 600,
+    "checkpoints": {
+      "bolt": {
+        "repo": "amazon/chronos-bolt-small",
+        "path": "/common/home/djk255/.cache/huggingface/hub/models--amazon--chronos-bolt-small/snapshots/772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "revision": "772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "weights": {
+          "model.safetensors": "06a6a19bbe74bc10a9cd193bd4bf2bf638ae07f7e0d51653ae7ab8ea968a21dd"
+        }
+      },
+      "timesfm": {
+        "repo": "google/timesfm-2.5-200m-pytorch",
+        "path": "/common/home/djk255/.cache/huggingface/hub/models--google--timesfm-2.5-200m-pytorch/snapshots/1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+        "revision": "1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+        "weights": {
+          "model.safetensors": "2f776efe6245e42b24bc4153ffdf61810140210e4bd3b01fb21f7aa779ab6ce8"
+        }
+      }
+    },
+    "budget": {
+      "bolt": {
+        "nodes": 400,
+        "conservative_seconds": 36.48049443267519,
+        "formula": "1.1*(20s startup allowance + focused whole-runtime * nodes/2640)"
+      },
+      "timesfm": {
+        "nodes": 400,
+        "conservative_seconds": 104.6712803701715,
+        "formula": "1.1*(20s startup allowance + focused whole-runtime * nodes/2640)"
+      }
+    },
+    "execution": "One native worker at a time. Both run and worker require external protocol-bound coordinator slot grant. Parent monitors RSS/wall time. Failure retained, no in-place retry or rescue claims.",
+    "capture_hold": true,
+    "old": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase4954200",
+    "proposal": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer_proposal4954300",
+    "old_hashes": {
+      "protocol.json": "b5ffa828d1d87aca572d8b84b7d88931e635e39b02cda15955038f2e6960ff95",
+      "audit.json": "f428f4e70da8e02040442e28b9e50d915b69617b9299ba5d2f8eb07e22b39c2c",
+      "raw_arithmetic.npz": "99980ef4e69c7ce71708f1038e67955d934020b32a3d84a57deb272a81ec6ff9",
+      "matrix_rows.json": "1e7218397bd59727e11582d58516cdedb7f9a47a66b65913acc8fd9d544d694d",
+      "groups.json": "9657f70716e4a0de241e3b75c39e6f6eea5f901c836ba781c0c2247c65224a25"
+    },
+    "source_hashes": {
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_transfer.py": "a3e17fcd057a2ca92698d5a71d070e4b3b77a9037bbc05f10b4d538eacabad2c",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tests/test_response_phase_transfer.py": "b14de4d33859f8d696cae13c95a4462096196152d74b65757a95cd91e03f03c3",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_transfer_plants.py": "8daed827a1e205ba25ff6563d409e586367f2c31a9ac9bc56bb9d943d0a5150d",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_transfer_audit.py": "29b0f96aa022005a3a0bbd1650ed80c493dfd225b50a3edcb90e483bfa4499ec",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_study.py": "baa8f5a94890b89411df99e108e9ab01e906e8419c1696002cc9a6d6f8a48187",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_surface_focused.py": "758b73564af323796355c51c16b8332f7710fef57fe748ecdfd2c9bc1b907b1e",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_surface_crossed.py": "4882c7aeda3269bb48bc6675196fbd984f6db12b98617d2a8f2fba2b6979d41d",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/selective_study.py": "d87ed477e46d72604fa6824fcc5b146880142a730fc52f0f70bf933b652604eb",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/coherence_study.py": "e9bd4dc10d57cfbc30cb4b01cfafe96789cccb6d34fe85616699ecfef799aec7",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/real_background_poc.py": "c88868ab339608f52afa8041d89cf3b48aa4260e87fb497b64fa7bf058b3eda6",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/homogeneous_normalizer.py": "2670effb2dfc0b631d368a69cab4263a8d2a90eb1208acc93d246a5c0ef55051",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tsfm_lens/extraction/hooks.py": "6f161d02a472c246691caed21bd301a201d7219d3aeef90de2854baa7bdc4281"
+    },
+    "hashes": {
+      "inputs.npy": "d60f13fd2278e782be817f7a580fba6a9cebc8387a3c6fbb62363f3f588f6d0c",
+      "nodes.json": "7ada0a56374df284806b0388c2b30028c7b72e271979e709e8c03b2c40949a0b",
+      "sources.json": "759549340b1747c32439c94d8a5eeec7684159553c169cb091bb6ec31d49ac28",
+      "groups.json": "ea5909cd07e132407b9cc9187c3961e7fc415386b5fdd0ad134cf533026911f2",
+      "frozen_predictors.json": "7c1920909020b49c9da55a5c3444ca9e82b855fb31d95ee283b7aaca5aa8b947",
+      "bootstrap_source_indices.npy": "2a3f8fc1ca6868e6b774a37934e432bf594dda5cd3d3fee00218e69ba79d1a3e"
+    }
+  },
+  "exact_findings": {
+    "primary": [
+      {
+        "model": "bolt",
+        "policy": "native",
+        "period": 19.2,
+        "baseline": "scalar_bounded",
+        "mean": 0.2473619533341253,
+        "wins": 14,
+        "sources": 16,
+        "source_differences": [
+          0.12389586276308767,
+          0.043792234435582666,
+          0.5402487560538025,
+          0.2956513118902221,
+          0.05456786421658166,
+          0.009641713055976775,
+          0.674384783655537,
+          0.3886634133313581,
+          0.14316941935158495,
+          -0.05361468318203133,
+          0.17329678384967373,
+          0.44242869623368075,
+          0.1568866957534969,
+          -0.03884408109741194,
+          0.8089232464511742,
+          0.19469923658368926
+        ],
+        "percentile95": [
+          0.18028082855538644,
+          0.3063560556285491
+        ],
+        "family": 4,
+        "family95_percentile": [
+          0.1632782914560016,
+          0.3182855976544267
+        ]
+      },
+      {
+        "model": "bolt",
+        "policy": "native",
+        "period": 19.2,
+        "baseline": "identity",
+        "mean": 0.7904968404470195,
+        "wins": 15,
+        "sources": 16,
+        "source_differences": [
+          1.2361514786108168,
+          1.1512024113029489,
+          0.9365629436002689,
+          0.14770747198798845,
+          1.2566647076938806,
+          1.1908196721015238,
+          0.5566382616972103,
+          0.0522488989588612,
+          1.2603182740476826,
+          1.0751728255125577,
+          0.14168811506445134,
+          0.06486541436572602,
+          1.2741907916307724,
+          1.0052172343474233,
+          1.3796547642200139,
+          -0.08115381798981502
+        ],
+        "percentile95": [
+          0.6769679570103087,
+          0.9058713640721154
+        ],
+        "family": 4,
+        "family95_percentile": [
+          0.6521839368087667,
+          0.932237095858742
+        ]
+      },
+      {
+        "model": "timesfm",
+        "policy": "native",
+        "period": 19.2,
+        "baseline": "scalar_bounded",
+        "mean": 0.17979939116871133,
+        "wins": 11,
+        "sources": 16,
+        "source_differences": [
+          0.5276869330733536,
+          -0.18626094410392735,
+          0.3550452406183904,
+          0.1355911302536139,
+          0.3071768618971693,
+          -0.093609274888518,
+          0.24819364105441588,
+          0.1926297916712808,
+          0.6012457796711341,
+          -0.11795893787505296,
+          0.16207316212344947,
+          0.18706064941335532,
+          0.4064461744347998,
+          -0.09694726271439946,
+          0.30470209179655383,
+          -0.056284777726237356
+        ],
+        "percentile95": [
+          0.13655285477804496,
+          0.22031324801440638
+        ],
+        "family": 4,
+        "family95_percentile": [
+          0.125550594671179,
+          0.23033485864196618
+        ]
+      },
+      {
+        "model": "timesfm",
+        "policy": "native",
+        "period": 19.2,
+        "baseline": "identity",
+        "mean": 0.6197092384731631,
+        "wins": 8,
+        "sources": 16,
+        "source_differences": [
+          1.8436540626977307,
+          1.4498238656953575,
+          -0.24196999425241839,
+          -0.326036292325998,
+          1.7785770739783513,
+          1.4743553941524228,
+          -0.39013144219019025,
+          -0.3337644821133652,
+          1.946616042281511,
+          1.2233942857298867,
+          -0.5582747208909101,
+          -0.19319252470585663,
+          1.7042656176577902,
+          1.2668374700266813,
+          -0.3509673062149098,
+          -0.37783923395547325
+        ],
+        "percentile95": [
+          0.5724183090712633,
+          0.6672726375474448
+        ],
+        "family": 4,
+        "family95_percentile": [
+          0.558720480512645,
+          0.6797187749599262
+        ]
+      }
+    ],
+    "center_baselines": [
+      {
+        "model": "bolt",
+        "policy": "native",
+        "center": 5.333333333333333,
+        "offset": 0.0,
+        "mean_nmse": {
+          "zero": 0.9250603856468116,
+          "identity": 0.4139957132036795,
+          "scalar_bounded": 0.35438355794697285,
+          "scalar_unconstrained": 0.35438355794697285,
+          "complex_linear": 0.3439079080769561,
+          "full_H": 0.34266071428724876,
+          "oracle_same_source": 0.15443325646608058,
+          "delay_full_H": 0.34266071428724876
+        }
+      },
+      {
+        "model": "bolt",
+        "policy": "native",
+        "center": 6.666666666666667,
+        "offset": 0.0,
+        "mean_nmse": {
+          "zero": 0.8397102958771663,
+          "identity": 1.321105820748856,
+          "scalar_bounded": 0.7779709336359619,
+          "scalar_unconstrained": 0.7779709336359619,
+          "complex_linear": 0.5460455764202343,
+          "full_H": 0.5306089803018366,
+          "oracle_same_source": 0.25187700328084306,
+          "delay_full_H": 0.5306089803018366
+        }
+      },
+      {
+        "model": "bolt",
+        "policy": "locked",
+        "center": 5.333333333333333,
+        "offset": 0.0,
+        "mean_nmse": {
+          "zero": 0.8775573302603813,
+          "identity": 0.43543241836832436,
+          "scalar_bounded": 0.35766220400252496,
+          "scalar_unconstrained": 0.35766220400252496,
+          "complex_linear": 0.3423290768634436,
+          "full_H": 0.3418557304436182,
+          "oracle_same_source": 0.1576639994417094,
+          "delay_full_H": 0.3418557304436182
+        }
+      },
+      {
+        "model": "bolt",
+        "policy": "locked",
+        "center": 6.666666666666667,
+        "offset": 0.0,
+        "mean_nmse": {
+          "zero": 0.7643894058068286,
+          "identity": 1.2539818136060603,
+          "scalar_bounded": 0.7005798704957453,
+          "scalar_unconstrained": 0.7005798704957453,
+          "complex_linear": 0.5284850083504667,
+          "full_H": 0.5197104702318471,
+          "oracle_same_source": 0.249676655605988,
+          "delay_full_H": 0.5197104702318471
+        }
+      },
+      {
+        "model": "timesfm",
+        "policy": "native",
+        "center": 5.333333333333333,
+        "offset": 0.0,
+        "mean_nmse": {
+          "zero": 1.7369895649232197,
+          "identity": 1.0705925423980096,
+          "scalar_bounded": 1.0429405755304095,
+          "scalar_unconstrained": 1.0429405755304095,
+          "complex_linear": 1.0442780107679868,
+          "full_H": 1.0428322638795517,
+          "oracle_same_source": 0.9127773404179553,
+          "delay_full_H": 1.0428322638795517
+        }
+      },
+      {
+        "model": "timesfm",
+        "policy": "native",
+        "center": 6.666666666666667,
+        "offset": 0.0,
+        "mean_nmse": {
+          "zero": 2.028619155529883,
+          "identity": 2.368241186889257,
+          "scalar_bounded": 1.9283313395848056,
+          "scalar_unconstrained": 1.9283313395848056,
+          "complex_linear": 1.7445773331921237,
+          "full_H": 1.7485319484160944,
+          "oracle_same_source": 0.872725856028604,
+          "delay_full_H": 1.7485319484160944
+        }
+      },
+      {
+        "model": "timesfm",
+        "policy": "locked",
+        "center": 5.333333333333333,
+        "offset": 0.0,
+        "mean_nmse": {
+          "zero": 1.9331816383951739,
+          "identity": 1.2314296064085317,
+          "scalar_bounded": 1.2095415185352807,
+          "scalar_unconstrained": 1.2095415185352807,
+          "complex_linear": 1.2059667563496563,
+          "full_H": 1.2041275694212592,
+          "oracle_same_source": 1.0384120546055158,
+          "delay_full_H": 1.2041275694212592
+        }
+      },
+      {
+        "model": "timesfm",
+        "policy": "locked",
+        "center": 6.666666666666667,
+        "offset": 0.0,
+        "mean_nmse": {
+          "zero": 2.157198238479727,
+          "identity": 2.4596813062943,
+          "scalar_bounded": 2.048472874989109,
+          "scalar_unconstrained": 2.048472874989109,
+          "complex_linear": 1.8512282205957034,
+          "full_H": 1.8729364974889793,
+          "oracle_same_source": 0.9182929277881988,
+          "delay_full_H": 1.8729364974889793
+        }
+      }
+    ],
+    "nearby": [
+      {
+        "model": "bolt",
+        "policy": "native",
+        "center": 5.333333333333333,
+        "mean": -0.0010026137876706768,
+        "wins": 2,
+        "sources": 16,
+        "source_differences": [
+          -0.0018397982392022866,
+          -0.001663672630865698,
+          -0.0008459687396213805,
+          0.00035355639404560657,
+          -0.0017717434710264046,
+          -0.0014101093894473282,
+          -0.000510925238947614,
+          -9.880132533302e-05,
+          -0.0020632117730462474,
+          -0.0013686815595375934,
+          -0.0010420452596389684,
+          -0.00016147952122885778,
+          -0.001730036147427838,
+          -0.0013225487688656862,
+          -0.000818893837635129,
+          0.0002525389050476168
+        ],
+        "percentile95": [
+          -0.0010858953344278495,
+          -0.0009186157215524939
+        ],
+        "family": 1,
+        "family95_percentile": [
+          -0.0010858953344278495,
+          -0.0009186157215524939
+        ]
+      },
+      {
+        "model": "bolt",
+        "policy": "native",
+        "center": 6.666666666666667,
+        "mean": 0.0021134136412217387,
+        "wins": 14,
+        "sources": 16,
+        "source_differences": [
+          0.00219854813839708,
+          0.0022419598837790933,
+          -0.00056475256032823,
+          0.0036109536353007288,
+          0.0007589727965693766,
+          0.001855312314790164,
+          0.0030951997914692164,
+          0.0037362652538242003,
+          0.0029970171961570258,
+          0.0014848184895746297,
+          -0.00031497823841258876,
+          0.00424316475065617,
+          0.002596271063638883,
+          0.0019003619587580345,
+          0.002557651062936317,
+          0.001417852722437718
+        ],
+        "percentile95": [
+          0.0015892676701608564,
+          0.0026328948405431223
+        ],
+        "family": 1,
+        "family95_percentile": [
+          0.0015892676701608564,
+          0.0026328948405431223
+        ]
+      },
+      {
+        "model": "bolt",
+        "policy": "locked",
+        "center": 5.333333333333333,
+        "mean": -0.001283091768314489,
+        "wins": 2,
+        "sources": 16,
+        "source_differences": [
+          -0.0021714011740358447,
+          -0.002316921394801441,
+          -0.0009975540056994317,
+          0.0005299695551586048,
+          -0.0021255779145082643,
+          -0.001951538215719445,
+          -0.0006153492425944596,
+          -2.4369175614824545e-05,
+          -0.002598491702413483,
+          -0.0019039407280680987,
+          -0.0013880377501321317,
+          -0.00013949779514621508,
+          -0.0021445362615891,
+          -0.0018451919142570272,
+          -0.0012591620322486147,
+          0.0004221314586379532
+        ],
+        "percentile95": [
+          -0.0014012283968142505,
+          -0.0011643296277353682
+        ],
+        "family": 1,
+        "family95_percentile": [
+          -0.0014012283968142505,
+          -0.0011643296277353682
+        ]
+      },
+      {
+        "model": "bolt",
+        "policy": "locked",
+        "center": 6.666666666666667,
+        "mean": 0.0011331300766014001,
+        "wins": 14,
+        "sources": 16,
+        "source_differences": [
+          0.0013426941804258602,
+          0.0015390883324464394,
+          -0.0010136324934805208,
+          0.001686183750796988,
+          0.00023374255383495912,
+          0.0012209451325827098,
+          0.0017360180499664812,
+          0.0016475792670493095,
+          0.001973559611332651,
+          0.0010079542019574561,
+          -0.00036853878742360013,
+          0.001983964866508703,
+          0.0016875102601867642,
+          0.001350160657596411,
+          0.0015707351920350443,
+          0.0005321164498067465
+        ],
+        "percentile95": [
+          0.0007723460875408855,
+          0.001490018238253133
+        ],
+        "family": 1,
+        "family95_percentile": [
+          0.0007723460875408855,
+          0.001490018238253133
+        ]
+      },
+      {
+        "model": "timesfm",
+        "policy": "native",
+        "center": 5.333333333333333,
+        "mean": -0.00023305938729510016,
+        "wins": 2,
+        "sources": 16,
+        "source_differences": [
+          -8.618901669284543e-05,
+          -0.00043619490651636283,
+          -0.00033479982859621615,
+          -0.0002959706904850923,
+          -0.00024031577141883642,
+          -0.00023867388788867405,
+          -0.0005691238579649677,
+          0.00018275119215704905,
+          -0.00017354577128370768,
+          -0.0004581704579239565,
+          -2.3585202982224357e-05,
+          -0.0003386988287062964,
+          -0.0002160942541769434,
+          -0.0003555117718163636,
+          -0.00034360486941489507,
+          0.0001987777269887303
+        ],
+        "percentile95": [
+          -0.0003145794568248285,
+          -0.0001501837697972048
+        ],
+        "family": 1,
+        "family95_percentile": [
+          -0.0003145794568248285,
+          -0.0001501837697972048
+        ]
+      },
+      {
+        "model": "timesfm",
+        "policy": "native",
+        "center": 6.666666666666667,
+        "mean": 0.00039901497311472904,
+        "wins": 8,
+        "sources": 16,
+        "source_differences": [
+          -0.0012505351633819162,
+          -0.001762657883361829,
+          0.003512744853883587,
+          0.00172121103011319,
+          -0.00203981653846097,
+          -0.0009844717230760303,
+          0.0015232994562007218,
+          0.0031489135019412973,
+          -0.00026307042172890593,
+          -0.0019345111373547663,
+          0.0024851258043486757,
+          0.002447726945807749,
+          -0.002243185839733597,
+          -0.0015776452918812023,
+          0.002464797157336329,
+          0.0011363148191833317
+        ],
+        "percentile95": [
+          7.619035368711874e-05,
+          0.0007295983119694991
+        ],
+        "family": 1,
+        "family95_percentile": [
+          7.619035368711874e-05,
+          0.0007295983119694991
+        ]
+      },
+      {
+        "model": "timesfm",
+        "policy": "locked",
+        "center": 5.333333333333333,
+        "mean": -0.0005399179293292138,
+        "wins": 2,
+        "sources": 16,
+        "source_differences": [
+          -9.870885063416324e-05,
+          -0.0010116248541045536,
+          -0.0005437413656030066,
+          -0.0006367930298126212,
+          -0.00044406525577328493,
+          -0.000559038801051237,
+          -0.0014573148039002115,
+          -5.361428923289502e-05,
+          -0.0003873032868353249,
+          -0.001134366840538692,
+          0.0005749240436377992,
+          -0.0008574093981537079,
+          -0.0006018871544171966,
+          -0.000776136898423152,
+          -0.000945919466816228,
+          0.00029431338239105376
+        ],
+        "percentile95": [
+          -0.0007551674359887612,
+          -0.00030981103294610624
+        ],
+        "family": 1,
+        "family95_percentile": [
+          -0.0007551674359887612,
+          -0.00030981103294610624
+        ]
+      },
+      {
+        "model": "timesfm",
+        "policy": "locked",
+        "center": 6.666666666666667,
+        "mean": 0.0004306762851929158,
+        "wins": 8,
+        "sources": 16,
+        "source_differences": [
+          -0.001572332036950952,
+          -0.0017726409624492234,
+          0.003469643428100355,
+          0.001997830862699168,
+          -0.0022774767223548986,
+          -0.0010812564283662063,
+          0.002704091385583751,
+          0.0024891004785572712,
+          -0.0006458028758846712,
+          -0.002095407594104648,
+          0.002684426684884278,
+          0.000700574729480985,
+          -0.001993272700296589,
+          -0.0017503849372886293,
+          0.0036755908343775734,
+          0.002358136417099088
+        ],
+        "percentile95": [
+          0.00015115435801786402,
+          0.0006987795582422508
+        ],
+        "family": 1,
+        "family95_percentile": [
+          0.00015115435801786402,
+          0.0006987795582422508
+        ]
+      }
+    ],
+    "primary_by_type": [
+      {
+        "model": "bolt",
+        "baseline": "scalar_bounded",
+        "background_type": 0,
+        "sources": 4,
+        "mean_gain": 0.1196299605211878
+      },
+      {
+        "model": "bolt",
+        "baseline": "scalar_bounded",
+        "background_type": 1,
+        "sources": 4,
+        "mean_gain": -0.009756204196970958
+      },
+      {
+        "model": "bolt",
+        "baseline": "scalar_bounded",
+        "background_type": 2,
+        "sources": 4,
+        "mean_gain": 0.5492133925025469
+      },
+      {
+        "model": "bolt",
+        "baseline": "scalar_bounded",
+        "background_type": 3,
+        "sources": 4,
+        "mean_gain": 0.33036066450973756
+      },
+      {
+        "model": "bolt",
+        "baseline": "identity",
+        "background_type": 0,
+        "sources": 4,
+        "mean_gain": 1.256831312995788
+      },
+      {
+        "model": "bolt",
+        "baseline": "identity",
+        "background_type": 1,
+        "sources": 4,
+        "mean_gain": 1.1056030358161135
+      },
+      {
+        "model": "bolt",
+        "baseline": "identity",
+        "background_type": 2,
+        "sources": 4,
+        "mean_gain": 0.7536360211454861
+      },
+      {
+        "model": "bolt",
+        "baseline": "identity",
+        "background_type": 3,
+        "sources": 4,
+        "mean_gain": 0.04591699183069016
+      },
+      {
+        "model": "timesfm",
+        "baseline": "scalar_bounded",
+        "background_type": 0,
+        "sources": 4,
+        "mean_gain": 0.4606389372691142
+      },
+      {
+        "model": "timesfm",
+        "baseline": "scalar_bounded",
+        "background_type": 1,
+        "sources": 4,
+        "mean_gain": -0.12369410489547444
+      },
+      {
+        "model": "timesfm",
+        "baseline": "scalar_bounded",
+        "background_type": 2,
+        "sources": 4,
+        "mean_gain": 0.26750353389820236
+      },
+      {
+        "model": "timesfm",
+        "baseline": "scalar_bounded",
+        "background_type": 3,
+        "sources": 4,
+        "mean_gain": 0.11474919840300317
+      },
+      {
+        "model": "timesfm",
+        "baseline": "identity",
+        "background_type": 0,
+        "sources": 4,
+        "mean_gain": 1.818278199153846
+      },
+      {
+        "model": "timesfm",
+        "baseline": "identity",
+        "background_type": 1,
+        "sources": 4,
+        "mean_gain": 1.353602753901087
+      },
+      {
+        "model": "timesfm",
+        "baseline": "identity",
+        "background_type": 2,
+        "sources": 4,
+        "mean_gain": -0.3853358658871071
+      },
+      {
+        "model": "timesfm",
+        "baseline": "identity",
+        "background_type": 3,
+        "sources": 4,
+        "mean_gain": -0.30770813327517327
+      }
+    ],
+    "interpretation": "Frozen fullH predicts fresh native19.2 responses better than old-fitted attenuation and identity in mean for both models. Complex-linear response captures most of the benefit; fullH improves over complex for Bolt but is slightly worse for TimesFM. This is response prediction, not a repaired forecast.",
+    "nearby_interpretation": "Principal-delay transport improves mean nearby19.2 response prediction only slightly; it worsens nearby24h response prediction. Finite-window phase variation and DC sensitivity do not identify patch causality.",
+    "inference": "Four native19.2 primary source-paired contrasts; family-adjusted Bonferroni percentile98.75% intervals are all above zero, approximate small-sample bootstrap coverage. Conditional on fixed old training predictors and balanced synthetic types; no universal smoothness/LTI or threshold claim."
+  },
+  "controls": {
+    "frozen_predictors": "Zero,identity,old-waveform-fitted bounded/unconstrained scalar,complexlinear,fullH; no fresh refitting except labeled oracle.",
+    "native_identity": "All exact gates0; same-batch replay exact; forecasts and source hashes audited.",
+    "inference": "Native19.2 fullH vs bounded scalar and vs identity, two models = family4. Paired source differences (baseline NMSE minus fullH NMSE),16384 common type-stratified source bootstrap draws seed4954300. Report ordinary95% and Bonferroni98.75% percentile CIs; approximate family coverage, no p-values or automatic threshold claims. Fresh synthetic generalization, not sealed confirmation.",
+    "independent_audit": {
+      "passed": true,
+      "checks": 10860,
+      "maximum_absolute_discrepancy": 2.4424906541753444e-15,
+      "results_checked": true,
+      "native_loaded": false,
+      "source_hashes_verified": true
+    },
+    "supplementary_audit": {
+      "passed": true,
+      "checks": 20,
+      "nearby_offsets_pooled_within_source": true,
+      "primary_win_counts_replayed": true
+    }
+  },
+  "limitations": "16 fresh synthetic sources from the four prespecified mixture types, amplitude.1, four phases, finite128-step context/32-step forecast. Bootstrap intervals conditional on old fixed predictors, approximate coverage with4sources/type. Predictions concern incremental model response, not natural forecast accuracy. Per-source oracle is same-data descriptive. Nearby delay-law and old/fresh horizon decompositions descriptive; no patch causality, time invariance, global smoothness, or hidden-information-loss claim.",
+  "evidence_class": "Fresh synthetic source transfer of frozen old-only response predictors; conditional behavioral evidence",
+  "failed_instrumentation_runs": [
+    {
+      "stage": "pre_freeze_test_collection",
+      "failure": "Duplicate horizon keyword in protocol construction; SyntaxError, no native or metrics",
+      "resolution": "Renamed narrative field horizon_analysis before freeze"
+    },
+    {
+      "stage": "pre_freeze_fixture",
+      "failure": "Asserted finite-window scalar versus trace gap >.01; measured .008649841226347266",
+      "resolution": "Used >.005 fixture guard, independent scalar formula unchanged; all tests and plants rerun"
+    },
+    {
+      "stage": "pre_freeze_plant_harness",
+      "failure": "Mutated function used native normalization rather than test mock; FakeNative AttributeError",
+      "resolution": "Forwarded normalization mock into mutant namespace; baseline checks and all plants rerun"
+    }
+  ],
+  "next_decision": "Native study closed and slot2 released. Coordinator may review transferable phase response beyond attenuation; no additional capture or grid scheduled.",
+  "verification": {
+    "tests_passed": 8,
+    "plants_detected": 11,
+    "preflight_audit": {
+      "passed": true,
+      "checks": 96,
+      "maximum_absolute_discrepancy": 5.551115123125783e-16,
+      "results_checked": false,
+      "native_loaded": false,
+      "source_hashes_verified": true
+    },
+    "standin_audit": {
+      "passed": true,
+      "checks": 10860,
+      "maximum_absolute_discrepancy": 2.4424906541753444e-15,
+      "results_checked": true,
+      "native_loaded": false,
+      "source_hashes_verified": true
+    }
+  },
+  "execution": {
+    "bolt": {
+      "valid": true,
+      "returncode": 0,
+      "seconds": 26.825516281067394,
+      "peak_rss": 1060147200,
+      "failure": null,
+      "grant_sha256": "71c86be2b44eb50715a42689d7b483c52a700465d33d9313af67528e18981321",
+      "slot": 2
+    },
+    "timesfm": {
+      "valid": true,
+      "returncode": 0,
+      "seconds": 106.10821969399694,
+      "peak_rss": 1638686720,
+      "failure": null,
+      "grant_sha256": "71c86be2b44eb50715a42689d7b483c52a700465d33d9313af67528e18981321",
+      "slot": 2
+    }
+  },
+  "native_sessions": {
+    "bolt": 98811,
+    "timesfm": 89664
+  },
+  "slot2_release": {
+    "slot": 2,
+    "released": true,
+    "run": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300",
+    "sessions": {
+      "bolt": 98811,
+      "timesfm": 89664
+    },
+    "execution": {
+      "bolt": {
+        "valid": true,
+        "returncode": 0,
+        "seconds": 26.825516281067394,
+        "peak_rss": 1060147200,
+        "failure": null,
+        "grant_sha256": "71c86be2b44eb50715a42689d7b483c52a700465d33d9313af67528e18981321",
+        "slot": 2
+      },
+      "timesfm": {
+        "valid": true,
+        "returncode": 0,
+        "seconds": 106.10821969399694,
+        "peak_rss": 1638686720,
+        "failure": null,
+        "grant_sha256": "71c86be2b44eb50715a42689d7b483c52a700465d33d9313af67528e18981321",
+        "slot": 2
+      }
+    },
+    "native_workers_remaining": 0
+  },
+  "native_capture_complete": true,
+  "horizon_summary_artifact": "horizon_summary.json"
+}

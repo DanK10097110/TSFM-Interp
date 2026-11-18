@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "models": {
+    "bolt": {
+      "passed": true,
+      "forecast_losses_checked": 3456,
+      "response_scores_checked": 576,
+      "max_loss_replay_error": 1.4210854715202004e-14,
+      "source_units_verified": 40
+    },
+    "timesfm": {
+      "passed": true,
+      "forecast_losses_checked": 3456,
+      "response_scores_checked": 576,
+      "max_loss_replay_error": 3.552713678800501e-15,
+      "source_units_verified": 40
+    }
+  },
+  "scope": "Independent all-node raw/corrected losses, threshold crossings, split-loss changes, response NMSE/gain and aggregate curve means; bootstrap interval coverage and pretraining novelty are not certified"
+}

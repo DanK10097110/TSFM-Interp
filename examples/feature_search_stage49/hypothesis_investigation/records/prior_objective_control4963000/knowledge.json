@@ -1,0 +1,347 @@
+{
+  "status": "complete_audited",
+  "question": "Separate a continuation prior from the prediction functional it optimizes.\n\nPaired tiny-model MSE/absolute-loss training exactly marginalizes surviving and\nvanishing futures. This is a mechanism control, never pretrained-model attribution.\n",
+  "design": {
+    "train": 512,
+    "test": 256,
+    "steps": 400,
+    "batch": 64,
+    "lr": 0.002,
+    "seeds": [
+      4963100,
+      4963101
+    ],
+    "probabilities": [
+      0.25,
+      0.5,
+      0.75
+    ],
+    "architectures": [
+      "mlp",
+      "transformer"
+    ],
+    "objectives": [
+      "mse",
+      "absolute"
+    ],
+    "train_seed": 4963200,
+    "test_seed": 4963300,
+    "threads": 1,
+    "cap_seconds": 180,
+    "cap_bytes": 2147483648,
+    "expected_risk": "Exactly marginalized two futures; no Monte Carlo branch noise",
+    "adequacy": "Descriptive optimization residuals retained; no failed arm discarded",
+    "scope": "Tiny training control only; actual pretrained objectives and priors are unknown",
+    "source_sha": "fc122359858b0f49227add06805556ceab6c4fea6e69548273121db743f6dbaf",
+    "model_sha": "3d18193ca3984f072e96f0beb0055d661b2a906ab54f13b692fcb8acab8dfc9a",
+    "bank_sha": "805762ca63faecc302cde734a6b69d7b16ce9560082a5675e5c5930b3b4019ba"
+  },
+  "exact_findings": {
+    "records": [
+      {
+        "architecture": "mlp",
+        "seed": 4963100,
+        "probability": 0.25,
+        "objective": "mse",
+        "key": "mlp_4963100_0.25_mse",
+        "mean_gain": 0.24881939481259874,
+        "mean_target_nmse": 0.0008706094495915316,
+        "median_set_distance": 0.24961047744082646,
+        "absolute_risk_excess": 0.12504642440195424,
+        "final_train_loss": 0.00018816758412867784
+      },
+      {
+        "architecture": "mlp",
+        "seed": 4963100,
+        "probability": 0.25,
+        "objective": "absolute",
+        "key": "mlp_4963100_0.25_absolute",
+        "mean_gain": 0.004985426555465776,
+        "mean_target_nmse": 0.060416579609338564,
+        "median_set_distance": 0.01712473662199596,
+        "absolute_risk_excess": 0.011620563584160266,
+        "final_train_loss": 0.16400632679462432
+      },
+      {
+        "architecture": "mlp",
+        "seed": 4963100,
+        "probability": 0.5,
+        "objective": "mse",
+        "key": "mlp_4963100_0.5_mse",
+        "mean_gain": 0.49914271948917355,
+        "mean_target_nmse": 0.0017749363988550288,
+        "median_set_distance": 0.0008282838979076321,
+        "absolute_risk_excess": 0.0008282838979076321,
+        "final_train_loss": 0.00040807015262544154
+      },
+      {
+        "architecture": "mlp",
+        "seed": 4963100,
+        "probability": 0.5,
+        "objective": "absolute",
+        "key": "mlp_4963100_0.5_absolute",
+        "mean_gain": 0.2680873488456798,
+        "mean_target_nmse": 0.05859055739689928,
+        "median_set_distance": 0.001428526279769666,
+        "absolute_risk_excess": 0.001428526279769666,
+        "final_train_loss": 0.3183307921886444
+      },
+      {
+        "architecture": "mlp",
+        "seed": 4963100,
+        "probability": 0.75,
+        "objective": "mse",
+        "key": "mlp_4963100_0.75_mse",
+        "mean_gain": 0.7490467598869157,
+        "mean_target_nmse": 0.002926230383713857,
+        "median_set_distance": 0.2537528370409482,
+        "absolute_risk_excess": 0.12782361572841427,
+        "final_train_loss": 0.0007083898270502687
+      },
+      {
+        "architecture": "mlp",
+        "seed": 4963100,
+        "probability": 0.75,
+        "objective": "absolute",
+        "key": "mlp_4963100_0.75_absolute",
+        "mean_gain": 0.9777613686899456,
+        "mean_target_nmse": 0.0566102057985151,
+        "median_set_distance": 0.06225834041193551,
+        "absolute_risk_excess": 0.041378410710838795,
+        "final_train_loss": 0.17748374223709107
+      },
+      {
+        "architecture": "mlp",
+        "seed": 4963101,
+        "probability": 0.25,
+        "objective": "mse",
+        "key": "mlp_4963101_0.25_mse",
+        "mean_gain": 0.24967727238006154,
+        "mean_target_nmse": 0.0009262376343048949,
+        "median_set_distance": 0.2505540914465196,
+        "absolute_risk_excess": 0.12560131804985186,
+        "final_train_loss": 0.0002054480044171214
+      },
+      {
+        "architecture": "mlp",
+        "seed": 4963101,
+        "probability": 0.25,
+        "objective": "absolute",
+        "key": "mlp_4963101_0.25_absolute",
+        "mean_gain": 0.004484544869355378,
+        "mean_target_nmse": 0.06064130898913703,
+        "median_set_distance": 0.016321934190488094,
+        "absolute_risk_excess": 0.01114172454886873,
+        "final_train_loss": 0.16533976078033447
+      },
+      {
+        "architecture": "mlp",
+        "seed": 4963101,
+        "probability": 0.5,
+        "objective": "mse",
+        "key": "mlp_4963101_0.5_mse",
+        "mean_gain": 0.5013990082883684,
+        "mean_target_nmse": 0.0018740815092104953,
+        "median_set_distance": 0.0009159356944756143,
+        "absolute_risk_excess": 0.0009159356944756143,
+        "final_train_loss": 0.00043306303094141184
+      },
+      {
+        "architecture": "mlp",
+        "seed": 4963101,
+        "probability": 0.5,
+        "objective": "absolute",
+        "key": "mlp_4963101_0.5_absolute",
+        "mean_gain": 0.2604442092344701,
+        "mean_target_nmse": 0.062259995909114345,
+        "median_set_distance": 0.001584336884339081,
+        "absolute_risk_excess": 0.001584336884339081,
+        "final_train_loss": 0.3209956216812134
+      },
+      {
+        "architecture": "mlp",
+        "seed": 4963101,
+        "probability": 0.75,
+        "objective": "mse",
+        "key": "mlp_4963101_0.75_mse",
+        "mean_gain": 0.7529284809960199,
+        "mean_target_nmse": 0.0031548244511916666,
+        "median_set_distance": 0.25041463039550443,
+        "absolute_risk_excess": 0.12627959466694927,
+        "final_train_loss": 0.0007343499711714685
+      },
+      {
+        "architecture": "mlp",
+        "seed": 4963101,
+        "probability": 0.75,
+        "objective": "absolute",
+        "key": "mlp_4963101_0.75_absolute",
+        "mean_gain": 0.9797544454327627,
+        "mean_target_nmse": 0.057865972127457935,
+        "median_set_distance": 0.06273977826541094,
+        "absolute_risk_excess": 0.04228485815002734,
+        "final_train_loss": 0.17871455430984498
+      },
+      {
+        "architecture": "transformer",
+        "seed": 4963100,
+        "probability": 0.25,
+        "objective": "mse",
+        "key": "transformer_4963100_0.25_mse",
+        "mean_gain": 0.24815798564598848,
+        "mean_target_nmse": 0.001334651603952906,
+        "median_set_distance": 0.24991358746708195,
+        "absolute_risk_excess": 0.12551466118576962,
+        "final_train_loss": 0.0003312353859655559
+      },
+      {
+        "architecture": "transformer",
+        "seed": 4963100,
+        "probability": 0.25,
+        "objective": "absolute",
+        "key": "transformer_4963100_0.25_absolute",
+        "mean_gain": 0.003449314682107953,
+        "mean_target_nmse": 0.061145087514637965,
+        "median_set_distance": 0.01611674741841795,
+        "absolute_risk_excess": 0.011217232409565805,
+        "final_train_loss": 0.16479380011558534
+      },
+      {
+        "architecture": "transformer",
+        "seed": 4963100,
+        "probability": 0.5,
+        "objective": "mse",
+        "key": "transformer_4963100_0.5_mse",
+        "mean_gain": 0.5000891121113471,
+        "mean_target_nmse": 0.002850107010813195,
+        "median_set_distance": 0.002011610875319782,
+        "absolute_risk_excess": 0.002011610875319782,
+        "final_train_loss": 0.0006497488636523485
+      },
+      {
+        "architecture": "transformer",
+        "seed": 4963100,
+        "probability": 0.5,
+        "objective": "absolute",
+        "key": "transformer_4963100_0.5_absolute",
+        "mean_gain": 0.12996200187309143,
+        "mean_target_nmse": 0.14181783051814079,
+        "median_set_distance": 0.0011455544752498963,
+        "absolute_risk_excess": 0.0011455544752498963,
+        "final_train_loss": 0.3183100736141205
+      },
+      {
+        "architecture": "transformer",
+        "seed": 4963100,
+        "probability": 0.75,
+        "objective": "mse",
+        "key": "transformer_4963100_0.75_mse",
+        "mean_gain": 0.7510871071708461,
+        "mean_target_nmse": 0.0050372025630655536,
+        "median_set_distance": 0.2562992214940324,
+        "absolute_risk_excess": 0.1306218270191055,
+        "final_train_loss": 0.0011123740021139383
+      },
+      {
+        "architecture": "transformer",
+        "seed": 4963100,
+        "probability": 0.75,
+        "objective": "absolute",
+        "key": "transformer_4963100_0.75_absolute",
+        "mean_gain": 0.9815443818979284,
+        "mean_target_nmse": 0.059544400374437846,
+        "median_set_distance": 0.06598528976198881,
+        "absolute_risk_excess": 0.04509314087170937,
+        "final_train_loss": 0.17953743577003478
+      },
+      {
+        "architecture": "transformer",
+        "seed": 4963101,
+        "probability": 0.25,
+        "objective": "mse",
+        "key": "transformer_4963101_0.25_mse",
+        "mean_gain": 0.24789963829063225,
+        "mean_target_nmse": 0.0013115068871386412,
+        "median_set_distance": 0.24932858809658315,
+        "absolute_risk_excess": 0.12511392837655544,
+        "final_train_loss": 0.00032614356721751394
+      },
+      {
+        "architecture": "transformer",
+        "seed": 4963101,
+        "probability": 0.25,
+        "objective": "absolute",
+        "key": "transformer_4963101_0.25_absolute",
+        "mean_gain": 0.0032150687063610115,
+        "mean_target_nmse": 0.061254919687747544,
+        "median_set_distance": 0.016000174597477296,
+        "absolute_risk_excess": 0.011202537445473603,
+        "final_train_loss": 0.1657121467590332
+      },
+      {
+        "architecture": "transformer",
+        "seed": 4963101,
+        "probability": 0.5,
+        "objective": "mse",
+        "key": "transformer_4963101_0.5_mse",
+        "mean_gain": 0.4985715048005484,
+        "mean_target_nmse": 0.0025652143928790224,
+        "median_set_distance": 0.0015783387319111687,
+        "absolute_risk_excess": 0.0015783387319111687,
+        "final_train_loss": 0.0005905942083336413
+      },
+      {
+        "architecture": "transformer",
+        "seed": 4963101,
+        "probability": 0.5,
+        "objective": "absolute",
+        "key": "transformer_4963101_0.5_absolute",
+        "mean_gain": 0.1109961110676092,
+        "mean_target_nmse": 0.1547266377853285,
+        "median_set_distance": 0.0013899392230736943,
+        "absolute_risk_excess": 0.0013899392230736943,
+        "final_train_loss": 0.3209938812255859
+      },
+      {
+        "architecture": "transformer",
+        "seed": 4963101,
+        "probability": 0.75,
+        "objective": "mse",
+        "key": "transformer_4963101_0.75_mse",
+        "mean_gain": 0.7509712250659216,
+        "mean_target_nmse": 0.004711318727008263,
+        "median_set_distance": 0.25520141105270744,
+        "absolute_risk_excess": 0.1296534221719951,
+        "final_train_loss": 0.0009777953033335506
+      },
+      {
+        "architecture": "transformer",
+        "seed": 4963101,
+        "probability": 0.75,
+        "objective": "absolute",
+        "key": "transformer_4963101_0.75_absolute",
+        "mean_gain": 0.9897283558827841,
+        "mean_target_nmse": 0.061643449752571675,
+        "median_set_distance": 0.054543334084811095,
+        "absolute_risk_excess": 0.038523841516142875,
+        "final_train_loss": 0.1785467392206192
+      }
+    ],
+    "seconds": 31.286835529026575,
+    "peak_rss": 667529216,
+    "predictions_sha": "e830655577e68345b1a0c35fab064dc844152ec45c29f8a356baace8d72fe186"
+  },
+  "limitations": [
+    "Two toy architectures and two initializations; not pretrained-model attribution.",
+    "At probability .5 the conditional median is any point between the two futures; intermediate gains are not optimization failures.",
+    "Absolute loss is twice pinball loss at quantile .5; minimizing it targets marginal medians, not a joint future path."
+  ],
+  "next_decision": "Replay saved risks independently; no pretrained inference or large training follows this control.",
+  "audit": {
+    "independent_saved_array_checks": 96,
+    "maximum_discrepancy": 2.7755575615628914e-17,
+    "known_answer_tests": 2,
+    "planted_regressions_detected": 2,
+    "plants_file": "../prior_objective_validation4963000/plants.json"
+  }
+}

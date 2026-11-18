@@ -1,0 +1,16 @@
+{
+  "question": "Does independent replay detect corrupted saved window loss?",
+  "design": "Isolated copy; intentionally alter one loss by1, never alter captures or original results.",
+  "exact_findings": {
+    "caught": true,
+    "returncode": 1,
+    "planted_change": "bolt_native_window[0] +=1 in isolated copy only",
+    "original": 0.19782935577017927,
+    "mutant": 1.1978293557701793,
+    "original_forecast_source_unchanged": true
+  },
+  "controls": "Checked mutation changed value; required numeric assertion failure, not import/collection error.",
+  "limitations": "Software guard test only; this copy contains an intentionally invalid loss artifact.",
+  "evidence_class": "planted instrumentation regression",
+  "next_decision": "Retain failed plant as audit evidence; original run remains valid."
+}

@@ -1,0 +1,20 @@
+{
+  "question": "Did the RSS monitor recovery change the scientific comparison?",
+  "exact_results": {
+    "protocol_except_code_hashes_exact": true,
+    "input_hashes_identical": true,
+    "dictionary_arrays_exact": true,
+    "metrics_probes_perturbations_exact": true,
+    "state_nmse": 0.7716047524411594
+  },
+  "controls": [
+    "Exact protocol comparison excluding implementation hashes",
+    "Dictionary arrays, probes, perturbations and health compared exactly"
+  ],
+  "limitations": [
+    "This validates monitor recovery only; it is not replication on fresh data"
+  ],
+  "next_step": "Continue granted slot1 in recovery_exit_monitor; no scientific setting changed.",
+  "failure_record": "../../monitor_failure.json",
+  "status": "audit_passed"
+}

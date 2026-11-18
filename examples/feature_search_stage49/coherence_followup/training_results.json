@@ -1,0 +1,667 @@
+{
+  "results": [
+    {
+      "seed": 493900,
+      "architecture": "mlp",
+      "arm": "withheld",
+      "steps": 400,
+      "error": {
+        "single": 0.00371370417997241,
+        "seen": 0.0020591847132891417,
+        "heldout": 0.013779041357338428
+      }
+    },
+    {
+      "seed": 493900,
+      "architecture": "mlp",
+      "arm": "withheld",
+      "steps": 800,
+      "error": {
+        "single": 0.003785583656281233,
+        "seen": 0.0019219189416617155,
+        "heldout": 0.011371978558599949
+      }
+    },
+    {
+      "seed": 493900,
+      "architecture": "transformer",
+      "arm": "withheld",
+      "steps": 400,
+      "error": {
+        "single": 0.008519737049937248,
+        "seen": 0.008092480711638927,
+        "heldout": 0.6589365005493164
+      }
+    },
+    {
+      "seed": 493900,
+      "architecture": "transformer",
+      "arm": "withheld",
+      "steps": 800,
+      "error": {
+        "single": 0.007090913597494364,
+        "seen": 0.0056447433307766914,
+        "heldout": 0.6497476100921631
+      }
+    },
+    {
+      "seed": 493900,
+      "architecture": "ridge",
+      "arm": "withheld",
+      "steps": 0,
+      "error": {
+        "single": 0.0034825194161385298,
+        "seen": 0.0013183893170207739,
+        "heldout": 0.0012648170813918114
+      }
+    },
+    {
+      "seed": 493900,
+      "architecture": "mlp",
+      "arm": "covered",
+      "steps": 400,
+      "error": {
+        "single": 0.0037159263156354427,
+        "seen": 0.0021461606957018375,
+        "heldout": 0.0020287714432924986
+      }
+    },
+    {
+      "seed": 493900,
+      "architecture": "mlp",
+      "arm": "covered",
+      "steps": 800,
+      "error": {
+        "single": 0.00374901806935668,
+        "seen": 0.001917368732392788,
+        "heldout": 0.0018389561446383595
+      }
+    },
+    {
+      "seed": 493900,
+      "architecture": "transformer",
+      "arm": "covered",
+      "steps": 400,
+      "error": {
+        "single": 0.008273953571915627,
+        "seen": 0.021648719906806946,
+        "heldout": 0.017490295693278313
+      }
+    },
+    {
+      "seed": 493900,
+      "architecture": "transformer",
+      "arm": "covered",
+      "steps": 800,
+      "error": {
+        "single": 0.005851246416568756,
+        "seen": 0.006583699025213718,
+        "heldout": 0.00580560602247715
+      }
+    },
+    {
+      "seed": 493900,
+      "architecture": "ridge",
+      "arm": "covered",
+      "steps": 0,
+      "error": {
+        "single": 0.003482094034552574,
+        "seen": 0.0013162059476599097,
+        "heldout": 0.0012623774819076061
+      }
+    },
+    {
+      "seed": 493901,
+      "architecture": "mlp",
+      "arm": "withheld",
+      "steps": 400,
+      "error": {
+        "single": 0.003833048976957798,
+        "seen": 0.002113660331815481,
+        "heldout": 0.012537838891148567
+      }
+    },
+    {
+      "seed": 493901,
+      "architecture": "mlp",
+      "arm": "withheld",
+      "steps": 800,
+      "error": {
+        "single": 0.003698208834975958,
+        "seen": 0.001887583639472723,
+        "heldout": 0.00947016105055809
+      }
+    },
+    {
+      "seed": 493901,
+      "architecture": "transformer",
+      "arm": "withheld",
+      "steps": 400,
+      "error": {
+        "single": 0.007578766439110041,
+        "seen": 0.008064055815339088,
+        "heldout": 0.6325492262840271
+      }
+    },
+    {
+      "seed": 493901,
+      "architecture": "transformer",
+      "arm": "withheld",
+      "steps": 800,
+      "error": {
+        "single": 0.006129842717200518,
+        "seen": 0.004956184886395931,
+        "heldout": 0.6600252389907837
+      }
+    },
+    {
+      "seed": 493901,
+      "architecture": "ridge",
+      "arm": "withheld",
+      "steps": 0,
+      "error": {
+        "single": 0.0034979383926838636,
+        "seen": 0.0013294349191710353,
+        "heldout": 0.001317487796768546
+      }
+    },
+    {
+      "seed": 493901,
+      "architecture": "mlp",
+      "arm": "covered",
+      "steps": 400,
+      "error": {
+        "single": 0.003827260807156563,
+        "seen": 0.0022165412083268166,
+        "heldout": 0.002183088567107916
+      }
+    },
+    {
+      "seed": 493901,
+      "architecture": "mlp",
+      "arm": "covered",
+      "steps": 800,
+      "error": {
+        "single": 0.003733652178198099,
+        "seen": 0.0019301940919831395,
+        "heldout": 0.0018920002039521933
+      }
+    },
+    {
+      "seed": 493901,
+      "architecture": "transformer",
+      "arm": "covered",
+      "steps": 400,
+      "error": {
+        "single": 0.007823769003152847,
+        "seen": 0.01606818474829197,
+        "heldout": 0.012256886810064316
+      }
+    },
+    {
+      "seed": 493901,
+      "architecture": "transformer",
+      "arm": "covered",
+      "steps": 800,
+      "error": {
+        "single": 0.005948745645582676,
+        "seen": 0.007736220024526119,
+        "heldout": 0.005821151193231344
+      }
+    },
+    {
+      "seed": 493901,
+      "architecture": "ridge",
+      "arm": "covered",
+      "steps": 0,
+      "error": {
+        "single": 0.0034980210475623608,
+        "seen": 0.001329784281551838,
+        "heldout": 0.001317858463153243
+      }
+    },
+    {
+      "seed": 493902,
+      "architecture": "mlp",
+      "arm": "withheld",
+      "steps": 400,
+      "error": {
+        "single": 0.0037374161183834076,
+        "seen": 0.002076967153698206,
+        "heldout": 0.014987490139901638
+      }
+    },
+    {
+      "seed": 493902,
+      "architecture": "mlp",
+      "arm": "withheld",
+      "steps": 800,
+      "error": {
+        "single": 0.0037615166511386633,
+        "seen": 0.0019055751617997885,
+        "heldout": 0.011908226646482944
+      }
+    },
+    {
+      "seed": 493902,
+      "architecture": "transformer",
+      "arm": "withheld",
+      "steps": 400,
+      "error": {
+        "single": 0.0075953081250190735,
+        "seen": 0.006995797622948885,
+        "heldout": 0.6461799144744873
+      }
+    },
+    {
+      "seed": 493902,
+      "architecture": "transformer",
+      "arm": "withheld",
+      "steps": 800,
+      "error": {
+        "single": 0.007828207686543465,
+        "seen": 0.006284410133957863,
+        "heldout": 0.648101806640625
+      }
+    },
+    {
+      "seed": 493902,
+      "architecture": "ridge",
+      "arm": "withheld",
+      "steps": 0,
+      "error": {
+        "single": 0.0035711918026208878,
+        "seen": 0.0013604429550468922,
+        "heldout": 0.0013776530977338552
+      }
+    },
+    {
+      "seed": 493902,
+      "architecture": "mlp",
+      "arm": "covered",
+      "steps": 400,
+      "error": {
+        "single": 0.003725370392203331,
+        "seen": 0.002158567775040865,
+        "heldout": 0.00214000279083848
+      }
+    },
+    {
+      "seed": 493902,
+      "architecture": "mlp",
+      "arm": "covered",
+      "steps": 800,
+      "error": {
+        "single": 0.0037100736517459154,
+        "seen": 0.001915335189551115,
+        "heldout": 0.0019402951002120972
+      }
+    },
+    {
+      "seed": 493902,
+      "architecture": "transformer",
+      "arm": "covered",
+      "steps": 400,
+      "error": {
+        "single": 0.006705428007990122,
+        "seen": 0.011878129094839096,
+        "heldout": 0.011250492185354233
+      }
+    },
+    {
+      "seed": 493902,
+      "architecture": "transformer",
+      "arm": "covered",
+      "steps": 800,
+      "error": {
+        "single": 0.005835012067109346,
+        "seen": 0.005483552347868681,
+        "heldout": 0.005098368041217327
+      }
+    },
+    {
+      "seed": 493902,
+      "architecture": "ridge",
+      "arm": "covered",
+      "steps": 0,
+      "error": {
+        "single": 0.00356752285733819,
+        "seen": 0.0013596606440842152,
+        "heldout": 0.0013779124710708857
+      }
+    },
+    {
+      "seed": 493903,
+      "architecture": "mlp",
+      "arm": "withheld",
+      "steps": 400,
+      "error": {
+        "single": 0.0036477819085121155,
+        "seen": 0.001984701491892338,
+        "heldout": 0.014104163274168968
+      }
+    },
+    {
+      "seed": 493903,
+      "architecture": "mlp",
+      "arm": "withheld",
+      "steps": 800,
+      "error": {
+        "single": 0.0036094009410589933,
+        "seen": 0.0018132863333448768,
+        "heldout": 0.011177215725183487
+      }
+    },
+    {
+      "seed": 493903,
+      "architecture": "transformer",
+      "arm": "withheld",
+      "steps": 400,
+      "error": {
+        "single": 0.008935470134019852,
+        "seen": 0.009525453671813011,
+        "heldout": 0.6219059228897095
+      }
+    },
+    {
+      "seed": 493903,
+      "architecture": "transformer",
+      "arm": "withheld",
+      "steps": 800,
+      "error": {
+        "single": 0.006979330908507109,
+        "seen": 0.005963662639260292,
+        "heldout": 0.6461742520332336
+      }
+    },
+    {
+      "seed": 493903,
+      "architecture": "ridge",
+      "arm": "withheld",
+      "steps": 0,
+      "error": {
+        "single": 0.0034592316951602697,
+        "seen": 0.0013121371157467365,
+        "heldout": 0.0013012599665671587
+      }
+    },
+    {
+      "seed": 493903,
+      "architecture": "mlp",
+      "arm": "covered",
+      "steps": 400,
+      "error": {
+        "single": 0.003655676729977131,
+        "seen": 0.0021256227046251297,
+        "heldout": 0.0021480987779796124
+      }
+    },
+    {
+      "seed": 493903,
+      "architecture": "mlp",
+      "arm": "covered",
+      "steps": 800,
+      "error": {
+        "single": 0.00361257279291749,
+        "seen": 0.0018497565761208534,
+        "heldout": 0.001856825314462185
+      }
+    },
+    {
+      "seed": 493903,
+      "architecture": "transformer",
+      "arm": "covered",
+      "steps": 400,
+      "error": {
+        "single": 0.009835533797740936,
+        "seen": 0.0260385200381279,
+        "heldout": 0.022519517689943314
+      }
+    },
+    {
+      "seed": 493903,
+      "architecture": "transformer",
+      "arm": "covered",
+      "steps": 800,
+      "error": {
+        "single": 0.006496088113635778,
+        "seen": 0.012103259563446045,
+        "heldout": 0.009699677117168903
+      }
+    },
+    {
+      "seed": 493903,
+      "architecture": "ridge",
+      "arm": "covered",
+      "steps": 0,
+      "error": {
+        "single": 0.0034584472887218,
+        "seen": 0.001312045380473137,
+        "heldout": 0.0013011957053095102
+      }
+    },
+    {
+      "seed": 493904,
+      "architecture": "mlp",
+      "arm": "withheld",
+      "steps": 400,
+      "error": {
+        "single": 0.0035824868828058243,
+        "seen": 0.0019530137069523335,
+        "heldout": 0.015372191555798054
+      }
+    },
+    {
+      "seed": 493904,
+      "architecture": "mlp",
+      "arm": "withheld",
+      "steps": 800,
+      "error": {
+        "single": 0.0036037119571119547,
+        "seen": 0.0018303170800209045,
+        "heldout": 0.012485174462199211
+      }
+    },
+    {
+      "seed": 493904,
+      "architecture": "transformer",
+      "arm": "withheld",
+      "steps": 400,
+      "error": {
+        "single": 0.007371545769274235,
+        "seen": 0.007478176616132259,
+        "heldout": 0.6190354228019714
+      }
+    },
+    {
+      "seed": 493904,
+      "architecture": "transformer",
+      "arm": "withheld",
+      "steps": 800,
+      "error": {
+        "single": 0.0062203118577599525,
+        "seen": 0.004670112393796444,
+        "heldout": 0.6008007526397705
+      }
+    },
+    {
+      "seed": 493904,
+      "architecture": "ridge",
+      "arm": "withheld",
+      "steps": 0,
+      "error": {
+        "single": 0.0033731781877577305,
+        "seen": 0.0013045233208686113,
+        "heldout": 0.0012805815786123276
+      }
+    },
+    {
+      "seed": 493904,
+      "architecture": "mlp",
+      "arm": "covered",
+      "steps": 400,
+      "error": {
+        "single": 0.0035580832045525312,
+        "seen": 0.0020184942986816168,
+        "heldout": 0.0021280909422785044
+      }
+    },
+    {
+      "seed": 493904,
+      "architecture": "mlp",
+      "arm": "covered",
+      "steps": 800,
+      "error": {
+        "single": 0.0036176485009491444,
+        "seen": 0.0019130527507513762,
+        "heldout": 0.001888233469799161
+      }
+    },
+    {
+      "seed": 493904,
+      "architecture": "transformer",
+      "arm": "covered",
+      "steps": 400,
+      "error": {
+        "single": 0.0066196974366903305,
+        "seen": 0.010991210117936134,
+        "heldout": 0.013219145126640797
+      }
+    },
+    {
+      "seed": 493904,
+      "architecture": "transformer",
+      "arm": "covered",
+      "steps": 800,
+      "error": {
+        "single": 0.005644035525619984,
+        "seen": 0.005637957714498043,
+        "heldout": 0.005321103613823652
+      }
+    },
+    {
+      "seed": 493904,
+      "architecture": "ridge",
+      "arm": "covered",
+      "steps": 0,
+      "error": {
+        "single": 0.0033728559501469135,
+        "seen": 0.0013044602237641811,
+        "heldout": 0.0012806797167286277
+      }
+    },
+    {
+      "seed": 493905,
+      "architecture": "mlp",
+      "arm": "withheld",
+      "steps": 400,
+      "error": {
+        "single": 0.003839384764432907,
+        "seen": 0.002029484836384654,
+        "heldout": 0.011203678324818611
+      }
+    },
+    {
+      "seed": 493905,
+      "architecture": "mlp",
+      "arm": "withheld",
+      "steps": 800,
+      "error": {
+        "single": 0.003665878437459469,
+        "seen": 0.0017978543182834983,
+        "heldout": 0.00851173885166645
+      }
+    },
+    {
+      "seed": 493905,
+      "architecture": "transformer",
+      "arm": "withheld",
+      "steps": 400,
+      "error": {
+        "single": 0.008056377992033958,
+        "seen": 0.007728023454546928,
+        "heldout": 0.6458972692489624
+      }
+    },
+    {
+      "seed": 493905,
+      "architecture": "transformer",
+      "arm": "withheld",
+      "steps": 800,
+      "error": {
+        "single": 0.006496976129710674,
+        "seen": 0.005761556327342987,
+        "heldout": 0.6341010928153992
+      }
+    },
+    {
+      "seed": 493905,
+      "architecture": "ridge",
+      "arm": "withheld",
+      "steps": 0,
+      "error": {
+        "single": 0.0034716282971203327,
+        "seen": 0.0013070633867755532,
+        "heldout": 0.0012982492335140705
+      }
+    },
+    {
+      "seed": 493905,
+      "architecture": "mlp",
+      "arm": "covered",
+      "steps": 400,
+      "error": {
+        "single": 0.0037997327744960785,
+        "seen": 0.002084413543343544,
+        "heldout": 0.0021433024667203426
+      }
+    },
+    {
+      "seed": 493905,
+      "architecture": "mlp",
+      "arm": "covered",
+      "steps": 800,
+      "error": {
+        "single": 0.0037172124721109867,
+        "seen": 0.0019095612224191427,
+        "heldout": 0.0019254278158769011
+      }
+    },
+    {
+      "seed": 493905,
+      "architecture": "transformer",
+      "arm": "covered",
+      "steps": 400,
+      "error": {
+        "single": 0.0071554603055119514,
+        "seen": 0.015199274756014347,
+        "heldout": 0.014283832162618637
+      }
+    },
+    {
+      "seed": 493905,
+      "architecture": "transformer",
+      "arm": "covered",
+      "steps": 800,
+      "error": {
+        "single": 0.005848460365086794,
+        "seen": 0.005930621642619371,
+        "heldout": 0.005527704022824764
+      }
+    },
+    {
+      "seed": 493905,
+      "architecture": "ridge",
+      "arm": "covered",
+      "steps": 0,
+      "error": {
+        "single": 0.0034742411226034164,
+        "seen": 0.0013085659593343735,
+        "heldout": 0.0012983425986021757
+      }
+    }
+  ],
+  "seconds": 66.29916899598902,
+  "peak_rss": 885948416,
+  "predictions_sha256": "ab79d8e11c625746eb1c9ce5054ee4a7f4fd9843106bb2712226120ebbb4e59f"
+}

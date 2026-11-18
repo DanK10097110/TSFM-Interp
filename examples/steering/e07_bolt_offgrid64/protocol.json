@@ -1,0 +1,21 @@
+{
+  "out": "runs/steering_e07_bolt_offgrid64",
+  "model": "bolt",
+  "test": 64,
+  "seed": 5220000,
+  "doses": [
+    0.2
+  ],
+  "radii": [
+    0.2
+  ],
+  "steps": [
+    1,
+    6
+  ],
+  "ridge": 1e-05,
+  "shifted": true,
+  "scope": "adaptive native-head control; not semantic vector or calibrated uncertainty",
+  "success": "relative error < 0.1",
+  "source_sha256": "47d2fda055d4e0fc62848ceff1431da825f491e44bd6bdbdf923d3f93b9d3a10"
+}

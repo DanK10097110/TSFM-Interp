@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "purpose": "Validate the distinct exact sign-probability estimand on an asymmetric sign-null law;not mean-zero calibration",
+  "master_seed": 2114000,
+  "n_seed_bundles": 64,
+  "hypotheses_per_family": 4,
+  "main_replicates": 128,
+  "pilot_replicates": 4,
+  "signs": "Independent fair Bernoulli signs for every seed and hypothesis,independent across replicate families;no sample sign balancing or centering",
+  "magnitudes": "Base marginal Exp(scale1) values correlated through an equicorrelated .5 Gaussian copula,using a random stream independent of signs",
+  "differences": "If sign positive,D=base Exp(scale1);if negative,D=-3*base Exp(scale1),so conditional negative magnitude is Exp(scale3). Population q=P(D>0)=.5 and population mean=-1.",
+  "scientific_null": "P(positive contrast | nonzero)=.5;all differences continuous and nonzero. The distribution is asymmetric and its mean is NOT0.",
+  "inference": "Actual production sign_comparison exact two-sided binomial p-values;global Holm across all4hypotheses;alpha.05. No mean sign-flip p-values and no bootstrap required.",
+  "uncertainty": "Family rejection count among128independent replicate families,with exact95%Clopper-Pearson interval;per-hypothesis counts separately. Do not pool4correlated hypotheses as512independent families.",
+  "pilot": "Independent4family runtime pilot only;retain128 main replicates. If projected duration exceeds100seconds,pause before main rather than adapt to pilot outcomes.",
+  "runtime": {"cpu_threads": 1, "gpu": false, "models": false, "cap_seconds": 120},
+  "provenance": "Protocol before data;production helper source and compiled-code hashes;actual imported helper used;no production edits",
+  "known_answers": "Both all-positive and all-negative n8vectors give exact two-sided p=2/256;direction reversal maps q to1-q while preservingp;ties and missingness retain explicit denominators and p1 for all ties;complete Holm4 family",
+  "interpretation": "This validates q,not expected-error superiority,mean significance,or phase completeness in the original population. The earlier centered-lognormal mean-null stress result is not a failure of exact sign inference."
+}

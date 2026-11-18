@@ -118,7 +118,7 @@ These instructions are binding for every future session, human or agent.
 | MP-05 | SAE feature death is a property of the layer's geometry (alive atoms ∝ effective dim, exponent 1.02) | 5 |
 | MN-21 | Reviving dead SAE features *hurts* causal alignment at 5/5 TimesFM depths | 5 |
 | MN-29 | The battery's legacy null is lenient: known-answer gate fails on 5/5 seeds (FPR 0.17–0.25), passes on 5/5 with a profile-matched null; on v2, causal features 293 → 110 (13.0× → 3.06× empirical chance), per-target concepts 9 → 0, convergent atlas concepts 13 → 0 | 5 |
-| MN-38 | Window-mean pooling hides within-window order and understates TimesFM-vs-fine-token CKA by 0.30–0.43 (held-out confirmed, fresh epoch); concatenating tokens fixes it | 5 |
+| MN-38 | Mean versus concat changes raw TimesFM-pair CKA by 0.30–0.43 (held-out); concat preserves order, while preferred measurement depends on window, rank and task (scope correction: MP-12) | 5 |
 
 ---
 
@@ -525,6 +525,32 @@ These instructions are binding for every future session, human or agent.
 - **Ref.** ROADMAP §38.3.4.
 - **Score. 5/5.** Answers the founding sharing question on the widest panel: causal forecast adjustments are mostly model-specific, and the one clear case of the same effect on the same inputs follows model lineage.
 
+#### SH-25 · Both models retain the spectral features at their actual forecast-head inputs despite different composition failures
+- **Claim.** A linear spectral probe, fit on 96 old generating seeds with
+  regularization chosen on 48 validation seeds, generalizes without refitting
+  to 128 fresh two-frequency bundles. Reconstructed future MSE, normalized by
+  the same mixture variance as the native forecast, is **0.0005480985483314407**
+  [0.00040073265909734875, 0.0007349060599206458] for Bolt and
+  **0.0006623374741218504** [0.0004980500019688435, 0.0008819125012721511]
+  for TimesFM; native errors are **0.2044275523140093** and
+  **0.3512594243442453**. Both period32 and period16 coefficient pairs are
+  recoverable. This is extra supervised, task-specific decoding, **not a fair
+  zero-shot forecast improvement or a causal repair**; a known-frequency input
+  harmonic estimator is essentially exact.
+- **Models / layers.** Chronos-Bolt-small `output_patch_embedding` input
+  (the actual decoder query); TimesFM 2.5 `output_projection_point` input at
+  the last read position. Bolt's decoder attends all encoder states; REG is
+  not its sole readout surface. Hooks change native forecasts by exactly zero.
+- **Evidence.** Held-out predictive / linear recoverability.
+- **Status.** Replicated on fresh synthetic seeds; not sealed-private confirmation.
+- **Reproduce.** `experiments/feature_search/head_readout.py`;
+  `runs/feature_search_20261111_native_head_readout_fp64/`
+  (frozen weights/scaler); source-cutpoint hashes in
+  `runs/feature_search_20261111_native_head_capture/`.
+- **Ref.** ROADMAP §48.12.
+- **Score. 4/5.** Separates retained task features from their native use and
+  avoids diagnosing a forecast failure as missing representation.
+
 ## C. Causal comparison (within-model causal evidence compared across models)
 
 #### CA-01 · Corruption-sensitivity agreement is pair-specific, not a general TimesFM-vs-rest anti-correlation
@@ -711,6 +737,75 @@ These instructions are binding for every future session, human or agent.
 - **Score. 4/5.** Independent replication of CA-11's answer on a new corpus and on raw real windows.
 
 ---
+
+#### CA-13 · Local forecast-head effects replicate, but the stronger retained-feature comparison fails its gate
+- **Claim.** Fresh128 generating bundles, period16 phase tangents at actual
+  forecast-head inputs: native-minus-frozen-probe off-target energy is
+  **0.05987707943785135** [0.04375830966984287, 0.0802239206957035] for
+  Bolt and **0.4939784532781031** [0.325254252594046, 0.7167902722611047]
+  for TimesFM. Their difference is **0.4341013738402517**
+  [0.269918309536019, 0.6470654426926147]; all Holm3 p-values **0.0015**.
+  **The complete cross-model claim fails:** TimesFM's frozen-probe off-target
+  relative RMS is **0.11326241938620228**, exceeding the fixed0.10 retained
+  feature gate. Bolt passes at **0.09855118286690241**. No rescue or retuning.
+  Internal interventions reproduce natural local output derivatives and self
+  patches are exactly0, but this does not establish a shared isolated feature
+  used differently by the two heads.
+- **Models / layers.** Bolt `output_patch_embedding` input; TimesFM
+  `output_projection_point` input, actual native read positions.
+- **Evidence.** Causal within-model (L3) for measured local intervention
+  responses; predictive for the frozen probe. Stronger retained-feature
+  comparison is not established.
+- **Status.** Negative (closed) for full cross-model gate; effect sizes
+  replicated on fresh synthetic seeds, not sealed benchmark confirmation.
+- **Reproduce.** `runs/feature_search_20261111_local_tangent_replication1659000/`,
+  including plots with the failed gate; `experiments/feature_search/local_tangent.py`.
+- **Ref.** ROADMAP §48.13.
+- **Score. 3/5.** Demonstrates why significant intervention contrasts alone
+  cannot certify that a cleanly retained concept accounts for model differences.
+
+#### CA-14 · An anchored composition edit repairs a late TimesFM suffix on fresh seeds
+- **Claim.** On16 fresh discovery seeds, replacing the state after15 of20
+  blocks with an amplitude-weighted, background-anchored combination of natural
+  component states reduces normalized MSE from **0.4625987461492669** to
+  **0.036757892047086**. The mean of two geometry-matched random controls is
+  **0.36724197569672923**; both gain contrasts are positive16/16 with
+  Holm8 p **0.000244140625** across the four-cut discovery search. Suffix
+  composition-residual energy is **0.03119729414172619**; aggregate recovery
+  relative to the actual component-sum reference is **0.9274894544128434**.
+- **Models / layers.** TimesFM2.5-200M, after15 blocks (zero-based index14),
+  full native four-token states, periods32/16, context128/horizon64. Only
+  candidates0/5/10/15 were searched;20 is a late control. Cut10 fails random
+  geometry and stays untestable;0/5 fail their corrected tests.
+- **Evidence.** Causal within-model (L3), structured state intervention
+  independently replicated with oracle-separated input components. The edit is an
+  explicit off-manifold composition hypothesis, not an isolated feature.
+- **Status.** Replicated on64 fresh synthetic seeds, with all frozen gates
+  passed and no excluded seeds. Native MSE **0.463167541269782** falls to
+  **0.03884115741909176**, versus random mean **0.4001224368955292**.
+  Native gain **0.4243263838506902** is positive61/64, Holm2 p
+  **4.742842403537839e-15**; random advantage **0.3612812794764374**
+  is positive64/64, Holm2 p **2.168404344971009e-19**. Suffix energy
+  **0.03340652363661104**, component reference **0.0037141944288743354**,
+  and gap recovery **0.9235461810611629** meet the fixed practical gates.
+  Sign tests support conditional majority; mean gates are empirical, not
+  population mean-superiority tests. Discovery effects were subject to selection
+  optimism. The original execution exceeded its
+  memory cap; a corrected execution preserves all29 arrays bitwise and every
+  scientific result exactly while meeting the same cap. It is not a second
+  scientific sample. No harmful-layer origin or cross-model causal identity
+  follows; success concerns the earliest tested cut clearing every discovery
+  gate. Cut10 remains unresolved under its failed random-control validity gate.
+- **Reproduce.** `experiments/feature_search/composition_restoration.py`;
+  `runs/feature_search_stage49_restoration3600000_memorysafe/`, with linked
+  original failed execution and independent cached statistics audit; fresh
+  `runs/feature_search_stage49_restoration3700000/` and
+  `experiments/feature_search/composition_restoration_replication.py`.
+- **Ref.** ROADMAP §49.14–49.17.
+- **Score. 4/5.** A controlled, independently replicated state intervention
+  moves beyond feature decodability to actual forecasting behavior.
+- **Correction (2026-11-12).** Fresh64 replication replaces planned status;
+  the discovery sample and its resource-correction history remain visible.
 
 ## D. Where and when: depth, crystallization, coverage
 
@@ -1105,6 +1200,231 @@ These instructions are binding for every future session, human or agent.
 - **Ref.** ROADMAP §38.3.4.
 - **Score. 3/5.** A per-model fact that changes how Timer's concepts are read, and a reason to gate concepts on per-target significance.
 
+#### PM-18 · Controlled feature composition reverses TimesFM versus Bolt's ranking; their failure modes differ
+- **Claim.** On 128 fresh seed bundles, each with paired pure and mixed
+  period32/period16 signals, the TimesFM-minus-Bolt mixed-error gap is
+  **0.146831872030236** [0.11511752415202106, 0.1790967268823472], while the
+  model-by-composition contrast is **0.25178730121876025**
+  [0.21538921012423637, 0.2885231015590052]. Changing only one input phase
+  changes the other predicted phase more in TimesFM: excess disturbances
+  **0.3279038512503415** [0.24031824798550505, 0.4230899215990888] and
+  **0.4534599782467891** [0.38325726931122517, 0.5251240350920741] radians.
+  All four predeclared tests pass Holm4 **0.002** and their practical thresholds.
+  Resampling keeps all eight factorial/pure cells of a seed together.
+- **Composition diagnostic.** Forecasting the known pure components separately
+  and summing with the exact known offset correction reduces TimesFM MSE from
+  **0.3512594243442453** to **0.0030202935401052824**, removing a fraction
+  **0.9914015302344021** [0.9902879922367146, 0.9923149662433601]. It does
+  not help Bolt on this draw. This uses an **oracle input decomposition** and
+  exact offset, not a generic forecast upgrade or `f(offset)` baseline.
+- **Fresh context/model extension.** 64 new bundles, contexts128/256/512,
+  horizon32: TimesFM mixed MSE **0.349466573709151 / 0.34946656956483124 /
+  0.34946649909290317**; Bolt **0.21823886495623107 / 0.13606338388518485 /
+  0.041825578693870505**; Chronos-2 **0.0009742264718476344 /
+  0.0006608511550697683 / 0.0005744582875454149**. All six predeclared
+  composition claims pass Holm6 **0.003**. These signals repeat identical
+  32-step patches: TimesFM's invariance is specific to this design, not a
+  general claim about long context. All MSE values use the same
+  `(a²+b²)/2` denominator across the pure and mixed conditions of each seed.
+- **Models / layers.** TimesFM 2.5-200M, Chronos-Bolt-small, Chronos-2; native forecasts.
+- **Noise robustness.** Another 64 fresh bundles, context512/horizon32, with
+  Gaussian context noise at10% of clean mixture RMS and clean conditional-mean
+  future truth: TimesFM's native-minus-component-sum gain is
+  **0.565583824301698** [0.4789526340549909, 0.6539884940384483], and its
+  native mixed-loss excess over Bolt is **0.523860819463454**
+  [0.4332454357804728, 0.6155645624105813]. The four fixed clean/noisy claims
+  all pass Holm4 **0.002**. This extension subtracts **actual**
+  `f(background)`, not an exact-offset oracle. Noise is shared across component
+  counterfactuals; known decomposition is still oracle information. Native
+  normalization scales can change, so this remains behavioral evidence.
+- **Evidence.** Behavioral, controlled input intervention; no hidden-mechanism
+  attribution. SH-25 separately establishes task-feature recoverability.
+- **Status.** Prospective fresh-synthetic replication and extension; no sealed
+  benchmark-private look. Restricted to this two-frequency task family.
+- **Reproduce.** `experiments/feature_search/mixture_replication.py`,
+  `mixture_context_expansion.py`, `mixture_composition_audit.py`;
+  `runs/feature_search_20261111_mixture_replication1215000/`,
+  `runs/feature_search_20261111_mixture_composition1215000/`,
+  `runs/feature_search_20261111_mixture_context1326000/`,
+  `runs/feature_search_20261111_mixture_noise1770000/`;
+  noise driver `experiments/feature_search/mixture_noise_background.py`.
+  The separate native public-CLI check is portable in
+  `examples/feature_interference/` (saved forecasts, exact inputs and report).
+- **Ref.** ROADMAP §48.10–48.11, §48.15, §48.21.
+- **Score. 4/5.** A reproducible task-specific model comparison with feature
+  interference, component controls and a third model, rather than a CKA ranking.
+  Composition interference itself has prior art
+  (https://arxiv.org/abs/2511.15324); see ROADMAP §48.17 for the contribution's scope.
+
+#### PM-19 · Repeated patches delimit TimesFM's context benefit on two-frequency mixtures
+- **Claim.** In a prospective32-bundle comparison with an identical future
+  origin and short contexts that are exact suffixes of long contexts,
+  TimesFM's mean context128→512 benefit for periods31/33 minus its benefit
+  for period32 is **0.17250893269492243**
+  [0.1367600676769811, 0.21923424793946084], p **0.0005**, passing the
+  frozen0.05 practical threshold. A second period16 component is always
+  present. At period31 mixed loss falls **0.13002088179741342 →
+  0.003840171334537932**; at period32 it is **0.37043001525656616 →
+  0.3704300549180914**. Loss uses common theoretical component energy.
+  Identical32-step patches give identical value vectors in the inspected
+  TimesFM architecture, explaining why duplicating them cannot add temporal
+  distinction. This does not explain why its head forecasts a pure repeated
+  sine well but a mixture poorly. Nearby periods also change normalization,
+  frequency preference and finite-window structure; no sole cause is proven.
+- **Models / layers.** TimesFM 2.5-200M, Bolt-small behavioral control;
+  TimesFM first/middle/final residual token variation and installed source.
+- **Evidence.** Behavioral, descriptive and source-level conditional argument;
+  not a causal isolation of patch size.
+- **Status.** Prospective fresh-synthetic challenge passed; restricted task family.
+- **Reproduce.** `experiments/feature_search/patch_context_challenge.py`,
+  `patch_homogeneity.py`; `runs/feature_search_20261111_patch_context1548000/`,
+  `runs/feature_search_20261111_patch_homogeneity/`.
+- **Ref.** ROADMAP §48.14.
+- **Score. 4/5.** Turns a context-length anomaly into a prospective conditional
+  prediction, while keeping the architecture explanation's limits explicit.
+
+#### PM-20 · The strong two-frequency failure does not generalize to the tested trend–seasonality task
+- **Claim.** A fresh 64-bundle, three-model discovery screen at periods24/48,
+  context192/horizon48 finds **0/12** contrasts above the fixed absolute
+  practical threshold0.05, even though11 have Holm12 p **0.003**. The largest
+  native gap is Bolt-minus-TimesFM at period48: **0.032891776989840735**
+  [0.028450752459306894, 0.0377026899694327]. At period24, native mixed MSE
+  is **0.0032415266684128687** for TimesFM versus **0.016850267849793904**
+  for Bolt. Units are the common sum of component future variances, including
+  trend. All actual-background component-sum gains are below the advancement
+  threshold. This does not establish equivalence or absence of small effects.
+- **Models / layers.** TimesFM 2.5-200M, Chronos-Bolt-small, Chronos-2;
+  native predictions, no hidden captures.
+- **Evidence.** Behavioral; paired synthetic discovery screen.
+- **Status.** Negative (closed) under the prospective practical gate;
+  no selected follow-up or sealed-private confirmation.
+- **Reproduce.** `experiments/feature_search/trend_seasonality.py`,
+  `trend_seasonality_protocol.json`;
+  `runs/feature_search_20261111_trend_seasonality1881000/`.
+- **Ref.** ROADMAP §48.16.
+- **Score. 3/5.** Bounds the positive finding's scope and prevents spending
+  more compute on tiny but statistically significant differences.
+
+#### PM-21 · Native linear head skips carry most local cross-frequency response in the tested mixture
+- **Claim.** Exact head replay on128 cached seed bundles agrees with native
+  forecasts to normalized RMS **1.1616196852667529e-07** (Bolt) and
+  **1.5304380828017896e-07** (TimesFM). For period16 phase perturbations,
+  the linear skip's signed projection onto the total off-target derivative is
+  **0.8688605152258402** [0.8304050378746096, 0.9088376396896608] for Bolt
+  and **0.9572140281831615** [0.9377662236464296, 0.9745467932949905] for
+  TimesFM. Nonlinear shares are **0.1311390609148922** and
+  **0.042786387793319745**. Normalization and numerical replay residuals
+  are explicitly retained; delta0.02 sensitivity agrees with primary0.01.
+  These are signed attribution shares, not fractions of forecast error or
+  independent branch energies. Incoming states can already mix the concepts:
+  this does not establish where that mixing originates or suggest a repair.
+- **Models / layers.** Bolt-small `output_patch_embedding`; TimesFM2.5-200M
+  `output_projection_point`; Chronos-2 `output_patch_embedding` with its shared
+  nonlinear inverse; native median forecast selection and normalization.
+- **Evidence.** Descriptive native computation decomposition along observed
+  input phase changes; no learned probe or isolated causal-feature assertion.
+- **Accurate comparator extension.** On the identical128 seeds and common
+  analytic target-phase strength denominator, Chronos-2's total off-frequency
+  energy ratio is **0.0009365699279938675**
+  [0.0007697780421198571, 0.0011184857798916235], versus Bolt
+  **0.069589415082317** and TimesFM **0.5068068289233191**. Chronos-2's
+  skip/nonlinear ratios are **0.0009901870057601352** /
+  **0.0004963239142425883**, giving the frozen descriptive label of weak
+  branch mixing. Its nonlinear `sinh` inverse requires a common secant
+  allocation through the SUM, not separate inverses of each branch.
+  This allocation is explicit and not claimed unique; native controls and
+  replay gates pass.
+- **Fresh replication.** On128 new bundles, native off-target energy ratios
+  are TimesFM **0.5261452802980068**, Bolt **0.06792029434615932**, and
+  Chronos-2 **0.0010493469166017904**. TimesFM-minus-Chronos-2 difference
+  is **0.5250959333814048**, approximate95% paired interval
+  [0.3280945788163841, 0.7723828712240296]; Bolt-minus-Chronos-2 is
+  **0.06687094742955753** [0.052205034722263094, 0.08340006809074582].
+  Both frozen practical gates pass. Each has126 positive and2 negative
+  paired energy numerators: q **0.984375**, exact pointwise95% interval
+  [0.944697409977551, 0.9981021068782607], global Holm2 exact two-sided
+  sign p **9.706056854739628e-35**. This establishes conditional majority
+  direction; the energy-ratio intervals remain approximate. Chronos-2's weak
+  branch-mixing description persists. No probe or hidden intervention was used.
+- **Status.** Prospective fresh-synthetic replication of the two model
+  comparisons; branch decomposition remains descriptive native computation,
+  not an isolated causal-feature or sealed-private confirmation claim.
+- **Reproduce.** `runs/feature_search_20261111_head_branch_audit1659000/`,
+  including protocol, selected tensor hashes and branch/bootstrap arrays;
+  `experiments/feature_search/head_branch_audit.py`;
+  `runs/feature_search_20261111_chronos2_head_audit1659000/`,
+  `runs/feature_search_20261111_native_head_replication2225000/`.
+- **Ref.** ROADMAP §48.17, §48.19–48.20; CA-13 remains failed under its separate gate.
+- **Score. 4/5.** Locates the measured output response in a simple native
+  readout path and discourages attributing it to head nonlinearity without evidence.
+
+#### PM-22 · A broader frequency screen exposes opposite TimesFM and Bolt weaknesses
+- **Claim.** On 16 fresh matched bundles at context128/horizon64, normalized
+  mixture MSE for periods32/16 is Bolt **0.3820556874818121**, TimesFM
+  **0.5869264504828446**, Chronos-2 **0.0010072802166847731**. For periods40/20
+  it is Bolt **0.9985357819308737**, TimesFM **0.00045863979466698586** and
+  Chronos-2 **0.000867662034843415**. At context512 on40/20, Bolt remains
+  **0.4748967708490257**; the other two are **4.763951575016e-05** and
+  **0.0005000873729892579**. Periods24/12 and48/24 are low-error controls.
+  Thirty-nine of the complete108 exact-sign/point-mean comparisons pass;
+  recurring effects are not necessarily same-direction model superiority.
+- **Models / layers.** Native TimesFM2.5-200M, Bolt-small, Chronos-2 forecasts;
+  six period pairs, contexts128/512, no hidden activation pooling.
+- **Evidence.** Behavioral exploratory screen with matched inputs and global
+  Holm108. Conditional sign evidence differs from a test of expected loss.
+- **Fresh replication.** On64 new bundles, the primary context128 native
+  ranking-flip gate fails: the32/16 gap has q **0.5625**, Holm p **1.0**.
+  The separate off-response reversal passes: TF-minus-Bolt differences are
+  **0.4341239800184107** at32/16 and **-0.1813287680828609** at40/20;
+  their crossover **-0.6154527481012717** has Holm p **9.90309863193456e-12**.
+  TimesFM32 actual component-sum S/L is **0.006784148048216241**
+  [0.005734700793525599,0.00837327135483489], while Bolt40 is
+  **0.8502795746095388** [0.7679059716968856,0.9382502269311893]. Bolt40
+  already has substantial pure-component errors. Its component-sum gain is
+  not detected at128, and becomes negative at512. These are different observed
+  failure patterns, not proof of exclusive internal mechanisms.
+- **Partial phase-response follow-up.** On the fixed40/20 amplitude grid,
+  Bolt native normalized MSE is **0.9937586478672578**; expected phase-axis
+  error is **0.9436013883016936**, including **0.7026315836996115**
+  gain/rotation error and **0.2409698046020821** wrong-time-character error.
+  Joint phase error is **0.02573335521746873**. Low-order patterns are stable,
+  but off-grid coverage fails (MN-43), so this is a partial behavioral
+  description with preprocessing included, not a complete internal explanation.
+- **Status.** Mixed fresh-synthetic replication: feature-response reversal
+  and TimesFM composition gain replicate; primary accuracy-ranking flip fails.
+  Context512 sensitivity does not rescue it. Ratio intervals are pointwise;
+  sign evidence concerns conditional majority, not expected-loss superiority.
+- **Reproduce.** `experiments/feature_search/frequency_generalization.py`;
+  `runs/feature_search_stage49_frequency3200000/` and prepared sibling.
+  Fresh check: `experiments/feature_search/frequency_crossover_replication.py`,
+  `runs/feature_search_stage49_crossover3400000/` and prepared sibling.
+  Partial response: `examples/feature_search_stage49/phase_orbit/`.
+- **Ref.** ROADMAP §49.4–49.5, §49.7, §49.12.
+- **Score. 4/5.** A concrete model-specific reversal motivates a falsifiable
+  mechanism comparison rather than a universal model or similarity ranking.
+
+#### PM-23 · TimesFM's homogeneous mixture failure survives a common normalizer
+- **Claim.** Source-exact one-token replay reproduces16 inspected seeds × six
+  native64-step conditions with maximum waveform RMS/common-scale
+  **5.3707417253144065e-06**. Identical patch values make QK routing unable
+  to distinguish positions in this regime. Native composition-residual energy
+  is **0.5526366314127467**; fixed-mixture-normalizer residual energy remains
+  **0.6739155886423474**, radial remainder **0.5285770016700883**, with cross
+  energy **-0.6498545646648604**. Radial effects and nonadditivity substantially
+  cancel. These are algebraic components, not fractions of causal blame.
+- **Models / layers.** TimesFM2.5-200M, exact32/16 repeated patches,
+  context128/horizon64; complete pointwise stack and native forecast head.
+- **Evidence.** Descriptive/source-verified computation replay and an explicit
+  common-normalizer counterfactual. Its lower-RMS pure branches are off-manifold.
+- **Status.** Exploratory. Rejects a solely affine radial-bias account of that
+  counterfactual; does not establish normalization is irrelevant, isolate a
+  responsible layer, or extend the homogeneous theorem to noisy contexts.
+- **Reproduce.** `experiments/feature_search/homogeneous_normalizer.py`;
+  `runs/feature_search_stage49_homogeneous_pilot/`, calibration sibling.
+- **Ref.** ROADMAP §49.11, §49.13; earlier patch boundary §48.14 /PM-19.
+- **Score. 4/5.** A cheap source-faithful reduction narrows mechanistic
+  explanations and makes controlled internal tests feasible on CPU.
+
 ## F. Method results — positives (what works, and was adopted)
 
 #### MP-01 · Token→time spans can be measured, and a zero-code adapter follows
@@ -1282,6 +1602,34 @@ These instructions are binding for every future session, human or agent.
   causal yield, while cross-model comparison stays defined.
 
 ---
+
+#### MP-12 · Window robustness needs matched extent, feature budget, and a separate task-information check
+- **Claim.** On the same cached dev series and fixed middle layers, window
+  concatenation is not a uniform similarity boost: at W128, TimesFM/Bolt raw
+  CKA mean→concat is **0.30325622517858053 → 0.34915321043261105**, but
+  PCA8 CKA is **0.2331308306660635 → 0.1338747277636627** and PCA32 is
+  **0.26600981566893317 → 0.22532351841408854**. PCA is fit on training
+  series only. Equal rank still leaves different spectra. Complete-context
+  concatenation is exactly invariant to arbitrary window partition (max
+  difference **0.0**); window-row CKA changes the observational unit.
+- **Task check.** On fresh phase pairs, W32 Bolt mean-minus-concat phase-vector
+  MSE at PCA8 is **0.43163991774494487**
+  [0.40522112183278375, 0.4581688715844688], Holm4 **0.0004**. Raising the
+  PCA budget substantially closes it, so this is not literal absence of phase
+  information. The geometry ranking differs across the mixed-period and pure
+  phase corpora; neither mean nor concat is a universal winner.
+- **Models / layers.** Fixed TimesFM10/Bolt3/Chronos-2 block6 on 128 common
+  cached dev series (64 train/64 test), identical trailing384-step extent;
+  phase information check uses 48 fresh held-out generating-seed bundles.
+- **Evidence.** Descriptive geometric and held-out predictive. The cached
+  null grid is unadjusted/descriptive and does not condition on input/family.
+- **Status.** Implemented, opt-in; existing pipeline defaults unchanged.
+- **Reproduce.** `run_window_robustness.py`; `docs/window_robustness.md`;
+  `runs/feature_search_20261111_window_cached_report/report.html` and
+  `runs/feature_search_20261111_window_phase993000/`.
+- **Ref.** ROADMAP §48.8.
+- **Score. 4/5.** Makes pooling-dependent conclusions auditable without model
+  inference and prevents window size from silently changing the comparison.
 
 ## G. Method results — confirmed negatives (what does not work, and why)
 
@@ -1783,6 +2131,15 @@ See SH-20. **4/5.**
 - **Reading.** Window-level CKA under mean pooling is biased toward dissimilarity between coarse-token (TimesFM) and
   fine-token models. Shared geometry is stronger than reported, and mostly at early, input-encoding layers. Pair
   rankings by CKA partly reflect tokenization.
+- **Scope correction (2026-11-11; MP-12).** The recorded loss of within-window
+  order and the held-out raw CKA contrasts stand. "Understates" and "fixes"
+  above refer to this particular order-preserving representation and study,
+  not an intrinsic ground-truth similarity or a universally preferable metric.
+  Matching PCA rank can reverse a raw mean-versus-concat ordering, and changing
+  window length changes the row-level estimand even with identical series and
+  crop. Higher CKA alone does not establish more shared task information.
+  Use the window robustness diagnostic and held-out concept probes before
+  extending this conclusion to another window, layer, task or feature budget.
 - **Evidence.** Descriptive / geometric; pre-registered criteria (ROADMAP §44–44.4). **Status:** held-out confirmed
   (ROADMAP §47.3, fresh sealed epoch; before that confirmed on a fresh dev set); the fix is in the library as `alignment.window_rep: concat`, the default
   since ROADMAP §44.6 (recorded runs pin `mean`).
@@ -1816,9 +2173,191 @@ See SH-20. **4/5.**
 - **Reproduce.** `tsfm_lens/run_pooling_check.py` (pilot/main/confirm JSONs in `runs/pooling_check/`),
   `tsfm_lens/run_concat_check.py` (`runs/concat_check/`), `analysis/window_concat.py`.
 - **Ref.** ROADMAP §44.2, §44.3a, §44.5.
-- **Score. 5/5.** A methodological bias in every window-level cross-architecture comparison, measured and fixed.
+- **Score. 5/5.** A large, replicated dependence on temporal representation;
+  the dated scope correction separates order preservation from a universal
+  preference for one similarity measurement.
 
 ---
+
+#### MN-39 · A bounded frozen-decoder hierarchy loses stability and does not improve task organization
+- **Claim.** On a fresh controlled seasonality corpus, a frozen-level-one,
+  SAE++-inspired decoder hierarchy with four parents fails all three prospective
+  promotion criteria. For 256 training-selected atoms from the historical
+  Chronos-Bolt dictionary, three hierarchy seeds have pairwise ARI
+  **0.09744900235251616 / 0.022057249581602746 / 0.10284922591492561**.
+  Held-out coarse balanced accuracy is **0.90625 / 0.8229166666666666 /
+  0.9895833333333334**, versus cosine grouping **0.9166666666666666**.
+  Fine period accuracy is **0.7916666666666666 / 0.625 / 0.7083333333333334**,
+  versus cosine **0.7708333333333334**, size-matched random **0.9375**, and
+  uncompressed codes **1.0**. Uncompressed coarse accuracy is also **1.0**.
+  The selected atoms cover **0.6938634399308558** of training activation
+  frequency. Optimization is finite and decreasing; every atom is assigned.
+- **Models / layers.** Chronos-Bolt-small, `encoder.block.3`, historical SAE;
+  48 held-out generating seeds, each with paired absent/present seasonality.
+- **Evidence.** Descriptive / held-out predictive, exploratory. This tests a
+  bounded frozen-dictionary transfer ablation, **not full joint SAE++**. The
+  context/horizon changes from historical 480/64 to 128/32; pooling matches
+  the historical 32-step window means. No causal or monosemanticity claim.
+- **Status.** Negative screen (closed without scaling, 2026-11-11).
+- **Reproduce.** `tsfm_lens/experiments/feature_search/hierarchy_poc.py`;
+  `tsfm_lens/runs/feature_search_20261111_hierarchy/results.json`;
+  checkpoint `runs/panel7_v3_ablcheck/sae/Chronos-Bolt/encoder_block_3.pt`.
+- **Ref.** ROADMAP §48.1–48.2.
+- **Score. 3/5.** A cheap falsifiable screen prevents expensive hierarchy
+  training from being justified by reconstruction alone.
+
+#### MN-40 · A mean-zero null does not justify paired sign flips without symmetry
+- **Claim.** An instrument calibration using the actual production statistic
+  finds Holm4 family rejection in **8/128** symmetric Gaussian null families
+  (**0.0625**, exact95% binomial interval
+  [0.027366684886370826, 0.11943678339385401]). In deliberately skewed
+  mean-zero families, where the statistic's symmetry assumption is violated,
+  rejection is **44/128** (**0.34375**). Each family has64 independent
+  seed-level contrasts and999 Monte Carlo sign flips. Mean-zero and
+  exchangeable/symmetric differences are distinct assumptions. The symmetric
+  sample is too small to certify5% calibration; the stress case demonstrates
+  the danger of claiming distribution-free mean inference.
+- **Models / layers.** No models; statistical machinery only.
+- **Evidence.** Illustrative simulation with known population nulls and a
+  deliberately invalid-assumption decoy; no TSFM performance conclusion.
+- **Status.** Negative (closed) for the claim that mean zero suffices.
+  Historical model contrasts retain their stated conditional assumptions.
+- **Different endpoint.** New protocols can instead select exact two-sided
+  inference on positive-sign probability, with ties/exclusions and mean effects
+  shown separately. In an asymmetric q=.5 simulation with mean−1, the observed
+  corrected count is0/128, but the analytical family error is
+  **0.03219153531930352**. Zero is a low-tail draw, not proof of zero error;
+  the separate post-hoc audit records its probability
+  **0.015172085364807403**. This endpoint does not test the mean.
+- **Reproduce.** `runs/feature_search_20261111_statistics_calibration1992000/`,
+  `runs/feature_search_20261111_sign_null_calibration2114000/`,
+  saved function snapshots and per-replicate results.
+- **Ref.** ROADMAP §48.18.
+- **Score. 3/5.** Motivates an explicitly different exact sign-probability
+  endpoint and prevents mistaking conditional mean p-values for universal guarantees.
+
+#### MN-41 · Derivative-based failure prediction does not survive a stronger input control
+- **Claim.** Off-frequency energy alone clears no frozen promotion gate on
+  the128-seed evaluation cohort. Bolt's joint off/on-target derivative ridge
+  augmentation initially gives **0.3068546604934841** relative prediction-loss
+  improvement, with exploratory Holm6 sign p **0.004979984371356317**.
+  A predeclared stronger input RBF challenge reverses this: input-only prediction
+  MSE **0.00793532001987993**, joint **0.00922707377887333**, on-only
+  **0.010098940806783127**. Joint gain is **-0.001291753758993399**,
+  pointwise95% interval [-0.003004891461113323,0.00026984535158859103].
+- **Models / layers.** All three native models in the first analysis; only
+  positive Bolt candidate in the RBF challenge. Input descriptors and fixed
+  native derivatives; no new GPU inference.
+- **Evidence.** Predictive exploratory analysis: discovery1659000 fits/CV,
+  evaluation2225000 fixed. Both cohorts were previously inspected.
+- **Status.** Negative (closed) for this incremental-prediction design; no
+  new native replication. Does not establish that interference is causally irrelevant.
+- **Reproduce.** `experiments/feature_search/stage49_failure_prediction.py`;
+  `runs/feature_search_20261111_stage49_failure_prediction_v3/` and
+  `runs/feature_search_20261111_stage49_rbf_challenge/`.
+- **Ref.** ROADMAP §49.2.
+- **Score. 3/5.** Prevents a simple input-baseline underfit from becoming a
+  claimed mechanistic explanation of individual forecasting failures.
+
+#### MN-42 · A residual-update clamp pilot fails its complete localization gate
+- **Claim.** No tested TimesFM site advances. At block19, off-energy falls
+  from **0.1303457303564841** to **0.08028764842129353** and intended relative
+  RMS error improves by **0.017882898460587382**. But13/16 favorable signs
+  versus native and random give Holm8 p **0.170166015625**. The practical
+  effect alone does not satisfy the registered gate. Baseline forecasts are
+  unchanged, and all-condition MSE is **0.30075443735853646** native versus
+  **0.3007761068835905** clamped, so this is not forecasting repair.
+- **Models / layers.** TimesFM2.5-200M blocks[0,9,15,19], all native positions,
+  16 fresh bundles3100000, periods32/16, context128/horizon32.
+- **Evidence.** Exploratory within-model response intervention, with exact
+  identity guards, output-clamp ceilings and matched-random edit energy.
+- **Status.** Negative (closed) under the promotion rule; not evidence of zero
+  layer effect. No larger sample or threshold change follows this pilot.
+- **Reproduce.** `experiments/feature_search/stage49_residual_update.py`;
+  `runs/stage49_timesfm_residual_update3100000_retry1/`.
+- **Ref.** ROADMAP §49.3.
+- **Score. 3/5.** Separates an interesting local effect from a defensible
+  localized-feature claim and from actual forecasting improvement.
+
+#### MN-43 · Low-order phase-response features do not fully explain the difficult cases
+- **Claim.** In a fixed8×8 to16×16 phase-grid check, TimesFM32/16 has0/4
+  stable low-order bundles and0/8 off-grid passes; Bolt32/16 has2/4 and0/8.
+  Their mode identities remain unresolved at this budget. Bolt40/20 has4/4
+  stability and high-order-energy passes, but0/8 off-grid passes: waveform
+  RMS/shared-scale ranges **0.06061027936225086–0.14363814021190519**, above
+  the frozen0.05 limit. Its stable low-order pattern is only partial.
+  TimesFM40/20 and Chronos-2 at both pairs pass all three checks, but no
+  originally eligible cross-model comparison achieves complete coverage.
+- **Models / layers.** Native TimesFM2.5, Bolt-small and Chronos-2 forecasts,
+  context128/horizon64, eight fixed amplitude/scale bundles; no hidden states.
+- **Evidence.** Behavioral/descriptive mathematical-resolution validation.
+  Full-waveform phase DFT avoids temporal-basis leakage; separate nested and
+  off-grid checks test phase aliasing and predictive coverage. No population
+  p-value belongs to this deterministic grid.
+- **Status.** Negative (closed) for complete low-order explanations at this
+  budget. Stable40/20 patterns may be described with their coverage limit;
+  no hidden-feature expansion, higher order or finer grid is promoted.
+  Original failed pilot controls remain recorded; the amended follow-up's
+  fixed-batch native controls pass exactly.
+- **Reproduce.** `experiments/feature_search/phase_orbit_alias.py`;
+  `runs/feature_search_stage49_phase_alias3500000/`, with linked coarse pilot,
+  separate FP64 replay and fixed-batch control artifacts.
+- **Ref.** ROADMAP §49.8–49.10, §49.12.
+- **Score. 3/5.** Prevents a visually simple low-order feature diagram from
+  becoming an unsupported explanation; separates stable partial structure
+  from adequate task coverage.
+
+#### MN-44 · Native forecasts do not preserve near-equivalent linear task recovery
+- **Claim.** Under SH-25's same fitting specification, output-decoder scaled
+  future MSE is **0.022370863219791523** for Bolt and **0.07411271997270756**
+  for TimesFM, versus frozen head-input decoder **0.0005480985483314407**
+  and **0.0006623374741218504**. Paired excesses are **0.02182276467146008**
+  [0.01975334769485844,0.023993157166713287] and **0.07345038249858571**
+  [0.06463308883673971,0.08314720863694158]. Both models fail the0.01
+  absolute/excess practical gates; no nonlinear fallback follows.
+- **Models / layers.** Bolt-small and TimesFM2.5, native32-step output versus
+  actual head input; same96/48 old split and128 inspected evaluation bundles.
+- **Evidence.** Correlational (exploratory linear recoverability). Intervals are pointwise
+  seed bootstraps, not new confirmation. Different feature dimensions and
+  finite-sample fitting remain possible contributors to the gap.
+- **Status.** Negative (closed) for near-equivalent output recovery under this
+  specification. It does not demonstrate information destruction or absence.
+  The decoder uses supervised labels and known frequencies, not a fair
+  zero-shot forecasting correction. Original caches lack embedded row IDs;
+  physical row/split/prediction checks do not erase that provenance limitation.
+- **Reproduce.** `experiments/feature_search/forecast_recoverability.py`;
+  `runs/feature_search_stage49_forecast_recoverability/`.
+- **Ref.** ROADMAP §49.11, §49.13; SH-25.
+- **Score. 3/5.** Distinguishes retained head-input task information from what
+  a fixed linear diagnostic can recover after the native forecast mapping.
+
+#### MN-45 · A tiny cross-fitted linear subspace does not preserve the composition repair
+- **Claim.** On the16 reused discovery seeds, uncentered channel-SVD ranks1/2/4
+  yield normalized losses **0.29508030518868866**, **0.1952377910849517**
+  and **0.1385365731017681**, versus full-edit **0.036757892047086**.
+  They recover **0.39338273758107306**, **0.6278424263167613** and
+  **0.7609936198600142** of the full edit's native-loss improvement.
+  Every rank fails the frozen loss≤0.06 and recovery≥0.8 gates. Rank4
+  beats its matched-random mean by **0.23509182549852548** and the
+  mean-only edit by **0.14481047365507416**, which cannot rescue those failures.
+- **Models / layers.** TimesFM2.5, after15 of20 blocks (index14), native
+  four-token states, periods32/16, context128/horizon64. Opposite seed-parity
+  folds fit8 seeds and evaluate8; tokens remain dependent within each seed.
+- **Evidence.** Causal within-model (L3), exploratory compression of the
+  oracle-component state intervention. No forecast targets enter fitting;
+  held-out corrections still require separated component inputs.
+- **Status.** Negative (closed) for the fixed ranks1/2/4 recipe. All16 seeds
+  and all three ranks pass geometry/execution checks; none is dropped. No
+  p-values on this inspected cohort, no rank escalation or fresh follow-up.
+  This does not rule out all low-dimensional/nonlinear mechanisms and does
+  not weaken CA-14's independent full-state restoration replication.
+- **Reproduce.** `experiments/feature_search/composition_compactness.py`;
+  `runs/feature_search_stage49_compactness3600000/`, with sibling
+  `feature_search_stage49_compactness3600000_independent_audit/` replaying
+  both fitted projectors, all96 random edits, actual state geometry and losses.
+- **Ref.** ROADMAP §49.18–49.19; CA-14.
+- **Score. 3/5.** Prevents a strong whole-state intervention from being
+  prematurely attributed to a few clean linear features.
 
 ## H. Benchmark trust
 
@@ -1865,3 +2404,1106 @@ See SH-20. **4/5.**
 - **Ref.** ROADMAP §32.7 addendum (2026-09-27); PM-07; MN-14.
 - **Remedy (D1, opt-in).** `configs/large_run_v2.yaml` adds `autogluon/chronos_datasets` electricity_hourly and traffic twins for each real-derived generator. The naive-flat proxy (lag1 < 0.2 and not periodic) halves corpus-wide, 0.2093 → 0.1067. Actual model flat share on dev falls correspondingly, v1 → v2: TimesFM 0.4943 → 0.3254, Chronos-2 0.4912 → 0.3202, Sundial 0.3917 → 0.2715, Chronos-Bolt 0.4881 → 0.3171. Sundial's sequential_par flat share rises 0.20 → 0.72; diagnosed as an adapter defect (PM-15). No full pipeline rerun on v2 yet. Ref. ROADMAP §32.7 D1.
 - **Score. 4/5.** The ~50% flat share and small ablation effects are partly a property of the corpus, not of the models. Rebalancing the real-derived source would change what the causal battery can see.
+
+#### PM-24 · Real-background units changes preserve these two models' responses
+- **Claim.** On12 heldout hourly sources (4 each electricity/M4/pedestrians),
+  the worst fixed scale/offset forecast-or-response RMS, averaged by dataset,
+  is Bolt **5.488865236960517e-7**, **3.1393979675288033e-7**,
+  **3.227940600501552e-7**, and TimesFM **2.280941964267713e-6**,
+  **1.4082511017083496e-6**, **7.435093066571062e-7**, in source past-SD
+  units. Scales0.1/10 and offsets-5/+5 expose no practical defect against the
+  prespecified0.1 gate. This does not establish exact global equivariance.
+- **Models / layers.** Chronos-Bolt small and TimesFM2.5-200M; native forecasts,
+  context128/horizon32, relative seasonal amplitude0.5, period24 hours.
+- **Evidence.** Behavioral, descriptive.
+- **Status.** Exploratory (dev); scaling-defect screen closed without expansion.
+- **Reproduce.** `experiments/feature_search/real_background_poc.py`;
+  `runs/real_background_poc492306/{bolt,timesfm}.json`, experiment4;
+  `examples/feature_search_stage49/real_background/index.html`.
+- **Ref.** ROADMAP §49.24–49.25.
+- **Score. 3/5.** Rules out practical units changes as the explanation for
+  response variation on these particular real-background pilot inputs.
+
+#### MN-46 · Good tiny-SAE state reconstruction misses controlled activation responses
+- **Claim.** Three matched64-atom TopK8 refits (150 steps,12 discovery sources)
+  achieve heldout state NMSE Bolt **0.05188297480344772**,
+  **0.052068207412958145**, **0.05264982953667641**, but response NMSE
+  **0.6410754323005676**, **0.6525039076805115**, **0.6279963850975037**.
+  TimesFM state NMSE is **0.1314772069454193**, **0.13562437891960144**,
+  **0.1317705512046814**, with response NMSE **0.5753476023674011**,
+  **0.5692651867866516**, **0.5553540587425232**. Every refit fails the frozen
+  response<=0.25 gate despite passing state reconstruction. Controlled
+  forecast-effect NMSE also exceeds0.1. Feature permutation and duplication
+  conserve decoded states within **7.62939453125e-6**.
+- **Models / layers.** Chronos-Bolt small final encoder block and TimesFM2.5
+  final transformer block; all native tokens including Bolt REG. Three cached
+  hourly datasets, source-disjoint12 evaluation sources. Positive seasonal
+  addition at0.5 past-SD, period24; no SAE seed/width/budget selection.
+- **Evidence.** Descriptive geometric reconstruction and within-model patches;
+  oracle native-normalizer closure also fails, limiting functional attribution.
+- **Status.** Negative (closed) for this tiny recipe; exploratory evidence.
+  This is not evidence that SAEs generally fail or that model semantics are
+  unstable. Response-sensitive fitting or greater capacity was not tested.
+- **Reproduce.** `experiments/feature_search/real_background_poc.py::sae_audit`;
+  `runs/real_background_poc492306/{bolt,timesfm}.json`, experiment6;
+  `examples/feature_search_stage49/real_background/index.html`.
+- **Ref.** ROADMAP §49.24–49.25.
+- **Score. 4/5.** A concrete counterexample to treating global reconstruction
+  quality as sufficient validation for controlled feature-response comparisons.
+
+#### PM-25 · A separated weak component exposes a model-dependent distraction boundary
+- **Claim.** With target amplitude0.5/bin5 fixed and far distractor bin17 at
+  amplitudes0.5/2/8, TimesFM check response NMSE is **0.12283654886009954**,
+  **0.5504058311228635**, **1.8385632140476604**. A past-only K4 Fourier
+  partition yields **0.004979990196191095** at all three amplitudes. Bolt
+  instead has native errors **1.1023462011450356**, **2.030500181193551**,
+  **1.279860610934934**, with separated error **0.7478962472416841**.
+  For a nearby bin6 distractor at amplitude8, TimesFM changes
+  **1.4235090872171847**→**1.4456124856595713**: the fixed split keeps that
+  pair in one group. The far adapter's amplitude invariance is structural
+  because target-group inputs are identical; its accuracy is the measurement.
+- **Models / layers.** Chronos-Bolt small and TimesFM2.5-200M native point
+  forecasts;128 history/32 horizon, fixed noise0.05, no internal intervention.
+ 16 fresh generating seeds split8 discovery/8 check; signs paired within seed.
+- **Evidence.** Behavioral, descriptive; no isolated internal mechanism claim.
+- **Status.** Exploratory (dev), candidate for fresh-source replication.
+  TimesFM's far-amplitude sensitivity has the same positive direction in both
+  halves; no multiplicity-corrected significance or broad generalization claim.
+- **Reproduce.** `experiments/feature_search/fourier_poc.py`;
+  `runs/fourier_poc4929000/`; portable `fourier_poc/{bolt,timesfm}_summary.json`
+  under `examples/feature_search_stage49/`, responses and distractor contrasts.
+- **Ref.** ROADMAP §49.29–49.30.
+- **Score. 4/5.** Separates a model that forecasts the isolated contribution
+  accurately from one that remains inaccurate after the same decomposition.
+
+#### PM-26 · Controlled-response fidelity can improve while real forecast accuracy deteriorates
+- **Claim.** TimesFM's native→K4 known-addition response NMSE on four check
+  electricity sources is **0.7354096312950661**→**0.23021885330862987**;
+  on four pedestrian sources **0.6644351168534955**→**0.23514514961125638**.
+  All four sources in each check group and all four discovery sources in each
+  group improve response. However, unmodified total-future normalized loss
+  increases **0.6073912219985821**→**1.425829712079506** and
+  **0.12325481761696377**→**1.6635653671014523**, respectively.
+  Bolt check response instead worsens **0.7356323719635418**→
+  **0.9769994295733234** and **0.6810495039385699**→**2.108136046437345**.
+- **Models / layers.** TimesFM2.5-200M and Chronos-Bolt small point forecasts;
+  real hourly histories with paired +/-0.5 past-SD sinusoidal additions,
+  period128/5. Exact reconstruction-preserving Fourier split, no true latent
+  decomposition, training, SAE or internal patch.
+- **Evidence.** Behavioral, descriptive. Source-disjoint discovery/check,
+  conditional on these small datasets; pretraining overlap is unknown.
+- **Status.** Exploratory (dev). M4 has a similar TimesFM check pattern but
+  fails discovery/check response-direction consistency and is not included in
+  the two-domain consistency claim. No general superiority or causality claim.
+- **Reproduce.** `experiments/feature_search/fourier_report.py`;
+  `runs/fourier_poc4929000/`; `examples/feature_search_stage49/fourier_poc/`.
+- **Ref.** ROADMAP §49.29–49.30.
+- **Score. 4/5.** Demonstrates why component-response consistency should be
+  measured alongside forecast quality rather than used as its substitute.
+
+#### PM-27 · Matched training coverage can dominate extra optimization on unseen combinations
+- **Claim.** Across six fresh training corpora with paired initializations,
+  the small transformer's unseen-pair NMSE is **0.6374173760414124** at400
+  steps and **0.6398251255353292** at800 when the pair combinations are
+  withheld. Adding those combinations, with the same example count and exactly
+  matched per-component exposures, yields **0.015170028277983269** and
+  **0.006212268335123857**. The MLP repeats a smaller gap at800 steps:
+  **0.010820749215781689**→**0.0018902896748234828**. All six paired corpora
+  improve in both architectures at both checkpoints. Ridge already solves the
+  withheld task with **0.001306674792431295** error; a neural-normalization-
+  matched ridge control also remains accurate.
+- **Models / layers.** Small trained MLP and two-layer patch transformer;
+  four sinusoidal frequencies,128 history/32 horizon,1,024 training examples
+  and256 latent test blocks per corpus. Equal neural optimizer/data budgets;
+  no pretrained TSFM modification or internal activation intervention.
+- **Evidence.** Controlled training intervention: combination coverage within
+  fixed architecture. Six independent corpus+initialization pairs; test rows
+  are not independent training replications. Ridge is a solvability reference,
+  not an optimizer-matched architecture experiment.
+- **Status.** Exploratory replication on fresh corpora. Supports a persistent
+  learned composition failure within this budget; does not identify pretrained
+  TSFM training exposure or rule out improvement with much longer optimization.
+- **Reproduce.** `experiments/feature_search/coverage_replication.py` and
+  `coverage_normalization_control.py`; `runs/coverage_replication493900/`,
+  `runs/coverage_normalization493900/`; portable coherence follow-up report.
+- **Ref.** ROADMAP §49.31–49.33.
+- **Score. 4/5.** Establishes a concrete mechanism that can generate strong
+  component familiarity alongside poor combination generalization.
+
+#### PM-28 · Fourier-response rescue has a sharp grouping and off-grid boundary
+- **Claim.** On64 fresh seeds, TimesFM's strong far-distractor response NMSE
+  changes **3.079471319358797**→**0.004152199204811288** with four-band Fourier
+  splitting. For nearby on-grid components, merely moving one band boundary
+  changes **1.7095258110167177**→**0.0036124372813698823**, still using four
+  parts. But moving frequencies off-grid reverses the benefit: near native
+  **1.975004373423026**→FFT **29.435810463708094**, far
+  **4.165856284653323**→**9.740471878910146**. Bolt also worsens off-grid.
+  A history-only fitted two-tone reference achieves **0.008172170252036145**
+  near and **0.0031745014192145794** far, without supplied frequencies.
+- **Models / layers.** Chronos-Bolt small and TimesFM2.5-200M native forecasts;
+  target amplitude0.5, distractor8,128 history/32 horizon. Frequencies5/6/17
+  on-grid and5.35/6.35/17.35 off-grid. No true decomposition supplied to the
+  Fourier adapter; the classical reference assumes two tones.
+- **Evidence.** Behavioral and controlled input transformation. The on-grid
+  far improvement passes the fixed12-test Holm family; grouping/off-grid
+  mechanisms are exploratory on64 fresh seeds. Normalizer self-identity and
+  forecast repeat gates pass exactly. Independent arithmetic audit passes.
+- **Status.** Grounded dev replication extends PM-25 and limits its scope.
+  Decomposition count alone is insufficient; paired normalization drift is
+  insufficient to explain the native failure. More history helps TimesFM in
+  the tested16-seed subset but worsens Bolt's far case in all16. No universal
+  adapter benefit, hidden mechanism, or architecture-only attribution.
+- **Reproduce.** `experiments/feature_search/coherence_study.py`,
+  `coherence_analysis.py`, `coherence_classical.py`;
+  `runs/coherence_replication4932000/`; coherence follow-up report.
+- **Ref.** ROADMAP §49.31–49.34.
+- **Score. 4/5.** A strong negative control shows that an apparent component
+  interpretation can depend on the analysis representation itself.
+
+#### PM-29 · The real response/forecast tradeoff replicates on pedestrians, with narrower scope
+- **Claim.** On16 fresh pedestrian TEST sources, TimesFM native→FFT response
+  NMSE improves **0.6834002141596086**→**0.16499201896090102**, while actual
+  future loss worsens **0.16289278445396405**→**1.6260539730301482**. All16
+  sources show both directions; Holm p **0.0001373291015625** for each.
+  Electricity response improvement does not pass (Holm p
+  **0.1152191162109375**, mean interval **[-0.12700144198376273,
+  0.6248026350943895]**), although its forecast harm does. Bolt pedestrian
+  response instead worsens **0.7210832771225903**→**2.4515692026859535**.
+- **Models / layers.** Same two native forecasters and past-only four-band
+  decomposition; known +/-0.5 past-SD additions, no oracle real components.
+- **Evidence.** Fixed primary family and fresh source-level evaluation;
+  bootstrap intervals are conditional on datasets. Source temporal dependence
+  and unknown pretraining overlap limit population generalization.
+- **Status.** Replicates PM-26's pedestrian tradeoff; narrows its earlier
+  two-domain pilot scope. Suppressing high-band forecasts recovers only
+  **0.006212028283677725** pedestrian TimesFM loss, so that particular noise
+  explanation cannot account for the **1.4631611885761842** total penalty.
+- **Reproduce.** `runs/coherence_replication4932000/analysis.json` primary
+  family and controls; `examples/feature_search_stage49/coherence_followup/`.
+- **Ref.** ROADMAP §49.34.
+- **Score. 4/5.** Better component-response fidelity is demonstrably compatible
+  with worse real forecasting, even after expanding beyond the tiny pilot.
+
+#### PM-30 · The fixed perturbation selector screen does not establish incremental practical value
+- **Claim.** Added response diagnostics worsen ridge TEST loss versus the
+  matched input-only selector on electricity **0.5710651275237811**→
+  **0.65187409462335**, M4 **0.11545850429947696**→**0.12296266560858424**,
+  and pedestrians **0.15995633314817082**→**0.1651241191327528**; traffic ties.
+  RBF diagnostics worsen electricity/M4, tie pedestrians, and improve traffic
+  by **0.01719967661651505**, driven by only2/16 sources (sign p **0.25**).
+- **Models / layers.** Select Bolt or TimesFM using fixed ridge/RBF predictors;
+  input descriptors versus input+past-only perturbation responses.64 FIT and64
+  untouched TEST sources,16/domain; global/domain constants and past32-step
+  hindcast baselines included. No test-selected model or hyperparameter.
+- **Evidence.** Exploratory source-disjoint prediction; TEST choice invariance
+  under arbitrary TEST-future label changes is tested. Full paired intervals
+  and losses retained. Traffic mean is heavy-tailed, so domains are separate.
+- **Status.** Negative/unsupported for this fixed recipe. This is not proof
+  that all diagnostics fail or that small observed differences are significant.
+- **Reproduce.** `coherence_analysis.py::selectors`; replication
+  `selector_rows.json`, `analysis.json` selector contrasts, portable report.
+- **Ref.** ROADMAP §49.34.
+- **Score. 3/5.** Prevents promoting an interpretable response metric into a
+  model-selection claim without incremental predictive evidence.
+
+#### PM-31 · Pure hidden composition gives a modest Bolt gain, not a general TSFM solution
+- **Claim.** FIT-selected pure Bolt first-block/depth2 fusion improves held-out
+  synthetic normalized loss by **0.04554777148291069**, interval
+  **[0.03945377595869312, 0.05159511970435278]**, and beats matched random edits
+  by **0.014407703650315172**. TimesFM's selected half-native-state blend gains
+  **0.0027575090146978944**, interval **[-0.009879762380357215,
+  0.013874104216795776]**. Geometry-selected pure TimesFM fusion instead harms
+  forecasting: gain **-0.007938986098528698**, interval
+  **[-0.014037585629773879, -0.0017337445038410355]**.
+- **Models / layers.** Bolt-small blocks0/1/3, TimesFM2.5 blocks0/5/10; adaptive
+  continuous-frequency tones plus intact residual; affine zero-state correction.
+  Pilot-FIT geometry weights frozen before replication. Full-context native
+  normalization metadata remain shared even in pure fusion.
+- **Evidence.** L3 within-model intervention and source-held-out behavior;
+  16 TEST seed groups, five dependent conditions each. Exact identity gates pass.
+  Conditional bootstrap intervals are exploratory, not corrected confirmation.
+- **Status.** Modest conditional Bolt positive; TimesFM selected blend is
+  inconclusive. Better hidden reconstruction alone is not a forecasting criterion.
+- **Reproduce.** `selective_analysis.py`; `selective_replication4942000/analysis.json`;
+  `examples/feature_search_stage49/selective_composition/`.
+- **Ref.** ROADMAP §49.35–49.37.
+- **Score. 4/5.** Separates causal usefulness from geometric reconstructibility.
+
+#### PM-32 · A dominant component can conceal failure to reconstruct the remainder
+- **Claim.** First-block/depth1 equal composition on off-grid dominant mixtures
+  has mean FP64 whole-state error **0.0022665692188878588** (Bolt) and
+  **0.00793706386934049** (TimesFM), yet error relative to full-minus-dominant
+  state is **2.2292954023482277** and **3.685396283813229**. Balanced mixtures give
+  remaining-relative errors **2.4911155737257302** and **0.26719512599310846**.
+  Despite closer TimesFM reconstruction, its balanced future loss worsens
+  **0.327477538734416**→**0.33736003512872703**; Bolt improves
+  **0.7459936128206015**→**0.6915583213036312**.
+- **Models / layers.** Same frozen pair, first block, pure equal-weight fusion,
+  residual retained; full-context normalizer. All native token positions.
+- **Evidence.** L1 geometry plus L3 suffix intervention, descriptive paired means
+  over16 held-out seeds; dominant-only and balanced controls. The measured
+  remainder is not assumed to be an oracle representation of the weak component.
+- **Status.** Replicates the pilot denominator warning; model differences concern
+  normalized within-model errors, not coordinate correspondence across models.
+- **Reproduce.** `selective_diagnostics.py`; replication saved states,
+  `marginal_geometry.json`, `analysis.json`; selective composition report.
+- **Ref.** ROADMAP §49.37.
+- **Score. 4/5.** A good whole-state score can hide precisely the contribution an
+  interpretability experiment is meant to recover.
+
+#### PM-33 · Local smoothness and transferable behavior do not guarantee correct component semantics
+- **Claim.** At synthetic perturbation radii **0.001/0.01/0.1**, Bolt first-block
+  sensitivity is **0.5246727590065028/0.5243779804855171/0.5201747462844821**;
+  TimesFM is **0.7031406556959651/0.7030663185533745/0.6959231112928421**.
+  Curvature shrinks with radius. On16 real TEST receivers, Bolt near-daily
+  first-block/radius0.1 effect transport NMSE is **0.024698876363800082** near
+  versus **0.1678951031062752** far. All **192/192** oracle and semantic gates
+  pass across repeated cuts/radii/donors. At19.2 hours, **96/96** oracle gates
+  pass but **0/96** native-signal semantic gates pass.
+- **Models / layers.** Local tests on both models, native and locked normalization;
+  transfer within each model from FIT donor to TEST receiver, three cuts.
+- **Evidence.** L1 local finite differences and L3 donor-effect intervention.
+  Transfer oracle is the receiver's actual counterfactual state with matching
+  normalization; semantic gate separately requires known-signal response NMSE
+  at most0.5. Repeated intervention rows are not independent sources.
+- **Status.** Local averages favor smoothness in sampled directions; neither
+  global smoothness nor cross-model semantic equivalence is established.
+  The fixed second frequency is an exploratory follow-up on the same sources.
+- **Reproduce.** `selective_transfer.py`, `selective_frequency_transfer.py`,
+  `selective_transfer_analysis.py`; selective composition report and raw controls.
+- **Ref.** ROADMAP §49.36–49.37; earlier oracle-normalizer controls in §49.34.
+- **Score. 4/5.** Reproducible transport can preserve the model's error; semantic
+  accuracy must be checked independently of patch validity and transfer fidelity.
+
+#### PM-34 · Selective tones plus a modelled residual work, but extraction and depth matter
+- **Claim.** FIT-selected hybrid TEST synthetic losses are
+  **0.006031990799018737** (Bolt) and **0.004931439430488167** (TimesFM), with
+  native-relative gains **1.0682909210254592** and **0.23171231421643068**.
+  The conservative tree splits only **3/16** moderate-injection real contexts,
+  versus **16/16** with the declared fixed stronger injection. At amplitude8,
+  depth1 hybrid future losses are **0.3186258362659885** versus native
+  **15.135874660784449** (Bolt), and **0.37227180446010033** versus
+  **1.4132528995863665** (TimesFM), in original-history variance units.
+  Requested depth3 gives **0.36046953460557996** and **0.4211007133624285**.
+- **Models / layers.** Classical continuation of past-fitted continuous-frequency
+  tones; native model predicts the intact residual. No oracle components or
+  future labels enter extraction. Maximum three recursive residual peels.
+- **Evidence.** Held-out synthetic behavior and exploratory controlled additions
+  to16 real TEST sources, four per dataset. Strong additions share sources with
+  the main study and do not increase independent n. Raw real pretraining overlap
+  is unknown. No best TEST depth becomes a selection rule.
+  At fixed19.2-hour period/phase, TimesFM native response NMSE improves
+  **0.22965478913847118**→**0.03153184616947545** as addition amplitude2→8;
+  this is amplitude/context dependence, not categorical frequency blindness.
+- **Status.** Positive bounded feasibility; does not establish natural-data
+  forecasting gains or internal additive representations. Abstention is an
+  extraction boundary, not a negative result about an intervention never applied.
+- **Reproduce.** `selective_tree.py`, `selective_strong_signal.py`,
+  `selective_strong_audit.py`; replication `strong_signal_scores.json`, report.
+- **Ref.** ROADMAP §49.35–49.37; contrasts earlier fixed-band PM-28.
+- **Score. 4/5.** Tests the intended limited-decomposition adapter and shows why
+  both residual preservation and an explicit abstention audit are necessary.
+
+#### PM-35 · A continuation prior can cause attenuation without failed pattern learning
+- **Claim.** In matched tiny-model training, changing only the unobservable
+  survival probability of a future tone from0 to0.5 to1 changes predicted tone
+  gain accordingly. At probability0.5, two paired MLP seeds give
+  **0.49643564224243164/0.49768996238708496** and two transformer seeds give
+  **0.49440494179725647/0.4973456859588623**. At probability1 the gains are
+  **0.9938386082649231/0.994098961353302** and
+  **0.994004487991333/0.996536910533905** respectively.
+- **Models / layers.** Small MLP and two-layer transformer; identical observed
+  histories, initialization, batches and200-step budget across survival arms.
+  Exact conditional-mean supervision equals expected two-branch MSE gradients.
+- **Evidence.** Controlled training intervention in two toy architectures;
+  512 training histories,256 held-out histories, two training seeds. Both pass
+  the prespecified conditional-mean error<=0.15 adequacy gate. Analytic marginal
+  risk and irreducible-risk decomposition independently replayed.
+- **Status.** Exploratory mechanism demonstration, not attribution of pretrained
+  TSFM failures. Test histories do not increase independent training-seed n.
+  The native Bolt and TimesFM outputs used in these studies are medians; this
+  toy conditional-mean MSE result does not identify their training objectives.
+  Initialization control: MLP tone-decoding errors
+  **0.006750625085256504/0.006583728204450735** are already below p0-trained
+  **0.016827709793355333/0.01536392071152469**. Transformer initialization
+  **0.4061008965454886/0.45874250688843426** also beats p0-trained
+  **0.47648969898855154/0.5042714721036291**. Recoverability alone therefore
+  does not show that the p0 objective learned a forecasting concept.
+  **Prediction-functional control:** matched MSE/absolute-loss training on the
+  same two-future distribution gives different optimal behavior. Across two
+  tiny architectures/two initializations, survival probability0.25 yields MSE
+  gains **0.24789963829063225–0.24967727238006154** versus absolute-loss
+  **0.0032150687063610115–0.004985426555465776**. At0.75 the respective gains
+  are **0.7490467598869157–0.7529284809960199** and
+  **0.9777613686899456–0.9897283558827841**. At0.5, absolute-loss gains vary
+  **0.1109961110676092–0.2680873488456798** while remaining close to the
+  nonunique median set. A low median gain need not encode a low survival prior.
+  This is a toy objective demonstration, not a diagnosis of pretrained training.
+- **Reproduce.** `prior_training.py`, `prior_training_analysis.py`;
+  `runs/prior_training_pilot4951000/analysis.json` and raw predictions;
+  `prior_objective_control.py`, `runs/prior_objective_control4963000/knowledge.json`
+  (24 matched arms, two tests/two plants,96 independent arithmetic checks).
+- **Ref.** ROADMAP §49.38.
+- **Score. 3/5.** Shows why attenuated forecasts alone cannot diagnose excessive
+  randomness assumptions or an inability to encode periodic structure.
+
+#### PM-36 · Cross-model predictive usefulness exists in the synthetic pilot, but outputs can suffice
+- **Claim.** Predicting TimesFM's forecast, input-only loss
+  **0.026855664954461247** falls to **0.01769764292154032** with Bolt hidden
+  states, but falls further to **0.013847275247863784** with Bolt forecasts.
+  Reverse-direction losses are **0.02398174312703629**, **0.020036055751863173**,
+  and **0.010813336181818452**. For predicting Bolt's fixed fusion response,
+  input+TimesFM hidden improves **0.0024933167683625517**→**0.0021698780749397047**;
+  input+TimesFM forecast gives **0.0024418541423520124**.
+- **Models / layers.** Frozen Bolt/TimesFM half-depth full-token states; target
+  fusion is first-block/depth1 equal pure composition. Train-only transforms and
+  grouped inner selection; strong input features include the full history.
+- **Evidence.** Source-held-out predictive comparison on16 synthetic TEST seeds
+  from earlier studies, not fresh confirmation or causal cross-model alignment.
+  Source-shuffled nulls and rotation invariance checked. Stable CV tie handling
+  was required to avoid roundoff-induced changes in selected predictors.
+- **Status.** Exploratory positive for bounded predictive usefulness; not general
+  semantic equivalence. Real and failure-prediction endpoints are mixed/negative;
+  constant-label endpoints cannot demonstrate discrimination.
+  **Fresh replication (2026-11-16):**64 new sources, frozen original FIT probes,
+  all three primary contrasts pass. Input→input+source-hidden losses are
+  **0.023864581292049478→0.015733820374062967**,
+  **0.01912109637372958→0.01604583723607949**, and
+  **0.002156430411168464→0.001852114482009267**, in the directions above.
+  Exploratory gains adding hidden to input+source-forecast are
+  **0.0011738879565609288/0.0008663409304243716/0.0001372677512059746**;
+  all source intervals are positive. This measures finite-data readout utility,
+  not new information beyond the input or equivalent semantics.
+  **Generic-feature follow-up:** Random Fourier/ReLU input features plus source
+  forecasts give TimesFM-emulation loss
+  **0.012719115560900612/0.012726500254948755**, beating trained-hidden
+  **0.013207666764194471**. Reverse-direction ReLU also matches trained hidden.
+  For Bolt fusion-response prediction, trained-hidden loss
+  **0.0020740497112315586** remains below random
+  **0.0022476849828418953/0.0022478083458015554**. This post-hoc reuse narrows
+  the interesting trained-feature advantage to the intervention-response target;
+  new-condition generalization required a separate test. Width/readout budgets
+  match, not network architecture or pretraining cost.
+  **Fresh condition-shift test:**20 new FIT/32 TEST sources and five conditions,
+  with exactly96 FIT rows, retain the trained-state advantage for Bolt fusion
+  response. Trained loss **0.002255216479176824** is below random Fourier
+  **0.0029625792146836614** and random ReLU **0.002444654328383262**;
+  relative reductions **23.876584700280104%/7.74906484761468%** pass both
+  frozen≥5% criteria and positive97.5% paired-source intervals. Old frozen
+  probes extrapolate poorly to the shifted conditions; the positive is for
+  matched-budget local refitting, not a universal cross-model translator.
+  Excluding the anchor descriptively reduces the trained-hidden advantage over random ReLU to
+  **3.584563021955512%**, with its interval crossing zero. The primary aggregate
+  passes, but the trained-feature advantage is not uniform across shifts.
+- **Reproduce.** `comparability_pilot.py`, `comparability_core.py`;
+  `runs/comparability_pilot4951000/results.json`, protocol/amendment and controls;
+  `comparability_replication4952000` preserves frozen probes and raw predictions.
+  `comparability_random4953000` records generic-feature controls; original
+  replication audit detects25 plants and replays60 intervals; new controls
+  detect11 plants and replay120 arithmetic comparisons. Fresh
+  `comparability_conditions4962000` catches29 plants and independently replays
+  422 intervals and both primary decisions.
+- **Ref.** ROADMAP §49.38,49.40.
+- **Score. 4/5.** Replaces an all-or-nothing comparability claim with a concrete,
+  baseline-relative test and exposes when hidden access is unnecessary.
+
+#### PM-37 · Continuation gains depend on future stability, and native models can use change cues
+- **Claim.** With identical histories and equal probability of persistent,
+  decaying, drifting and stopped futures, TEST native/hybrid losses are Bolt
+  **0.7044685896391737/0.546102676503224** and TimesFM
+  **0.4974279871980144/0.5385035414665008**. TimesFM's hybrid becomes preferable
+  above persistence probability **0.8058511886716185**, holding the other future
+  probabilities equal. Visible decay/cessation cues improve both native models
+  on **4/4** TEST seeds; drift helps TimesFM **4/4**, Bolt **2/4**.
+- **Models / layers.** Frozen native forecasts versus fitted-tone continuation
+  plus native residual; period19.2, amplitude8,128-context/32-horizon, cue onset−32.
+- **Evidence.** Exploratory controlled behavioral pilot, eight seeds/four TEST.
+  Identical histories are deduplicated; singleton calls pass exact repeat and
+  self-patch gates. Independent score replay and planted faults pass.
+- **Status.** A counterexample to categorical claims that models ignore visible
+  changes. Crossover is a hypothetical risk boundary, NOT an inferred training
+  prior. The tree accepts cued decay/drift despite harmful continuation and
+  abstains on cessation; past extraction validity does not ensure persistence.
+  **Fresh replication:**64 seeds,32 TEST, two periods and five cue leads.
+  A FIT-only stability veto fails to beat always-native by the declared source
+  sign-test screen in either model. Against always-hybrid it wins30/32 Bolt
+  and32/32 TimesFM; Bolt's mean gain **0.024316141847413635** has interval
+  **[-0.012248115026278854,0.05250180964470645]**, so majority wins do not
+  establish population-mean improvement. TimesFM gain is
+  **0.11701714686534168**. Recent32-step refitting beats full-history fitted
+  tones on visible-changing cases32/32 sources at both periods, with gains
+  **0.12318180842823585/0.11615768959478193**. This diagnoses a continuation
+  assumption in the adapter, not the pretrained training data.
+- **Reproduce.** `persistence_*`; `runs/persistence_pilot4951000/singleton_geometry/`;
+  three knowledge.json files preserve failed batching, calibration and recovery.
+  `persistence_replication4953000` independently replays35840 scores,35840 cue
+  comparisons,8960 risks and six primary means; twenty tests/nine new plants
+  plus a score plant pass/catch.
+- **Ref.** ROADMAP §49.38,49.40.
+- **Score. 4/5.** Separates unavailable future information from ignored observable
+  evidence, and identifies an adapter assumption that can fail.
+
+#### PM-38 · Response decoding is normalization-sensitive; local nonlinear interactions can still be smooth
+- **Claim.** First-block coefficient-decoding NMSE native→background-locked is
+  Bolt **0.4996478849685851**→**0.012752598094436797**, TimesFM
+  **0.4723127043833158**→**0.01359228639593964**; raw-input baseline
+  **2.9406281795183107e-07**. Native forecast chord curvature shrinks with radius
+  on **48/48** Bolt and **47/48** TimesFM paths; paths share eight sources.
+- **Models / layers.** First/quarter/half blocks; fixed-phase frequency paths near
+ 24h/19.2h, amplitudes0.1/0.5/2, native and anchored native normalization.
+  Four-point interaction differences are nonzero even with normalization locked.
+- **Evidence.** Instrumentation pilot: four synthetic backgrounds and four reused
+  real FIT sources. Seven tests/plants and21600 independent arithmetic checks.
+- **Status.** Exploratory. Decoder improvement is not information recovery until
+  omitted native normalization metadata is controlled. **Follow-up (2026-11-16):**
+  normalized-target decoding with correct history-only inverse reduces native
+  first-block errors to **0.009669252562936726/0.030581905688274888** (Bolt/TimesFM),
+  improving8/8 sources per model. That inverse explicitly uses observed background
+  Fourier coefficients; matched controls receive the same information. Its
+  training-mean controls score **0.8039847473064277/0.8448163768887251**. The
+  endpoint route without that coefficient correction gives hidden errors
+  **0.1776317107733182/0.20469722023739187** versus matched inputs
+  **0.2009918735389694/0.1998988078602276**. These controls support a decoder-
+  parameterization confound, not blanket hidden superiority or hidden-only
+  information recovery. Small-radius smoothness
+  does not imply additive composition, semantic invariance or global smoothness.
+  The crossed-phase fresh-background follow-up is recorded below.
+  **Focused expansion:**16 fresh synthetic backgrounds×four phases, actual
+  RMS radii0.01/0.005/0.002. All16 source averages show decreasing curvature in
+  every tested model/policy/axis/endpoint setting; five individual phase curves
+  are exceptions. Native forecast frequency-curvature medians decrease
+  **0.040190041464709246→0.01285684887688486** (Bolt) and
+  **0.0873284666297234→0.01742486071070292** (TimesFM). Yet19.2h response NMSE
+  remains **1.398347641932045/2.3657490304769673**. Local smoothness coexists
+  with inaccurate component response and small calibrated nonlinear interactions.
+- **Reproduce.** `response_surface_*`; `runs/response_surface_pilot4951000/knowledge.json`,
+  raw arrays, analysis and report; `response_surface_normalization4953000`
+  (eight tests/plants,7920 independent arithmetic checks across144 fits).
+  `response_surface_focused4954100` adds45824 arithmetic checks and56 source-
+  summary checks; the larger full grid is parked.
+- **Ref.** ROADMAP §49.38–49.40.
+- **Score. 4/5.** Supplies competing explanations for apparent representational
+  messiness and prevents conflating smooth nonlinearity with instability.
+
+#### PM-39 · Conservative amplitude attenuation alone does not explain the measured TSFM responses
+- **Claim.** For19.2h additions at amplitude0.1, mean response NMSE is
+  **3.390003549579674** (Bolt) and **2.1344526166056355** (TimesFM). Optimally
+  fitting a separate scalar in[0,1] to each response still leaves normalized
+  residual **2.337825752154055** and **0.9575308104404547**. A free-phase
+  same-frequency plane still leaves off-frequency error **0.832073982853724**
+  and **0.40932874401172437**.
+- **Models / layers.** Native forecasts from the response-surface pilot; also
+  evaluated under locked normalization. Error units are known-signal energy.
+- **Evidence.** Descriptive explanatory projections, eight backgrounds (four
+  synthetic, four reused real FIT sources). Independent original-score agreement
+  for192 rows; exact error partition and planted-bound check pass.
+- **Status.** Negative for a sufficient scalar-conservatism explanation in this
+  pilot, not a diagnosis of training data. Rowwise projections are optimistic
+  explanatory bounds, not deployable calibrations. At amplitude2, bounded
+  residuals decrease to **0.40867184504571824/0.10954368175736659**.
+- **Reproduce.** `attenuation_analysis.py`;
+  `runs/attenuation_explanation4951000/knowledge.json` and raw response bank.
+- **Ref.** ROADMAP §49.38–49.39; contrast controlled-training PM-35.
+- **Score. 4/5.** Distinguishes a plausible prior mechanism from a complete
+  explanation; waveform and background effects remain to be explained.
+
+#### PM-40 · Natural Fourier-hybrid gains vary by domain, and short hindcasts can miss them
+- **Claim.** On four new electricity TEST sources, depth1 hybrid changes native
+  MSE from **0.32830079848935756** to **0.3230221699359904** for Bolt and
+  **0.6192148434100198** to **0.35038952478445495** for TimesFM. On four traffic
+  sources it worsens **0.266875622142397**→**0.5146018681958637** and
+  **0.2869937946993105**→**0.4171051966105375**. TimesFM's two-hindcast selector
+  rejects all electricity hybrids, missing three improvements and one tie.
+- **Models / layers.** Native Bolt/TimesFM versus past-fitted tone continuation
+  plus native residual,128-context/32-horizon; unmodified real data.
+- **Evidence.** Exploratory behavioral source holdout:26 sources across four
+  domains, half FIT/TEST; only one pedestrian TEST source, no interval there.
+  Own-history normalization at each origin; main future excluded from selection.
+- **Status.** **Fresh replication:**64 new TEST sources/domain,192 total.
+  TimesFM electricity improves **0.5515747684009784→0.4676360158302627**;
+  gain **0.08393875257071565**, six-comparison interval
+  **[0.015307078093565,0.1583223135327461]**,24 wins/35 ties/5 losses.
+  Bolt electricity does not improve; traffic is harmful in both, with gains
+  **-0.1539340790284484/-0.1346564054134044** and adjusted intervals below zero.
+  Neither M4 model establishes improvement. Seasonal-naive24 electricity mean
+  MSE **0.3993750427653811** is lower than the hybrids; its paired difference
+  from TimesFM hybrid remains uncertain. No universal improvement or failure.
+  Pretraining overlap unknown; no TEST-best depth deployed. The smaller pilot's
+  selector false-rejection observation is not a universal selector failure.
+  **Normalization-path control:** on the same64 electricity sources, TimesFM
+  ordinary/locked hybrid gains are **0.08393870612092993/0.08201179427098884**
+  after consistent singleton replay. Locking forward/inverse normalization to
+  full-history values therefore preserves the observed positive; their small
+  difference is uncertain, not demonstrated equivalent. Bolt remains negative
+  in mean for both. This is a reused-cohort controlled intervention, not fresh
+  confirmation or a training diagnosis. Old batch4/singleton rounding changes
+  no source-gain sign and is bounded explicitly.
+- **Reproduce.** `natural_validation_*`;
+  `runs/natural_validation_pilot4951001/knowledge.json`, `analysis.json`,
+  `verification.json` (24 tests and8 amendment plants).
+  `natural_validation_replication4955000` adds17 tests/21 plants and independent
+  exact MSE/selector replay in audit.json. `persistence_electricity_lock4957200`
+  adds384-loss/2304-partition/six-contrast/256-drift-bound independent replay.
+- **Ref.** ROADMAP §49.40.
+- **Score. 4/5.** Separates synthetic persistent-tone feasibility from natural
+  continuation uncertainty and tests a plausible past-only selection remedy.
+
+#### PM-41 · Some off-tone distortion aligns with background modulation, but a simple template is insufficient
+- **Claim.** At19.2h/amplitude0.1, response error outside the added-frequency
+  plane is **0.832073982853724/0.40932874401172425** for Bolt/TimesFM.
+  Fitting constant/trend and then the unperturbed forecast reduces the residual
+  to **0.3345255393285157/0.19192169094791175**. The background template beats
+  the95th percentile of19 time-permuted templates on **6/8** and **5/8** sources.
+  Locked-normalizer residuals remain **0.32135854483142834/0.18529909782956655**.
+- **Models / layers.** Bolt/TimesFM native and background-locked forecast responses.
+- **Evidence.** Descriptive per-response fitted projections on eight existing
+  pilot backgrounds. One test/three plants and192 arithmetic replays pass.
+- **Status.** Partial descriptive explanation, not a learned prediction method
+  or causal mechanism. Short-horizon correlated bases and projection order limit
+  interpretation; simple background modulation leaves substantial residual error.
+- **Reproduce.** `background_modulation.py`;
+  `runs/background_modulation4956100/knowledge.json`, projections and verification.
+- **Ref.** ROADMAP §49.40; follows PM-39.
+- **Score. 3/5.** Narrows the alternatives to scalar attenuation without treating
+  every nonlinear response as incoherent or as a normalizer artifact.
+
+
+### Steering research additions (2026-11-16)
+
+#### PM-42 · Real Fourier-hybrid benefits extend beyond the extracted frequency
+- **Claim.** On64 new electricity sources, TimesFM hybrid gain
+  **0.08393875257071565** partitions into **0.03509242848460109** in the
+  past-fitted sine/cosine plane and **0.04884632408611454** outside it.
+  **0.5168608174353616** of the actual forecast-update energy is off-plane.
+  Traffic losses chiefly occur in the tone plane: gains
+  **-0.13961662375115133/-0.12706543331818337** for Bolt/TimesFM.
+- **Models / layers.** Native versus depth1 hybrid forecast outputs; same192-source
+  natural replication, with the frequency frozen from each context's past.
+- **Evidence.** Descriptive exact orthogonal error/update partitions,384 paired
+  model/source rows;270 extraction-eligible. One test/three plants and raw replay.
+- **Status.** The benefit is not solely a repaired tone amplitude or phase.
+  The modelled residual changes other forecast components. This does not identify
+  a true decomposition of natural futures or a causal training mechanism.
+- **Reproduce.** `natural_gain_location.py`;
+  `runs/natural_gain_location4956300/knowledge.json`, partitions and verification.
+- **Ref.** ROADMAP §49.40; follows PM-40.
+- **Score. 4/5.** Makes the observed real-data gain more interpretable and guards
+  against attributing every Fourier-adapter improvement to one extracted concept.
+
+#### PM-43 · Tokenization can create input discontinuities without arbitrary encoder behavior
+- **Claim.** Chronos-T5-tiny has a one-token change for raw-history pairs only
+  **7.573261841801273e-09** RMS apart on average across eight sources.
+  Relative jumps average **0.04599361338361545** at embeddings and
+  **0.02180104422917018** at the final normalized encoder output. On continuous
+  embedding paths, first-step probability curvature shrinks
+  **0.18482274082093753→0.03314285486742809** as radius0.25→0.03125.
+- **Models / layers.** Cached Chronos-T5-tiny, encoder and deterministic first
+  decoder-step probabilities; one architecture-matched random initialization.
+- **Evidence.** Controlled descriptive architecture pilot, eight synthetic
+  backgrounds. Exact same-token, repeat and embedding-replay gates;720 arithmetic
+  checks. Three tests/five plants include a precision-resolution guard.
+- **Status.** Known frontend discontinuity is distinct from internal incoherence.
+  Random output probabilities are nearly uniform;32 probability-curvature cells
+  are precision-limited and cannot support a smoothness comparison. Embedding
+  interpolation is off-manifold; no multi-step forecasting or semantic claim.
+  **Fresh paired16-source replication at tiny/small sizes:** input distance
+  **4.837472450240249e-09**, final-encoder relative jumps
+  **0.023675344465227722/0.02218872810943274**, first-step probability TV
+  **0.002784460601826859/0.0029375174143024202**. All16 pretrained curves per
+  model shrink between largest/smallest embedding radii; full four-radius
+  monotonicity holds13/16 and15/16. Random probability ratios remain unresolved.
+- **Reproduce.** `token_boundary.py`, `token_boundary_analysis.py`;
+  `runs/token_boundary_pilot4956000/audit/knowledge.json`;
+  `token_boundary_replication4961000_tiny` and `_small`, each1440 audit checks.
+- **Ref.** ROADMAP §49.40.
+- **Score. 3/5.** Prevents a tokenizer artifact or numerical floor from being
+  misreported as general representational messiness.
+
+#### PM-44 · Other marginal quantiles do not rescue weak-tone response failures
+- **Claim.** Weak19.2h median response NMSEs are
+  **2.5675212280679705/1.9717594022240545** for Bolt/TimesFM; averaging nine
+  native central quantiles gives **2.5120652628795126/1.9689040160935263**.
+  Even per-response oracle-best quantiles leave
+  **2.161041132950336/1.801664427855226**; locked-normalizer oracle errors are
+  **2.0141060449313395/1.8573412859313922**.
+- **Models / layers.** Nine native forecast quantiles; both native point outputs
+  are medians. Eight reused backgrounds, four phases, two periods, three amplitudes.
+- **Evidence.** Descriptive controlled-response pilot. Exact median/native replay,
+  repeat and normalization gates; two tests/three plants,3072 arithmetic checks.
+- **Status.** Negative for a sufficient median-versus-other-quantile explanation
+  in these weak-tone cases. Width changes do not establish calibrated uncertainty;
+  marginal quantiles do not define joint forecast paths. Oracle selection is
+  explanatory only. Stronger tones have much lower errors.
+- **Reproduce.** `quantile_response.py`;
+  `runs/quantile_response4956200/knowledge.json`, raw quantiles and verification.
+- **Ref.** ROADMAP §49.40; complements PM-39 rather than attributing training data.
+- **Score. 4/5.** Tests an alternative explanation arising from the actual native
+  output functional, instead of diagnosing a model from its median alone.
+
+#### PM-45 · Some incorrect weak-tone responses have a transferable phase structure
+- **Claim.** A two-coordinate sine/cosine response map fitted on the other15
+  backgrounds predicts Bolt's period19.2 weak-tone response better than ideal
+  continuation on16/16 sources: phase-energy-pooled NMSE
+  **1.3906871921613242→0.5068692957225513**. TimesFM improves in mean
+  **2.3537098800938168→1.999695124522527**, but only8/16 sources improve.
+  Per-source fitted maps leave **0.2314247904913106/0.9018266927220593**;
+  these are optimistic explanatory ceilings, not held-out predictions.
+- **Models / layers.** Bolt-small/TimesFM2.5 median forecasts;16 reused fresh-
+  replication backgrounds, four phases, amplitude0.1, periods24 and19.2.
+- **Evidence.** Descriptive response prediction; no new native inference.
+  Exact odd/even/off-frequency energy decomposition, DC-leakage sensitivity,
+  source-stratified bootstrap;4672 independent checks, maximum discrepancy
+  **8.929789570134933e-15**. Model response prediction is not true-future accuracy.
+- **Status.** Systematic phase response is a bounded alternative to undifferentiated
+  messiness. Four phases at one amplitude do not establish an LTI system or a
+  global response law; background dependence and off-frequency errors remain.
+  Fresh-source validation is a separate experiment, not implied by this reuse.
+  **Frozen-map validation:**16 new sources at four phases and nearby frequencies
+  retain a period19.2 advantage over old-fitted scalar attenuation. Bolt scalar
+  **0.7779709336359619→0.5306089803018366** and TimesFM
+  **1.9283313395848056→1.7485319484160944**. Paired mean gains
+  **0.2473619533341253/0.17979939116871133** have family4-adjusted intervals
+  **[0.1632782914560016,0.3182855976544267]** and
+  **[0.125550594671179,0.23033485864196618]**. Both identity comparisons also
+  retain positive adjusted intervals. Thus simple attenuation alone is
+  insufficient to describe these responses; a frozen phase map adds predictive
+  value. Intervals condition on the four equally weighted background types.
+  **Oblique-phase check:** eight additional angles on the same16 transfer
+  backgrounds retain scalar-minus-map gains **0.24816757777846288** for
+  Bolt and **0.18448195097911668** for TimesFM, with positive family4-adjusted
+  intervals. Coefficients remain byte-identical. These are new phase inputs,
+  not independent new backgrounds; no universal phase-law claim follows.
+- **Reproduce.** `response_phase_study.py`, `response_phase_audit.py`;
+  `runs/response_phase4954200/knowledge.json`, raw arithmetic and bootstrap indices;
+  `response_phase_transfer4954300` contains400 inputs, frozen zero/scalar/
+  complex/full-map controls, fresh responses and10860 independent score checks.
+  `response_phase_oblique4954500` adds144 native inputs and5164 independent
+  arithmetic checks, with six tests/eight planted regressions detected.
+- **Ref.** ROADMAP §49.40; follows PM-38/39/41.
+- **Score. 4/5.** Separates predictable wrong behavior from faithful continuation.
+
+#### PM-46 · Native FFN selectivity is model-dependent and does not require an SAE
+- **Claim.** In the first-block RMS/four-feature synthetic TEST slice, Bolt's
+  native FFN coordinates classify five controlled perturbation types with
+  accuracy **0.825**, versus **0.525** averaged over three structured rotations,
+  **0.5750000000000001** for FIT PCA and **0.925** for input coordinates.
+  TimesFM's corresponding accuracies are **0.7/0.7833333333333333/0.75/0.925**.
+  The full registered first/half-depth, mean/RMS and feature-budget table is
+  retained; this informative slice is exploratory, not a selected primary test.
+- **Models / layers.** Actual post-activation inputs to Bolt `DenseReluDense.wo`
+  and TimesFM `ff1`, plus matched residual captures. Sixteen fresh synthetic
+  backgrounds split8/8 and eight reused real backgrounds split4/4; five
+  equal-input-RMS perturbation types with phase/sign variants.
+- **Evidence.** Held-out perturbation selectivity under background-locked
+  normalization; no SAE and no selected-unit causal intervention yet. FIT-only
+  selection, source grouping, exact replay and intervention reach gates pass.
+  Eleven tests/16 plants and independent replay of270 feature records/4680
+  source summaries pass, maximum metric error **9.836575998178887e-14**.
+- **Status.** Native coordinates can be useful, especially early Bolt, but this
+  does not establish general monosemanticity. Structured rotations are not Haar;
+  PCA has a different candidate count; raw input itself is highly informative.
+  Small reused real cohorts establish no fresh real-data generalization.
+  **Causal follow-up:** four FIT-selected early Bolt units, reset to background
+  values, remove **0.006158264488730194** of the ramp/noise response on eight
+  fresh sources,95% interval **[−0.00486514095782705,0.017475451719261043]**.
+  Their advantage over assigned activity-matched controls is
+  **0.012473076834747427**, interval **[0.0021393454858827585,
+  0.022147086103784748]**; controls themselves increase the response on average.
+  This small relative advantage does not establish strong selective removal.
+  Actual edit and output reach are audited separately from full-FFN reach.
+  **The larger causal test did not replicate that advantage.** On32 fresh
+  sources with four frozen control sets crossed with every source, selected
+  signed removal before subtracting controls is **0.0008338539038024147**, interval
+  **[−0.00640342426749434,0.007862991279733313]**. The paired advantage is
+  **0.0003116219633811186**, interval
+  **[−0.006925097142577513,0.007340577240027061]**. Both intervals lie within
+  the preregistered descriptive±0.02 band. This bounds this particular k4 edit;
+  it does not show that all native neurons are causally irrelevant. FIT activity
+  matching also fails to equalize actual held-out edit energy: selected target
+  edits have **2.7226714950868156×** the mean-control projected energy. All160
+  selected edits are nonzero and reach the output. The negative concerns aligned
+  response removal, not absence of any causal output change.
+- **Reproduce.** `ffn_selectivity_study.py`, `ffn_selectivity_analysis.py`;
+  `runs/ffn_selectivity_pilot4961000/knowledge.json`, `compact_record.json`,
+  `independent_audit.json`. Native capture480 cells/model,37.56/90.35seconds.
+  `ffn_selectivity_causal4963000` preserves384 Bolt cells, exact edit support,
+  nine tests/15 plants and240 event/567 source-summary independent replays.
+  `ffn_selectivity_causal_replication4964000` adds1088 Bolt cells and independent
+  replay of800 events/392 source summaries, maxeventerror3.3306690738754696e-16.
+- **Ref.** ROADMAP §49.40; addresses the scope distinction in §49.39.
+- **Score. 3/5.** Tests genuine neurons rather than extrapolating a monosemanticity
+  claim from residual dimensions or successful sparse reconstruction.
+
+#### PM-47 · Limited Fourier separation fails on a chronological weather holdout
+- **Claim.** Fixed depth1 increases equal-station normalized MSE from
+  **0.4729334720068331→0.6547303222032483** for Bolt and
+  **0.4503466537272577→0.5064548545682812** for TimesFM on October2026
+  airport temperatures. Only **1/8 and3/8** station means improve. Seasonal24
+  MSE is **0.6059731631636294**; both native models have lower observed means.
+- **Models / data.** Exact cached Bolt/TimesFM revisions predate observations
+  (2025-11-21/2025-10-02). Eight fixed US airports, four fixed origins,
+  history128/horizon32;30 complete futures, JFK two and other stations four.
+  The fixed rule accepts18 histories and abstains on12. No threshold tuning.
+- **Evidence.** Behavioral chronological-observation holdout, descriptive pilot.
+  Source weighting is by station, not window. Official GHCNh source/archive
+  hashes, checkpoint chronology, target-read prohibition, exact singleton
+  repeats/abstention identity and independent score replay are preserved.
+  Five native-protocol tests/11 plants plus an isolated score-corruption plant;
+  replay240 window losses/64 station losses/eight intervals.
+- **Status.** Negative for a general Fourier benefit on these genuinely later
+  observations; not a population theorem. Shared weather limits station
+  independence. Archived observations are not a real-time vintage, null quality
+  flags mean unflagged rather than verified QC completion, and familiar
+  locations/climates may occur in training. A zero-residual physical-temperature
+  baseline discards DC and is not a meaningful claim that native residuals are
+  necessary; it remains recorded as a diagnostic only.
+  **Saved-array follow-up:** restoring mean/last residual levels gives errors
+  **0.8649854790083853/1.1309893084967446**, still worse than native/hybrid.
+  Weather hybrid gains partition into history-fitted tone-plane/off-plane
+  **−0.021876413106958606/−0.15992043708945658** for Bolt and
+  **−0.023748947453231563/−0.03235925338779193** for TimesFM. Much damage
+  lies outside the peeled frequency; this does not attribute all harm to bad
+  analytic continuation. Three tests/four plants and independent replay pass.
+  **Joint normalization intervention:** locking residual forward/inverse scales
+  to the full history worsens Bolt hybrid MSE to **0.8431448147928856** on all
+  eight station means. TimesFM becomes **0.4763265507043724**, but improves only
+  two stations and its paired interval crosses zero. Residual renormalization
+  alone is therefore not a general explanation or repair of the weather failure.
+  Four tests/five plants and independent replay of180 losses/1080 partition
+  scalars pass; the forward and inverse contributions are not separated.
+- **Reproduce.** `postrelease_weather_prepare.py` and related pilot modules;
+  `runs/postrelease_weather_202610/ghcnh_oct2026/knowledge.json` for provenance,
+  `runs/postrelease_weather_pilot202610/knowledge.json` for forecasts/audits.
+- **Ref.** ROADMAP §49.40; complements the public-source electricity positive PM-40.
+- **Score. 4/5.** Tests the frozen idea on observations that postdate the weights,
+  while retaining an informative negative and a strong simple baseline.
+
+#### PM-48 · Longer-period waveform fits explain a little more weak-tone response, but no unique oscillator
+- **Claim.** With old16-source-only selection, Bolt's response to a19.2-period
+  tone is better predicted by a24-period output basis: fresh response NMSE
+  **0.5306089803018366→0.48412325715727056**. TimesFM selects22 and improves
+  **1.748531948416094→1.726079453649708**. The old mean32×2 response waveform
+  performs better still (**0.45748844616145007/1.6466122728733559**), at greater
+  fitted capacity. Period24 controls select24 and receive no frequency-shift gain.
+- **Models / data.** Native median response, weak amplitude0.1, old16 FIT and
+  reused fresh16 TEST backgrounds/four phases,32-step horizon; no new inference.
+- **Evidence.** Saved-array descriptive follow-up. Nine output-period candidates,
+  source-CV selection entirely on old responses, all FIT/TEST curves retained.
+  Eight tests/nine plants and768 independent checks pass, maximum discrepancy
+  **2.3314683517128287e-15**.
+- **Status.** Conditional waveform distortion, not identified frequency snapping
+  or training-prior causality. With matched DC/trend nuisance terms Bolt selects
+ 22 instead of24; TimesFM's added shift gain becomes uncertain. Runner-up gaps
+  are small, the horizon contains few cycles, and effects differ by background
+  type. Good coefficient conditioning does not identify a unique frequency.
+- **Reproduce.** `response_phase_frequency4954400/knowledge.json`, frozen FIT
+  selection, full curves, source scores, figures and independent audit.
+- **Ref.** ROADMAP §49.40; follows PM-45.
+- **Score. 3/5.** Tests a concrete phase-distortion alternative while exposing its
+  finite-horizon and nuisance ambiguity.
+
+#### PM-49 · Shared position-dependent state structure explains much more Bolt variance than TimesFM variance
+- **Claim.** A source-weighted FIT position-conditioned mean reduces TEST error
+  relative to the global FIT mean by **80.30466851357155%** for Bolt but only
+  **10.107015663060814%** for TimesFM. Corresponding error ratios are
+  **0.19695331486428444/0.8989298433693919**. Existing PCA top8/top16 coefficient
+  reconstructions are substantially better: Bolt
+  **0.021846093615440033/0.009173964053706064**; TimesFM
+  **0.08610490644031232/0.04259929649012923**.
+- **Models / layers.** First-block full-token states, frozen dictionary cohort:
+  32 FIT/32 TEST sources,112 rows each;16 synthetic andfour per real domain.
+- **Evidence.** Post-hoc geometric compression diagnostic, no native inference
+  or dictionary training. Five tests/five plants,204 independent metric checks;
+  maximum discrepancy **4.395839963453344e-16**.
+- **Status.** Fixed means cannot respond to input perturbations, so good global
+  reconstruction alone does not establish preservation of useful input changes.
+  The baseline may contain common content/normalization/token roles; this is
+  not causal attribution to positional embeddings. It does not explain all PCA
+  gains. PCA uses a full fitted basis with adaptive sparse coefficients and
+  greater stored capacity, not a single fixed rank8/rank16 subspace.
+- **Reproduce.** `runs/comparability_position_mean20261116/knowledge.json`,
+  source scores, parameter counts, gates and independent audit.
+- **Ref.** ROADMAP §49.40; qualifies the dictionary reconstruction comparison.
+- **Score. 3/5.** Provides a static-state baseline that separates compression from
+  responsiveness and exposes a model-dependent nuisance contribution.
+
+#### PM-50 · Sparse state reconstruction and weak-response preservation are different objectives
+- **Claim.** At k16, PCA whole-state NMSE is **0.009173964124244276** for Bolt
+  and **0.042599296711000684** for TimesFM, while saved sinusoid-response NMSE
+  is **0.3008273079816649/0.41102390528013866**. TopK response errors are
+  **0.3720378072540668/0.40271957749287796**, nested-inspired
+  **0.3003756530838683/0.4071664697199135**, averaged over three seeds.
+  Low state reconstruction error therefore does not guarantee small normalized
+  error on weak state differences. These metrics have distinct denominators.
+- **Models / layers.** First-block Bolt/TimesFM, width512/1280; native axes,
+  rotations, full FIT PCA with adaptive signed top-k coefficients, TopK and a
+  Matryoshka-inspired nested-prefix variant. k8/16;32 FIT/32 TEST sources.
+- **Evidence.**44 fits,44 native stages, four stability stages and two saved
+  response audits. Actual activity is matched; neural methods use500 steps and
+  three seeds. Nested has1.25× forward dense-matmul cost at equal steps/parameters.
+  Nineteen tests/19 plants,8890 arithmetic checks,880 native identity gates.
+- **Status.** No uniform SAE advantage. PCA k16 native point distortion is
+  **0.01136767773111914/0.028067500051962135** over20 receivers; TimesFM k8
+  TopK beats PCA (**0.06998571582496164** versus **0.10808140090652474**).
+  Preservation is not forecast improvement or semantic validity. PCA stores a
+  full fitted basis; signed and nonnegative codes are different constraints.
+  **2048/3520** causal response cells have invalid random geometry and cannot
+  support null-relative semantic claims. Exact base replay finds119/120 zero
+  TimesFM TopK-k8 edits;478/480 cached ± edits were zero, but these are proxies, not certificates for
+  unsaved singleton branches. Independent ± random edits are not calibrated
+  smooth-response nulls. Earlier stronger null wording is explicitly superseded.
+- **Reproduce.** `dictionary_pilot*`, `dictionary_core.py`, `dictionary_review.py`;
+  `runs/dictionary_pilot4951000/recovery_exit_monitor/knowledge.json`,
+  `comparison_summary.json`, `validity_audit/` and `response_audit_*`.
+  Initial monitor failure and recovery provenance remain saved.
+- **Ref.** ROADMAP §49.40; follows PM-49 and complements genuine-neuron PM-46.
+- **Score. 4/5.** Supplies matched no-SAE/modern-SAE baselines and catches an
+  interpretability-control failure before treating zero effects as model findings.
+
+#### PM-51 · Sparse encoders can introduce much more roughness than the states they encode
+- **Claim.** Across frozen PCA/TopK/nested maps at k8/16, the ratio of mean
+  decoded actual-path chord RMS to mean raw-state chord RMS is **76–130×**
+  for Bolt and **106–189×** for TimesFM under native normalization. With
+  normalization locked, the ranges are **79–121×/129–231×**. These are
+  ratios of source means over balanced paths, not average pathwise ratios.
+- **Evidence.** Sixteen saved synthetic backgrounds, first-block residual states,
+  768 matched-radius paths, one frozen dictionary seed, no fitting or native
+  inference. All24 sparse-arm means exceed their raw-state counterparts; this
+  need not hold for every individual source or path. Isolating the dictionary
+  on a straight activation chord leaves substantial roughness; identity and
+  fixed-first-k linear PCA have isolated chord RMS at roundoff
+  (maximum **1.5983290058905532e-15**). Adaptive top-k PCA is nonlinear.
+- **Interpretation.** Apparent feature jaggedness can arise in the measuring
+  dictionary. It cannot automatically be attributed to the model. Actual native
+  paths also have nonzero curvature. The isolated activation interpolation is
+  off-manifold, and compression changes fidelity and secant responses; this
+  is not a ranking of semantic quality. FP64 changes dictionary arithmetic
+  over saved FP32 states, not native-model precision.
+- **Validation.** Six tests/six corrected plants,36 independently replayed arms,
+  6480 source-summary checks;90.856seconds,1.667GB peak, one CPU thread.
+  An initially ineffective planted mutation is retained as a failed validation
+  attempt. Resolution-floor sensitivity and absolute chord sizes are saved.
+  **Fixed-support control:** with the same weights, freezing TopK membership
+  at each actual path midpoint removes **99.30–99.79%** of mean actual-path
+  chord RMS across six model/method cells. Keeping ReLU live or freezing its
+  central gate gives identical saved-path metrics, isolating TopK membership
+  switching in this design. Isolated fixed-map chord RMS is at roundoff.
+  Hidden perturbation-response RMS error falls **61.58–82.37%**; mean state
+  reconstruction error slightly worsens in five cells and improves in TimesFM
+  TopK. All16 sources improve response error in every cell. These gates are
+  chosen locally at each path's midpoint, not a deployable global encoder.
+  Four tests/four plants,2898 summary checks and18-arm dense replay pass;
+  50.887seconds,1.068GB peak, no fitting or native calls.
+- **Reproduce.** `runs/dictionary_smoothness4965000/leading_findings.json`,
+  `knowledge.json`, `compact_record.json`, independent replay and aggregation audit.
+  `dictionary_smoothness_fixed_support4965100` contains the controlled gate
+  comparison and corrects the parent's active-support/ReLU wording explicitly.
+- **Ref.** ROADMAP §49.40; follows PM-38/50.
+- **Score. 4/5.** Separates measurement-induced nonlinearity from model geometry.
+
+#### PM-52 · Training a dictionary to preserve responses changes what it preserves
+- **Claim.** A paired-response loss added to Bolt TopK-k16 reduces held-out
+  sinusoid response NMSE **0.33706543732597316→0.08178803929115522** and
+  noise response NMSE **0.6499851374406904→0.2761959152644845**, at the cost
+  of global-state NMSE **0.013896715445253071→0.02355438870740306**.
+  On16 focused sources with held-out directions/phases, response NMSE falls
+  **0.4779692525911392→0.1367897436126779**. Every32 old TEST source and
+  every16 focused source improves in the corresponding response comparison.
+- **Design.** One new seed4965000, frozen lambda0/lambda1, same initialization,
+  batches, architecture,500 steps and computed branches. Source-weighted
+  central-difference reconstruction is normalized with FIT-only scales/floors.
+  Frozen adaptive PCA-k16 gives global/sine/noise/focused NMSE
+  **0.00917/0.30083/0.61419/0.44724**. Measured lambda1 activity is
+  **15.99757**, not exactly16. Six tests and323 independent arithmetic checks
+  pass;22.25seconds,0.984GB peak, one thread.
+- **Scope.** This is a response-aware-inspired pilot, not a TSAE reproduction.
+  Old TEST data are reused; the focused bank was excluded from fitting and
+  selection. Hidden-response fidelity describes the model, not true semantics
+  or forecast accuracy. The descriptive expansion gate passed; a separate
+  bounded native preservation check is complete, with no lambda search.
+  **Native preservation:** on20 baseline receivers, distortion is lambda0
+  **0.027193170003341927**, lambda1 **0.02480812127788782**, PCA
+  **0.011367679684409307**. On15 paired receivers, source-mean sinusoid
+  NMSE is **0.14779665980988985/0.19236556912378608/0.14294983813373244**;
+  noise NMSE **0.7082152774328037/0.8738374357450586/0.6469003467085652**.
+  Lambda1 improves12/15 sine and11/15 noise receivers, but adverse tails
+  reverse the means. Noise ratio-of-total-energies improves
+  **0.536958287827822→0.27442507632856705**; it does not replace the frozen
+  source-average primary. No denominator falls below its recorded floor.
+  Baseline error uses history variance, while paired error uses native output
+  response energy; neither measures forecast accuracy against future truth.
+  All identity/restoration gates, nine independent exact forecast replays and
+  792 arithmetic checks pass.399 cells take33.8405seconds,1.110GB peak.
+  **Saved-array tail audit:** hidden-response NMSE improves for all15 actual
+  singleton sources in each direction, including adverse output cases. Two
+  low-native-response synthetic sources account for96.62% of positive sine
+  deterioration; two real sources account for99.17% of positive noise
+  deterioration. Noise mean error/history variance rises
+  **0.007429496410932423→0.014622474951728765**, demonstrating genuine
+  adverse output-error increases, not solely small denominators. Sine mean
+  error/history variance instead falls **0.00420397959319133→
+  0.0021108072573565806**. Net source-mean worsening is86.61%/94.09%
+  orthogonal to the native sine/noise response, respectively. Raw pooled
+  energies depend on source units; history-normalized noise pooling worsens
+  **0.5133076997963011→1.0102742592023026**. Top1/top2 influence removal
+  reverses means but is descriptive, not an exclusion rule or replacement
+  primary. Four tests/600 independent FP64 identities pass;0.463seconds,
+  no native calls or fitting. No downstream Jacobian was measured.
+  Native and objective branches closed.
+- **Reproduce.** `runs/dictionary_response4965000/knowledge.json`, paired arm
+  records, comparison and arithmetic audit; `dictionary_response_native4965000`
+  contains the independent native stage and per-source outputs.
+  `dictionary_response_influence4965000` preserves all sources, domain
+  summaries, energy identities and the influence analysis.
+- **Ref.** ROADMAP §49.40; follows PM-50/51.
+- **Score. 4/5.** Demonstrates an objective-dependent reconstruction/response tradeoff.
+
+#### PM-53 · A longer forecast window strengthens a frequency-distortion description, even for strong tones
+- **Claim.** For Bolt period19.2 inputs, OLD-source-selected output-frequency
+  maps improve on same-frequency maps at both amplitudes and horizons. At64
+  steps, period22 is selected with or without matched DC/trend nuisance terms;
+  all period24 controls retain24. Tone-only64-step NMSE changes are
+  **0.6671436361279975→0.4718520703236281** at amplitude0.1 and
+  **0.8618611110237165→0.5910433543110412** at amplitude2. Family4-adjusted
+  gain intervals are **[0.14272620350980894,0.23566626897020315]** and
+  **[0.2506674391046784,0.2928226919160863]**.
+- **Scope.**16 OLD FIT/16 reused TEST backgrounds,544 fixed inputs, native
+  normalization and a finite nine-period grid. The32-step selection depends
+  on amplitude and nuisance terms. Strong amplitude also changes normalization;
+  this does not uniquely identify an SNR, training-prior, oscillator or patch
+  mechanism. The scores predict model responses, not forecasting truth.
+- **Recovery.** The original historical-replay gate compared changed batch
+  membership/row geometry and failed before scientific evaluation; its missing
+  discrepancy values remain a limitation. Four-case preflight replays original
+  geometry exactly and reproduces a changed-geometry effect. An outcome-blind
+  amendment preserves strict current64/current32 same-batch prefix equality,
+  single-forward gates and measured historical drift bounds. No autoregression.
+  Independent1210 score/replay and1544 roundoff checks pass; maximum audited
+  rebatching NMSE change **1.9054664079920514e-06**, below its bound
+  **8.08821007460502e-06**. Native recovery takes42.844seconds,1.048GB peak.
+- **Reproduce.** `runs/response_phase_horizon_recovery4954700/knowledge.json`,
+  original failed parent, `response_phase_horizon_replay4954700`, amendment,
+  exact query records, frozen fits, raw outputs and independent audits.
+- **Ref.** ROADMAP §49.40; follows PM-45/48. Native branch closed.
+- **Score. 3/5.** Extends the waveform observation beyond a weak, short-window setting.
+
+#### CA-15 · Adaptive native-head steering works without SAE features on fresh contexts
+- **Claim.** With frozen radius0.2,ridge1e-5,six correction steps,dose0.2,
+  interval widening,narrowing and seasonal-prior tasks pass full-output relative
+  error<0.1 on64/64 fresh contexts per task for both models, and64/64 on each
+  of those tasks in a second off-grid-period distribution. Fresh mean errors
+  (widen,narrow,season) are Bolt **0.01906498080258097,
+  0.011064170357698487,0.012995774410960347** and TimesFM
+  **0.0015741310043839983,0.0023598210753626066,0.0007871052444355581**.
+  Isolated upper-quantile control is harder:57/64 and63/64 fresh,45/64 and60/64
+  off-grid. All2,048 one/six-step replication interventions independently replay
+  through full models; normalized discrepancies≤2.384185791015625e-06.
+- **Models / layers.** Chronos-Bolt-small native decoder-head input;
+  TimesFM2.5-200M final-token point-head input; context128,horizon32,nine quantiles.
+- **Evidence.** Causal within-model (L3), fresh-seed replication with discovery-
+  selected settings frozen before evaluation. Additional twelve-source real
+  checks support external validity but use reused sources with unknown
+  pretraining overlap. Not sealed private confirmation.
+- **Status.** Replicated within the stated adaptive-control tasks. No claim of
+  universal semantic vectors, monosemantic neurons, forecast improvement or
+  calibrated uncertainty. Quantile ordering is a separate reported diagnostic.
+- **Reproduce.** `tsfm_lens/tsfm_lens/experiments/steering_control.py`;
+  `runs/steering_e06_*_fresh64`, `runs/steering_e07_*_offgrid64`;
+  portable arrays/audits/figures in `examples/steering/`;
+  API `tsfm_lens.steering.ForecastSteerer`.
+- **Ref.** ROADMAP §50.1–50.2; `docs/steering_research_log.md` E00–E10.
+- **Score. 4/5.** Establishes a practical control baseline that disentangles
+  output controllability from the stronger claim of semantic feature discovery.
+
+#### MN-47 · Lower SAE reconstruction error does not consistently improve selective steering
+- **Claim.** In a512-atom,k16,600-step,24-context Bolt pilot, held-out
+  reconstruction NMSE is TopK **0.05970584973692894**, AbsTopK
+  **0.05588775873184204**, BatchTopK **0.0515652634203434**. Yet64-atom
+  seasonal-control errors at dose0.2 are **0.06595,0.06934,0.06858** respectively
+  (rounded means; exact rows in artifacts). BatchTopK test L0 **21.25** versus
+  **16** for the other arms additionally prevents a matched-test-sparsity claim.
+  Single atoms fail the0.1 full-output criterion on every tested task/context.
+- **Models / layers.** Chronos-Bolt-small native decoder-head input.
+- **Evidence.** Descriptive dictionary fidelity and causal within-model steering;
+  matched optimizer/init/training budget; one training seed, fresh test contexts.
+- **Status.** Exploratory negative for adopting these variants on this evidence;
+  not a general rejection of signed/adaptive SAEs. Modern variants remain opt-in.
+- **Reproduce.** `sae/modern.py`; `runs/steering_e02_topk`,
+  `runs/steering_e02_abstopk`, `runs/steering_e02_batchtopk`; portable summaries
+  in corresponding `examples/steering/` directories.
+- **Ref.** ROADMAP §50.2; `docs/steering_research_log.md` E02.
+- **Score. 3/5.** A concrete TSFM example of why reconstruction and actual
+  selective control need separate evaluation and realized-sparsity checks.
+
+
+#### CA-16 · Bolt encoder-output control supports width and season, but isolated upper-quantile control fails the tested budget
+- **Claim.** On16 fresh contexts, radius0.2 of the full encoder-state Frobenius
+  norm,ridge1e-5,six nonlinear correction steps, upper-only control passes0/16
+  for REG-only, shared-token and fully independent token edits. Mean errors are
+  **0.2570767497950713,0.242367760175313,0.27089506942840846**. Widening passes
+  **15/16,14/16,13/16**; season passes **15/16,16/16,16/16**. Original-Jacobian
+  optimal upper-error means are **0.4195139834384104,0.31967113879732045,
+  0.21209865207669704**; these bound only the initial linearized problem.
+- **Models / layers.** Chronos-Bolt-small complete final encoder output,
+  including REG; actual frozen decoder and head downstream;128 context,32 horizon.
+- **Evidence.** Causal within-model (L3), fresh synthetic replication of a
+  four-context discovery; all scopes/settings frozen and no exclusions.
+- **Status.** Replicated restricted negative for upper-only at this site,
+  norm budget and optimizer, with positive width/season control. Other budgets,
+  sites and optimizers remain untested; head/encoder norm units are not directly
+  comparable. No global impossibility claim.
+- **Reproduce.** `experiments/steering_upstream.py`;
+  `runs/steering_e09_upstream_fresh16`, portable raw results/arrays in
+  `examples/steering/e09_upstream_fresh16`.
+- **Ref.** ROADMAP §50.3–50.4; `docs/steering_research_log.md` E05,E05b,E09.
+- **Score. 4/5.** Shows that steering feasibility depends on the allowed
+  intervention site and geometry; late-head success alone is insufficient.
+
+#### CA-17 · Automatic steering discovery generalizes across registered forecast architectures, with target-dependent limits
+- **Claim.** A shared no-grad steering engine automatically discovers real
+  internal/input interventions on Bolt, TimesFM and point-only Timer. Larger
+  fresh-context suites achieve **141/168**, **156/168**, and **103/112** learned
+  successes respectively (≤10% full-output error, radius0.2); explicit context
+  preprocessing is excluded. Frozen synthetic profiles pass **60/72** Bolt and
+  **68/72** TimesFM real-source cases with local response refinement. All native
+  replays are exact. Large clipping and some selective edits fail.
+- **Models / surfaces.** Automatically observed parameter-module inputs; no
+  model/layer names in the engine. H64 for Bolt/TimesFM and H96 for Timer.
+  A small Chronos2 pilot succeeds on only1/4 learned requests: registration
+  portability is broader than reliable steering capability.
+- **Evidence.** Eight new synthetic contexts per larger model suite, separate
+  calibration/validation;12 reused real evaluation sources per transfer audit.
+  D11 additionally controls Bolt's repeated 1→9 expanded-batch H96 rollout on
+  two fresh contexts (8/8 learned cases). No future labels or weight training.
+- **Mechanism.** Signed-effect screening avoids inactive branches. For a narrow
+  standard Linear module, its exact input row space removes invisible directions:
+  paired Timer successes rise16/28→26/28, then103/112 on fresh contexts.
+- **Status.** Useful adaptive control, not universal support, semantic-feature
+  discovery, a fixed vector, forecasting improvement or calibrated uncertainty.
+  Real-source pretraining overlap is unknown; most successes occur near readouts.
+- **Reproduce.** `steering/dynamic.py`; `experiments/dynamic_steering_study.py`;
+  `experiments/dynamic_real_audit.py`; `examples/dynamic_steering/` portable raw
+  arrays, protocols, findings and scientific figures.
+- **Ref.** ROADMAP §51; `docs/dynamic_steering_research_log.md` D07/D08/D11/D14–D17b.
+- **Score. 4/5.** A working architecture-independent intervention API with
+  explicit negative results, replay audits and saved-profile transfer.
+
+#### CA-18 · Exact context removal is operationally possible; selective-horizon context focus remains budget-limited
+- **Claim.** Explicit ignore/focus preprocessing makes forecasts exactly
+  invariant to removed values in **64/64** Bolt/TimesFM sensitivity cases.
+  Amplifying deviations increases output sensitivity in **27/32**, so nonlinear
+  emphasis is not universally monotonic. Reproducing context counterfactuals
+  only in one forecast half while protecting the other is harder: expanding
+  Bolt control from rank128 to512 improves successes **5/28→12/28**, while
+  strong suppression/focus still fails the radius0.2 budget.
+- **Evidence.** Eight fresh contexts/model for input-policy audits; four matched
+  contexts across seven selective-horizon requests for the span comparison.
+  All forecasts are real model inference, with exact intervention replay.
+- **Status.** Operational input relevance semantics, explicitly distinct from
+  attention control or learned internal steering. The partial-horizon negative
+  is restricted to tested sites/budgets; no global impossibility follows.
+- **Reproduce.** `experiments/dynamic_context_audit.py`; D09/D10/D18/D19 raw
+  artifacts in `examples/dynamic_steering/` and local `runs/dynamic_*`.
+- **Ref.** ROADMAP §51; `docs/dynamic_steering.md` context-policy contract.
+- **Score. 4/5.** Separates a useful exact preprocessing capability from the
+  stronger internal/selective causal claim it cannot automatically establish.

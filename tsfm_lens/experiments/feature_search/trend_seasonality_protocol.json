@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "purpose": "Discovery screen of a distinct trend-by-seasonality task; controlled synthetic evidence requiring fresh replication",
+  "seed_base": 1881000,
+  "n_bundles": 64,
+  "context": 192,
+  "horizon": 48,
+  "periods": [24, 48],
+  "time": "t=np.arange(-192,48); phase and intercept refer to future origin t=0",
+  "draw_order": "a~U(.5,2),phi~U(0,2pi),offset~U(-2,2),slope_ratio~U(.5,2);slope_magnitude=a*slope_ratio/48",
+  "phase_shift": 1.5707963267948966,
+  "conditions_per_period": {"mixed": "trend sign -1/+1 by phase cell 0/1;4", "pure_trend": "two signs", "pure_season": "two phases", "background_only": "one constant offset"},
+  "total_contexts_per_model": 1152,
+  "models": ["timesfm", "bolt", "chronos2"],
+  "checkpoints": {"timesfm": "google/timesfm-2.5-200m-pytorch", "bolt": "amazon/chronos-bolt-small", "chronos2": "amazon/chronos-2"},
+  "variance_scale": "v=a*a/2+slope_magnitude*slope_magnitude*(H*H-1)/12;SAME across all cells and both periods per seed. Sum of component future variances,NOT realized mixture variance or future second moment.",
+  "actual_composition": "f(trend+offset)+f(season+offset)-f(offset),using actual native constant-background forecast",
+  "primary_equations": {
+    "native_gap": "L_m=mean_over_four_mixed_cells(mean_horizon((f_m(mix)-truth)^2)/v); contrast=L_later-L_earlier",
+    "model_by_component_sum_gain": "C_m=mean_over_four_mixed_cells(mean_horizon((f_m(trend+offset)+f_m(season+offset)-f_m(offset)-truth)^2)/v);G_m=L_m-C_m;contrast=G_later-G_earlier"
+  },
+  "primary_family_size": 12,
+  "primary_family": "3 unordered model pairs in fixed order timesfm,bolt,chronos2;later-listed minus earlier-listed;2periods;2contrast types;global Holm12",
+  "minimum_absolute_practical": 0.05,
+  "primary_pass": "Either signed direction:abs(mean)>=.05,bootstrap95%CI excludes0,global Holm12 p<.05. Discovery only;promising effects need fresh replication.",
+  "inference": {"n_boot": 2000, "n_permutations": 3999, "seed": 113, "ci": 0.95, "resampling_unit": "64 generating bundles;all18cells stay together", "p": "two-sided paired seed sign-flip plus-one;requires symmetry/exchangeability;bootstrap predictions fixed"},
+  "measurement": "Joint OLS[t/H,1,sin(2pi*t/period),cos(2pi*t/period)] with full empirical Gram. Describe slope/phase/amplitude errors and cross-component responses;never assume orthogonal loss components. Phase untestable below1e-6*true seasonal amplitude;MSE claims retained.",
+  "input_control": "Known-period harmonic-plus-linear OLS fit to context and extrapolated to future;exact input baseline,not a learned activation result",
+  "descriptive": "Pure-condition errors,actual background forecast error,component-sum improvement,relative slope/seasonal-amplitude errors,phase errors,full-Gram reconstruction checks",
+  "provenance": "Protocol,metadata,worker source and adapter source hashes;offline cached checkpoint names;exact native repeats;independent Chronos2 group IDs and batch-permutation check",
+  "compute": {"gpu": 3, "single_worker": true, "dtype": "float32", "autocast": false, "batch": 8, "cpu_threads": 2, "gpu_memory_bytes": 6000000000, "runtime_cap_seconds": 600, "estimated_seconds": [30, 120], "total_forecasts": 3456},
+  "selection": "Freeze before inference;no hidden capture,no uniqueness claims,no new agents,no ledger edits,no automatic expansion"
+}

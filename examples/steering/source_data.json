@@ -1,0 +1,298 @@
+{
+  "fresh/bolt": {
+    "results_sha256": "6f7555a8698f20b9b9337ff4d7fdd6e4049465bc91f4785390501098d65e7921",
+    "run": "steering_e06_bolt_fresh64",
+    "tasks": {
+      "widen": {
+        "error": {
+          "mean": 0.01906498080258097,
+          "lo": 0.014906874063629475,
+          "hi": 0.023778165716086205,
+          "n": 64
+        },
+        "improvement": {
+          "mean": 0.05897657609398722,
+          "lo": 0.0476505394763971,
+          "hi": 0.0715229534173497,
+          "n": 64
+        },
+        "successes": 64,
+        "baseline_crossing_fraction": 0.0,
+        "edited_crossing_fraction": 0.0
+      },
+      "narrow": {
+        "error": {
+          "mean": 0.011064170357698487,
+          "lo": 0.008423407939593614,
+          "hi": 0.014218446366322359,
+          "n": 64
+        },
+        "improvement": {
+          "mean": 0.03624578543055561,
+          "lo": 0.024048371420739192,
+          "hi": 0.05031269014008361,
+          "n": 64
+        },
+        "successes": 64,
+        "baseline_crossing_fraction": 0.0,
+        "edited_crossing_fraction": 0.0
+      },
+      "season": {
+        "error": {
+          "mean": 0.012995774410960347,
+          "lo": 0.009197980547955608,
+          "hi": 0.017417570430969014,
+          "n": 64
+        },
+        "improvement": {
+          "mean": 0.052080604327438745,
+          "lo": 0.04271565807990019,
+          "hi": 0.06178509272403555,
+          "n": 64
+        },
+        "successes": 64,
+        "baseline_crossing_fraction": 0.0,
+        "edited_crossing_fraction": 0.0
+      },
+      "upper": {
+        "error": {
+          "mean": 0.07500547734918891,
+          "lo": 0.0696781488209073,
+          "hi": 0.08118458633288786,
+          "n": 64
+        },
+        "improvement": {
+          "mean": 0.168960520267328,
+          "lo": 0.12886274163656675,
+          "hi": 0.2104227392399136,
+          "n": 64
+        },
+        "successes": 57,
+        "baseline_crossing_fraction": 0.0,
+        "edited_crossing_fraction": 0.0
+      }
+    }
+  },
+  "fresh/timesfm": {
+    "results_sha256": "5d81ac7f171fe5d458f4960cf48da3ca2592937db73198ee4f8462e31b07b941",
+    "run": "steering_e06_timesfm_fresh64",
+    "tasks": {
+      "widen": {
+        "error": {
+          "mean": 0.0015741310043839983,
+          "lo": 0.0013516199160827304,
+          "hi": 0.0018408384489781169,
+          "n": 64
+        },
+        "improvement": {
+          "mean": 0.024301486226813152,
+          "lo": 0.020253001788539296,
+          "hi": 0.029561566079310552,
+          "n": 64
+        },
+        "successes": 64,
+        "baseline_crossing_fraction": 0.00054931640625,
+        "edited_crossing_fraction": 0.00048828125
+      },
+      "narrow": {
+        "error": {
+          "mean": 0.0023598210753626066,
+          "lo": 0.0020376635880899464,
+          "hi": 0.002680540980898579,
+          "n": 64
+        },
+        "improvement": {
+          "mean": 0.029101326926460384,
+          "lo": 0.02552119170414336,
+          "hi": 0.033277133207351685,
+          "n": 64
+        },
+        "successes": 64,
+        "baseline_crossing_fraction": 0.00054931640625,
+        "edited_crossing_fraction": 0.00054931640625
+      },
+      "season": {
+        "error": {
+          "mean": 0.0007871052444355581,
+          "lo": 0.0006760691205452102,
+          "hi": 0.0009215615148494699,
+          "n": 64
+        },
+        "improvement": {
+          "mean": 0.000484774890468398,
+          "lo": 0.0,
+          "hi": 0.0012357508642906038,
+          "n": 64
+        },
+        "successes": 64,
+        "baseline_crossing_fraction": 0.00054931640625,
+        "edited_crossing_fraction": 0.00054931640625
+      },
+      "upper": {
+        "error": {
+          "mean": 0.03220862827694282,
+          "lo": 0.026355577684935842,
+          "hi": 0.0387178680694309,
+          "n": 64
+        },
+        "improvement": {
+          "mean": 0.5797198056168709,
+          "lo": 0.5181933065522959,
+          "hi": 0.6381091547866772,
+          "n": 64
+        },
+        "successes": 63,
+        "baseline_crossing_fraction": 0.00054931640625,
+        "edited_crossing_fraction": 0.00067138671875
+      }
+    }
+  },
+  "offgrid/bolt": {
+    "results_sha256": "91c38838fe95e7ce1853f63a056845c24ba7e5381ee8e7706f0057990d34bd56",
+    "run": "steering_e07_bolt_offgrid64",
+    "tasks": {
+      "widen": {
+        "error": {
+          "mean": 0.007532483041356374,
+          "lo": 0.00540691134055642,
+          "hi": 0.009946028458996952,
+          "n": 64
+        },
+        "improvement": {
+          "mean": 0.02207479660606984,
+          "lo": 0.01441073892299502,
+          "hi": 0.03128706324230034,
+          "n": 64
+        },
+        "successes": 64,
+        "baseline_crossing_fraction": 0.0,
+        "edited_crossing_fraction": 0.0
+      },
+      "narrow": {
+        "error": {
+          "mean": 0.0045750094467081875,
+          "lo": 0.003531333932574248,
+          "hi": 0.0057996839190933205,
+          "n": 64
+        },
+        "improvement": {
+          "mean": 0.006641998575846578,
+          "lo": 0.0041106336821058265,
+          "hi": 0.00937105021578073,
+          "n": 64
+        },
+        "successes": 64,
+        "baseline_crossing_fraction": 0.0,
+        "edited_crossing_fraction": 0.0
+      },
+      "season": {
+        "error": {
+          "mean": 0.002716605509821038,
+          "lo": 0.0020246651395725663,
+          "hi": 0.0034989698661545285,
+          "n": 64
+        },
+        "improvement": {
+          "mean": 0.033013781190246345,
+          "lo": 0.02288326457587447,
+          "hi": 0.04384825563507499,
+          "n": 64
+        },
+        "successes": 64,
+        "baseline_crossing_fraction": 0.0,
+        "edited_crossing_fraction": 0.0
+      },
+      "upper": {
+        "error": {
+          "mean": 0.09301025033495691,
+          "lo": 0.08708725638608764,
+          "hi": 0.10031718021672242,
+          "n": 64
+        },
+        "improvement": {
+          "mean": 0.1518999855729109,
+          "lo": 0.11409098737136923,
+          "hi": 0.1903514522790989,
+          "n": 64
+        },
+        "successes": 45,
+        "baseline_crossing_fraction": 0.0,
+        "edited_crossing_fraction": 0.0
+      }
+    }
+  },
+  "offgrid/timesfm": {
+    "results_sha256": "1636ef7b6ddc3917ca36c6b6391ba79a404d591b8e43ca19e7f9244a3815a3dd",
+    "run": "steering_e07_timesfm_offgrid64",
+    "tasks": {
+      "widen": {
+        "error": {
+          "mean": 0.0016518817296379714,
+          "lo": 0.0013351188384452199,
+          "hi": 0.0020271951848923405,
+          "n": 64
+        },
+        "improvement": {
+          "mean": 0.022124773056284366,
+          "lo": 0.01923469270175254,
+          "hi": 0.025423367082423876,
+          "n": 64
+        },
+        "successes": 64,
+        "baseline_crossing_fraction": 0.0047607421875,
+        "edited_crossing_fraction": 0.00469970703125
+      },
+      "narrow": {
+        "error": {
+          "mean": 0.0019212934351805799,
+          "lo": 0.0016135220727403893,
+          "hi": 0.002280615584239491,
+          "n": 64
+        },
+        "improvement": {
+          "mean": 0.027312863790687855,
+          "lo": 0.0240943540021904,
+          "hi": 0.030917448542569826,
+          "n": 64
+        },
+        "successes": 64,
+        "baseline_crossing_fraction": 0.0047607421875,
+        "edited_crossing_fraction": 0.00469970703125
+      },
+      "season": {
+        "error": {
+          "mean": 0.0008516731746187663,
+          "lo": 0.0006925592434520903,
+          "hi": 0.001043133622917484,
+          "n": 64
+        },
+        "improvement": {
+          "mean": 0.0014781756042085358,
+          "lo": 0.0,
+          "hi": 0.004346419526383191,
+          "n": 64
+        },
+        "successes": 64,
+        "baseline_crossing_fraction": 0.0047607421875,
+        "edited_crossing_fraction": 0.0047607421875
+      },
+      "upper": {
+        "error": {
+          "mean": 0.03484842871917372,
+          "lo": 0.026975047022004185,
+          "hi": 0.043584301978474724,
+          "n": 64
+        },
+        "improvement": {
+          "mean": 0.5251690930291708,
+          "lo": 0.4726931125917069,
+          "hi": 0.5776437031231318,
+          "n": 64
+        },
+        "successes": 60,
+        "baseline_crossing_fraction": 0.0047607421875,
+        "edited_crossing_fraction": 0.00433349609375
+      }
+    }
+  }
+}

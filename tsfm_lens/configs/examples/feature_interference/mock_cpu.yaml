@@ -1,0 +1,43 @@
+# Standalone run_feature_interference.py example, not a pipeline preset.
+# Prepare first, then use --prepared with --device cpu and a NEW output directory.
+# Four seed bundles keep the exact sign-primary comparison descriptive.
+# The permutation budget controls only the secondary historical mean test.
+design:
+  context: 128
+  horizon: 32
+  periods: [32, 16]
+  phase_shift: 1.5707963267948966
+  n_bundles: 4
+  seed_base: 2400000
+  amplitudes: [0.5, 2.0]
+  offset: [-2.0, 2.0]
+  phase_floor: 0.000001
+  native_background: true  # Recommended: measure f(background), adding a ninth cell.
+
+models:
+  - name: mock_patch
+    adapter: mock_patch
+    checkpoint: ""
+  - name: mock_wave
+    adapter: mock_wave
+    checkpoint: ""
+
+inference:
+  primary_estimand: sign_probability  # Declared before generating forecasts.
+  n_boot: 99
+  n_permutations: 9
+  seed: 113
+  ci: 0.95
+
+# For a separate native study, copy this YAML and replace the models block:
+# models:
+#   - name: bolt
+#     adapter: chronos_bolt
+#     checkpoint: amazon/chronos-bolt-small
+#   - name: timesfm
+#     adapter: timesfm
+#     checkpoint: google/timesfm-2.5-200m-pytorch
+# Also choose a fresh seed range and enough bundles/resamples prospectively
+# (for example n_bundles: 128, n_boot: 2000, n_permutations: 1999).
+# Native inference requires cached checkpoints and an explicitly assigned device;
+# --device cuda:0 uses one model at a time with a 6 GiB allocator cap.

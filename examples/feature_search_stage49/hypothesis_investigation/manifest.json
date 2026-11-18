@@ -1,0 +1,877 @@
+[
+  {
+    "path": "prior_training_pilot4951000/knowledge.json",
+    "status": "recorded",
+    "sha256": "690ac8cd91118bf03897c23c7ad83112f0fd0b6b4558f4268b5210b37aa58933"
+  },
+  {
+    "path": "prior_initial_control4951000/knowledge.json",
+    "status": "recorded",
+    "sha256": "06fba63498eea6897014b83851e74e0d737a4e9e6a966896caf36aa5f758d360"
+  },
+  {
+    "path": "persistence_pilot4951000/calibration_batch_geometry/knowledge.json",
+    "status": "recorded",
+    "sha256": "10349b8293ee185d457a2367ea7ee2b8425b6dee967b83f470a178175f7cd27f"
+  },
+  {
+    "path": "persistence_pilot4951000/knowledge.json",
+    "status": "failed instrumentation; no forecast conclusions",
+    "sha256": "ecec4385b9c9c667e2bca01f4040e73364a2bd9af1baf4682147097489accabf"
+  },
+  {
+    "path": "persistence_pilot4951000/singleton_geometry/knowledge.json",
+    "status": "recorded",
+    "sha256": "e0393cc6032be29cc4d6cd1a4abaccd5def5d53593b9d57edaa8c4b6d2833907"
+  },
+  {
+    "path": "persistence_replication4953000/knowledge.json",
+    "status": "Completed native replication, FIT-only selector freeze, TEST scoring, and independent audit;4/6 primary screens pass",
+    "sha256": "088258424bdfd61f9fcd541d8fbe2d02f97648297b3c9c87ee17fb9697e45de7"
+  },
+  {
+    "path": "persistence_replication4953000/model_free_fixture/knowledge.json",
+    "status": "PASS",
+    "sha256": "d460d033594cab1e3203aa8b4bc6c37df0cb6e811398f540a4f0750ab165b292"
+  },
+  {
+    "path": "persistence_replication4953000/post_audit_fixture/knowledge.json",
+    "status": "recorded",
+    "sha256": "2ce19c9a44c0922774bceeb88afc0687da8f8531a86e744c29c71171cf791c16"
+  },
+  {
+    "path": "persistence_replication4953000/post_audit_fixture/planted_score/knowledge.json",
+    "status": "recorded",
+    "sha256": "64ec255c737418e10b244eedecbfc724ff25ccf1e8aa41ae083e3bde4796dd0a"
+  },
+  {
+    "path": "comparability_pilot4951000/knowledge.json",
+    "status": "recorded",
+    "sha256": "e9df77c2ddc81a9b7b9548f640319345e56a48e0647bfc597da7d0ee78ce49c7"
+  },
+  {
+    "path": "comparability_replication4952000/knowledge.json",
+    "status": "complete",
+    "sha256": "313b3c885cb7dbb94b0c81705fc35396771235de31d6eb73363709644ca06346"
+  },
+  {
+    "path": "response_surface_pilot4951000/knowledge.json",
+    "status": "complete_pilot_stop_for_orchestration",
+    "sha256": "fbe395a637a747779a40d00ebdf2d2a67f074ef93f471bdfb924cf158fbc6243"
+  },
+  {
+    "path": "response_surface_normalization4953000/knowledge.json",
+    "status": "complete_saved_array_followup",
+    "sha256": "5653b846c558b86f84d6a47272c13817f2a9bfeb51d4ea62aee86127c14e2d45"
+  },
+  {
+    "path": "attenuation_explanation4951000/knowledge.json",
+    "status": "recorded",
+    "sha256": "9854c30f1b4de0682035b0505e54d08d149c851c5031b9b89c0229589ff047ae"
+  },
+  {
+    "path": "background_modulation4956100/knowledge.json",
+    "status": "complete",
+    "sha256": "dee05a8d2795b751743d9c89bb9e07c9d45dc2eb4c6fd7d1719c940656b8eaa7"
+  },
+  {
+    "path": "natural_validation_pilot4951000/knowledge.json",
+    "status": "prepare: failed",
+    "sha256": "44b024e641f3389ede8b746bf9b3cc51aac7b56cee0f576029e7176f3d955b1e"
+  },
+  {
+    "path": "natural_validation_pilot4951001/knowledge.json",
+    "status": "analysis: complete",
+    "sha256": "99f41c05215320b5132190c764303835cf0541e4cb02f63e274f92d3ba9803a5"
+  },
+  {
+    "path": "natural_validation_replication4955000/knowledge.json",
+    "status": "analysis: complete",
+    "sha256": "8c077ead482f60fb053162a6671c2ba1002975d6f7876790008482979508ed74"
+  },
+  {
+    "path": "dictionary_pilot4951000/fit_bolt_cut0_native_k8_s4951000/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "364c8322c076763a42933b6430139fe9a28b4395c845243e5c34740c96c582ea"
+  },
+  {
+    "path": "dictionary_pilot4951000/knowledge.json",
+    "status": "stopped_failure",
+    "sha256": "ae5644c803b078cfdfee65bfd166e70aa144b9e36d46e39c085fbf4837f14c35"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/bolt_probe_review/knowledge.json",
+    "status": "descriptive_review",
+    "sha256": "dcd5d1482f0b05416a0ed6446ee931298dac6b0bdcb06e085abf841b042f781c"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/compare_bolt_cut0_native_k16_s4951000/knowledge.json",
+    "status": "comparison_only",
+    "sha256": "36968fef0ca45b9c3d5228a4af97344a93c8639957fc9db7d7ecdb90205c6d50"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/compare_bolt_cut0_native_k8_s4951000/knowledge.json",
+    "status": "comparison_only",
+    "sha256": "b50e0713042a737be05f798e6ca073fc9d3637ef5fe861a4a3df8d2973105972"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/compare_timesfm_cut0_native_k16_s4951000/knowledge.json",
+    "status": "comparison_only",
+    "sha256": "371880bc5d9629363fecbad3fa604c1b41a1b6364173fee227398bbb5d521c06"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/compare_timesfm_cut0_native_k8_s4951000/knowledge.json",
+    "status": "comparison_only",
+    "sha256": "69a0805ee220228136f73924e63656da5d5c24a2a233b52da713acef270ba8d2"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_bolt_cut0_native_k16_s4951000/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "5572841e1cd1ce65a3586bf136f64f3a7c71fa54ff6fb5768163759f85b40bd2"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_bolt_cut0_native_k8_s4951000/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "49b0ace5ac709a310eda369dd6578a7251a562228abcb0533f20bebbc8a23273"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_bolt_cut0_nested_k16_s4951000/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "183b8bf37321f7719d67e1dbe634cf21576710f4e1d8073b6cd157275e607a13"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_bolt_cut0_nested_k16_s4951001/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "7900a7f5bf6d5ff16b49a137fd935ab42c01179babd239f9ed791a90cc568374"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_bolt_cut0_nested_k16_s4951002/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "88c840c32068046305f063ed6e37d496a481479dfd78222fed6b2c1a63832f82"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_bolt_cut0_nested_k8_s4951000/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "469cdeb68c5dec1e839746e3982bcbbcee75dedec049fa42e6fe287516f57657"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_bolt_cut0_nested_k8_s4951001/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "42f46910dc03050a659aa6317d62c11bf31a0cc3e550db169ab0a10c1f36c000"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_bolt_cut0_nested_k8_s4951002/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "2fa077be7213ab441dee122a94f484d5a0936bfed8bb7792c5996d417814141f"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_bolt_cut0_pca_k16_s4951000/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "6cc511a80391c006fb8de7b22ce72af15aa42e1d32d560a6f9ef1ddb2a76ea21"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_bolt_cut0_pca_k8_s4951000/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "6aedb7f6b58f459e009daca9ec8ab552aa3da3d765816b37ffc4b8c94c4d07e4"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_bolt_cut0_rotation_k16_s4951000/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "d1425cb56991db729794168fa16e4c86c8c3c05c009420377a93ca0df8bd9caa"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_bolt_cut0_rotation_k16_s4951001/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "cceec269242ae0af15da4a71bb7a6cecd9bfdf05d2ee31989554441085b9119b"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_bolt_cut0_rotation_k16_s4951002/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "e3091c053fd8f15e6d2a9ba4552e12c87e3d0b86c30872c87ff822446f564f5e"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_bolt_cut0_rotation_k8_s4951000/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "290a9d53bf408e7a905ede0c0c5f859c32bcd6d189c6ecc36b9c771f4aeffc25"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_bolt_cut0_rotation_k8_s4951001/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "c89d4214cadf8e64616618df54de8301bd5073f3a6e2d79a37c6c445df820071"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_bolt_cut0_rotation_k8_s4951002/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "46307fe21a05f4e3b4dc9b2acad356396bfca194c53ade68332f1456880e9af9"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_bolt_cut0_topk_k16_s4951000/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "1ba3cc749ca6cec7a2f97f002f4bc70606e960beebdfc7f42b051d04b08b298d"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_bolt_cut0_topk_k16_s4951001/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "bfcbb78c507ea7264d8028968789dcd8a4a0fc6fcf901a8bb9830e49742f29b1"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_bolt_cut0_topk_k16_s4951002/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "74d8f9b368025e78eb710ee82e05d050ad83e26962f105cbbb233ab73a5ec5c8"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_bolt_cut0_topk_k8_s4951000/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "40f429ee9b9cfcb30757164ea9bf56eb8614ad72313ee5086dba6ab4eb193d8c"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_bolt_cut0_topk_k8_s4951001/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "98de64e9a2fae09a48e61cef0366c2f166b7645304b8f802c501f9c85f01e79b"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_bolt_cut0_topk_k8_s4951002/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "df5cd96ec6c2f685657a6e2128f1663b40a2fefb93c9d371174a9df5dd96eb4e"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_timesfm_cut0_native_k16_s4951000/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "e8b60e6cff17aed5ba7e1a37f0ad54c1d2bf693da91b10deaadf68b813868cb7"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_timesfm_cut0_native_k8_s4951000/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "59e54be8ed7e6b7667f7efea287bd8d4792885fc5ba8efad558839a9494f2e25"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_timesfm_cut0_nested_k16_s4951000/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "4358e2192086400c54eb065e2c63ae1912c9049339f27c4e4ade96d7426ac379"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_timesfm_cut0_nested_k16_s4951001/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "a54be3626ada41443d2bd4a0c49d13ca0223d347b8fe5adf1c2ded9f809fa6c2"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_timesfm_cut0_nested_k16_s4951002/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "85e2cad6492a6d8d29600997b666fbc94cebf670b7fca1730febf4ac1b95d884"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_timesfm_cut0_nested_k8_s4951000/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "ad7e864ffbe60729163319f06fa1e07b9d48091099828ff3deb00a696cb55f6b"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_timesfm_cut0_nested_k8_s4951001/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "caca9d166bbd5296738560353d49b42908b79382997338048e16b950d4e4b8c0"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_timesfm_cut0_nested_k8_s4951002/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "bb84f7ddbb29972e3805695059860fa3ffc444b2876ada1bf6a78a8448e0e83b"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_timesfm_cut0_pca_k16_s4951000/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "d145fd586ef59e6eaf15877c06b1e14984e9129d378d78ddb9d98ad0095e93a0"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_timesfm_cut0_pca_k8_s4951000/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "35f65ff6a1158297fd618229d577ead6c883b854ddfa3bb0877f0f0cd64592ce"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_timesfm_cut0_rotation_k16_s4951000/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "ac2bb8c234375ee04ad47e2e5ed15dd829afa235f54988a9bf0635190f1c39d7"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_timesfm_cut0_rotation_k16_s4951001/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "bbaffae239917b9c3ad293a1c85ddf3bb25907dd95faf4da8cd91e41cab1e773"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_timesfm_cut0_rotation_k16_s4951002/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "2bef7a36c2060c0e40f83eb1f0acd68dee5ed985791d041f216f8e79233c9390"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_timesfm_cut0_rotation_k8_s4951000/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "2de84e8cbf25754616c972406bcf180f235a695c96d155f750ccc694af2c2c89"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_timesfm_cut0_rotation_k8_s4951001/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "1df8d473490427024d55b2f8f11b6d9a8a3ed10c4873b0b05fd38d120004e167"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_timesfm_cut0_rotation_k8_s4951002/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "403ffa233c61671668db436c37b67776de832568ec4c1f33d3622345b51bff7b"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_timesfm_cut0_topk_k16_s4951000/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "cb45a7e90e33a7554adc1081a88815ab6a310e321603e669b304915c8e33bf63"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_timesfm_cut0_topk_k16_s4951001/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "aa944fc74cb909233bc0f84f9e1159894fcbb525b07b14a6f03ae8336d582774"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_timesfm_cut0_topk_k16_s4951002/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "804a3aa93f0bf66c783986d521f5a8cef6652887077c2f8ded319598437cb01e"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_timesfm_cut0_topk_k8_s4951000/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "878459d77080d16d7cb7e8ab0feed2885c8a3e297475a1bae0983aa3efce48c5"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_timesfm_cut0_topk_k8_s4951001/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "8cd9917889d6439fb9774af74e3391c01995dc831aec0af70e5aaac39f00761e"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/fit_timesfm_cut0_topk_k8_s4951002/knowledge.json",
+    "status": "descriptive_complete_native_pending",
+    "sha256": "b41b02b6cac48bb3cb97431be5a604d6c93a8a693f8433fac23d16f300f22e38"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/knowledge.json",
+    "status": "complete_with_unscorable_causal_selectivity",
+    "sha256": "909d7835042130dea0288e10fd898995e95480f24b024f15cf003133e87dfe78"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/monitor_audit/knowledge.json",
+    "status": "audit_passed",
+    "sha256": "2a7881d2c9f3bf742e331df0ce90f4c7e643cbee140727ff8031edb7081e4bb2"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_bolt_cut0_native_k16_s4951000/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "3901fcc6b59752266f8515fa75e9c687f2262b5e2986eb36ba80195b19a1288a"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_bolt_cut0_native_k8_s4951000/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "8d7e48a0cf5e4f01b71091a77bbaa80ee1b521a35c9ecd1360573fe7843580d3"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_bolt_cut0_nested_k16_s4951000/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "0441c57676abc429d1547e626b033a3acab61bbe5449018a6d057099e08ee896"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_bolt_cut0_nested_k16_s4951001/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "7f2092d622e7b1025723a21d95b1a98d874242bb94b7c08a2391042dfebd7510"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_bolt_cut0_nested_k16_s4951002/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "09d0b02c81bc997e710293a75de6ed88ef22e1ef9caa68ea794aebacfb00697f"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_bolt_cut0_nested_k8_s4951000/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "32c7e89c790c9001d8701e2977169d579d844373d735f6fb8b384ee03cb7ffee"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_bolt_cut0_nested_k8_s4951001/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "9442cd75d5be209a87fbab0e1d56a34932ecd684b6ae91102855619230930e04"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_bolt_cut0_nested_k8_s4951002/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "7c9da2ccfc40911fce73ef34d7fab20e63d5fc1ef940cbe74cc95ad8f437fd1c"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_bolt_cut0_pca_k16_s4951000/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "59c4d5bbc3ef0b22eb5659e5eecacf2c40d18ddd197d1b20726565a47e0b26db"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_bolt_cut0_pca_k8_s4951000/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "dc7b7d945473ba8b4cac00b9c7abe79a747956a9e70586f2e5bb70fb9b628c03"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_bolt_cut0_rotation_k16_s4951000/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "5d1e4bc69f7294ff878af2f69a9dbb880fb144481ca1da7e0cfc1c21b3b1e1ef"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_bolt_cut0_rotation_k16_s4951001/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "b864b17e87627e650769bd7c0ea433ac7eafa1e7bad4e0c4856da30a1cda9147"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_bolt_cut0_rotation_k16_s4951002/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "792c3d242e51fff0bbd2b6ef8ac9305106683d5da1cad6054765ae24d084268a"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_bolt_cut0_rotation_k8_s4951000/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "fa7d0f327bcc5c7fe993d5e318f69d29aca7819fd48f6c4264f8b4621196c263"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_bolt_cut0_rotation_k8_s4951001/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "02a516bd83864d9b0119c01fc79976d0955846c23912cd896a483d89e7ca8521"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_bolt_cut0_rotation_k8_s4951002/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "7ac3659885551bf7fdb5584fc5d4166b41fed071a42d7fba97e9a1077f19b50f"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_bolt_cut0_topk_k16_s4951000/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "306d5011ca37840b79ef01804ffacf52db9573ba16bda4538cc041566007403c"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_bolt_cut0_topk_k16_s4951001/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "d90d424afc502decf59f9a21a03946bf0d3c34514eb59e2535c51f12a61576b1"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_bolt_cut0_topk_k16_s4951002/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "42c2e8b89bc8eab2b8df4206f673aaaaaa4069aaba68dbcacfacad5a64995834"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_bolt_cut0_topk_k8_s4951000/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "4a8d7b005d94ee2848301514ff448521f9451b8ee90065b9ab295f309bc73b1d"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_bolt_cut0_topk_k8_s4951001/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "c2b84f781d6359a1a6b227a7a897640c1011c6e4c085eda0aa45d3e42e087e4d"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_bolt_cut0_topk_k8_s4951002/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "5190a18e383bd1f4f698e753454d4921691c0d849c5eff0b0624ae97b916289e"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_timesfm_cut0_native_k16_s4951000/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "e8f549d431afd56134a188fd78bca2d169e8a925a81948e6c72d5c16970af19c"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_timesfm_cut0_native_k8_s4951000/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "86a1d0b11a03ed3ee1de3310a88e2d9e547b0944caaf5d2017c5fe144116c07c"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_timesfm_cut0_nested_k16_s4951000/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "d12dd83153d612e74948f9d1223204fbfc6db5f0f973aaef1df60f1cc593c766"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_timesfm_cut0_nested_k16_s4951001/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "f2827117350c42ec0e559b9dd6855a063c5b19fff96f6a6a3ece6bc4891149f0"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_timesfm_cut0_nested_k16_s4951002/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "78c843b783e1a822b241e7a79bc8baf847fc5e9d732a930e4245c1df15eb43a7"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_timesfm_cut0_nested_k8_s4951000/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "9b440371a90fd440119c448e6609723fd51ccb9dda36c67204352b6e4451c259"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_timesfm_cut0_nested_k8_s4951001/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "1283455fc2ea8281b6ee05455bc9ae124a2a2fa8d71cb062126a059ffe21cbe1"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_timesfm_cut0_nested_k8_s4951002/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "83817b6bd5753e72321ba350f2ea51ed332758a0250ac81f10216b20320310b8"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_timesfm_cut0_pca_k16_s4951000/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "48e0840e6d1ce9a081377dc21ffbe31cc1ddb352c1a81bf7834ba188b1c3798b"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_timesfm_cut0_pca_k8_s4951000/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "eecf2516f5835b1d526d675813a0a0f1e1136517d2bb93687a08fcdfe18ba6ea"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_timesfm_cut0_rotation_k16_s4951000/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "ce5d86cb25f6e139dae43feac01ed0c10a833d68d91d1b1ffa6db61953d7f2bc"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_timesfm_cut0_rotation_k16_s4951001/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "33a21232f13e5b21891a17dea1455b1c5c90af35ee7457101439e659cee604fe"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_timesfm_cut0_rotation_k16_s4951002/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "8a6323b001812a7b227109b79ead173e8a75f9d9997e3c6fc46de5481e8f6891"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_timesfm_cut0_rotation_k8_s4951000/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "4b93b34d42d7c7f73d697ea77a018c3b347291b5fdd176120038663a24ebc5b5"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_timesfm_cut0_rotation_k8_s4951001/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "67717afccfd63e398c4c83c0a57574247ffd2b607149e20542326fffe5b9def3"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_timesfm_cut0_rotation_k8_s4951002/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "ecce4d5323a122cc83ca2f7015bbabbdaa2fbdd69598593a4b6013821f9fcd4b"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_timesfm_cut0_topk_k16_s4951000/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "c83b3a2273132a743445b593b206a1035aae3915101bdabca63156c43750148a"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_timesfm_cut0_topk_k16_s4951001/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "91a23ea02d7b98cff2fd64993e8afbe7ade8d1587268bb077646953623b16e47"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_timesfm_cut0_topk_k16_s4951002/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "d08ae898b9fc8c074bb2c66d38170eb9389f9bb27adb0981a4451485f40e98c9"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_timesfm_cut0_topk_k8_s4951000/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "834883f983b4e49f63feb3ae780468ba43080d88867d483fac0cf075ba5f06a5"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_timesfm_cut0_topk_k8_s4951001/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "c7c7743992b83c0547f3ca26d9b3f45423dc33c22d99627ac1c895f79b8655a2"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/native_timesfm_cut0_topk_k8_s4951002/knowledge.json",
+    "status": "causal_pilot_complete_no_automatic_claim",
+    "sha256": "a7b3c48925584772ef39fcb910878c68b2fe6988c8bef8fddd163315130d73ad"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/response_audit_bolt/knowledge.json",
+    "status": "saved_only_audit_complete",
+    "sha256": "4fbc42e21c68d3ea43a404e066c7965d841c6156f406785c3da6337371c8180a"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/response_audit_timesfm/knowledge.json",
+    "status": "saved_only_audit_complete",
+    "sha256": "4f4de338a24ea543ce67350c1da4764e710a7cf3cd56857561bf297f240c9b36"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/review/knowledge.json",
+    "status": "review_tables",
+    "sha256": "47cd9523d521868ba30ec6facdb2b0bf60920a5f2c8a39e79a20a6bb44a68ee0"
+  },
+  {
+    "path": "dictionary_pilot4951000/recovery_exit_monitor/validity_audit/knowledge.json",
+    "status": "posthoc_validity_correction",
+    "sha256": "c0065b6dbd5465f1c115113bfffe1fb542e20cfad9c13d82001776d229f73778"
+  },
+  {
+    "path": "token_boundary_pilot4956000/audit/knowledge.json",
+    "status": "complete",
+    "sha256": "a2e04905c634c7d883f40521f6e9c79d4c6a5655ff2aa3780837c4e827ea69bc"
+  },
+  {
+    "path": "token_boundary_pilot4956000/knowledge.json",
+    "status": "complete",
+    "sha256": "e34a82c6643c3f9c88c99b6dbcfb5384f010f91f1882eee28dc838fb189d3de5"
+  },
+  {
+    "path": "quantile_response4956200/knowledge.json",
+    "status": "complete",
+    "sha256": "6d68f3915465d21b5686335be80169ca7f4e36d3a330c8d3180d7f0dacca3ee4"
+  },
+  {
+    "path": "prior_objective_control4963000/knowledge.json",
+    "status": "complete_audited",
+    "sha256": "de42961812bdc48610ed69260ab138b04f400a28908b0d8f82a05c7c1497fc92"
+  },
+  {
+    "path": "investigation_validation4963000/knowledge.json",
+    "status": "complete",
+    "sha256": "924b366eb8cb491f28e8b704aa36e78467d858b28f09fd311c3615618ea8424a"
+  },
+  {
+    "path": "comparability_dictionary_edit_audit20261116/knowledge.json",
+    "status": "complete_saved_only",
+    "sha256": "aba0bf3377a1c667261e30f3ca3faf9beabc88099a459c61cf7b0424e022fef1"
+  },
+  {
+    "path": "response_surface_crossed4954000/knowledge.json",
+    "status": "prepared_native_capture_held",
+    "sha256": "5ea829607409ea58616f4af7ce46bd1260e86157d69eafc58911933507aa9aff"
+  },
+  {
+    "path": "response_surface_focused4954100/knowledge.json",
+    "status": "complete_audited",
+    "sha256": "37580304922bda8872db7ab8b0a74a7776cbd0bc9b33b75ca388c3f44fc8bc66"
+  },
+  {
+    "path": "comparability_random4953000/knowledge.json",
+    "status": "complete",
+    "sha256": "6d183aeff2a48365cf82d9c014c329186ba0cd805648193d5b357e7f6de5f843"
+  },
+  {
+    "path": "comparability_conditions4962000/knowledge.json",
+    "status": "complete_native_branch_closed",
+    "sha256": "bd4eeaa7edca1a95660e2d4307648fed7c739eb3454525e0c0e75908d9a9bb31"
+  },
+  {
+    "path": "comparability_conditions4962000_preflight_failed/knowledge.json",
+    "status": "prepared_native_hold",
+    "sha256": "3ddda1508a742f0de5c4ec0187d555c2cf93d0c6a6276e3bf409d73867b6eb0e"
+  },
+  {
+    "path": "response_phase4954200/knowledge.json",
+    "status": "complete_audited",
+    "sha256": "79121f7e75e6d43451675b79b54082ba7758b887644d5288d75a451a419e74d9"
+  },
+  {
+    "path": "response_phase_frequency4954400/knowledge.json",
+    "status": "complete_audited",
+    "sha256": "e6cc274aef1120b892f0b43bfd8dcee804e316d7eed601a77f5dfc21b6fc40c0"
+  },
+  {
+    "path": "response_phase_horizon4954600/knowledge.json",
+    "status": "failed_native_historical_parity_closed",
+    "sha256": "7e6532e1df9a04b356ed4cd87fa808660d4c99c66b59e2a06f05842fa235f7f3"
+  },
+  {
+    "path": "response_phase_horizon_recovery4954700/knowledge.json",
+    "status": "complete_audited",
+    "sha256": "43ef08f96ee9e8c0d1d31d6a9ee20cec260b04a393f33af92497476ad2f15073"
+  },
+  {
+    "path": "response_phase_horizon_replay4954700/knowledge.json",
+    "status": "replay_eligible_for_outcome_blind_amendment",
+    "sha256": "4dd4b7a823ce4aff6c01fa68c5c588bee36510bbcece3518649bdf833d08b119"
+  },
+  {
+    "path": "response_phase_horizon_standin4954600/knowledge.json",
+    "status": "standin_complete_audited",
+    "sha256": "6bdc368d828fbad0f465e5433d4ff058190b2ba9fb18cd48bb4964815904fd4a"
+  },
+  {
+    "path": "response_phase_oblique4954500/knowledge.json",
+    "status": "complete_audited",
+    "sha256": "4bd4eb0a50f6883a8c35dbd29e8492562c605f63c9ad15d1a00c7a9a4360b52b"
+  },
+  {
+    "path": "response_phase_oblique_standin4954500/knowledge.json",
+    "status": "standin_complete_audited",
+    "sha256": "0752c1a84c5dc54fd0664885be14f45fca6d4416c3fe0d6e63efbf541f477c23"
+  },
+  {
+    "path": "response_phase_transfer4954300/knowledge.json",
+    "status": "complete_audited",
+    "sha256": "8973c6290d04ed4425eab428f0468325cc79c9268674e05b73ce53ca1d01dc36"
+  },
+  {
+    "path": "response_phase_transfer_proposal4954300/knowledge.json",
+    "status": "proposal_only_no_native",
+    "sha256": "2afb48ba321bc8fd0ee828c0d9edfe6b97e274074c92cbffd75e2466f05e69ea"
+  },
+  {
+    "path": "response_phase_transfer_standin4954300/knowledge.json",
+    "status": "standin_complete_audited",
+    "sha256": "b5999ae06b9c71bb10666952601a3fde3543027213dda52668b32ecf7f78ac3b"
+  },
+  {
+    "path": "token_boundary_replication4961000_small/audit/knowledge.json",
+    "status": "complete",
+    "sha256": "f3bb8f5f3170712f1fa06e69aee9a2b5c2bfcf83243424f122c92bbe2fe37728"
+  },
+  {
+    "path": "token_boundary_replication4961000_small/knowledge.json",
+    "status": "complete",
+    "sha256": "fcc2c19d81fa43cf49c09780dcc1c313790f8e59dbe164b56fdb2f293e18f088"
+  },
+  {
+    "path": "token_boundary_replication4961000_tiny/audit/knowledge.json",
+    "status": "complete",
+    "sha256": "50b949c718b03fba8214bfd6da9c3ebf0f0ece8d0a3c2080b0071fb989c7b0c1"
+  },
+  {
+    "path": "token_boundary_replication4961000_tiny/knowledge.json",
+    "status": "complete",
+    "sha256": "e454965fddbe4dd355d5a03ee1f2c3c00ecc0e69d255376e46a45884e71dfce1"
+  },
+  {
+    "path": "natural_gain_location4956300/knowledge.json",
+    "status": "complete",
+    "sha256": "4d247de9ad2b2a855f3f06b09c89f71fc4f40d53d84c85fa19aff05ddb047043"
+  },
+  {
+    "path": "ffn_selectivity_causal4963000/knowledge.json",
+    "status": "pilot_report: complete",
+    "sha256": "acac4ecc86a7e3b69e4c37ad6a2264edccc140d914977f36d36a82ab172bb9a9"
+  },
+  {
+    "path": "ffn_selectivity_causal_replication4964000/knowledge.json",
+    "status": "closure: complete",
+    "sha256": "5bd7ae8ebbcf039485aad967edf5a337ee27492343f1811d340b9c20b3ce5d8a"
+  },
+  {
+    "path": "ffn_selectivity_pilot4961000/knowledge.json",
+    "status": "pilot_report: complete",
+    "sha256": "1e9f611432dfd31c22980c40854e4f8f68b405b53adf83a094c149ce67192db3"
+  },
+  {
+    "path": "postrelease_weather_202610/ghcnh_oct2026/audit/knowledge.json",
+    "status": "Actual October2026 observations retrieved for all8 fixed airports",
+    "sha256": "498b9b6eea55a422100b7e5396ac416e95e56aa455e065e27e44b9314da4e6e2"
+  },
+  {
+    "path": "postrelease_weather_202610/ghcnh_oct2026/knowledge.json",
+    "status": "Actual October2026 observations retrieved for all8 fixed airports",
+    "sha256": "498b9b6eea55a422100b7e5396ac416e95e56aa455e065e27e44b9314da4e6e2"
+  },
+  {
+    "path": "postrelease_weather_202610/ghcnh_oct2026/prepared/knowledge.json",
+    "status": "Actual October2026 observations retrieved for all8 fixed airports",
+    "sha256": "498b9b6eea55a422100b7e5396ac416e95e56aa455e065e27e44b9314da4e6e2"
+  },
+  {
+    "path": "postrelease_weather_202610/knowledge.json",
+    "status": "Checkpoint chronology/weight hashes and8 official station IDs verified; observation availability pending",
+    "sha256": "3fbc12314f58266055352f751743f736eefe8e59839a5ec921c897ca56b555b3"
+  },
+  {
+    "path": "postrelease_weather_lock202610/analysis/knowledge.json",
+    "status": "Both captures valid; slot2 released before analysis",
+    "sha256": "173233fe1ac7b271032805c9c54b5c9709d81b6b3c31753c27cb10d88c004f5a"
+  },
+  {
+    "path": "postrelease_weather_lock202610/knowledge.json",
+    "status": "COMPLETE: native branch CLOSED; slot2 released before analysis",
+    "sha256": "4d2bdbdc934e62fd2255fc544ea441daba092d3520978dfaf9fa0e196c0c3c40"
+  },
+  {
+    "path": "postrelease_weather_lock202610_preflight/knowledge.json",
+    "status": "recorded",
+    "sha256": "b7d2f8f1d009841c657dd377b2c037f27930b5d5e88de29f060657af00ef9cac"
+  },
+  {
+    "path": "postrelease_weather_pilot202610/analysis/knowledge.json",
+    "status": "frozen; native HOLD",
+    "sha256": "ca92154c81db7b2d5caf3c495e6ffd5c15af01b753b95bbb576c20c231b8f26a"
+  },
+  {
+    "path": "postrelease_weather_pilot202610/audit/replay_corruption_plant/analysis/knowledge.json",
+    "status": "frozen; native HOLD",
+    "sha256": "ca92154c81db7b2d5caf3c495e6ffd5c15af01b753b95bbb576c20c231b8f26a"
+  },
+  {
+    "path": "postrelease_weather_pilot202610/audit/replay_corruption_plant/knowledge.json",
+    "status": "recorded",
+    "sha256": "6d09907c5bb00b288c0af0402239fa2455f833fe179ff159c3df07789abf6493"
+  },
+  {
+    "path": "postrelease_weather_pilot202610/knowledge.json",
+    "status": "COMPLETE: both native workers valid, exact gates passed, independent replay passed; slot2 released",
+    "sha256": "08026bcf00fd7115f84e234ad0d8bae656f3ab0ac79f3571efe460517f54d220"
+  },
+  {
+    "path": "postrelease_weather_pilot202610_preflight/knowledge.json",
+    "status": "recorded",
+    "sha256": "42830cf352596f6011c85e5da1957ad29495b2adfc1145b2b0c48f31f151bbb4"
+  },
+  {
+    "path": "postrelease_weather_posthoc202610/knowledge.json",
+    "status": "COMPLETE: posthoc saved-array diagnostics audited; primary immutable; native branch CLOSED",
+    "sha256": "482da12ae545beb553ed2c8b6f30ab753a9ef505dc7660337a78e90010bff9de"
+  },
+  {
+    "path": "postrelease_weather_posthoc202610_preflight/knowledge.json",
+    "status": "recorded",
+    "sha256": "609f37ae48372d1e75bd1eb60f610fddc50b32c8ae0090081fa0563359c7a567"
+  },
+  {
+    "path": "persistence_electricity_lock4957200/analysis/knowledge.json",
+    "status": "Both captures valid; slot2 released before analysis",
+    "sha256": "5a058c9f26e3574987db3bd08bde4abe5934950007aca972ef8488e00a0f1c90"
+  },
+  {
+    "path": "persistence_electricity_lock4957200/audit/readiness_guard_manifest_failure/knowledge.json",
+    "status": "FAILED manifest phase only",
+    "sha256": "b8cbe372b809b87f045cbbaaacf4e2dcd312c2e5009d361cb7a24adf355fc573"
+  },
+  {
+    "path": "persistence_electricity_lock4957200/knowledge.json",
+    "status": "COMPLETE; native branch CLOSED; slot2 released before analysis",
+    "sha256": "347e97598a618ee47725b89a5ec6e2456f02a6f55fc91c1734c14a2f912deb07"
+  },
+  {
+    "path": "persistence_electricity_lock4957200_preflight/knowledge.json",
+    "status": "recorded",
+    "sha256": "a734a427bd5f6fc2b7300477b8d9303ff508e02acf6bfef717209845a35732f8"
+  },
+  {
+    "path": "comparability_position_mean20261116/knowledge.json",
+    "status": "complete_saved_only",
+    "sha256": "11bbbb79f21e12507fca02345040ce7b92c8df67763051136e1c1b3ca8c4b55f"
+  },
+  {
+    "path": "dictionary_response4965000/knowledge.json",
+    "status": "complete",
+    "sha256": "6770224a8da9af75bc27c05fa3a789669e775d19637453c1e85778656540a5b4"
+  },
+  {
+    "path": "dictionary_response4965000/lambda0/knowledge.json",
+    "status": "complete",
+    "sha256": "f8d9589d49b9c7954f0f3e54c7e8f67e3edded9685d52742c7e6ccc172c60473"
+  },
+  {
+    "path": "dictionary_response4965000/lambda1/knowledge.json",
+    "status": "complete",
+    "sha256": "c1b91bfa1412bd5005f602c2d7734f0d619d13d1a46de44936170f34a8384a71"
+  },
+  {
+    "path": "dictionary_response_influence4965000/knowledge.json",
+    "status": "complete_objective_closed",
+    "sha256": "3b20ee8beaa1822db1d02835f73dc5dcd1a1a459a69becf5633966d915d8a4f5"
+  },
+  {
+    "path": "dictionary_response_native4965000/knowledge.json",
+    "status": "complete_branch_closed",
+    "sha256": "785533b5311c5d11d4df8b2f97a6c94374d78f5072d22497dc047d8131c5eae5"
+  },
+  {
+    "path": "dictionary_smoothness4965000/knowledge.json",
+    "status": "compact_summary: complete",
+    "sha256": "a185f04ebeb69a9fef4335212a3b8f7241b9549c1a0bdd7b4a2770356219f8fa"
+  },
+  {
+    "path": "dictionary_smoothness_fixed_support4965100/knowledge.json",
+    "status": "branch_closed: complete",
+    "sha256": "d2bddf70500dc781dbfc876364117220c05a77a693f0bb8d339a727efb064bbe"
+  }
+]

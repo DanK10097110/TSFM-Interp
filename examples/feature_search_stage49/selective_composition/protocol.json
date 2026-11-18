@@ -1,0 +1,258 @@
+{
+  "stage": "replication",
+  "seeds": [
+    4942000,
+    4942001,
+    4942002,
+    4942003,
+    4942004,
+    4942005,
+    4942006,
+    4942007,
+    4942008,
+    4942009,
+    4942010,
+    4942011,
+    4942012,
+    4942013,
+    4942014,
+    4942015,
+    4942016,
+    4942017,
+    4942018,
+    4942019,
+    4942020,
+    4942021,
+    4942022,
+    4942023,
+    4942024,
+    4942025,
+    4942026,
+    4942027,
+    4942028,
+    4942029,
+    4942030,
+    4942031
+  ],
+  "rows": 224,
+  "real_sources": 32,
+  "real_offset": 56,
+  "checkpoints": {
+    "bolt": {
+      "repo": "amazon/chronos-bolt-small",
+      "path": "/common/home/djk255/.cache/huggingface/hub/models--amazon--chronos-bolt-small/snapshots/772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+      "revision": "772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+      "weights": {
+        "model.safetensors": "06a6a19bbe74bc10a9cd193bd4bf2bf638ae07f7e0d51653ae7ab8ea968a21dd"
+      }
+    },
+    "timesfm": {
+      "repo": "google/timesfm-2.5-200m-pytorch",
+      "path": "/common/home/djk255/.cache/huggingface/hub/models--google--timesfm-2.5-200m-pytorch/snapshots/1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+      "revision": "1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+      "weights": {
+        "model.safetensors": "2f776efe6245e42b24bc4153ffdf61810140210e4bd3b01fb21f7aa779ab6ce8"
+      }
+    }
+  },
+  "sources": {
+    "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/selective_study.py": "d87ed477e46d72604fa6824fcc5b146880142a730fc52f0f70bf933b652604eb",
+    "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/selective_tree.py": "0d96de5655995d55f9dc6c1510d5951db916656642b5d22c2bf4721d664f75f1",
+    "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/real_background_poc.py": "c88868ab339608f52afa8041d89cf3b48aa4260e87fb497b64fa7bf058b3eda6",
+    "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/coherence_study.py": "e9bd4dc10d57cfbc30cb4b01cfafe96789cccb6d34fe85616699ecfef799aec7",
+    "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/composition_restoration.py": "3f56b33f06a8d454d19ba5eb89f402d222c4a4c8927495155ed08f3bae7c8bc3",
+    "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/homogeneous_normalizer.py": "2670effb2dfc0b631d368a69cab4263a8d2a90eb1208acc93d246a5c0ef55051",
+    "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/selective_followup.py": "45b9e3ff111d20c86a2e67f418652f3c1afe2810965f9f6bd40816458d9ec5dd",
+    "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/selective_parallel.py": "c78b473e9f6adbb6d5d581d7138116fdb0435b9dc406defa36efb3dab241ea9e"
+  },
+  "hashes": {
+    "inputs.npz": "bdf0c62ba740b96ecf912fbd0082dd9899c1fcf5c0fe3db72025d3e2a854684d",
+    "targets.npz": "88ed126c43c0fe2a956316ac67afb7da946e3ac36f378cac525e2e7ed57fa6b1",
+    "rows.json": "5d0e1ac6d82a3826a0054e7d7bb17f1df8f547a183eb9e9f01cc0e17625a43d2",
+    "plans.json": "8ba08e6e5d89b7a3e8e6d5b9fd513dd21f38ab0dba15eb06a864291b71ae96b0"
+  },
+  "worker_cap": 3221225472,
+  "seconds_per_model": 2400,
+  "cpu_threads": 1,
+  "tree": "max3 peels; stability>=.65; explained>=.15; prominence>=8; continuous frequencies2..48/128; retain residual and DC",
+  "layers": "block outputs at first,quarter,half depth; role comparable, not architecturally identical",
+  "weights": [
+    "equal",
+    "confidence"
+  ],
+  "blend": [
+    0.5,
+    1.0
+  ],
+  "controls": "native; independent/shared-normalizer forecast sums; classical tones plus native residual; exact self patch; matched random edit preserving receiver/edit Gram",
+  "stability": "native and full-context-locked normalization; fixed sinusoid and random direction; symmetric RMS radii.001,.01,.1",
+  "selection": "FIT-only per-domain choose method/depth/layer/weight/blend; preserve native candidate and all depth curves; TEST best is oracle only",
+  "replication_rule": "Expand valid pilot if any reproducible split/fusion effect or informative failure boundary; no promotion without source-heldout comparison to native, output sum and random edit",
+  "inference": "Exploratory source-paired bootstrap; no sealed confirmation; synthetic cases averaged within seed; real domains separate",
+  "provenance": "Pilot real ranks54-55 reused from earlier study for instrumentation; replication ranks56-63 fresh. Real pretraining overlap unknown",
+  "learned_weights": {
+    "bolt": {
+      "1": {
+        "0": {
+          "weights": [
+            0.9383932437441944,
+            0.2882037576923947
+          ],
+          "fit_rows": 18,
+          "gram_condition": 5.868741442982443
+        },
+        "1": {
+          "weights": [
+            0.937956853055045,
+            0.3327330921636138
+          ],
+          "fit_rows": 18,
+          "gram_condition": 4.750881394952122
+        },
+        "3": {
+          "weights": [
+            0.941719858631018,
+            0.3243186861317405
+          ],
+          "fit_rows": 18,
+          "gram_condition": 4.317503711968994
+        }
+      },
+      "2": {
+        "0": {
+          "weights": [
+            0.8667045236401946,
+            0.0
+          ],
+          "fit_rows": 17,
+          "gram_condition": 12.437857645583334
+        },
+        "1": {
+          "weights": [
+            0.8597837232532791,
+            0.0
+          ],
+          "fit_rows": 17,
+          "gram_condition": 10.17096810687289
+        },
+        "3": {
+          "weights": [
+            0.8472344747439007,
+            0.0
+          ],
+          "fit_rows": 17,
+          "gram_condition": 9.4452950531978
+        }
+      },
+      "3": {
+        "0": {
+          "weights": [
+            0.9931895249354287,
+            0.7087367161738527
+          ],
+          "fit_rows": 4,
+          "gram_condition": 696.4487870279875
+        },
+        "1": {
+          "weights": [
+            0.9857383341690961,
+            0.5358682409464945
+          ],
+          "fit_rows": 4,
+          "gram_condition": 627.0493342728508
+        },
+        "3": {
+          "weights": [
+            0.9624329459176788,
+            0.26285277130835205
+          ],
+          "fit_rows": 4,
+          "gram_condition": 531.120502573847
+        }
+      }
+    },
+    "timesfm": {
+      "1": {
+        "0": {
+          "weights": [
+            0.9619027724214883,
+            0.6715781019524555
+          ],
+          "fit_rows": 18,
+          "gram_condition": 6.1163123886420925
+        },
+        "5": {
+          "weights": [
+            0.8709247825996592,
+            0.2876553330305138
+          ],
+          "fit_rows": 18,
+          "gram_condition": 6.172568441619118
+        },
+        "10": {
+          "weights": [
+            0.8363020909601413,
+            0.31468689243466197
+          ],
+          "fit_rows": 18,
+          "gram_condition": 6.816816530416247
+        }
+      },
+      "2": {
+        "0": {
+          "weights": [
+            0.8951053594371946,
+            0.33045784024079794
+          ],
+          "fit_rows": 17,
+          "gram_condition": 11.711315389707718
+        },
+        "5": {
+          "weights": [
+            0.6678879763500813,
+            0.035639932099539695
+          ],
+          "fit_rows": 17,
+          "gram_condition": 11.20673796895726
+        },
+        "10": {
+          "weights": [
+            0.6327418163499084,
+            0.102821035812829
+          ],
+          "fit_rows": 17,
+          "gram_condition": 10.34043658272817
+        }
+      },
+      "3": {
+        "0": {
+          "weights": [
+            0.9482325547759102,
+            0.3007325839296605
+          ],
+          "fit_rows": 4,
+          "gram_condition": 334.6561760043633
+        },
+        "5": {
+          "weights": [
+            0.5873282133353762,
+            0.0
+          ],
+          "fit_rows": 4,
+          "gram_condition": 91.49893269296403
+        },
+        "10": {
+          "weights": [
+            0.5414803888636771,
+            0.0
+          ],
+          "fit_rows": 4,
+          "gram_condition": 95.60560269149506
+        }
+      }
+    }
+  },
+  "real_injection": "Paired +2 past-SD period19.2 oscillation on32 real histories and futures; same source split, never independent rows. FIT policies optimize mean across original/injected contexts.",
+  "extension": "Balanced off-grid mixture amplitude.5+.5, same32 seeds; tests whether composition closure only reflects a dominant component. Dominant-only state control at all cuts.",
+  "execution_mode": "Two isolated concurrent processes, one CPU thread and3GiB per model; maximum2 CPU threads,6GiB total; unchanged inference count"
+}

@@ -1,0 +1,5331 @@
+{
+  "status": "complete_audited",
+  "question": "Does weak-versus-strong output-frequency distortion transfer over the direct64 horizon and sharpen the finite-window frequency comparison?",
+  "design": {
+    "question": "Does weak-versus-strong output-frequency distortion transfer over the direct64 horizon and sharpen the finite-window frequency comparison?",
+    "stage": "prepared_native_held",
+    "models": [
+      "bolt"
+    ],
+    "policies": [
+      "native"
+    ],
+    "nodes": 544,
+    "context": 128,
+    "horizon": 64,
+    "analysis_horizons": [
+      32,
+      64
+    ],
+    "cohorts": {
+      "FIT": 16,
+      "TEST": 16
+    },
+    "new_sources": 0,
+    "amplitudes": [
+      0.1,
+      2.0
+    ],
+    "input_periods": [
+      19.2,
+      24.0
+    ],
+    "phases": [
+      0.0,
+      1.5707963267948966,
+      3.141592653589793,
+      4.71238898038469
+    ],
+    "output_period_candidates": [
+      16.0,
+      18.0,
+      19.2,
+      20.0,
+      22.0,
+      24.0,
+      26.0,
+      28.0,
+      32.0
+    ],
+    "conditional_authorization": {
+      "oblique_run": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_oblique4954500",
+      "oblique_gain": {
+        "model": "bolt",
+        "policy": "native",
+        "contrast": "oblique_scalar_minus_fullH",
+        "mean": 0.24816757777846288,
+        "positive_sources": 14,
+        "source_differences": [
+          0.12234821633461551,
+          0.043299034145133475,
+          0.5393817302631823,
+          0.29188925480340194,
+          0.05600859025694671,
+          0.010589539460546471,
+          0.682469368316557,
+          0.3900400645773262,
+          0.14269494014104467,
+          -0.05268926429361992,
+          0.17977271376751847,
+          0.44302265890929216,
+          0.15607638205062846,
+          -0.038036462783750113,
+          0.8077069102595965,
+          0.19610756824698627
+        ],
+        "percentile95": [
+          0.1820132629649184,
+          0.30652601466359786
+        ],
+        "family4_percentile": [
+          0.16488455363199903,
+          0.31861438122355634
+        ]
+      },
+      "audit_sha256": "34f199d98281ffad061ba9df10c7f5698e9fc78350120e868c256c1acafe379d"
+    },
+    "capability": {
+      "static_supported": true,
+      "declared_direct_head": 64,
+      "autoregression_required_for64": false,
+      "implementation": "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/chronos/chronos_bolt.py",
+      "implementation_sha256": "572a3ffd23a7887c423d234fd0086a4dfa2bac0c3e34d4b7d42eb9cda2e3d1d4",
+      "config_sha256": "9ca0ebbe049ccebacb0546361e8aa728f0cf104cd18d1838d78d296aa317bd21",
+      "dynamic_prefix_parity": "PENDING coordinator-granted native gate; no native model loaded",
+      "evidence": "Configuration plus installed source: fixed64 quantile head, one initial forward, autoregression only when remaining>0. Static evidence alone does not establish bitwise parity."
+    },
+    "controls": "Require declared head64; limit_prediction_length=True; exactly one model forward for every64 AND32 request; bit-exact prefix parity on identical batches<=4; exact repeated64/32 background; exact same-batch replay; all288 historical weak/base32 forecasts match at batch4 geometry. Save both64 and separately requested32 arrays. Any mismatch stops capability and invalidates run, no autoregressive rescue.",
+    "selection": "Separate OLD-source LOSO selection among fixed9 output periods per amplitude/input period/analysis horizon/variant. Tone-only2x2 and matched tone+DC+lineartrend4x2 maps; same-input map and OLD mean horizonx2 waveform controls. Freeze all OLD-selected maps before TEST scoring. No TEST selection.",
+    "primary": "19.2input tone-only, TEST same-frequency minus OLD-selected-frequency phase-pooled NMSE, four cells amplitude.1/2 x horizon32/64. Paired16TEST-source balanced-type16384 bootstrap draws seed4954600; nominal95 and family4 Bonferroni98.75 percentile CIs, descriptive small-sample coverage; no threshold/oscillator claim.",
+    "interactions": "Descriptive source-paired weak-minus-strong selected-map gain at each horizon and64-minus32 gain at each amplitude.24h and nuisance variants descriptive; retain all FIT-train/CV and TEST curves, source rows, rank/conditioning and even residual.",
+    "limitations": "Same OLD16 and previously examined TEST16 synthetic sources, native normalization only. Strong amplitude changes normalization as well as signal dominance.32prefix reuses identical direct64 forecast; neither horizon is a new independent source. Four cardinal phases: weak32 interpolation has external oblique support, strong/64 phase behavior is not separately validated. Response prediction is not forecast improvement; no training-prior or oscillator/patch-causality attribution.",
+    "cpu_threads": 1,
+    "worker_cap": 3221225472,
+    "seconds_per_model": 300,
+    "estimated_seconds": 203.3557805299552,
+    "budget_formula": "1.1*(20s allowance + measured oblique Bolt elapsed *544/144 *2 for64/32 requests); conservative estimate, not guarantee",
+    "capture_hold": true,
+    "grant_contract": "No native until new coordinator grant bound to this protocol. Bolt only. Gate failure stops; no extra horizon/grid or TimesFM.",
+    "checkpoints": {
+      "bolt": {
+        "repo": "amazon/chronos-bolt-small",
+        "path": "/common/home/djk255/.cache/huggingface/hub/models--amazon--chronos-bolt-small/snapshots/772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "revision": "772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "weights": {
+          "model.safetensors": "06a6a19bbe74bc10a9cd193bd4bf2bf638ae07f7e0d51653ae7ab8ea968a21dd"
+        }
+      }
+    },
+    "source_hashes": {
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_transfer.py": "a3e17fcd057a2ca92698d5a71d070e4b3b77a9037bbc05f10b4d538eacabad2c",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tests/test_response_phase_transfer.py": "b14de4d33859f8d696cae13c95a4462096196152d74b65757a95cd91e03f03c3",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_transfer_plants.py": "8daed827a1e205ba25ff6563d409e586367f2c31a9ac9bc56bb9d943d0a5150d",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_transfer_audit.py": "29b0f96aa022005a3a0bbd1650ed80c493dfd225b50a3edcb90e483bfa4499ec",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_study.py": "baa8f5a94890b89411df99e108e9ab01e906e8419c1696002cc9a6d6f8a48187",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_surface_focused.py": "758b73564af323796355c51c16b8332f7710fef57fe748ecdfd2c9bc1b907b1e",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_surface_crossed.py": "4882c7aeda3269bb48bc6675196fbd984f6db12b98617d2a8f2fba2b6979d41d",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/selective_study.py": "d87ed477e46d72604fa6824fcc5b146880142a730fc52f0f70bf933b652604eb",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/coherence_study.py": "e9bd4dc10d57cfbc30cb4b01cfafe96789cccb6d34fe85616699ecfef799aec7",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/real_background_poc.py": "c88868ab339608f52afa8041d89cf3b48aa4260e87fb497b64fa7bf058b3eda6",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/homogeneous_normalizer.py": "2670effb2dfc0b631d368a69cab4263a8d2a90eb1208acc93d246a5c0ef55051",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tsfm_lens/extraction/hooks.py": "6f161d02a472c246691caed21bd301a201d7219d3aeef90de2854baa7bdc4281",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_horizon.py": "c19575d7593d242db44d3175f70947769543e7e8b74bd06cb37187cab62c564d",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_horizon_analysis.py": "5ea68ab734bbf48f9a0b41e947784e182b4f18b29f8366b5876715c8e21214f2",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_horizon_audit.py": "c4336e51061c12132925673b0113c956a5a5bdd17f64f261fcce483e9285912b",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_horizon_plants.py": "efc940f5d90c080af05ba5bfbaa0285bf0b8ce77e82bc624bf67aca2ef42452c",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tests/test_response_phase_horizon.py": "a7dd267da68b6e7eafa786b446a1ff5f124e8b3e584fbf98e3064061f2440389",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/chronos/chronos_bolt.py": "572a3ffd23a7887c423d234fd0086a4dfa2bac0c3e34d4b7d42eb9cda2e3d1d4",
+      "/common/users/djk255/hf_cache_home/huggingface/hub/models--amazon--chronos-bolt-small/blobs/d8f9b65552d4d211e28d332ad5666484092bbf77": "9ca0ebbe049ccebacb0546361e8aa728f0cf104cd18d1838d78d296aa317bd21"
+    },
+    "hashes": {
+      "inputs.npy": "45f272955f04fc6774e65162b3eac68cc3ab0f009328ce23e530ead5934cc0f7",
+      "historical_prefix32.npy": "ba59ed4ec43aff8e7754b9aadc3cf89c2ecfb3f191155e8328b51000fdefd2d4",
+      "historical_reference_mask.npy": "1c6eebbd243f4c727df4785f7b8b2773b4f043f0d5d0e1c6b63e14028fe21727",
+      "nodes.json": "a0db0a163f4882ed0ee0ec3a8173853eaf1c17cf75f826ff6af5ae4ca0d023c9",
+      "groups.json": "0f7149874c3e3a951038417a8488316281ec573453e0cb0ec397d18dfed9ff7d",
+      "sources.json": "884a4b74bfc80c5707f67a1476b11742aab4fa9cfcf00ea17066e48606b124de",
+      "static_capability.json": "5926299416131d288220b541ed1a0c4ca0b37ec6108f8e8cb5c96990fcdd9c82"
+    },
+    "prior_hashes": {
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_surface_focused4954100/inputs.npy": "30489820fe91db02fe81362cf835134f9507a418e7ad3c205eb2a387f9bb4692",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_surface_focused4954100/nodes.json": "ae5c34467ad4f04b0d8f59fdd8b719fd0a0b0ab483ee7bd93155a4875c4144a7",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_surface_focused4954100/sources.json": "462064575313677c3f9c28a2e344ada82dd7ae1a44a652ef30a9a47d4ca4b588",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_surface_focused4954100/bolt_native_forecast.npy": "03e2bc05a8fd3ffc50f13b0f6ecfc2b38ad64349f257bd14bfa3518234b4fbea",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_surface_focused4954100/bolt_worker.json": "9294b85d36af2e1a12220259dedbf067bf9eb9955656459c35e0e58faef6072a",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_surface_focused4954100/execution.json": "0f3526f9231b229bb0733452066c8d127a4e278938f010bda66f2f69b9fd37b3",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_surface_focused4954100/protocol.json": "12f90d5aef20c09f29f4850651b868564d9acfcd4131dba2754f599e9cd32a27",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase4954200/groups.json": "9657f70716e4a0de241e3b75c39e6f6eea5f901c836ba781c0c2247c65224a25",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/inputs.npy": "d60f13fd2278e782be817f7a580fba6a9cebc8387a3c6fbb62363f3f588f6d0c",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/nodes.json": "7ada0a56374df284806b0388c2b30028c7b72e271979e709e8c03b2c40949a0b",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/sources.json": "759549340b1747c32439c94d8a5eeec7684159553c169cb091bb6ec31d49ac28",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/bolt_native_forecast.npy": "3d736b5a1d63faaaafc2cb7d75dc2f8b1c1c284e2a4a8a21bf074ca0cb6b63cf",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/bolt_worker.json": "8c064d477e62c20e1694efdf9215cf7a596cd6402f1b913d6669c5ba616ba59a",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/execution.json": "9963b7325032deeb500c19d8f0c50191d8fe1bcac54900b9e15e762b24fd0990",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/protocol.json": "fc5b74295f9d30e0afb23809699b339f647976685d2b9637951511fea2231572",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/groups.json": "ea5909cd07e132407b9cc9187c3961e7fc415386b5fdd0ad134cf533026911f2"
+    },
+    "input_gate": {
+      "nominal_rms_over_peak_max": 2.729557082621205e-07,
+      "antipodal_rms_over_peak_max": 2.2595863366571957e-07
+    },
+    "historical_reference_rows": 288
+  },
+  "amendment": {
+    "parent": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_horizon4954600",
+    "preflight": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_horizon_replay4954700",
+    "parent_protocol_sha256": "18717795e5eb1fb1293ec28bf9a3f4e89416f539718fb446bda611b9fcb6f4e8",
+    "question": "Does weak-versus-strong output-frequency distortion transfer over the direct64 horizon and sharpen the finite-window frequency comparison?",
+    "outcome_blind": true,
+    "scientific_capture_started": false,
+    "frequency_fits_started": false,
+    "test_performance_evaluated": false,
+    "unchanged": "All544 inputs, source/FIT/TEST membership, amplitudes, periods, phases, candidate grid, OLD-only sourceCV, metrics, bootstrap, native model, one-thread3GiB300s caps and current64/current32 exact prefix requirement.",
+    "replaced_clause": "Original historical weak/base prefix exactness compared different row positions/batch contents. Remove that cross-geometry equality as a validity gate; preserve and measure every historical difference instead.",
+    "mandatory_gates": [
+      "direct_head64",
+      "single_forward_per_request",
+      "prefix32_exact",
+      "background_repeat_exact",
+      "batch_replay_exact",
+      "original_geometry_preflight_rechecked"
+    ],
+    "historical_diagnostic": "For all288 historical weak/base references save current32-old32 arrays, per-row exact/maximum/L2 statistics, input hashes and actual query batches. For each weak phase group, d=response_current-response_historical; ||d|| bounded by source-wise triangle inequality. No silent tolerance or pass/fail threshold on mixed geometry.",
+    "error_bound": "For any FIXED predictor P and unchanged ideal signal energy E: |NMSE(current,P)-NMSE(historical,P)| <= (2*||historical-P||*||d||+||d||\u00b2)/E =2sqrt(NMSE_historical)u+u\u00b2. Save measured u and conservative triangle-u. After OLD fits are frozen, audit actual score changes against these bounds for every32h weak candidate in both cohorts; these bounds do not claim selected-period invariance.",
+    "preflight_decision": {
+      "eligible": true,
+      "same_geometry_all_exact": true,
+      "geometry_effect_reproduced": true,
+      "reason": "Exact original geometry replays; only changed query geometry changes selected-row outputs in the fixed cases."
+    },
+    "preflight_audit": {
+      "passed": true,
+      "checks": 100,
+      "all_four_original_batches_exact": true,
+      "all_prefixes_and_repeats_exact": true,
+      "changed_geometry_cases": [
+        "FIT_weak19.2_phase0"
+      ],
+      "maximum_changed_geometry_difference": 2.384185791015625e-07,
+      "evidence": "Controlled same-model query-geometry switch in four fixed replay cases; no frequency/performance fitting.",
+      "native_worker_finished": true
+    },
+    "initial_recheck": "Before544-node capture, replay all4 original and mixed queries; require exact original historical32, exact current64/current32, and exact agreement with saved preflight32/64 for each geometry. Any failure stops this one child attempt.",
+    "persistence": "Raw query32/64/count/difference files are saved BEFORE capability checks, including failed calls; completion mask persisted. Original missing failed delta is not reconstructed or erased.",
+    "limitations": "Four controlled cases isolate the geometry effect locally, not architecture-wide. Original failed numerical values were not saved. Mixed geometry roundoff may affect very small score/selection differences; report bounds and ambiguity. No further native retry/grid.",
+    "source_hashes": {
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_horizon_recovery.py": "e8e86af380efcf4765e379b08acb2e18dc5d7d32f4f320d5d68b6102ac780d76",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_horizon_recovery_audit.py": "24ffcdb18b580423a6188e7be16b742f32c09d01e80235269ce6278c9872d83b",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_horizon_recovery_plants.py": "53db77dec950392d4c656226a548f7b4179a72d09b0c15ca8e5448e00d5c92dd",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tests/test_response_phase_horizon_recovery.py": "b7c61db0bd530d72acf676912c72f2de6b49e669a343cfab5e65475c66e3d7bc",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_replay_preflight.py": "fa46405cc024e7040e00c69b9bb3a9335dd91fef86db07b97f951318874dcfe2"
+    },
+    "preflight_files": {
+      "protocol.json": "f4eddcba3268eb7103c9bcbcd247cc5c765d90492530c79e1043059e3fcd8dea",
+      "cases.json": "a036aaaeea476c670b48f9b61bb97ea36e0ce16715c71d9e80c9957850287d34",
+      "queries.npz": "e73c2d00737f1e3a7d361ed12e22bfcf6b9916f4a6209282ffdde51a731f14e5",
+      "diagnostic.json": "e8789c56abfc3fafdc69dc24ced60592324f87671af33c2c4d5d5b5dacf07742",
+      "audit.json": "72e6935d5c4ddb878e8ca54c09f1a55826aabb38eb5c14cc9b2e6b63bd0d115a",
+      "execution.json": "2dffdb38cfea33c034bcc662ee38fc74a7e9d6e1d25e3f0df9aa2ef7d678f7f9",
+      "FIT_base_raw.npz": "de04d91e965ef9fa261ed5879879207f4c4393ccc8c4d0419fce91939f468142",
+      "TEST_weak19.2_phase0_raw.npz": "1258529668cf1348b9f4f38aa441077312400c67afda70ba2cdf3e409b5ff765",
+      "FIT_weak19.2_phase0_raw.npz": "7e6278945a73d2eda6c5c837f48aef2a286fc08bb47390dbcf786b23bd4d3f23",
+      "TEST_base_raw.npz": "2adbbd62f108f2351b2605e4e745813b00f86ef0da9a8046c4462689fed67813",
+      "TEST_weak19.2_phase0_calls.json": "976ddfef804c5e5c9e4b2a9bd5df5a88c758cbc262a695bd7ba682b8177304c1",
+      "FIT_base_calls.json": "976ddfef804c5e5c9e4b2a9bd5df5a88c758cbc262a695bd7ba682b8177304c1",
+      "TEST_base_calls.json": "976ddfef804c5e5c9e4b2a9bd5df5a88c758cbc262a695bd7ba682b8177304c1",
+      "FIT_weak19.2_phase0_calls.json": "976ddfef804c5e5c9e4b2a9bd5df5a88c758cbc262a695bd7ba682b8177304c1"
+    },
+    "parent_files": {
+      "protocol.json": "18717795e5eb1fb1293ec28bf9a3f4e89416f539718fb446bda611b9fcb6f4e8",
+      "knowledge.json": "7e6532e1df9a04b356ed4cd87fa808660d4c99c66b59e2a06f05842fa235f7f3",
+      "execution.json": "8ac890c0ac95492a8379937290191de5c0ce958a40cec23ab8b9022f8158d004",
+      "bolt.log": "0f48b0637004acc9ebbedd4a4e919226ba6267b4e034fe7bece649ea9eef46e2",
+      "failure_bookkeeping_audit.json": "383d7c7f1eab9c4d304813f8de65940ba4034a5dd19dfa7f1b32ca2c86226de6",
+      "bolt_native_forecast32.npy": "56ddebf71b33b5de342fe87de1d95d27b3fb3de2a6998c605b5632d3250d6948",
+      "bolt_native_forecast64.npy": "6c771a956deaf984a9d51c2f0a4eb38355e0b28de13a5ddf825c1d4a6e55464d"
+    }
+  },
+  "exact_findings": {
+    "rows": [
+      {
+        "horizon": 32,
+        "amplitude": 0.1,
+        "input_period": 19.2,
+        "variant": "tone_only",
+        "selected_index": 5,
+        "selected_period": 24.0,
+        "same_index": 2,
+        "fit_train_curve": [
+          0.6568951168761465,
+          0.5361295978208812,
+          0.4735147173863167,
+          0.44218478458523564,
+          0.4000437831518543,
+          0.39655270248381236,
+          0.4178467892353712,
+          0.45194700002117744,
+          0.5245361507614992
+        ],
+        "fit_cv_curve": [
+          0.6731492199519037,
+          0.564449617465428,
+          0.506869320815784,
+          0.47749895272442167,
+          0.43634716024889547,
+          0.4306267024451335,
+          0.4483249703195634,
+          0.47848092095593714,
+          0.5440386063454545
+        ],
+        "runner_up_gap": 0.005720457803761958,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 2506,
+          "24.0": 13865,
+          "26.0": 13,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.6194201391284488,
+          0.5897516036172198
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.1106530233293974,
+        "mean_waveform_singular_values": [
+          2.605885533903756,
+          2.3868319490474574
+        ],
+        "test_curve": [
+          0.7363952759426979,
+          0.5996357087897695,
+          0.5306089934011169,
+          0.49956380967000047,
+          0.47055205197341643,
+          0.48412327500122415,
+          0.5153582475143446,
+          0.5513963238906527,
+          0.6196142317020887
+        ],
+        "same_test_nmse": 0.5306089934011169,
+        "selected_test_nmse": 0.48412327500122415,
+        "mean_waveform_test_nmse": 0.4574884697258573,
+        "mean_even_floor": 0.014433359562515475,
+        "same_minus_selected": {
+          "mean": 0.04648571839989281,
+          "source_differences": [
+            0.09455924274992361,
+            0.07151562867147168,
+            0.09369896840473962,
+            -0.1023540499539598,
+            0.07937457886807853,
+            0.0567036633472735,
+            0.14799242243621902,
+            -0.07920060048354294,
+            0.11321570632123612,
+            0.05951296899207148,
+            -0.007487108104097473,
+            -0.07172801486852087,
+            0.12061352830395322,
+            0.046575815181406466,
+            0.2615643396423756,
+            -0.14078559511034283
+          ],
+          "positive_sources": 11,
+          "percentile95": [
+            0.02176044834447165,
+            0.07128394535619983
+          ],
+          "family4_percentile": [
+            0.01599657791433283,
+            0.07796044940209548
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.026634805275366755,
+          "source_differences": [
+            0.006634998182310725,
+            -0.006743659069477159,
+            0.014895044879003005,
+            0.08548342050120783,
+            -0.015381918746927847,
+            -0.0017079501662022878,
+            0.049888379478726375,
+            0.09682897188275119,
+            -0.03328340564391097,
+            -0.0022372243811749626,
+            0.04868617613974857,
+            0.09341839008035802,
+            -0.015136426055000762,
+            0.0014444619862754582,
+            0.01550055158438135,
+            0.08786707375379954
+          ],
+          "positive_sources": 10,
+          "percentile95": [
+            0.021169821104494082,
+            0.03220501771385984
+          ],
+          "family4_percentile": [
+            0.019845640450598945,
+            0.03359511013323503
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.10194076406079787
+          },
+          {
+            "type": 1,
+            "gain": 0.05857701904805578
+          },
+          {
+            "type": 2,
+            "gain": 0.12394215559480919
+          },
+          {
+            "type": 3,
+            "gain": -0.09851706510409161
+          }
+        ]
+      },
+      {
+        "horizon": 32,
+        "amplitude": 0.1,
+        "input_period": 19.2,
+        "variant": "tone_dc_trend",
+        "selected_index": 4,
+        "selected_period": 22.0,
+        "same_index": 2,
+        "fit_train_curve": [
+          0.6067004670042013,
+          0.48531233988664013,
+          0.4328734628771861,
+          0.40930407016926484,
+          0.3844798832263534,
+          0.3871554924045402,
+          0.39829196374322634,
+          0.4102659466166061,
+          0.4298238516073194
+        ],
+        "fit_cv_curve": [
+          0.6325118253120259,
+          0.5217390103835999,
+          0.4731610025169458,
+          0.4509476061394586,
+          0.42638851041963854,
+          0.4273394555771558,
+          0.43652022202728125,
+          0.4468183932347711,
+          0.4639770113538482
+        ],
+        "runner_up_gap": 0.0009509451575172578,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 10818,
+          "24.0": 5566,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.6265152366687013,
+          0.5820404014276095
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.7523264713645745,
+        "mean_waveform_singular_values": [
+          2.605885533903756,
+          2.3868319490474574
+        ],
+        "test_curve": [
+          0.7022789692841838,
+          0.5822070785159639,
+          0.5218874304555718,
+          0.49398089984934024,
+          0.4657834208227075,
+          0.47167951453671747,
+          0.4874417434528981,
+          0.5035342707192364,
+          0.5289084696468054
+        ],
+        "same_test_nmse": 0.5218874304555718,
+        "selected_test_nmse": 0.4657834208227075,
+        "mean_waveform_test_nmse": 0.4574884697258573,
+        "mean_even_floor": 0.014433359562515475,
+        "same_minus_selected": {
+          "mean": 0.05610400963286437,
+          "source_differences": [
+            0.05212373939937426,
+            0.024171484765584506,
+            0.1440800491406154,
+            -0.0035201414868804015,
+            0.04804082658279152,
+            0.015448818189525926,
+            0.10204070120256414,
+            0.025894554446315277,
+            0.0817970357857346,
+            0.012992350929747154,
+            0.11020850183846242,
+            0.03478283112338665,
+            0.07557692406508315,
+            0.021506704407794286,
+            0.15428662312815933,
+            -0.0017668493924283268
+          ],
+          "positive_sources": 14,
+          "percentile95": [
+            0.048416468336653716,
+            0.06372704448436758
+          ],
+          "family4_percentile": [
+            0.04649232787805986,
+            0.06550144748369759
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.008294951096850155,
+          "source_differences": [
+            0.022866627808011186,
+            0.015220536754087965,
+            -0.013725532928530515,
+            0.007578556485543619,
+            -0.0022790989132370765,
+            0.01326985136380121,
+            0.01400421378432326,
+            0.013167498318240156,
+            -0.017086371685440527,
+            0.01919806999597634,
+            0.054729796891899385,
+            0.008635038117833505,
+            -0.022750487455053425,
+            0.02280092029531705,
+            -0.005627744614510433,
+            0.0027173433313407713
+          ],
+          "positive_sources": 11,
+          "percentile95": [
+            0.0010680379562178254,
+            0.016615944323916065
+          ],
+          "family4_percentile": [
+            -0.0004792155166630845,
+            0.018775600603662644
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.06438463145824588
+          },
+          {
+            "type": 1,
+            "gain": 0.018529839573162968
+          },
+          {
+            "type": 2,
+            "gain": 0.12765396882745034
+          },
+          {
+            "type": 3,
+            "gain": 0.013847598672598299
+          }
+        ]
+      },
+      {
+        "horizon": 32,
+        "amplitude": 0.1,
+        "input_period": 24.0,
+        "variant": "tone_only",
+        "selected_index": 5,
+        "selected_period": 24.0,
+        "same_index": 5,
+        "fit_train_curve": [
+          0.8103359251965164,
+          0.6091459032444135,
+          0.4937626636130694,
+          0.43289891979346057,
+          0.3435923430458633,
+          0.3244256360102241,
+          0.3504612297457802,
+          0.4003769286425686,
+          0.5135700037160122
+        ],
+        "fit_cv_curve": [
+          0.8203780308352184,
+          0.626862907721419,
+          0.5151373715497582,
+          0.4559525859835093,
+          0.3684545656717245,
+          0.3488438949064545,
+          0.37320183999884793,
+          0.42087114457782,
+          0.5295022868802677
+        ],
+        "runner_up_gap": 0.01961067076527001,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 2,
+          "24.0": 16382,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.8043690096692324,
+          0.7381434991752032
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.1106530233293974,
+        "mean_waveform_singular_values": [
+          3.3724435528705925,
+          2.839470809564681
+        ],
+        "test_curve": [
+          0.812067961619533,
+          0.6206879509147307,
+          0.5117482522803698,
+          0.4532901328400545,
+          0.36417867312719154,
+          0.34266069452601045,
+          0.3674941005256228,
+          0.4168095649548462,
+          0.5259191082982455
+        ],
+        "same_test_nmse": 0.34266069452601045,
+        "selected_test_nmse": 0.34266069452601045,
+        "mean_waveform_test_nmse": 0.343142320259737,
+        "mean_even_floor": 0.03424918361674058,
+        "same_minus_selected": {
+          "mean": 0.0,
+          "source_differences": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "positive_sources": 0,
+          "percentile95": [
+            0.0,
+            0.0
+          ],
+          "family4_percentile": [
+            0.0,
+            0.0
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": -0.00048162573372652947,
+          "source_differences": [
+            0.002913140512908377,
+            -0.018571646117681695,
+            0.0146688245736534,
+            0.005659456547085551,
+            -0.0016267345540373346,
+            -0.010847872672982373,
+            -0.015550708429346374,
+            0.001718435783506056,
+            0.0011735836495606888,
+            -0.007998270374657002,
+            0.026786201883710392,
+            0.002930560634606394,
+            -0.007109613662994355,
+            -0.0017926197349919792,
+            -0.0031910438443034095,
+            0.003132294066339192
+          ],
+          "positive_sources": 8,
+          "percentile95": [
+            -0.0048271995566763325,
+            0.0038623463908662795
+          ],
+          "family4_percentile": [
+            -0.005904782039295246,
+            0.0048832791449327645
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.0
+          },
+          {
+            "type": 1,
+            "gain": 0.0
+          },
+          {
+            "type": 2,
+            "gain": 0.0
+          },
+          {
+            "type": 3,
+            "gain": 0.0
+          }
+        ]
+      },
+      {
+        "horizon": 32,
+        "amplitude": 0.1,
+        "input_period": 24.0,
+        "variant": "tone_dc_trend",
+        "selected_index": 5,
+        "selected_period": 24.0,
+        "same_index": 5,
+        "fit_train_curve": [
+          0.7433504783384999,
+          0.542332561772662,
+          0.4424307652961301,
+          0.3929927708569113,
+          0.329090654827683,
+          0.31929474279286063,
+          0.32987382721869746,
+          0.3453631851882001,
+          0.37379019311020234
+        ],
+        "fit_cv_curve": [
+          0.7617045233049674,
+          0.5680448138708595,
+          0.47101401780318464,
+          0.42271889373549076,
+          0.3595617289031864,
+          0.34900604172498695,
+          0.3585091430584927,
+          0.3730100856110495,
+          0.3999540409951203
+        ],
+        "runner_up_gap": 0.009503101333505737,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 142,
+          "24.0": 15601,
+          "26.0": 636,
+          "28.0": 5,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.8031711027421996,
+          0.7483748758750076
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.8528564575353113,
+        "mean_waveform_singular_values": [
+          3.3724435528705925,
+          2.839470809564681
+        ],
+        "test_curve": [
+          0.7681748917409147,
+          0.5686588299220862,
+          0.47080133303002597,
+          0.4218517567098852,
+          0.3556341023349767,
+          0.3413147989187376,
+          0.3476290562060199,
+          0.3597318749783045,
+          0.3836269784513405
+        ],
+        "same_test_nmse": 0.3413147989187376,
+        "selected_test_nmse": 0.3413147989187376,
+        "mean_waveform_test_nmse": 0.343142320259737,
+        "mean_even_floor": 0.03424918361674058,
+        "same_minus_selected": {
+          "mean": 0.0,
+          "source_differences": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "positive_sources": 0,
+          "percentile95": [
+            0.0,
+            0.0
+          ],
+          "family4_percentile": [
+            0.0,
+            0.0
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": -0.0018275213409994166,
+          "source_differences": [
+            0.0019553880903762644,
+            -0.0005654120760690828,
+            -0.005677529531486952,
+            0.0026676959086622265,
+            -0.005008740302296727,
+            -0.009148587573292677,
+            0.006522445284728728,
+            0.0017079381478686262,
+            -0.0021227287599400457,
+            -0.003466126803377323,
+            -0.01573918667125629,
+            0.0034555121987885906,
+            -0.0002407485761623529,
+            -0.0016619481484423382,
+            0.002312011330096564,
+            -0.004230323974187877
+          ],
+          "positive_sources": 6,
+          "percentile95": [
+            -0.004335687786551092,
+            0.0005123376385646976
+          ],
+          "family4_percentile": [
+            -0.005037373088148071,
+            0.0010190854565101865
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.0
+          },
+          {
+            "type": 1,
+            "gain": 0.0
+          },
+          {
+            "type": 2,
+            "gain": 0.0
+          },
+          {
+            "type": 3,
+            "gain": 0.0
+          }
+        ]
+      },
+      {
+        "horizon": 32,
+        "amplitude": 2.0,
+        "input_period": 19.2,
+        "variant": "tone_only",
+        "selected_index": 4,
+        "selected_period": 22.0,
+        "same_index": 2,
+        "fit_train_curve": [
+          0.6249278348957065,
+          0.5090125929668093,
+          0.46792236751396715,
+          0.4537451932578858,
+          0.4536076658446063,
+          0.4848355657040545,
+          0.5306399137212177,
+          0.5781939218860705,
+          0.654012187691092
+        ],
+        "fit_cv_curve": [
+          0.6369019058586842,
+          0.5280804273188636,
+          0.48927813555390975,
+          0.4756625773672003,
+          0.47450061029106294,
+          0.5029431726239729,
+          0.5455085738907961,
+          0.590055161530538,
+          0.6613561076060666
+        ],
+        "runner_up_gap": 0.0011619670761373602,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 4266,
+          "22.0": 12118,
+          "24.0": 0,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.6704501286971339,
+          0.5193618693161499
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.0317539091431922,
+        "mean_waveform_singular_values": [
+          2.74466434666841,
+          2.305304713704136
+        ],
+        "test_curve": [
+          0.715605339642251,
+          0.5935900572285637,
+          0.5495240371828565,
+          0.5336084187526813,
+          0.5317268528081878,
+          0.5656989683141873,
+          0.6169021719393271,
+          0.6698879669022003,
+          0.7523549360864237
+        ],
+        "same_test_nmse": 0.5495240371828565,
+        "selected_test_nmse": 0.5317268528081878,
+        "mean_waveform_test_nmse": 0.48616385241640286,
+        "mean_even_floor": 0.2792810440051141,
+        "same_minus_selected": {
+          "mean": 0.01779718437466879,
+          "source_differences": [
+            0.018325436048427735,
+            -0.009894431789434388,
+            0.02240664623308508,
+            0.026418276905174065,
+            0.013717560548889396,
+            -0.004106682705217968,
+            0.029238034300890503,
+            0.03440960424841849,
+            0.008230457470803643,
+            -0.005616701552030201,
+            0.016177722814317508,
+            0.034293658970832364,
+            0.030868484168374954,
+            -0.0027083144086237354,
+            0.04030486333266692,
+            0.03269033540812624
+          ],
+          "positive_sources": 12,
+          "percentile95": [
+            0.014739901787453996,
+            0.02105034406577744
+          ],
+          "family4_percentile": [
+            0.014065797968728182,
+            0.0219823471729843
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.04556300039178493,
+          "source_differences": [
+            0.05415452497365192,
+            0.04904378893316663,
+            0.027697972703878304,
+            0.02080501126144116,
+            0.0652478759961278,
+            0.0531093473519485,
+            0.016290196601437545,
+            0.020892080411758773,
+            0.074496200156829,
+            0.05082420033745583,
+            0.07098296821725525,
+            0.020462023485761094,
+            0.08609962962792073,
+            0.060100597466940964,
+            0.03964458752434119,
+            0.019157001218644193
+          ],
+          "positive_sources": 16,
+          "percentile95": [
+            0.040074535792572925,
+            0.05176350598967457
+          ],
+          "family4_percentile": [
+            0.03882758964980377,
+            0.05336356159265385
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.017785484559123932
+          },
+          {
+            "type": 1,
+            "gain": -0.005581532613826573
+          },
+          {
+            "type": 2,
+            "gain": 0.027031816670240003
+          },
+          {
+            "type": 3,
+            "gain": 0.03195296888313779
+          }
+        ]
+      },
+      {
+        "horizon": 32,
+        "amplitude": 2.0,
+        "input_period": 19.2,
+        "variant": "tone_dc_trend",
+        "selected_index": 3,
+        "selected_period": 20.0,
+        "same_index": 2,
+        "fit_train_curve": [
+          0.6015786856176673,
+          0.48846339052421894,
+          0.4528274353329932,
+          0.44181405036057,
+          0.4435318369308239,
+          0.4620481148656713,
+          0.48144193215553077,
+          0.49762105108978394,
+          0.5204398579124991
+        ],
+        "fit_cv_curve": [
+          0.6169016016619775,
+          0.5095083742668652,
+          0.47541664154501106,
+          0.4646938604818177,
+          0.4655011038160368,
+          0.4823204828275979,
+          0.5001609859711895,
+          0.5151131399765393,
+          0.5362715057811953
+        ],
+        "runner_up_gap": 0.0008072433342191099,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 11148,
+          "22.0": 5236,
+          "24.0": 0,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.6575039965796713,
+          0.5655878862225303
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.8572670219856748,
+        "mean_waveform_singular_values": [
+          2.74466434666841,
+          2.305304713704136
+        ],
+        "test_curve": [
+          0.6942535242929905,
+          0.5718235320367782,
+          0.5324599805875426,
+          0.5192561646212095,
+          0.5169961220010384,
+          0.533750977058404,
+          0.55274660068071,
+          0.5691409230782759,
+          0.5928981261162303
+        ],
+        "same_test_nmse": 0.5324599805875426,
+        "selected_test_nmse": 0.5192561646212095,
+        "mean_waveform_test_nmse": 0.48616385241640286,
+        "mean_even_floor": 0.2792810440051141,
+        "same_minus_selected": {
+          "mean": 0.013203815966333132,
+          "source_differences": [
+            -0.0014282335244841793,
+            -0.0048519386877887705,
+            0.02627756863442149,
+            0.026691546027957813,
+            0.006109187154253015,
+            -0.006029958446609807,
+            0.030432793177830986,
+            0.028407408307004944,
+            0.002227466541528833,
+            -0.006429773365891678,
+            0.022500668023320403,
+            0.028127324199822445,
+            0.004051269758754028,
+            -0.006090951486393714,
+            0.03194148021324872,
+            0.02932519893435559
+          ],
+          "positive_sources": 11,
+          "percentile95": [
+            0.012016525353971286,
+            0.014334883385981666
+          ],
+          "family4_percentile": [
+            0.011692762227431396,
+            0.014603155449359912
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.033092312204806615,
+          "source_differences": [
+            0.039448061654289934,
+            0.043642669289529756,
+            0.005257680729852554,
+            0.004496144711734068,
+            0.04631702973688279,
+            0.049246803628328006,
+            0.015219076360907469,
+            0.009329881626943148,
+            0.056816931244504154,
+            0.047422841227550694,
+            0.0495361484271703,
+            0.008770262793269146,
+            0.06920883340580253,
+            0.051165130022880256,
+            0.024225402860681977,
+            0.009374097556578975
+          ],
+          "positive_sources": 16,
+          "percentile95": [
+            0.02847427783573626,
+            0.03832402014470545
+          ],
+          "family4_percentile": [
+            0.027363755917959528,
+            0.03968887027314335
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.0027399224825129243
+          },
+          {
+            "type": 1,
+            "gain": -0.005850655496670992
+          },
+          {
+            "type": 2,
+            "gain": 0.0277881275122054
+          },
+          {
+            "type": 3,
+            "gain": 0.028137869367285198
+          }
+        ]
+      },
+      {
+        "horizon": 32,
+        "amplitude": 2.0,
+        "input_period": 24.0,
+        "variant": "tone_only",
+        "selected_index": 5,
+        "selected_period": 24.0,
+        "same_index": 5,
+        "fit_train_curve": [
+          0.9615550200154241,
+          0.666776364797968,
+          0.499289036083226,
+          0.41017457137922975,
+          0.27709633213219487,
+          0.24829739240411275,
+          0.289950737495569,
+          0.3691587111726532,
+          0.5455972745381732
+        ],
+        "fit_cv_curve": [
+          0.9626715763144545,
+          0.669562931515255,
+          0.5030880643305196,
+          0.4145297537357294,
+          0.2823137911406504,
+          0.25373664483903946,
+          0.29517097775710355,
+          0.37392051578340574,
+          0.5493357117882531
+        ],
+        "runner_up_gap": 0.028577146301610956,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 0,
+          "24.0": 16384,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.9691876663752033,
+          0.9282695610705882
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.1106530233293974,
+        "mean_waveform_singular_values": [
+          3.9087351498088108,
+          3.673907869203836
+        ],
+        "test_curve": [
+          1.0326316167550105,
+          0.7129485281726928,
+          0.529496028471683,
+          0.43208209019566934,
+          0.28701824285008526,
+          0.25361395421372934,
+          0.2936135253052648,
+          0.3728280947125251,
+          0.5532625127679259
+        ],
+        "same_test_nmse": 0.25361395421372934,
+        "selected_test_nmse": 0.25361395421372934,
+        "mean_waveform_test_nmse": 0.24933711005096035,
+        "mean_even_floor": 0.19940918843425204,
+        "same_minus_selected": {
+          "mean": 0.0,
+          "source_differences": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "positive_sources": 0,
+          "percentile95": [
+            0.0,
+            0.0
+          ],
+          "family4_percentile": [
+            0.0,
+            0.0
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.00427684416276899,
+          "source_differences": [
+            -0.0024954711366964206,
+            -0.0018235917750287767,
+            0.00942247114859096,
+            0.0119469916456022,
+            -0.0018939079701997298,
+            -0.000994655100486963,
+            0.0019315991259039877,
+            0.013138973992722902,
+            -2.3950562359809774e-05,
+            -0.0010346617641405764,
+            0.010167400785753733,
+            0.013422080828498717,
+            0.0005416653898254534,
+            -0.0005974761373329918,
+            0.009202916128580277,
+            0.007519122005070877
+          ],
+          "positive_sources": 9,
+          "percentile95": [
+            0.0031506570363184806,
+            0.005228119681113704
+          ],
+          "family4_percentile": [
+            0.0027973768613709254,
+            0.005381561613887583
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.0
+          },
+          {
+            "type": 1,
+            "gain": 0.0
+          },
+          {
+            "type": 2,
+            "gain": 0.0
+          },
+          {
+            "type": 3,
+            "gain": 0.0
+          }
+        ]
+      },
+      {
+        "horizon": 32,
+        "amplitude": 2.0,
+        "input_period": 24.0,
+        "variant": "tone_dc_trend",
+        "selected_index": 5,
+        "selected_period": 24.0,
+        "same_index": 5,
+        "fit_train_curve": [
+          0.8622162532109888,
+          0.5642153148017154,
+          0.42203439494708256,
+          0.35222599363962737,
+          0.26150768725559903,
+          0.24643672863816493,
+          0.2602102721723088,
+          0.28124245823923344,
+          0.3204781239565001
+        ],
+        "fit_cv_curve": [
+          0.8665233720434959,
+          0.5701310219127156,
+          0.42873132461599067,
+          0.3593210478401192,
+          0.2691757187502215,
+          0.25427306938743155,
+          0.2680406350783582,
+          0.2890088619915959,
+          0.3280943186413675
+        ],
+        "runner_up_gap": 0.01376756569092663,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 0,
+          "24.0": 16384,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.9760038132598029,
+          0.9322931321498221
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.8528564575353113,
+        "mean_waveform_singular_values": [
+          3.9087351498088108,
+          3.673907869203836
+        ],
+        "test_curve": [
+          0.9294002548746381,
+          0.6068106589484823,
+          0.4477926109354194,
+          0.36893290188857714,
+          0.26622217166465656,
+          0.24965908895076067,
+          0.265921651639785,
+          0.2903078701798341,
+          0.3354707941933736
+        ],
+        "same_test_nmse": 0.24965908895076067,
+        "selected_test_nmse": 0.24965908895076067,
+        "mean_waveform_test_nmse": 0.24933711005096035,
+        "mean_even_floor": 0.19940918843425204,
+        "same_minus_selected": {
+          "mean": 0.0,
+          "source_differences": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "positive_sources": 0,
+          "percentile95": [
+            0.0,
+            0.0
+          ],
+          "family4_percentile": [
+            0.0,
+            0.0
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.00032197889980032594,
+          "source_differences": [
+            -0.0009533893867795171,
+            -0.0005810098619061232,
+            0.0004294626308307681,
+            0.001925800052346216,
+            -0.0011754646522214134,
+            -0.000654467710374862,
+            0.0018862247443736102,
+            0.0016646568296976305,
+            0.0002467822949230765,
+            -0.0007248675961117335,
+            0.00042771368768915186,
+            0.0019330254782186085,
+            0.0006361427584632151,
+            -0.0002270729176702957,
+            0.0014562025305290272,
+            -0.001138076485202144
+          ],
+          "positive_sources": 9,
+          "percentile95": [
+            -0.0001104135349439599,
+            0.0006966069927298413
+          ],
+          "family4_percentile": [
+            -0.0002346130189816678,
+            0.0007782389187947472
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.0
+          },
+          {
+            "type": 1,
+            "gain": 0.0
+          },
+          {
+            "type": 2,
+            "gain": 0.0
+          },
+          {
+            "type": 3,
+            "gain": 0.0
+          }
+        ]
+      },
+      {
+        "horizon": 64,
+        "amplitude": 0.1,
+        "input_period": 19.2,
+        "variant": "tone_only",
+        "selected_index": 4,
+        "selected_period": 22.0,
+        "same_index": 2,
+        "fit_train_curve": [
+          0.8273339548200171,
+          0.8085815598681889,
+          0.6971674075238941,
+          0.6116151317935832,
+          0.48784982806200666,
+          0.5265004422056349,
+          0.6404492373397735,
+          0.7439361740688191,
+          0.8328978429215073
+        ],
+        "fit_cv_curve": [
+          0.8296402099410962,
+          0.8177508454916591,
+          0.7193465833042989,
+          0.6426982209335702,
+          0.5305394295776822,
+          0.5654892534184804,
+          0.6684276898918673,
+          0.7610090181454683,
+          0.8383420234402231
+        ],
+        "runner_up_gap": 0.034949823840798255,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 16384,
+          "24.0": 0,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.6103454047247204,
+          0.5863811461092093
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.0304474712662106,
+        "mean_waveform_singular_values": [
+          3.5368279160757052,
+          3.521650440173558
+        ],
+        "test_curve": [
+          0.7668541790664959,
+          0.7640751764778027,
+          0.6671436361279975,
+          0.5867207627412336,
+          0.4718520703236281,
+          0.5037687606603356,
+          0.6000467057061531,
+          0.6959849575764946,
+          0.7811317329517447
+        ],
+        "same_test_nmse": 0.6671436361279975,
+        "selected_test_nmse": 0.4718520703236281,
+        "mean_waveform_test_nmse": 0.46371213275050027,
+        "mean_even_floor": 0.01284661000556452,
+        "same_minus_selected": {
+          "mean": 0.1952915658043694,
+          "source_differences": [
+            0.031835147010448095,
+            0.010334556622522473,
+            0.4935294794249251,
+            0.22534568522150755,
+            0.0027734406373990383,
+            -0.014583449517185543,
+            0.5999568561206231,
+            0.27992074479311824,
+            0.05938586982870109,
+            -0.011254331622874203,
+            0.24713884782867912,
+            0.3046554039812649,
+            0.05955119456746699,
+            -0.02954853762678722,
+            0.6463091162222171,
+            0.21931502937788494
+          ],
+          "positive_sources": 13,
+          "percentile95": [
+            0.15247680733987104,
+            0.230218880600897
+          ],
+          "family4_percentile": [
+            0.14272620350980894,
+            0.23566626897020315
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.008139937573127809,
+          "source_differences": [
+            0.02557240602061156,
+            0.016670944826789658,
+            -0.020002716022847977,
+            0.010426689940447209,
+            0.00034005891291388757,
+            0.020662423181637024,
+            0.008125078690381815,
+            0.025083508234025165,
+            -0.006033943124918784,
+            0.021891858996518854,
+            -0.04718678983669489,
+            0.02153669285679871,
+            0.01944891650041558,
+            0.019188415065230002,
+            0.018051715071416008,
+            -0.003536258142678883
+          ],
+          "positive_sources": 12,
+          "percentile95": [
+            0.0004474283275908759,
+            0.015409756434390732
+          ],
+          "family4_percentile": [
+            -0.001762529969605467,
+            0.016938757497586502
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.0383864130110038
+          },
+          {
+            "type": 1,
+            "gain": -0.011262940536081123
+          },
+          {
+            "type": 2,
+            "gain": 0.4967335748991111
+          },
+          {
+            "type": 3,
+            "gain": 0.2573092158434439
+          }
+        ]
+      },
+      {
+        "horizon": 64,
+        "amplitude": 0.1,
+        "input_period": 19.2,
+        "variant": "tone_dc_trend",
+        "selected_index": 4,
+        "selected_period": 22.0,
+        "same_index": 2,
+        "fit_train_curve": [
+          0.8021942726895698,
+          0.7773818009708645,
+          0.6764364723827816,
+          0.5991893895763583,
+          0.4785596380149361,
+          0.5041235198370588,
+          0.6019834660406644,
+          0.6945414960598464,
+          0.796609430591324
+        ],
+        "fit_cv_curve": [
+          0.8130922260922954,
+          0.7955538620567547,
+          0.7063710379594275,
+          0.6372523755237061,
+          0.5278957389120519,
+          0.5503856082310377,
+          0.6385776399270091,
+          0.7214737011979386,
+          0.8110487239037594
+        ],
+        "runner_up_gap": 0.022489869318985778,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 16384,
+          "24.0": 0,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.6157982251976756,
+          0.5666286321012974
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.859413207080056,
+        "mean_waveform_singular_values": [
+          3.5368279160757052,
+          3.521650440173558
+        ],
+        "test_curve": [
+          0.7474033865868441,
+          0.7370167829246992,
+          0.6525149413261242,
+          0.5822858912346318,
+          0.4734270166200101,
+          0.49561735411792474,
+          0.5720950744406755,
+          0.6490748329344657,
+          0.7442936172601715
+        ],
+        "same_test_nmse": 0.6525149413261242,
+        "selected_test_nmse": 0.4734270166200101,
+        "mean_waveform_test_nmse": 0.46371213275050027,
+        "mean_even_floor": 0.01284661000556452,
+        "same_minus_selected": {
+          "mean": 0.1790879247061142,
+          "source_differences": [
+            0.046154780924386796,
+            0.025369940868438356,
+            0.4639243954179559,
+            0.19406010986632033,
+            0.022105655028901494,
+            0.009184058169748877,
+            0.4854801804162713,
+            0.2477366750505704,
+            0.0677896563575125,
+            0.007495810847991891,
+            0.15245968158722967,
+            0.2725459180616423,
+            0.07753869898187887,
+            -0.015250443437922923,
+            0.6210471621671534,
+            0.18776451498974822
+          ],
+          "positive_sources": 15,
+          "percentile95": [
+            0.1316579165941086,
+            0.2170974371584799
+          ],
+          "family4_percentile": [
+            0.12229767940398589,
+            0.2243881700693826
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.009714883869509784,
+          "source_differences": [
+            0.027875709344730715,
+            0.011570363936631495,
+            -0.015491929888874212,
+            0.0005057899742593186,
+            -0.0030103395811792444,
+            0.008104446366739487,
+            0.011800867864141362,
+            0.021819193723641495,
+            -0.006604757760494073,
+            0.011050467191485391,
+            -0.0024831246615231173,
+            0.01922608399459569,
+            0.005215083369457363,
+            0.01538598615636183,
+            0.04454830157188039,
+            0.005926000310302659
+          ],
+          "positive_sources": 12,
+          "percentile95": [
+            0.0033321238965285474,
+            0.016712846578416245
+          ],
+          "family4_percentile": [
+            0.0019190065080155999,
+            0.018757040658445367
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.053397197823169915
+          },
+          {
+            "type": 1,
+            "gain": 0.00669984161206405
+          },
+          {
+            "type": 2,
+            "gain": 0.43072785489715254
+          },
+          {
+            "type": 3,
+            "gain": 0.2255268044920703
+          }
+        ]
+      },
+      {
+        "horizon": 64,
+        "amplitude": 0.1,
+        "input_period": 24.0,
+        "variant": "tone_only",
+        "selected_index": 5,
+        "selected_period": 24.0,
+        "same_index": 5,
+        "fit_train_curve": [
+          0.8679941328267982,
+          0.8554804825251061,
+          0.7557321426615344,
+          0.6591696710508762,
+          0.45357988575755437,
+          0.4041018735091424,
+          0.485693875780018,
+          0.615364911095855,
+          0.806957316812754
+        ],
+        "fit_cv_curve": [
+          0.8716887197293253,
+          0.8612815496076256,
+          0.7660736542781332,
+          0.6739039449398518,
+          0.4786619126023798,
+          0.4329113370833765,
+          0.5108822455882742,
+          0.6336379113535584,
+          0.8136496461307587
+        ],
+        "runner_up_gap": 0.0457505755190033,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 118,
+          "24.0": 16266,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.7209530882633053,
+          0.6551605121619823
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.0537233970145543,
+        "mean_waveform_singular_values": [
+          4.260602590650375,
+          3.6917757352320484
+        ],
+        "test_curve": [
+          0.8721908198742669,
+          0.8688020424660937,
+          0.7711779974840847,
+          0.6712177428112428,
+          0.44993580867325844,
+          0.39630082565609503,
+          0.4840168085864476,
+          0.6210097932282269,
+          0.8171197777295343
+        ],
+        "same_test_nmse": 0.39630082565609503,
+        "selected_test_nmse": 0.39630082565609503,
+        "mean_waveform_test_nmse": 0.3885992994036647,
+        "mean_even_floor": 0.025813638496202915,
+        "same_minus_selected": {
+          "mean": 0.0,
+          "source_differences": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "positive_sources": 0,
+          "percentile95": [
+            0.0,
+            0.0
+          ],
+          "family4_percentile": [
+            0.0,
+            0.0
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.00770152625243028,
+          "source_differences": [
+            0.0003291309437343237,
+            -0.01715335313881544,
+            0.005569191886921954,
+            0.009796461494227082,
+            -0.0025748547858979454,
+            -0.010938860026167924,
+            0.009046897872923676,
+            0.052558703999939116,
+            -0.009164350378991881,
+            -0.008434672229292367,
+            0.051651634716480044,
+            0.06431966263725652,
+            -0.020534777846179242,
+            -0.004737387190904219,
+            -0.007332834582461367,
+            0.010823826666112146
+          ],
+          "positive_sources": 8,
+          "percentile95": [
+            -0.00040698618609196483,
+            0.016356987071226188
+          ],
+          "family4_percentile": [
+            -0.002332000942565786,
+            0.01865125414032162
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.0
+          },
+          {
+            "type": 1,
+            "gain": 0.0
+          },
+          {
+            "type": 2,
+            "gain": 0.0
+          },
+          {
+            "type": 3,
+            "gain": 0.0
+          }
+        ]
+      },
+      {
+        "horizon": 64,
+        "amplitude": 0.1,
+        "input_period": 24.0,
+        "variant": "tone_dc_trend",
+        "selected_index": 5,
+        "selected_period": 24.0,
+        "same_index": 5,
+        "fit_train_curve": [
+          0.8611872617236349,
+          0.8458541669874878,
+          0.7505293881327346,
+          0.6567926359211024,
+          0.44831970125564174,
+          0.39698346096989623,
+          0.47151522241240645,
+          0.5871597527454524,
+          0.7812082009242198
+        ],
+        "fit_cv_curve": [
+          0.8741452348491922,
+          0.8612120516843706,
+          0.7704451544516221,
+          0.6809498781608551,
+          0.48211175568426834,
+          0.4334355785813361,
+          0.5044289483681392,
+          0.6142337208482622,
+          0.7977164106762357
+        ],
+        "runner_up_gap": 0.04867617710293226,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 17,
+          "24.0": 16367,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.7258336846818966,
+          0.6675407028362356
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.7904415739095403,
+        "mean_waveform_singular_values": [
+          4.260602590650375,
+          3.6917757352320484
+        ],
+        "test_curve": [
+          0.8696377487232233,
+          0.8611555228858155,
+          0.7687540328148681,
+          0.6742850983681058,
+          0.45389169612785807,
+          0.39465263296113695,
+          0.47025519440020674,
+          0.5899596577275537,
+          0.7907016388361298
+        ],
+        "same_test_nmse": 0.39465263296113695,
+        "selected_test_nmse": 0.39465263296113695,
+        "mean_waveform_test_nmse": 0.3885992994036647,
+        "mean_even_floor": 0.025813638496202915,
+        "same_minus_selected": {
+          "mean": 0.0,
+          "source_differences": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "positive_sources": 0,
+          "percentile95": [
+            0.0,
+            0.0
+          ],
+          "family4_percentile": [
+            0.0,
+            0.0
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.006053333557472226,
+          "source_differences": [
+            0.0008974812368094942,
+            -0.0003791140646171032,
+            0.0016441921374134583,
+            0.01708318708408385,
+            -0.012018642709235416,
+            -0.004971352990564171,
+            0.014604450431724952,
+            0.04659228469157506,
+            -0.011108550636870468,
+            -0.0022502288125148817,
+            -0.022631053144051227,
+            0.05992408425790641,
+            -0.011991542294149338,
+            -0.005787974778673183,
+            0.009800611058154773,
+            0.017445505452563403
+          ],
+          "positive_sources": 8,
+          "percentile95": [
+            -3.336093134815606e-05,
+            0.011896416936568196
+          ],
+          "family4_percentile": [
+            -0.0014872228377094396,
+            0.013479563204557206
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.0
+          },
+          {
+            "type": 1,
+            "gain": 0.0
+          },
+          {
+            "type": 2,
+            "gain": 0.0
+          },
+          {
+            "type": 3,
+            "gain": 0.0
+          }
+        ]
+      },
+      {
+        "horizon": 64,
+        "amplitude": 2.0,
+        "input_period": 19.2,
+        "variant": "tone_only",
+        "selected_index": 4,
+        "selected_period": 22.0,
+        "same_index": 2,
+        "fit_train_curve": [
+          0.7787501873353626,
+          0.8457354176455708,
+          0.7561018465454787,
+          0.6669521831996525,
+          0.5132554050123743,
+          0.535659343220728,
+          0.6450070465423438,
+          0.7524709937302356,
+          0.8496445669620093
+        ],
+        "fit_cv_curve": [
+          0.7798497399504177,
+          0.853449062468967,
+          0.770698256401245,
+          0.6851927102924743,
+          0.5333011181136592,
+          0.5503808128478018,
+          0.6534795955208373,
+          0.7564360038835559,
+          0.8503554533418123
+        ],
+        "runner_up_gap": 0.017079694734142614,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 16384,
+          "24.0": 0,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.6181427664144472,
+          0.5449564616309931
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.0304474712662106,
+        "mean_waveform_singular_values": [
+          3.7601046753503895,
+          3.385743439255703
+        ],
+        "test_curve": [
+          0.8621505658540423,
+          0.9475231338921122,
+          0.8618611110237165,
+          0.7677883828944045,
+          0.5910433543110412,
+          0.6030963603462279,
+          0.7167673845147061,
+          0.8346415697166814,
+          0.9480669215260136
+        ],
+        "same_test_nmse": 0.8618611110237165,
+        "selected_test_nmse": 0.5910433543110412,
+        "mean_waveform_test_nmse": 0.516588170377069,
+        "mean_even_floor": 0.31870823893727673,
+        "same_minus_selected": {
+          "mean": 0.2708177567126754,
+          "source_differences": [
+            0.04636998018770688,
+            -0.032207191889194964,
+            0.5889280338516472,
+            0.49683858811546333,
+            0.06670018238240472,
+            -0.09036155991262795,
+            0.5196863544326731,
+            0.4851647663784956,
+            0.1847899325267509,
+            -0.09018227125013212,
+            0.524228952547052,
+            0.48469766438807826,
+            0.11364337382601297,
+            -0.020202628249773702,
+            0.5729730317388357,
+            0.48201689832941486
+          ],
+          "positive_sources": 12,
+          "percentile95": [
+            0.2544776699953301,
+            0.287964443722711
+          ],
+          "family4_percentile": [
+            0.2506674391046784,
+            0.2928226919160863
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.07445518393397219,
+          "source_differences": [
+            0.06849309831719863,
+            0.07614874392838222,
+            0.07214593434173283,
+            0.05022461774417675,
+            0.0743773047817069,
+            0.05207514066561969,
+            0.057673054069325214,
+            0.04928648868951502,
+            0.14043952641981738,
+            0.04744975544430963,
+            0.13025739737242725,
+            0.04817950219673628,
+            0.11820866612655667,
+            0.09254462695927912,
+            0.07612552355838587,
+            0.037653562328385626
+          ],
+          "positive_sources": 16,
+          "percentile95": [
+            0.06376619860367673,
+            0.08596657147462998
+          ],
+          "family4_percentile": [
+            0.0612863351014081,
+            0.08899497088485545
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.10287586723071887
+          },
+          {
+            "type": 1,
+            "gain": -0.058238412825432184
+          },
+          {
+            "type": 2,
+            "gain": 0.551454093142552
+          },
+          {
+            "type": 3,
+            "gain": 0.48717947930286304
+          }
+        ]
+      },
+      {
+        "horizon": 64,
+        "amplitude": 2.0,
+        "input_period": 19.2,
+        "variant": "tone_dc_trend",
+        "selected_index": 4,
+        "selected_period": 22.0,
+        "same_index": 2,
+        "fit_train_curve": [
+          0.765388460967305,
+          0.8229281317521493,
+          0.7400468105846646,
+          0.6587839333950319,
+          0.510231798617047,
+          0.5240821975455914,
+          0.6182630942051347,
+          0.7100467320356525,
+          0.8157519122308627
+        ],
+        "fit_cv_curve": [
+          0.7681051322155217,
+          0.8325174353755487,
+          0.7560037978089278,
+          0.6780682525884958,
+          0.5311867158633474,
+          0.5399212914214048,
+          0.6284140158676387,
+          0.7162760519662439,
+          0.8184066267234552
+        ],
+        "runner_up_gap": 0.008734575558057345,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 16220,
+          "24.0": 164,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.6066114793448368,
+          0.5470391726081006
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.859413207080056,
+        "mean_waveform_singular_values": [
+          3.7601046753503895,
+          3.385743439255703
+        ],
+        "test_curve": [
+          0.8486489588228574,
+          0.9231055198189713,
+          0.8434444468958936,
+          0.7577157442729759,
+          0.5862560667650929,
+          0.5883876743807899,
+          0.6858929334950518,
+          0.7866524648362245,
+          0.9093585005272773
+        ],
+        "same_test_nmse": 0.8434444468958936,
+        "selected_test_nmse": 0.5862560667650929,
+        "mean_waveform_test_nmse": 0.516588170377069,
+        "mean_even_floor": 0.31870823893727673,
+        "same_minus_selected": {
+          "mean": 0.2571883801308007,
+          "source_differences": [
+            0.05516496359637413,
+            -0.033328262449829116,
+            0.5563018601826504,
+            0.47036475475410305,
+            0.06999174002958153,
+            -0.08357614793301227,
+            0.48390726009366725,
+            0.45956945422556905,
+            0.1722262859557393,
+            -0.08303189121708698,
+            0.49391749984111727,
+            0.45889784220547614,
+            0.11533495708585018,
+            -0.01904761677467115,
+            0.540055808585894,
+            0.458265573911388
+          ],
+          "positive_sources": 12,
+          "percentile95": [
+            0.24247383215309035,
+            0.27248237808228754
+          ],
+          "family4_percentile": [
+            0.23890069003316478,
+            0.2767977734442835
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.06966789638802395,
+          "source_differences": [
+            0.06000691365883404,
+            0.07026814095658651,
+            0.07204194998572366,
+            0.04265629605744198,
+            0.07205980615056151,
+            0.04384764840321187,
+            0.06454887876266735,
+            0.041148700812759564,
+            0.13488410559991126,
+            0.04007678968646344,
+            0.13003900116360356,
+            0.03966546922685954,
+            0.10513975792028885,
+            0.08859353800292935,
+            0.07430075162129873,
+            0.03540859419924197
+          ],
+          "positive_sources": 16,
+          "percentile95": [
+            0.0592662355745751,
+            0.08092298762967633
+          ],
+          "family4_percentile": [
+            0.05692005085183566,
+            0.08397780855908876
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.10317948666688628
+          },
+          {
+            "type": 1,
+            "gain": -0.05474597959364988
+          },
+          {
+            "type": 2,
+            "gain": 0.5185456071758323
+          },
+          {
+            "type": 3,
+            "gain": 0.461774406274134
+          }
+        ]
+      },
+      {
+        "horizon": 64,
+        "amplitude": 2.0,
+        "input_period": 24.0,
+        "variant": "tone_only",
+        "selected_index": 5,
+        "selected_period": 24.0,
+        "same_index": 5,
+        "fit_train_curve": [
+          1.1218707353593191,
+          1.1192441696042819,
+          0.955448440730148,
+          0.7886560995804714,
+          0.41535594475139226,
+          0.3225157420833677,
+          0.4721596534717851,
+          0.7034022312471885,
+          1.0393386235760937
+        ],
+        "fit_cv_curve": [
+          1.1224801756604412,
+          1.1202009414121792,
+          0.95762157511833,
+          0.7922118591173821,
+          0.42276976201650013,
+          0.3319019350971315,
+          0.4807909033776158,
+          0.7098556916151999,
+          1.0417199010032308
+        ],
+        "runner_up_gap": 0.09086782691936862,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 0,
+          "24.0": 16384,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.9161448337335099,
+          0.905300033895874
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.0537233970145543,
+        "mean_waveform_singular_values": [
+          5.274144990732317,
+          5.080789040568726
+        ],
+        "test_curve": [
+          1.1775740903265863,
+          1.1750003013774526,
+          0.9858061862993228,
+          0.7941866893961977,
+          0.3808743101816342,
+          0.29133679156798825,
+          0.46306886263217506,
+          0.724297034231285,
+          1.0972338313632655
+        ],
+        "same_test_nmse": 0.29133679156798825,
+        "selected_test_nmse": 0.29133679156798825,
+        "mean_waveform_test_nmse": 0.27768965501589604,
+        "mean_even_floor": 0.20184550349055586,
+        "same_minus_selected": {
+          "mean": 0.0,
+          "source_differences": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "positive_sources": 0,
+          "percentile95": [
+            0.0,
+            0.0
+          ],
+          "family4_percentile": [
+            0.0,
+            0.0
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.013647136552092225,
+          "source_differences": [
+            -0.006176804226156241,
+            -0.00608209240638144,
+            0.024266656635465067,
+            0.046277410320955115,
+            -0.005959658313611053,
+            -0.005155244470119946,
+            0.007014189733145465,
+            0.046200505990037444,
+            -0.004819289937228972,
+            -0.005048903122833737,
+            0.025775866983709067,
+            0.048519657541722605,
+            -0.003386444696011487,
+            -0.005112506881081169,
+            0.03389727734165007,
+            0.02814356434021481
+          ],
+          "positive_sources": 8,
+          "percentile95": [
+            0.01043773400140211,
+            0.01647493777972672
+          ],
+          "family4_percentile": [
+            0.009456142342739459,
+            0.017081267772294195
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.0
+          },
+          {
+            "type": 1,
+            "gain": 0.0
+          },
+          {
+            "type": 2,
+            "gain": 0.0
+          },
+          {
+            "type": 3,
+            "gain": 0.0
+          }
+        ]
+      },
+      {
+        "horizon": 64,
+        "amplitude": 2.0,
+        "input_period": 24.0,
+        "variant": "tone_dc_trend",
+        "selected_index": 5,
+        "selected_period": 24.0,
+        "same_index": 5,
+        "fit_train_curve": [
+          1.1106680806241387,
+          1.0990315775772812,
+          0.9401356697765296,
+          0.7802754543102524,
+          0.4123687122170521,
+          0.32001484512779976,
+          0.45544466219258795,
+          0.6583387387019156,
+          0.9911623396116558
+        ],
+        "fit_cv_curve": [
+          1.1145805301441172,
+          1.1033205883019581,
+          0.9457008970595489,
+          0.7871961195068027,
+          0.4228880209573409,
+          0.3320993973803541,
+          0.4667817838898902,
+          0.6679156108346189,
+          0.9972031905754223
+        ],
+        "runner_up_gap": 0.0907886235769868,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 0,
+          "24.0": 16384,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.9269722526831324,
+          0.903589590306745
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.7904415739095403,
+        "mean_waveform_singular_values": [
+          5.274144990732317,
+          5.080789040568726
+        ],
+        "test_curve": [
+          1.1673430999489791,
+          1.1551062526985587,
+          0.975753523631068,
+          0.7938069541400568,
+          0.38154149344187677,
+          0.28430566900663,
+          0.43457370861957456,
+          0.6610275228527429,
+          1.0387285439614142
+        ],
+        "same_test_nmse": 0.28430566900663,
+        "selected_test_nmse": 0.28430566900663,
+        "mean_waveform_test_nmse": 0.27768965501589604,
+        "mean_even_floor": 0.20184550349055586,
+        "same_minus_selected": {
+          "mean": 0.0,
+          "source_differences": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "positive_sources": 0,
+          "percentile95": [
+            0.0,
+            0.0
+          ],
+          "family4_percentile": [
+            0.0,
+            0.0
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.006616013990734011,
+          "source_differences": [
+            -0.005348828096996411,
+            -0.004880769502236343,
+            0.011860749601513149,
+            0.027537801300880238,
+            -0.004958720871065289,
+            -0.004176984251685001,
+            0.01873226132908548,
+            0.02302987907383991,
+            -0.004434648244568941,
+            -0.004288980873964787,
+            0.0009743011895926856,
+            0.025153104216041333,
+            -0.0036784867076324404,
+            -0.0058290305370806705,
+            0.01828534561355949,
+            0.01787923061246177
+          ],
+          "positive_sources": 8,
+          "percentile95": [
+            0.004508283408171118,
+            0.008417983161956537
+          ],
+          "family4_percentile": [
+            0.004023915018767883,
+            0.008744702049877241
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.0
+          },
+          {
+            "type": 1,
+            "gain": 0.0
+          },
+          {
+            "type": 2,
+            "gain": 0.0
+          },
+          {
+            "type": 3,
+            "gain": 0.0
+          }
+        ]
+      }
+    ],
+    "interactions": [
+      {
+        "contrast": "weak_minus_strong_gain",
+        "horizon": 32,
+        "mean": 0.028688534025224022,
+        "source_differences": [
+          0.07623380670149588,
+          0.08141006046090607,
+          0.07129232217165454,
+          -0.12877232685913387,
+          0.06565701831918913,
+          0.06081034605249147,
+          0.11875438813532851,
+          -0.11361020473196143,
+          0.10498524885043248,
+          0.06512967054410168,
+          -0.02366483091841498,
+          -0.10602167383935324,
+          0.08974504413557827,
+          0.0492841295900302,
+          0.22125947630970866,
+          -0.17347593051846907
+        ],
+        "positive_sources": 11,
+        "percentile95": [
+          0.006000729393470964,
+          0.05136046746850634
+        ],
+        "family4_percentile": [
+          0.000782274576089354,
+          0.05726974073794385
+        ]
+      },
+      {
+        "contrast": "weak_minus_strong_gain",
+        "horizon": 64,
+        "mean": -0.075526190908306,
+        "source_differences": [
+          -0.014534833177258788,
+          0.04254174851171744,
+          -0.09539855442672207,
+          -0.2714929028939558,
+          -0.06392674174500568,
+          0.07577811039544241,
+          0.08027050168795002,
+          -0.20524402158537736,
+          -0.12540406269804982,
+          0.07892793962725791,
+          -0.2770901047183729,
+          -0.18004226040681337,
+          -0.05409217925854598,
+          -0.009345909377013517,
+          0.07333608448338136,
+          -0.2627018689515299
+        ],
+        "positive_sources": 5,
+        "percentile95": [
+          -0.11678573117226514,
+          -0.03858634572624494
+        ],
+        "family4_percentile": [
+          -0.12828048584090992,
+          -0.03179612109622562
+        ]
+      },
+      {
+        "contrast": "64_minus32_gain",
+        "amplitude": 0.1,
+        "mean": 0.1488058474044766,
+        "source_differences": [
+          -0.06272409573947552,
+          -0.06118107204894921,
+          0.39983051102018546,
+          0.32769973517546735,
+          -0.07660113823067949,
+          -0.07128711286445905,
+          0.4519644336844041,
+          0.3591213452766612,
+          -0.05382983649253503,
+          -0.07076730061494568,
+          0.2546259559327766,
+          0.37638341884978577,
+          -0.06106233373648623,
+          -0.07612435280819368,
+          0.3847447765798415,
+          0.36010062448822777
+        ],
+        "positive_sources": 8,
+        "percentile95": [
+          0.12842044236737765,
+          0.16516164329654603
+        ],
+        "family4_percentile": [
+          0.12438586539269722,
+          0.1679323916416436
+        ]
+      },
+      {
+        "contrast": "64_minus32_gain",
+        "amplitude": 2.0,
+        "mean": 0.2530205723380066,
+        "source_differences": [
+          0.02804454413927915,
+          -0.022312760099760576,
+          0.5665213876185621,
+          0.47042031121028927,
+          0.05298262183351532,
+          -0.08625487720740999,
+          0.4904483201317826,
+          0.4507551621300771,
+          0.17655947505594727,
+          -0.08456556969810192,
+          0.5080512297327345,
+          0.4504040054172459,
+          0.08277488965763802,
+          -0.017494313841149967,
+          0.5326681684061688,
+          0.4493265629212886
+        ],
+        "positive_sources": 12,
+        "percentile95": [
+          0.23651506663300276,
+          0.27112320715471905
+        ],
+        "family4_percentile": [
+          0.23274303824478562,
+          0.2760393316277282
+        ]
+      }
+    ]
+  },
+  "controls": {
+    "original_protocol_byte_identical": true,
+    "original_input_artifacts_byte_identical": true,
+    "amendment_sha256": "22ebc2b1fe5b1511dc36a1e0b392acf853df9f9ce3181fbaee08d30af0705af1",
+    "direct_head_and_parity_gates": {
+      "direct_head64": true,
+      "single_forward_per_request": true,
+      "prefix32_exact": true,
+      "background_repeat_exact": true,
+      "batch_replay_exact": true,
+      "original_geometry_preflight_rechecked": true
+    },
+    "old_only_fit_freeze": {
+      "protocol_sha256": "18717795e5eb1fb1293ec28bf9a3f4e89416f539718fb446bda611b9fcb6f4e8",
+      "test_evaluated": false,
+      "files": {
+        "fit_arrays.npz": "8077f4cf0102c34c35963f118117fafe2ff123374500651a791c61f7ddc3c22a",
+        "fit_selection.json": "8e28a93826ec1f85c3cfc2ad12ce06ccbe05d86b44176e2eb8ca918bd0e31c8d"
+      }
+    },
+    "independent_audit": {
+      "passed": true,
+      "checks": 1210,
+      "maximum_absolute_discrepancy": 1.5543122344752192e-15,
+      "results_checked": true,
+      "native_loaded": false,
+      "nodes": 544,
+      "old_fit_sources": 16,
+      "test_sources": 16,
+      "source_and_artifact_hashes_verified": true
+    },
+    "roundoff_audit": {
+      "passed": true,
+      "checks": 1544,
+      "max_actual_nmse_change": 1.9054664079920514e-06,
+      "max_bound": 8.08821007460502e-06,
+      "max_measured_u": 3.5467811427899066e-06,
+      "historical_reference_rows": 288,
+      "mixed_geometry_is_diagnostic_not_tolerance": true
+    }
+  },
+  "limitations": "Bolt only, direct head<=64, native normalization, existing16OLD FIT and16previously examined TEST synthetic backgrounds, two amplitudes, two input periods, four cardinal phases. No new independent sources. Weak32 oblique validation does not validate strong/64 interpolation. Conditional response prediction, not improved natural forecasting; no training-prior, oscillator, or patch-causality inference. Original failed delta remains missing and original failed run untouched. One authorized diagnostic and one recovery child; no retries after the successful child.",
+  "evidence_class": "Conditional descriptive response prediction on reused heldout sources; independently audited comparator-instrumentation recovery, not causal evidence",
+  "failed_instrumentation_runs": [],
+  "original_failure_preserved": {
+    "run": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_horizon4954600",
+    "missing_numeric_delta": true
+  },
+  "next_decision": "CLOSED. No additional native or saved-only expansion planned.",
+  "verification": {
+    "tests_passed": 4,
+    "test_session": 34178,
+    "plants_detected": 4,
+    "preflight": {
+      "passed": true,
+      "checks": 128,
+      "maximum_absolute_discrepancy": 0.0,
+      "results_checked": false,
+      "native_loaded": false,
+      "nodes": 544,
+      "old_fit_sources": 16,
+      "test_sources": 16,
+      "source_and_artifact_hashes_verified": true
+    },
+    "coordinator_reported_test_batch": {
+      "passed": 38,
+      "source": "User reported central all-new-test batch, including horizon recovery; not rerun by this worker"
+    }
+  },
+  "execution": {
+    "bolt": {
+      "valid": true,
+      "returncode": 0,
+      "seconds": 42.844048619037494,
+      "peak_rss": 1048424448,
+      "failure": null,
+      "slot": 2,
+      "amendment_sha256": "22ebc2b1fe5b1511dc36a1e0b392acf853df9f9ce3181fbaee08d30af0705af1"
+    }
+  },
+  "slot2_release": {
+    "slot": 2,
+    "released": true,
+    "run": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_horizon_recovery4954700",
+    "session": 57851,
+    "execution": {
+      "bolt": {
+        "valid": true,
+        "returncode": 0,
+        "seconds": 42.844048619037494,
+        "peak_rss": 1048424448,
+        "failure": null,
+        "slot": 2,
+        "amendment_sha256": "22ebc2b1fe5b1511dc36a1e0b392acf853df9f9ce3181fbaee08d30af0705af1"
+      }
+    },
+    "native_workers_remaining": 0,
+    "no_further_native": true
+  },
+  "distilled_findings": {
+    "primary": [
+      {
+        "horizon": 32,
+        "amplitude": 0.1,
+        "input_period": 19.2,
+        "variant": "tone_only",
+        "selected_index": 5,
+        "selected_period": 24.0,
+        "same_index": 2,
+        "fit_train_curve": [
+          0.6568951168761465,
+          0.5361295978208812,
+          0.4735147173863167,
+          0.44218478458523564,
+          0.4000437831518543,
+          0.39655270248381236,
+          0.4178467892353712,
+          0.45194700002117744,
+          0.5245361507614992
+        ],
+        "fit_cv_curve": [
+          0.6731492199519037,
+          0.564449617465428,
+          0.506869320815784,
+          0.47749895272442167,
+          0.43634716024889547,
+          0.4306267024451335,
+          0.4483249703195634,
+          0.47848092095593714,
+          0.5440386063454545
+        ],
+        "runner_up_gap": 0.005720457803761958,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 2506,
+          "24.0": 13865,
+          "26.0": 13,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.6194201391284488,
+          0.5897516036172198
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.1106530233293974,
+        "mean_waveform_singular_values": [
+          2.605885533903756,
+          2.3868319490474574
+        ],
+        "test_curve": [
+          0.7363952759426979,
+          0.5996357087897695,
+          0.5306089934011169,
+          0.49956380967000047,
+          0.47055205197341643,
+          0.48412327500122415,
+          0.5153582475143446,
+          0.5513963238906527,
+          0.6196142317020887
+        ],
+        "same_test_nmse": 0.5306089934011169,
+        "selected_test_nmse": 0.48412327500122415,
+        "mean_waveform_test_nmse": 0.4574884697258573,
+        "mean_even_floor": 0.014433359562515475,
+        "same_minus_selected": {
+          "mean": 0.04648571839989281,
+          "source_differences": [
+            0.09455924274992361,
+            0.07151562867147168,
+            0.09369896840473962,
+            -0.1023540499539598,
+            0.07937457886807853,
+            0.0567036633472735,
+            0.14799242243621902,
+            -0.07920060048354294,
+            0.11321570632123612,
+            0.05951296899207148,
+            -0.007487108104097473,
+            -0.07172801486852087,
+            0.12061352830395322,
+            0.046575815181406466,
+            0.2615643396423756,
+            -0.14078559511034283
+          ],
+          "positive_sources": 11,
+          "percentile95": [
+            0.02176044834447165,
+            0.07128394535619983
+          ],
+          "family4_percentile": [
+            0.01599657791433283,
+            0.07796044940209548
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.026634805275366755,
+          "source_differences": [
+            0.006634998182310725,
+            -0.006743659069477159,
+            0.014895044879003005,
+            0.08548342050120783,
+            -0.015381918746927847,
+            -0.0017079501662022878,
+            0.049888379478726375,
+            0.09682897188275119,
+            -0.03328340564391097,
+            -0.0022372243811749626,
+            0.04868617613974857,
+            0.09341839008035802,
+            -0.015136426055000762,
+            0.0014444619862754582,
+            0.01550055158438135,
+            0.08786707375379954
+          ],
+          "positive_sources": 10,
+          "percentile95": [
+            0.021169821104494082,
+            0.03220501771385984
+          ],
+          "family4_percentile": [
+            0.019845640450598945,
+            0.03359511013323503
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.10194076406079787
+          },
+          {
+            "type": 1,
+            "gain": 0.05857701904805578
+          },
+          {
+            "type": 2,
+            "gain": 0.12394215559480919
+          },
+          {
+            "type": 3,
+            "gain": -0.09851706510409161
+          }
+        ]
+      },
+      {
+        "horizon": 32,
+        "amplitude": 2.0,
+        "input_period": 19.2,
+        "variant": "tone_only",
+        "selected_index": 4,
+        "selected_period": 22.0,
+        "same_index": 2,
+        "fit_train_curve": [
+          0.6249278348957065,
+          0.5090125929668093,
+          0.46792236751396715,
+          0.4537451932578858,
+          0.4536076658446063,
+          0.4848355657040545,
+          0.5306399137212177,
+          0.5781939218860705,
+          0.654012187691092
+        ],
+        "fit_cv_curve": [
+          0.6369019058586842,
+          0.5280804273188636,
+          0.48927813555390975,
+          0.4756625773672003,
+          0.47450061029106294,
+          0.5029431726239729,
+          0.5455085738907961,
+          0.590055161530538,
+          0.6613561076060666
+        ],
+        "runner_up_gap": 0.0011619670761373602,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 4266,
+          "22.0": 12118,
+          "24.0": 0,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.6704501286971339,
+          0.5193618693161499
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.0317539091431922,
+        "mean_waveform_singular_values": [
+          2.74466434666841,
+          2.305304713704136
+        ],
+        "test_curve": [
+          0.715605339642251,
+          0.5935900572285637,
+          0.5495240371828565,
+          0.5336084187526813,
+          0.5317268528081878,
+          0.5656989683141873,
+          0.6169021719393271,
+          0.6698879669022003,
+          0.7523549360864237
+        ],
+        "same_test_nmse": 0.5495240371828565,
+        "selected_test_nmse": 0.5317268528081878,
+        "mean_waveform_test_nmse": 0.48616385241640286,
+        "mean_even_floor": 0.2792810440051141,
+        "same_minus_selected": {
+          "mean": 0.01779718437466879,
+          "source_differences": [
+            0.018325436048427735,
+            -0.009894431789434388,
+            0.02240664623308508,
+            0.026418276905174065,
+            0.013717560548889396,
+            -0.004106682705217968,
+            0.029238034300890503,
+            0.03440960424841849,
+            0.008230457470803643,
+            -0.005616701552030201,
+            0.016177722814317508,
+            0.034293658970832364,
+            0.030868484168374954,
+            -0.0027083144086237354,
+            0.04030486333266692,
+            0.03269033540812624
+          ],
+          "positive_sources": 12,
+          "percentile95": [
+            0.014739901787453996,
+            0.02105034406577744
+          ],
+          "family4_percentile": [
+            0.014065797968728182,
+            0.0219823471729843
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.04556300039178493,
+          "source_differences": [
+            0.05415452497365192,
+            0.04904378893316663,
+            0.027697972703878304,
+            0.02080501126144116,
+            0.0652478759961278,
+            0.0531093473519485,
+            0.016290196601437545,
+            0.020892080411758773,
+            0.074496200156829,
+            0.05082420033745583,
+            0.07098296821725525,
+            0.020462023485761094,
+            0.08609962962792073,
+            0.060100597466940964,
+            0.03964458752434119,
+            0.019157001218644193
+          ],
+          "positive_sources": 16,
+          "percentile95": [
+            0.040074535792572925,
+            0.05176350598967457
+          ],
+          "family4_percentile": [
+            0.03882758964980377,
+            0.05336356159265385
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.017785484559123932
+          },
+          {
+            "type": 1,
+            "gain": -0.005581532613826573
+          },
+          {
+            "type": 2,
+            "gain": 0.027031816670240003
+          },
+          {
+            "type": 3,
+            "gain": 0.03195296888313779
+          }
+        ]
+      },
+      {
+        "horizon": 64,
+        "amplitude": 0.1,
+        "input_period": 19.2,
+        "variant": "tone_only",
+        "selected_index": 4,
+        "selected_period": 22.0,
+        "same_index": 2,
+        "fit_train_curve": [
+          0.8273339548200171,
+          0.8085815598681889,
+          0.6971674075238941,
+          0.6116151317935832,
+          0.48784982806200666,
+          0.5265004422056349,
+          0.6404492373397735,
+          0.7439361740688191,
+          0.8328978429215073
+        ],
+        "fit_cv_curve": [
+          0.8296402099410962,
+          0.8177508454916591,
+          0.7193465833042989,
+          0.6426982209335702,
+          0.5305394295776822,
+          0.5654892534184804,
+          0.6684276898918673,
+          0.7610090181454683,
+          0.8383420234402231
+        ],
+        "runner_up_gap": 0.034949823840798255,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 16384,
+          "24.0": 0,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.6103454047247204,
+          0.5863811461092093
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.0304474712662106,
+        "mean_waveform_singular_values": [
+          3.5368279160757052,
+          3.521650440173558
+        ],
+        "test_curve": [
+          0.7668541790664959,
+          0.7640751764778027,
+          0.6671436361279975,
+          0.5867207627412336,
+          0.4718520703236281,
+          0.5037687606603356,
+          0.6000467057061531,
+          0.6959849575764946,
+          0.7811317329517447
+        ],
+        "same_test_nmse": 0.6671436361279975,
+        "selected_test_nmse": 0.4718520703236281,
+        "mean_waveform_test_nmse": 0.46371213275050027,
+        "mean_even_floor": 0.01284661000556452,
+        "same_minus_selected": {
+          "mean": 0.1952915658043694,
+          "source_differences": [
+            0.031835147010448095,
+            0.010334556622522473,
+            0.4935294794249251,
+            0.22534568522150755,
+            0.0027734406373990383,
+            -0.014583449517185543,
+            0.5999568561206231,
+            0.27992074479311824,
+            0.05938586982870109,
+            -0.011254331622874203,
+            0.24713884782867912,
+            0.3046554039812649,
+            0.05955119456746699,
+            -0.02954853762678722,
+            0.6463091162222171,
+            0.21931502937788494
+          ],
+          "positive_sources": 13,
+          "percentile95": [
+            0.15247680733987104,
+            0.230218880600897
+          ],
+          "family4_percentile": [
+            0.14272620350980894,
+            0.23566626897020315
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.008139937573127809,
+          "source_differences": [
+            0.02557240602061156,
+            0.016670944826789658,
+            -0.020002716022847977,
+            0.010426689940447209,
+            0.00034005891291388757,
+            0.020662423181637024,
+            0.008125078690381815,
+            0.025083508234025165,
+            -0.006033943124918784,
+            0.021891858996518854,
+            -0.04718678983669489,
+            0.02153669285679871,
+            0.01944891650041558,
+            0.019188415065230002,
+            0.018051715071416008,
+            -0.003536258142678883
+          ],
+          "positive_sources": 12,
+          "percentile95": [
+            0.0004474283275908759,
+            0.015409756434390732
+          ],
+          "family4_percentile": [
+            -0.001762529969605467,
+            0.016938757497586502
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.0383864130110038
+          },
+          {
+            "type": 1,
+            "gain": -0.011262940536081123
+          },
+          {
+            "type": 2,
+            "gain": 0.4967335748991111
+          },
+          {
+            "type": 3,
+            "gain": 0.2573092158434439
+          }
+        ]
+      },
+      {
+        "horizon": 64,
+        "amplitude": 2.0,
+        "input_period": 19.2,
+        "variant": "tone_only",
+        "selected_index": 4,
+        "selected_period": 22.0,
+        "same_index": 2,
+        "fit_train_curve": [
+          0.7787501873353626,
+          0.8457354176455708,
+          0.7561018465454787,
+          0.6669521831996525,
+          0.5132554050123743,
+          0.535659343220728,
+          0.6450070465423438,
+          0.7524709937302356,
+          0.8496445669620093
+        ],
+        "fit_cv_curve": [
+          0.7798497399504177,
+          0.853449062468967,
+          0.770698256401245,
+          0.6851927102924743,
+          0.5333011181136592,
+          0.5503808128478018,
+          0.6534795955208373,
+          0.7564360038835559,
+          0.8503554533418123
+        ],
+        "runner_up_gap": 0.017079694734142614,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 16384,
+          "24.0": 0,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.6181427664144472,
+          0.5449564616309931
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.0304474712662106,
+        "mean_waveform_singular_values": [
+          3.7601046753503895,
+          3.385743439255703
+        ],
+        "test_curve": [
+          0.8621505658540423,
+          0.9475231338921122,
+          0.8618611110237165,
+          0.7677883828944045,
+          0.5910433543110412,
+          0.6030963603462279,
+          0.7167673845147061,
+          0.8346415697166814,
+          0.9480669215260136
+        ],
+        "same_test_nmse": 0.8618611110237165,
+        "selected_test_nmse": 0.5910433543110412,
+        "mean_waveform_test_nmse": 0.516588170377069,
+        "mean_even_floor": 0.31870823893727673,
+        "same_minus_selected": {
+          "mean": 0.2708177567126754,
+          "source_differences": [
+            0.04636998018770688,
+            -0.032207191889194964,
+            0.5889280338516472,
+            0.49683858811546333,
+            0.06670018238240472,
+            -0.09036155991262795,
+            0.5196863544326731,
+            0.4851647663784956,
+            0.1847899325267509,
+            -0.09018227125013212,
+            0.524228952547052,
+            0.48469766438807826,
+            0.11364337382601297,
+            -0.020202628249773702,
+            0.5729730317388357,
+            0.48201689832941486
+          ],
+          "positive_sources": 12,
+          "percentile95": [
+            0.2544776699953301,
+            0.287964443722711
+          ],
+          "family4_percentile": [
+            0.2506674391046784,
+            0.2928226919160863
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.07445518393397219,
+          "source_differences": [
+            0.06849309831719863,
+            0.07614874392838222,
+            0.07214593434173283,
+            0.05022461774417675,
+            0.0743773047817069,
+            0.05207514066561969,
+            0.057673054069325214,
+            0.04928648868951502,
+            0.14043952641981738,
+            0.04744975544430963,
+            0.13025739737242725,
+            0.04817950219673628,
+            0.11820866612655667,
+            0.09254462695927912,
+            0.07612552355838587,
+            0.037653562328385626
+          ],
+          "positive_sources": 16,
+          "percentile95": [
+            0.06376619860367673,
+            0.08596657147462998
+          ],
+          "family4_percentile": [
+            0.0612863351014081,
+            0.08899497088485545
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.10287586723071887
+          },
+          {
+            "type": 1,
+            "gain": -0.058238412825432184
+          },
+          {
+            "type": 2,
+            "gain": 0.551454093142552
+          },
+          {
+            "type": 3,
+            "gain": 0.48717947930286304
+          }
+        ]
+      }
+    ],
+    "nuisance": [
+      {
+        "horizon": 32,
+        "amplitude": 0.1,
+        "input_period": 19.2,
+        "variant": "tone_dc_trend",
+        "selected_index": 4,
+        "selected_period": 22.0,
+        "same_index": 2,
+        "fit_train_curve": [
+          0.6067004670042013,
+          0.48531233988664013,
+          0.4328734628771861,
+          0.40930407016926484,
+          0.3844798832263534,
+          0.3871554924045402,
+          0.39829196374322634,
+          0.4102659466166061,
+          0.4298238516073194
+        ],
+        "fit_cv_curve": [
+          0.6325118253120259,
+          0.5217390103835999,
+          0.4731610025169458,
+          0.4509476061394586,
+          0.42638851041963854,
+          0.4273394555771558,
+          0.43652022202728125,
+          0.4468183932347711,
+          0.4639770113538482
+        ],
+        "runner_up_gap": 0.0009509451575172578,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 10818,
+          "24.0": 5566,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.6265152366687013,
+          0.5820404014276095
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.7523264713645745,
+        "mean_waveform_singular_values": [
+          2.605885533903756,
+          2.3868319490474574
+        ],
+        "test_curve": [
+          0.7022789692841838,
+          0.5822070785159639,
+          0.5218874304555718,
+          0.49398089984934024,
+          0.4657834208227075,
+          0.47167951453671747,
+          0.4874417434528981,
+          0.5035342707192364,
+          0.5289084696468054
+        ],
+        "same_test_nmse": 0.5218874304555718,
+        "selected_test_nmse": 0.4657834208227075,
+        "mean_waveform_test_nmse": 0.4574884697258573,
+        "mean_even_floor": 0.014433359562515475,
+        "same_minus_selected": {
+          "mean": 0.05610400963286437,
+          "source_differences": [
+            0.05212373939937426,
+            0.024171484765584506,
+            0.1440800491406154,
+            -0.0035201414868804015,
+            0.04804082658279152,
+            0.015448818189525926,
+            0.10204070120256414,
+            0.025894554446315277,
+            0.0817970357857346,
+            0.012992350929747154,
+            0.11020850183846242,
+            0.03478283112338665,
+            0.07557692406508315,
+            0.021506704407794286,
+            0.15428662312815933,
+            -0.0017668493924283268
+          ],
+          "positive_sources": 14,
+          "percentile95": [
+            0.048416468336653716,
+            0.06372704448436758
+          ],
+          "family4_percentile": [
+            0.04649232787805986,
+            0.06550144748369759
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.008294951096850155,
+          "source_differences": [
+            0.022866627808011186,
+            0.015220536754087965,
+            -0.013725532928530515,
+            0.007578556485543619,
+            -0.0022790989132370765,
+            0.01326985136380121,
+            0.01400421378432326,
+            0.013167498318240156,
+            -0.017086371685440527,
+            0.01919806999597634,
+            0.054729796891899385,
+            0.008635038117833505,
+            -0.022750487455053425,
+            0.02280092029531705,
+            -0.005627744614510433,
+            0.0027173433313407713
+          ],
+          "positive_sources": 11,
+          "percentile95": [
+            0.0010680379562178254,
+            0.016615944323916065
+          ],
+          "family4_percentile": [
+            -0.0004792155166630845,
+            0.018775600603662644
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.06438463145824588
+          },
+          {
+            "type": 1,
+            "gain": 0.018529839573162968
+          },
+          {
+            "type": 2,
+            "gain": 0.12765396882745034
+          },
+          {
+            "type": 3,
+            "gain": 0.013847598672598299
+          }
+        ]
+      },
+      {
+        "horizon": 32,
+        "amplitude": 2.0,
+        "input_period": 19.2,
+        "variant": "tone_dc_trend",
+        "selected_index": 3,
+        "selected_period": 20.0,
+        "same_index": 2,
+        "fit_train_curve": [
+          0.6015786856176673,
+          0.48846339052421894,
+          0.4528274353329932,
+          0.44181405036057,
+          0.4435318369308239,
+          0.4620481148656713,
+          0.48144193215553077,
+          0.49762105108978394,
+          0.5204398579124991
+        ],
+        "fit_cv_curve": [
+          0.6169016016619775,
+          0.5095083742668652,
+          0.47541664154501106,
+          0.4646938604818177,
+          0.4655011038160368,
+          0.4823204828275979,
+          0.5001609859711895,
+          0.5151131399765393,
+          0.5362715057811953
+        ],
+        "runner_up_gap": 0.0008072433342191099,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 11148,
+          "22.0": 5236,
+          "24.0": 0,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.6575039965796713,
+          0.5655878862225303
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.8572670219856748,
+        "mean_waveform_singular_values": [
+          2.74466434666841,
+          2.305304713704136
+        ],
+        "test_curve": [
+          0.6942535242929905,
+          0.5718235320367782,
+          0.5324599805875426,
+          0.5192561646212095,
+          0.5169961220010384,
+          0.533750977058404,
+          0.55274660068071,
+          0.5691409230782759,
+          0.5928981261162303
+        ],
+        "same_test_nmse": 0.5324599805875426,
+        "selected_test_nmse": 0.5192561646212095,
+        "mean_waveform_test_nmse": 0.48616385241640286,
+        "mean_even_floor": 0.2792810440051141,
+        "same_minus_selected": {
+          "mean": 0.013203815966333132,
+          "source_differences": [
+            -0.0014282335244841793,
+            -0.0048519386877887705,
+            0.02627756863442149,
+            0.026691546027957813,
+            0.006109187154253015,
+            -0.006029958446609807,
+            0.030432793177830986,
+            0.028407408307004944,
+            0.002227466541528833,
+            -0.006429773365891678,
+            0.022500668023320403,
+            0.028127324199822445,
+            0.004051269758754028,
+            -0.006090951486393714,
+            0.03194148021324872,
+            0.02932519893435559
+          ],
+          "positive_sources": 11,
+          "percentile95": [
+            0.012016525353971286,
+            0.014334883385981666
+          ],
+          "family4_percentile": [
+            0.011692762227431396,
+            0.014603155449359912
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.033092312204806615,
+          "source_differences": [
+            0.039448061654289934,
+            0.043642669289529756,
+            0.005257680729852554,
+            0.004496144711734068,
+            0.04631702973688279,
+            0.049246803628328006,
+            0.015219076360907469,
+            0.009329881626943148,
+            0.056816931244504154,
+            0.047422841227550694,
+            0.0495361484271703,
+            0.008770262793269146,
+            0.06920883340580253,
+            0.051165130022880256,
+            0.024225402860681977,
+            0.009374097556578975
+          ],
+          "positive_sources": 16,
+          "percentile95": [
+            0.02847427783573626,
+            0.03832402014470545
+          ],
+          "family4_percentile": [
+            0.027363755917959528,
+            0.03968887027314335
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.0027399224825129243
+          },
+          {
+            "type": 1,
+            "gain": -0.005850655496670992
+          },
+          {
+            "type": 2,
+            "gain": 0.0277881275122054
+          },
+          {
+            "type": 3,
+            "gain": 0.028137869367285198
+          }
+        ]
+      },
+      {
+        "horizon": 64,
+        "amplitude": 0.1,
+        "input_period": 19.2,
+        "variant": "tone_dc_trend",
+        "selected_index": 4,
+        "selected_period": 22.0,
+        "same_index": 2,
+        "fit_train_curve": [
+          0.8021942726895698,
+          0.7773818009708645,
+          0.6764364723827816,
+          0.5991893895763583,
+          0.4785596380149361,
+          0.5041235198370588,
+          0.6019834660406644,
+          0.6945414960598464,
+          0.796609430591324
+        ],
+        "fit_cv_curve": [
+          0.8130922260922954,
+          0.7955538620567547,
+          0.7063710379594275,
+          0.6372523755237061,
+          0.5278957389120519,
+          0.5503856082310377,
+          0.6385776399270091,
+          0.7214737011979386,
+          0.8110487239037594
+        ],
+        "runner_up_gap": 0.022489869318985778,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 16384,
+          "24.0": 0,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.6157982251976756,
+          0.5666286321012974
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.859413207080056,
+        "mean_waveform_singular_values": [
+          3.5368279160757052,
+          3.521650440173558
+        ],
+        "test_curve": [
+          0.7474033865868441,
+          0.7370167829246992,
+          0.6525149413261242,
+          0.5822858912346318,
+          0.4734270166200101,
+          0.49561735411792474,
+          0.5720950744406755,
+          0.6490748329344657,
+          0.7442936172601715
+        ],
+        "same_test_nmse": 0.6525149413261242,
+        "selected_test_nmse": 0.4734270166200101,
+        "mean_waveform_test_nmse": 0.46371213275050027,
+        "mean_even_floor": 0.01284661000556452,
+        "same_minus_selected": {
+          "mean": 0.1790879247061142,
+          "source_differences": [
+            0.046154780924386796,
+            0.025369940868438356,
+            0.4639243954179559,
+            0.19406010986632033,
+            0.022105655028901494,
+            0.009184058169748877,
+            0.4854801804162713,
+            0.2477366750505704,
+            0.0677896563575125,
+            0.007495810847991891,
+            0.15245968158722967,
+            0.2725459180616423,
+            0.07753869898187887,
+            -0.015250443437922923,
+            0.6210471621671534,
+            0.18776451498974822
+          ],
+          "positive_sources": 15,
+          "percentile95": [
+            0.1316579165941086,
+            0.2170974371584799
+          ],
+          "family4_percentile": [
+            0.12229767940398589,
+            0.2243881700693826
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.009714883869509784,
+          "source_differences": [
+            0.027875709344730715,
+            0.011570363936631495,
+            -0.015491929888874212,
+            0.0005057899742593186,
+            -0.0030103395811792444,
+            0.008104446366739487,
+            0.011800867864141362,
+            0.021819193723641495,
+            -0.006604757760494073,
+            0.011050467191485391,
+            -0.0024831246615231173,
+            0.01922608399459569,
+            0.005215083369457363,
+            0.01538598615636183,
+            0.04454830157188039,
+            0.005926000310302659
+          ],
+          "positive_sources": 12,
+          "percentile95": [
+            0.0033321238965285474,
+            0.016712846578416245
+          ],
+          "family4_percentile": [
+            0.0019190065080155999,
+            0.018757040658445367
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.053397197823169915
+          },
+          {
+            "type": 1,
+            "gain": 0.00669984161206405
+          },
+          {
+            "type": 2,
+            "gain": 0.43072785489715254
+          },
+          {
+            "type": 3,
+            "gain": 0.2255268044920703
+          }
+        ]
+      },
+      {
+        "horizon": 64,
+        "amplitude": 2.0,
+        "input_period": 19.2,
+        "variant": "tone_dc_trend",
+        "selected_index": 4,
+        "selected_period": 22.0,
+        "same_index": 2,
+        "fit_train_curve": [
+          0.765388460967305,
+          0.8229281317521493,
+          0.7400468105846646,
+          0.6587839333950319,
+          0.510231798617047,
+          0.5240821975455914,
+          0.6182630942051347,
+          0.7100467320356525,
+          0.8157519122308627
+        ],
+        "fit_cv_curve": [
+          0.7681051322155217,
+          0.8325174353755487,
+          0.7560037978089278,
+          0.6780682525884958,
+          0.5311867158633474,
+          0.5399212914214048,
+          0.6284140158676387,
+          0.7162760519662439,
+          0.8184066267234552
+        ],
+        "runner_up_gap": 0.008734575558057345,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 16220,
+          "24.0": 164,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.6066114793448368,
+          0.5470391726081006
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.859413207080056,
+        "mean_waveform_singular_values": [
+          3.7601046753503895,
+          3.385743439255703
+        ],
+        "test_curve": [
+          0.8486489588228574,
+          0.9231055198189713,
+          0.8434444468958936,
+          0.7577157442729759,
+          0.5862560667650929,
+          0.5883876743807899,
+          0.6858929334950518,
+          0.7866524648362245,
+          0.9093585005272773
+        ],
+        "same_test_nmse": 0.8434444468958936,
+        "selected_test_nmse": 0.5862560667650929,
+        "mean_waveform_test_nmse": 0.516588170377069,
+        "mean_even_floor": 0.31870823893727673,
+        "same_minus_selected": {
+          "mean": 0.2571883801308007,
+          "source_differences": [
+            0.05516496359637413,
+            -0.033328262449829116,
+            0.5563018601826504,
+            0.47036475475410305,
+            0.06999174002958153,
+            -0.08357614793301227,
+            0.48390726009366725,
+            0.45956945422556905,
+            0.1722262859557393,
+            -0.08303189121708698,
+            0.49391749984111727,
+            0.45889784220547614,
+            0.11533495708585018,
+            -0.01904761677467115,
+            0.540055808585894,
+            0.458265573911388
+          ],
+          "positive_sources": 12,
+          "percentile95": [
+            0.24247383215309035,
+            0.27248237808228754
+          ],
+          "family4_percentile": [
+            0.23890069003316478,
+            0.2767977734442835
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.06966789638802395,
+          "source_differences": [
+            0.06000691365883404,
+            0.07026814095658651,
+            0.07204194998572366,
+            0.04265629605744198,
+            0.07205980615056151,
+            0.04384764840321187,
+            0.06454887876266735,
+            0.041148700812759564,
+            0.13488410559991126,
+            0.04007678968646344,
+            0.13003900116360356,
+            0.03966546922685954,
+            0.10513975792028885,
+            0.08859353800292935,
+            0.07430075162129873,
+            0.03540859419924197
+          ],
+          "positive_sources": 16,
+          "percentile95": [
+            0.0592662355745751,
+            0.08092298762967633
+          ],
+          "family4_percentile": [
+            0.05692005085183566,
+            0.08397780855908876
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.10317948666688628
+          },
+          {
+            "type": 1,
+            "gain": -0.05474597959364988
+          },
+          {
+            "type": 2,
+            "gain": 0.5185456071758323
+          },
+          {
+            "type": 3,
+            "gain": 0.461774406274134
+          }
+        ]
+      }
+    ],
+    "control24": [
+      {
+        "horizon": 32,
+        "amplitude": 0.1,
+        "input_period": 24.0,
+        "variant": "tone_only",
+        "selected_index": 5,
+        "selected_period": 24.0,
+        "same_index": 5,
+        "fit_train_curve": [
+          0.8103359251965164,
+          0.6091459032444135,
+          0.4937626636130694,
+          0.43289891979346057,
+          0.3435923430458633,
+          0.3244256360102241,
+          0.3504612297457802,
+          0.4003769286425686,
+          0.5135700037160122
+        ],
+        "fit_cv_curve": [
+          0.8203780308352184,
+          0.626862907721419,
+          0.5151373715497582,
+          0.4559525859835093,
+          0.3684545656717245,
+          0.3488438949064545,
+          0.37320183999884793,
+          0.42087114457782,
+          0.5295022868802677
+        ],
+        "runner_up_gap": 0.01961067076527001,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 2,
+          "24.0": 16382,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.8043690096692324,
+          0.7381434991752032
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.1106530233293974,
+        "mean_waveform_singular_values": [
+          3.3724435528705925,
+          2.839470809564681
+        ],
+        "test_curve": [
+          0.812067961619533,
+          0.6206879509147307,
+          0.5117482522803698,
+          0.4532901328400545,
+          0.36417867312719154,
+          0.34266069452601045,
+          0.3674941005256228,
+          0.4168095649548462,
+          0.5259191082982455
+        ],
+        "same_test_nmse": 0.34266069452601045,
+        "selected_test_nmse": 0.34266069452601045,
+        "mean_waveform_test_nmse": 0.343142320259737,
+        "mean_even_floor": 0.03424918361674058,
+        "same_minus_selected": {
+          "mean": 0.0,
+          "source_differences": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "positive_sources": 0,
+          "percentile95": [
+            0.0,
+            0.0
+          ],
+          "family4_percentile": [
+            0.0,
+            0.0
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": -0.00048162573372652947,
+          "source_differences": [
+            0.002913140512908377,
+            -0.018571646117681695,
+            0.0146688245736534,
+            0.005659456547085551,
+            -0.0016267345540373346,
+            -0.010847872672982373,
+            -0.015550708429346374,
+            0.001718435783506056,
+            0.0011735836495606888,
+            -0.007998270374657002,
+            0.026786201883710392,
+            0.002930560634606394,
+            -0.007109613662994355,
+            -0.0017926197349919792,
+            -0.0031910438443034095,
+            0.003132294066339192
+          ],
+          "positive_sources": 8,
+          "percentile95": [
+            -0.0048271995566763325,
+            0.0038623463908662795
+          ],
+          "family4_percentile": [
+            -0.005904782039295246,
+            0.0048832791449327645
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.0
+          },
+          {
+            "type": 1,
+            "gain": 0.0
+          },
+          {
+            "type": 2,
+            "gain": 0.0
+          },
+          {
+            "type": 3,
+            "gain": 0.0
+          }
+        ]
+      },
+      {
+        "horizon": 32,
+        "amplitude": 0.1,
+        "input_period": 24.0,
+        "variant": "tone_dc_trend",
+        "selected_index": 5,
+        "selected_period": 24.0,
+        "same_index": 5,
+        "fit_train_curve": [
+          0.7433504783384999,
+          0.542332561772662,
+          0.4424307652961301,
+          0.3929927708569113,
+          0.329090654827683,
+          0.31929474279286063,
+          0.32987382721869746,
+          0.3453631851882001,
+          0.37379019311020234
+        ],
+        "fit_cv_curve": [
+          0.7617045233049674,
+          0.5680448138708595,
+          0.47101401780318464,
+          0.42271889373549076,
+          0.3595617289031864,
+          0.34900604172498695,
+          0.3585091430584927,
+          0.3730100856110495,
+          0.3999540409951203
+        ],
+        "runner_up_gap": 0.009503101333505737,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 142,
+          "24.0": 15601,
+          "26.0": 636,
+          "28.0": 5,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.8031711027421996,
+          0.7483748758750076
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.8528564575353113,
+        "mean_waveform_singular_values": [
+          3.3724435528705925,
+          2.839470809564681
+        ],
+        "test_curve": [
+          0.7681748917409147,
+          0.5686588299220862,
+          0.47080133303002597,
+          0.4218517567098852,
+          0.3556341023349767,
+          0.3413147989187376,
+          0.3476290562060199,
+          0.3597318749783045,
+          0.3836269784513405
+        ],
+        "same_test_nmse": 0.3413147989187376,
+        "selected_test_nmse": 0.3413147989187376,
+        "mean_waveform_test_nmse": 0.343142320259737,
+        "mean_even_floor": 0.03424918361674058,
+        "same_minus_selected": {
+          "mean": 0.0,
+          "source_differences": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "positive_sources": 0,
+          "percentile95": [
+            0.0,
+            0.0
+          ],
+          "family4_percentile": [
+            0.0,
+            0.0
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": -0.0018275213409994166,
+          "source_differences": [
+            0.0019553880903762644,
+            -0.0005654120760690828,
+            -0.005677529531486952,
+            0.0026676959086622265,
+            -0.005008740302296727,
+            -0.009148587573292677,
+            0.006522445284728728,
+            0.0017079381478686262,
+            -0.0021227287599400457,
+            -0.003466126803377323,
+            -0.01573918667125629,
+            0.0034555121987885906,
+            -0.0002407485761623529,
+            -0.0016619481484423382,
+            0.002312011330096564,
+            -0.004230323974187877
+          ],
+          "positive_sources": 6,
+          "percentile95": [
+            -0.004335687786551092,
+            0.0005123376385646976
+          ],
+          "family4_percentile": [
+            -0.005037373088148071,
+            0.0010190854565101865
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.0
+          },
+          {
+            "type": 1,
+            "gain": 0.0
+          },
+          {
+            "type": 2,
+            "gain": 0.0
+          },
+          {
+            "type": 3,
+            "gain": 0.0
+          }
+        ]
+      },
+      {
+        "horizon": 32,
+        "amplitude": 2.0,
+        "input_period": 24.0,
+        "variant": "tone_only",
+        "selected_index": 5,
+        "selected_period": 24.0,
+        "same_index": 5,
+        "fit_train_curve": [
+          0.9615550200154241,
+          0.666776364797968,
+          0.499289036083226,
+          0.41017457137922975,
+          0.27709633213219487,
+          0.24829739240411275,
+          0.289950737495569,
+          0.3691587111726532,
+          0.5455972745381732
+        ],
+        "fit_cv_curve": [
+          0.9626715763144545,
+          0.669562931515255,
+          0.5030880643305196,
+          0.4145297537357294,
+          0.2823137911406504,
+          0.25373664483903946,
+          0.29517097775710355,
+          0.37392051578340574,
+          0.5493357117882531
+        ],
+        "runner_up_gap": 0.028577146301610956,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 0,
+          "24.0": 16384,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.9691876663752033,
+          0.9282695610705882
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.1106530233293974,
+        "mean_waveform_singular_values": [
+          3.9087351498088108,
+          3.673907869203836
+        ],
+        "test_curve": [
+          1.0326316167550105,
+          0.7129485281726928,
+          0.529496028471683,
+          0.43208209019566934,
+          0.28701824285008526,
+          0.25361395421372934,
+          0.2936135253052648,
+          0.3728280947125251,
+          0.5532625127679259
+        ],
+        "same_test_nmse": 0.25361395421372934,
+        "selected_test_nmse": 0.25361395421372934,
+        "mean_waveform_test_nmse": 0.24933711005096035,
+        "mean_even_floor": 0.19940918843425204,
+        "same_minus_selected": {
+          "mean": 0.0,
+          "source_differences": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "positive_sources": 0,
+          "percentile95": [
+            0.0,
+            0.0
+          ],
+          "family4_percentile": [
+            0.0,
+            0.0
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.00427684416276899,
+          "source_differences": [
+            -0.0024954711366964206,
+            -0.0018235917750287767,
+            0.00942247114859096,
+            0.0119469916456022,
+            -0.0018939079701997298,
+            -0.000994655100486963,
+            0.0019315991259039877,
+            0.013138973992722902,
+            -2.3950562359809774e-05,
+            -0.0010346617641405764,
+            0.010167400785753733,
+            0.013422080828498717,
+            0.0005416653898254534,
+            -0.0005974761373329918,
+            0.009202916128580277,
+            0.007519122005070877
+          ],
+          "positive_sources": 9,
+          "percentile95": [
+            0.0031506570363184806,
+            0.005228119681113704
+          ],
+          "family4_percentile": [
+            0.0027973768613709254,
+            0.005381561613887583
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.0
+          },
+          {
+            "type": 1,
+            "gain": 0.0
+          },
+          {
+            "type": 2,
+            "gain": 0.0
+          },
+          {
+            "type": 3,
+            "gain": 0.0
+          }
+        ]
+      },
+      {
+        "horizon": 32,
+        "amplitude": 2.0,
+        "input_period": 24.0,
+        "variant": "tone_dc_trend",
+        "selected_index": 5,
+        "selected_period": 24.0,
+        "same_index": 5,
+        "fit_train_curve": [
+          0.8622162532109888,
+          0.5642153148017154,
+          0.42203439494708256,
+          0.35222599363962737,
+          0.26150768725559903,
+          0.24643672863816493,
+          0.2602102721723088,
+          0.28124245823923344,
+          0.3204781239565001
+        ],
+        "fit_cv_curve": [
+          0.8665233720434959,
+          0.5701310219127156,
+          0.42873132461599067,
+          0.3593210478401192,
+          0.2691757187502215,
+          0.25427306938743155,
+          0.2680406350783582,
+          0.2890088619915959,
+          0.3280943186413675
+        ],
+        "runner_up_gap": 0.01376756569092663,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 0,
+          "24.0": 16384,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.9760038132598029,
+          0.9322931321498221
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.8528564575353113,
+        "mean_waveform_singular_values": [
+          3.9087351498088108,
+          3.673907869203836
+        ],
+        "test_curve": [
+          0.9294002548746381,
+          0.6068106589484823,
+          0.4477926109354194,
+          0.36893290188857714,
+          0.26622217166465656,
+          0.24965908895076067,
+          0.265921651639785,
+          0.2903078701798341,
+          0.3354707941933736
+        ],
+        "same_test_nmse": 0.24965908895076067,
+        "selected_test_nmse": 0.24965908895076067,
+        "mean_waveform_test_nmse": 0.24933711005096035,
+        "mean_even_floor": 0.19940918843425204,
+        "same_minus_selected": {
+          "mean": 0.0,
+          "source_differences": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "positive_sources": 0,
+          "percentile95": [
+            0.0,
+            0.0
+          ],
+          "family4_percentile": [
+            0.0,
+            0.0
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.00032197889980032594,
+          "source_differences": [
+            -0.0009533893867795171,
+            -0.0005810098619061232,
+            0.0004294626308307681,
+            0.001925800052346216,
+            -0.0011754646522214134,
+            -0.000654467710374862,
+            0.0018862247443736102,
+            0.0016646568296976305,
+            0.0002467822949230765,
+            -0.0007248675961117335,
+            0.00042771368768915186,
+            0.0019330254782186085,
+            0.0006361427584632151,
+            -0.0002270729176702957,
+            0.0014562025305290272,
+            -0.001138076485202144
+          ],
+          "positive_sources": 9,
+          "percentile95": [
+            -0.0001104135349439599,
+            0.0006966069927298413
+          ],
+          "family4_percentile": [
+            -0.0002346130189816678,
+            0.0007782389187947472
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.0
+          },
+          {
+            "type": 1,
+            "gain": 0.0
+          },
+          {
+            "type": 2,
+            "gain": 0.0
+          },
+          {
+            "type": 3,
+            "gain": 0.0
+          }
+        ]
+      },
+      {
+        "horizon": 64,
+        "amplitude": 0.1,
+        "input_period": 24.0,
+        "variant": "tone_only",
+        "selected_index": 5,
+        "selected_period": 24.0,
+        "same_index": 5,
+        "fit_train_curve": [
+          0.8679941328267982,
+          0.8554804825251061,
+          0.7557321426615344,
+          0.6591696710508762,
+          0.45357988575755437,
+          0.4041018735091424,
+          0.485693875780018,
+          0.615364911095855,
+          0.806957316812754
+        ],
+        "fit_cv_curve": [
+          0.8716887197293253,
+          0.8612815496076256,
+          0.7660736542781332,
+          0.6739039449398518,
+          0.4786619126023798,
+          0.4329113370833765,
+          0.5108822455882742,
+          0.6336379113535584,
+          0.8136496461307587
+        ],
+        "runner_up_gap": 0.0457505755190033,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 118,
+          "24.0": 16266,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.7209530882633053,
+          0.6551605121619823
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.0537233970145543,
+        "mean_waveform_singular_values": [
+          4.260602590650375,
+          3.6917757352320484
+        ],
+        "test_curve": [
+          0.8721908198742669,
+          0.8688020424660937,
+          0.7711779974840847,
+          0.6712177428112428,
+          0.44993580867325844,
+          0.39630082565609503,
+          0.4840168085864476,
+          0.6210097932282269,
+          0.8171197777295343
+        ],
+        "same_test_nmse": 0.39630082565609503,
+        "selected_test_nmse": 0.39630082565609503,
+        "mean_waveform_test_nmse": 0.3885992994036647,
+        "mean_even_floor": 0.025813638496202915,
+        "same_minus_selected": {
+          "mean": 0.0,
+          "source_differences": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "positive_sources": 0,
+          "percentile95": [
+            0.0,
+            0.0
+          ],
+          "family4_percentile": [
+            0.0,
+            0.0
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.00770152625243028,
+          "source_differences": [
+            0.0003291309437343237,
+            -0.01715335313881544,
+            0.005569191886921954,
+            0.009796461494227082,
+            -0.0025748547858979454,
+            -0.010938860026167924,
+            0.009046897872923676,
+            0.052558703999939116,
+            -0.009164350378991881,
+            -0.008434672229292367,
+            0.051651634716480044,
+            0.06431966263725652,
+            -0.020534777846179242,
+            -0.004737387190904219,
+            -0.007332834582461367,
+            0.010823826666112146
+          ],
+          "positive_sources": 8,
+          "percentile95": [
+            -0.00040698618609196483,
+            0.016356987071226188
+          ],
+          "family4_percentile": [
+            -0.002332000942565786,
+            0.01865125414032162
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.0
+          },
+          {
+            "type": 1,
+            "gain": 0.0
+          },
+          {
+            "type": 2,
+            "gain": 0.0
+          },
+          {
+            "type": 3,
+            "gain": 0.0
+          }
+        ]
+      },
+      {
+        "horizon": 64,
+        "amplitude": 0.1,
+        "input_period": 24.0,
+        "variant": "tone_dc_trend",
+        "selected_index": 5,
+        "selected_period": 24.0,
+        "same_index": 5,
+        "fit_train_curve": [
+          0.8611872617236349,
+          0.8458541669874878,
+          0.7505293881327346,
+          0.6567926359211024,
+          0.44831970125564174,
+          0.39698346096989623,
+          0.47151522241240645,
+          0.5871597527454524,
+          0.7812082009242198
+        ],
+        "fit_cv_curve": [
+          0.8741452348491922,
+          0.8612120516843706,
+          0.7704451544516221,
+          0.6809498781608551,
+          0.48211175568426834,
+          0.4334355785813361,
+          0.5044289483681392,
+          0.6142337208482622,
+          0.7977164106762357
+        ],
+        "runner_up_gap": 0.04867617710293226,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 17,
+          "24.0": 16367,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.7258336846818966,
+          0.6675407028362356
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.7904415739095403,
+        "mean_waveform_singular_values": [
+          4.260602590650375,
+          3.6917757352320484
+        ],
+        "test_curve": [
+          0.8696377487232233,
+          0.8611555228858155,
+          0.7687540328148681,
+          0.6742850983681058,
+          0.45389169612785807,
+          0.39465263296113695,
+          0.47025519440020674,
+          0.5899596577275537,
+          0.7907016388361298
+        ],
+        "same_test_nmse": 0.39465263296113695,
+        "selected_test_nmse": 0.39465263296113695,
+        "mean_waveform_test_nmse": 0.3885992994036647,
+        "mean_even_floor": 0.025813638496202915,
+        "same_minus_selected": {
+          "mean": 0.0,
+          "source_differences": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "positive_sources": 0,
+          "percentile95": [
+            0.0,
+            0.0
+          ],
+          "family4_percentile": [
+            0.0,
+            0.0
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.006053333557472226,
+          "source_differences": [
+            0.0008974812368094942,
+            -0.0003791140646171032,
+            0.0016441921374134583,
+            0.01708318708408385,
+            -0.012018642709235416,
+            -0.004971352990564171,
+            0.014604450431724952,
+            0.04659228469157506,
+            -0.011108550636870468,
+            -0.0022502288125148817,
+            -0.022631053144051227,
+            0.05992408425790641,
+            -0.011991542294149338,
+            -0.005787974778673183,
+            0.009800611058154773,
+            0.017445505452563403
+          ],
+          "positive_sources": 8,
+          "percentile95": [
+            -3.336093134815606e-05,
+            0.011896416936568196
+          ],
+          "family4_percentile": [
+            -0.0014872228377094396,
+            0.013479563204557206
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.0
+          },
+          {
+            "type": 1,
+            "gain": 0.0
+          },
+          {
+            "type": 2,
+            "gain": 0.0
+          },
+          {
+            "type": 3,
+            "gain": 0.0
+          }
+        ]
+      },
+      {
+        "horizon": 64,
+        "amplitude": 2.0,
+        "input_period": 24.0,
+        "variant": "tone_only",
+        "selected_index": 5,
+        "selected_period": 24.0,
+        "same_index": 5,
+        "fit_train_curve": [
+          1.1218707353593191,
+          1.1192441696042819,
+          0.955448440730148,
+          0.7886560995804714,
+          0.41535594475139226,
+          0.3225157420833677,
+          0.4721596534717851,
+          0.7034022312471885,
+          1.0393386235760937
+        ],
+        "fit_cv_curve": [
+          1.1224801756604412,
+          1.1202009414121792,
+          0.95762157511833,
+          0.7922118591173821,
+          0.42276976201650013,
+          0.3319019350971315,
+          0.4807909033776158,
+          0.7098556916151999,
+          1.0417199010032308
+        ],
+        "runner_up_gap": 0.09086782691936862,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 0,
+          "24.0": 16384,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.9161448337335099,
+          0.905300033895874
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.0537233970145543,
+        "mean_waveform_singular_values": [
+          5.274144990732317,
+          5.080789040568726
+        ],
+        "test_curve": [
+          1.1775740903265863,
+          1.1750003013774526,
+          0.9858061862993228,
+          0.7941866893961977,
+          0.3808743101816342,
+          0.29133679156798825,
+          0.46306886263217506,
+          0.724297034231285,
+          1.0972338313632655
+        ],
+        "same_test_nmse": 0.29133679156798825,
+        "selected_test_nmse": 0.29133679156798825,
+        "mean_waveform_test_nmse": 0.27768965501589604,
+        "mean_even_floor": 0.20184550349055586,
+        "same_minus_selected": {
+          "mean": 0.0,
+          "source_differences": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "positive_sources": 0,
+          "percentile95": [
+            0.0,
+            0.0
+          ],
+          "family4_percentile": [
+            0.0,
+            0.0
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.013647136552092225,
+          "source_differences": [
+            -0.006176804226156241,
+            -0.00608209240638144,
+            0.024266656635465067,
+            0.046277410320955115,
+            -0.005959658313611053,
+            -0.005155244470119946,
+            0.007014189733145465,
+            0.046200505990037444,
+            -0.004819289937228972,
+            -0.005048903122833737,
+            0.025775866983709067,
+            0.048519657541722605,
+            -0.003386444696011487,
+            -0.005112506881081169,
+            0.03389727734165007,
+            0.02814356434021481
+          ],
+          "positive_sources": 8,
+          "percentile95": [
+            0.01043773400140211,
+            0.01647493777972672
+          ],
+          "family4_percentile": [
+            0.009456142342739459,
+            0.017081267772294195
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.0
+          },
+          {
+            "type": 1,
+            "gain": 0.0
+          },
+          {
+            "type": 2,
+            "gain": 0.0
+          },
+          {
+            "type": 3,
+            "gain": 0.0
+          }
+        ]
+      },
+      {
+        "horizon": 64,
+        "amplitude": 2.0,
+        "input_period": 24.0,
+        "variant": "tone_dc_trend",
+        "selected_index": 5,
+        "selected_period": 24.0,
+        "same_index": 5,
+        "fit_train_curve": [
+          1.1106680806241387,
+          1.0990315775772812,
+          0.9401356697765296,
+          0.7802754543102524,
+          0.4123687122170521,
+          0.32001484512779976,
+          0.45544466219258795,
+          0.6583387387019156,
+          0.9911623396116558
+        ],
+        "fit_cv_curve": [
+          1.1145805301441172,
+          1.1033205883019581,
+          0.9457008970595489,
+          0.7871961195068027,
+          0.4228880209573409,
+          0.3320993973803541,
+          0.4667817838898902,
+          0.6679156108346189,
+          0.9972031905754223
+        ],
+        "runner_up_gap": 0.0907886235769868,
+        "fixed_cv_bootstrap_minimizers": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 0,
+          "24.0": 16384,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "selected_H_singular_values": [
+          0.9269722526831324,
+          0.903589590306745
+        ],
+        "selected_H_rank": 2,
+        "design_condition": 1.7904415739095403,
+        "mean_waveform_singular_values": [
+          5.274144990732317,
+          5.080789040568726
+        ],
+        "test_curve": [
+          1.1673430999489791,
+          1.1551062526985587,
+          0.975753523631068,
+          0.7938069541400568,
+          0.38154149344187677,
+          0.28430566900663,
+          0.43457370861957456,
+          0.6610275228527429,
+          1.0387285439614142
+        ],
+        "same_test_nmse": 0.28430566900663,
+        "selected_test_nmse": 0.28430566900663,
+        "mean_waveform_test_nmse": 0.27768965501589604,
+        "mean_even_floor": 0.20184550349055586,
+        "same_minus_selected": {
+          "mean": 0.0,
+          "source_differences": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "positive_sources": 0,
+          "percentile95": [
+            0.0,
+            0.0
+          ],
+          "family4_percentile": [
+            0.0,
+            0.0
+          ]
+        },
+        "selected_minus_waveform": {
+          "mean": 0.006616013990734011,
+          "source_differences": [
+            -0.005348828096996411,
+            -0.004880769502236343,
+            0.011860749601513149,
+            0.027537801300880238,
+            -0.004958720871065289,
+            -0.004176984251685001,
+            0.01873226132908548,
+            0.02302987907383991,
+            -0.004434648244568941,
+            -0.004288980873964787,
+            0.0009743011895926856,
+            0.025153104216041333,
+            -0.0036784867076324404,
+            -0.0058290305370806705,
+            0.01828534561355949,
+            0.01787923061246177
+          ],
+          "positive_sources": 8,
+          "percentile95": [
+            0.004508283408171118,
+            0.008417983161956537
+          ],
+          "family4_percentile": [
+            0.004023915018767883,
+            0.008744702049877241
+          ]
+        },
+        "by_type": [
+          {
+            "type": 0,
+            "gain": 0.0
+          },
+          {
+            "type": 1,
+            "gain": 0.0
+          },
+          {
+            "type": 2,
+            "gain": 0.0
+          },
+          {
+            "type": 3,
+            "gain": 0.0
+          }
+        ]
+      }
+    ],
+    "interactions": [
+      {
+        "contrast": "weak_minus_strong_gain",
+        "horizon": 32,
+        "mean": 0.028688534025224022,
+        "source_differences": [
+          0.07623380670149588,
+          0.08141006046090607,
+          0.07129232217165454,
+          -0.12877232685913387,
+          0.06565701831918913,
+          0.06081034605249147,
+          0.11875438813532851,
+          -0.11361020473196143,
+          0.10498524885043248,
+          0.06512967054410168,
+          -0.02366483091841498,
+          -0.10602167383935324,
+          0.08974504413557827,
+          0.0492841295900302,
+          0.22125947630970866,
+          -0.17347593051846907
+        ],
+        "positive_sources": 11,
+        "percentile95": [
+          0.006000729393470964,
+          0.05136046746850634
+        ],
+        "family4_percentile": [
+          0.000782274576089354,
+          0.05726974073794385
+        ]
+      },
+      {
+        "contrast": "weak_minus_strong_gain",
+        "horizon": 64,
+        "mean": -0.075526190908306,
+        "source_differences": [
+          -0.014534833177258788,
+          0.04254174851171744,
+          -0.09539855442672207,
+          -0.2714929028939558,
+          -0.06392674174500568,
+          0.07577811039544241,
+          0.08027050168795002,
+          -0.20524402158537736,
+          -0.12540406269804982,
+          0.07892793962725791,
+          -0.2770901047183729,
+          -0.18004226040681337,
+          -0.05409217925854598,
+          -0.009345909377013517,
+          0.07333608448338136,
+          -0.2627018689515299
+        ],
+        "positive_sources": 5,
+        "percentile95": [
+          -0.11678573117226514,
+          -0.03858634572624494
+        ],
+        "family4_percentile": [
+          -0.12828048584090992,
+          -0.03179612109622562
+        ]
+      },
+      {
+        "contrast": "64_minus32_gain",
+        "amplitude": 0.1,
+        "mean": 0.1488058474044766,
+        "source_differences": [
+          -0.06272409573947552,
+          -0.06118107204894921,
+          0.39983051102018546,
+          0.32769973517546735,
+          -0.07660113823067949,
+          -0.07128711286445905,
+          0.4519644336844041,
+          0.3591213452766612,
+          -0.05382983649253503,
+          -0.07076730061494568,
+          0.2546259559327766,
+          0.37638341884978577,
+          -0.06106233373648623,
+          -0.07612435280819368,
+          0.3847447765798415,
+          0.36010062448822777
+        ],
+        "positive_sources": 8,
+        "percentile95": [
+          0.12842044236737765,
+          0.16516164329654603
+        ],
+        "family4_percentile": [
+          0.12438586539269722,
+          0.1679323916416436
+        ]
+      },
+      {
+        "contrast": "64_minus32_gain",
+        "amplitude": 2.0,
+        "mean": 0.2530205723380066,
+        "source_differences": [
+          0.02804454413927915,
+          -0.022312760099760576,
+          0.5665213876185621,
+          0.47042031121028927,
+          0.05298262183351532,
+          -0.08625487720740999,
+          0.4904483201317826,
+          0.4507551621300771,
+          0.17655947505594727,
+          -0.08456556969810192,
+          0.5080512297327345,
+          0.4504040054172459,
+          0.08277488965763802,
+          -0.017494313841149967,
+          0.5326681684061688,
+          0.4493265629212886
+        ],
+        "positive_sources": 12,
+        "percentile95": [
+          0.23651506663300276,
+          0.27112320715471905
+        ],
+        "family4_percentile": [
+          0.23274303824478562,
+          0.2760393316277282
+        ]
+      }
+    ],
+    "conclusion": "The direct64 horizon more clearly favors an OLD-selected22h response basis for19.2h inputs at both weak.1 and strong2 amplitudes; matched DC/trend also selects22h. All four tone-only primary heldout mean gains over same-inputH have positive family4 percentile intervals. The24h controls retain24h in every amplitude/horizon/nuisance cell. Distortion is therefore not confined to the weak input case in this conditional design.",
+    "horizon_identification": "At32h weak tone-only selects24h and nuisance selects22h; strong tone-only selects22h and nuisance selects20h. At64h all select22h. OLD-CV runner-up gaps grow from.005720457803761958 to.034949823840798255 for weak tone-only and.0011619670761373602 to.017079694734142614 for strong. Discrete-grid selection over finite windows is not a uniquely identified oscillator.",
+    "amplitude_interaction": "Weak-minus-strong selected-map gain changes from+0.028688534025224022 at32h to-0.075526190908306 at64h. Strong64 even-response NMSE floor0.31870823893727673 versus weak0.01284661000556452 shows substantial strong-amplitude nonlinearity; amplitude also changes native normalization.",
+    "scope": "Bolt only, direct head<=64, native normalization, existing16OLD FIT and16previously examined TEST synthetic backgrounds, two amplitudes, two input periods, four cardinal phases. No new independent sources. Weak32 oblique validation does not validate strong/64 interpolation. Conditional response prediction, not improved natural forecasting; no training-prior, oscillator, or patch-causality inference.",
+    "comparator_recovery": "Four original batches/positions replayed bit-exactly; one mixed-geometry case reproduced2.384185791015625e-7 difference. Original protocol and544inputs byte-identical. Separate amendment retained exact same-query64/32 and single-forward gates; mixed-geometry history retained as raw diagnostics with algebraic bounds, never silently tolerated.",
+    "original_failure": "Original failed delta remains missing and original failed run untouched. One authorized diagnostic and one recovery child; no retries after the successful child.",
+    "audit": {
+      "passed": true,
+      "checks": 1210,
+      "maximum_absolute_discrepancy": 1.5543122344752192e-15,
+      "results_checked": true,
+      "native_loaded": false,
+      "nodes": 544,
+      "old_fit_sources": 16,
+      "test_sources": 16,
+      "source_and_artifact_hashes_verified": true
+    },
+    "roundoff_audit": {
+      "passed": true,
+      "checks": 1544,
+      "max_actual_nmse_change": 1.9054664079920514e-06,
+      "max_bound": 8.08821007460502e-06,
+      "max_measured_u": 3.5467811427899066e-06,
+      "historical_reference_rows": 288,
+      "mixed_geometry_is_diagnostic_not_tolerance": true
+    },
+    "native_execution": {
+      "bolt": {
+        "valid": true,
+        "returncode": 0,
+        "seconds": 42.844048619037494,
+        "peak_rss": 1048424448,
+        "failure": null,
+        "slot": 2,
+        "amendment_sha256": "22ebc2b1fe5b1511dc36a1e0b392acf853df9f9ce3181fbaee08d30af0705af1"
+      }
+    },
+    "native_closed": true,
+    "next_decision": "CLOSED. No additional native or saved-only expansion planned."
+  },
+  "native_closed": true
+}

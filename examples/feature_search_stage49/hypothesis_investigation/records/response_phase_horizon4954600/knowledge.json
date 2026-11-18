@@ -1,0 +1,351 @@
+{
+  "status": "failed_native_historical_parity_closed",
+  "question": "Does weak-versus-strong output-frequency distortion transfer over the direct64 horizon and sharpen the finite-window frequency comparison?",
+  "exact_findings": {
+    "native_execution": {
+      "bolt": {
+        "valid": false,
+        "returncode": 1,
+        "seconds": 10.21139372792095,
+        "peak_rss": 1027821568,
+        "failure": "Native/capability failure, exit1; see bolt.log",
+        "slot": 2,
+        "grant_sha256": "5f1026df6e339be49753398a41ca950c5507c70a558f3312c029acda96eaeed4"
+      }
+    },
+    "failed_gate": "Historical weak/base prefix32 exact replay",
+    "scientific_results": null,
+    "direct64_current32_status": "Passed through the reached predict_pair calls before historical gate rejection; not a completed bank-wide capability validation.",
+    "static_capability": {
+      "static_supported": true,
+      "declared_direct_head": 64,
+      "autoregression_required_for64": false,
+      "implementation": "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/chronos/chronos_bolt.py",
+      "implementation_sha256": "572a3ffd23a7887c423d234fd0086a4dfa2bac0c3e34d4b7d42eb9cda2e3d1d4",
+      "config_sha256": "9ca0ebbe049ccebacb0546361e8aa728f0cf104cd18d1838d78d296aa317bd21",
+      "dynamic_prefix_parity": "PENDING coordinator-granted native gate; no native model loaded",
+      "evidence": "Configuration plus installed source: fixed64 quantile head, one initial forward, autoregression only when remaining>0. Static evidence alone does not establish bitwise parity."
+    },
+    "bookkeeping_audit": {
+      "passed": true,
+      "scope": "READ-ONLY bookkeeping/hash audit; does NOT validate failed native outputs",
+      "checks": 640,
+      "reference_inputs_exact": true,
+      "reference_forecast_copy_exact": true,
+      "source_and_input_hashes_unchanged": true,
+      "source0_batch_row_positions": [
+        {
+          "new_index": 0,
+          "old_index": 0,
+          "old_batch_row": 0,
+          "new_batch_row": 0
+        },
+        {
+          "new_index": 1,
+          "old_index": 18,
+          "old_batch_row": 2,
+          "new_batch_row": 1
+        },
+        {
+          "new_index": 2,
+          "old_index": 50,
+          "old_batch_row": 2,
+          "new_batch_row": 2
+        },
+        {
+          "new_index": 3,
+          "old_index": 82,
+          "old_batch_row": 2,
+          "new_batch_row": 3
+        },
+        {
+          "new_index": 4,
+          "old_index": 114,
+          "old_batch_row": 2,
+          "new_batch_row": 0
+        },
+        {
+          "new_index": 0,
+          "old_index": 0,
+          "old_batch_row": 0,
+          "new_batch_row": 0
+        },
+        {
+          "new_index": 9,
+          "old_index": 2,
+          "old_batch_row": 2,
+          "new_batch_row": 1
+        },
+        {
+          "new_index": 10,
+          "old_index": 34,
+          "old_batch_row": 2,
+          "new_batch_row": 2
+        },
+        {
+          "new_index": 11,
+          "old_index": 66,
+          "old_batch_row": 2,
+          "new_batch_row": 3
+        },
+        {
+          "new_index": 12,
+          "old_index": 98,
+          "old_batch_row": 2,
+          "new_batch_row": 0
+        }
+      ],
+      "partial_prefix_rows_with_nonzero_values": [],
+      "first_source_completion_logged": false,
+      "failed_row_and_magnitude": "Not persisted by fail-closed historical check; cannot recover without new inference. No inference retry authorized or attempted.",
+      "historical_batch_geometry_limitation": "Historical comparator matched batch size4 but not full batch membership or original row positions. E.g new weak row1 corresponds to historical row2. This prevents attributing the failed exact replay to direct64 capability; rebatching effects are a possible untested explanation."
+    }
+  },
+  "controls": "Require declared head64; limit_prediction_length=True; exactly one model forward for every64 AND32 request; bit-exact prefix parity on identical batches<=4; exact repeated64/32 background; exact same-batch replay; all288 historical weak/base32 forecasts match at batch4 geometry. Save both64 and separately requested32 arrays. Any mismatch stops capability and invalidates run, no autoregressive rescue.",
+  "limitations": "Native capture invalid under frozen protocol. Failed batch values were checked before persistence, so failing row and discrepancy magnitude are unavailable. Correct input/reference bookkeeping does not explain the numerical mismatch. Static64 support and reached same-batch64/32 parity do not rescue historical replay failure. No OLD fits or TEST frequency/SNR results computed. Historical comparator matched batch size4 but not full batch membership or original row positions. E.g new weak row1 corresponds to historical row2. This prevents attributing the failed exact replay to direct64 capability; rebatching effects are a possible untested explanation.",
+  "evidence_class": "Failed native instrumentation/replay experiment; no scientific frequency/SNR evidence",
+  "failed_instrumentation_runs": [
+    {
+      "valid": false,
+      "returncode": 1,
+      "seconds": 10.21139372792095,
+      "peak_rss": 1027821568,
+      "failure": "Native/capability failure, exit1; see bolt.log",
+      "slot": 2,
+      "grant_sha256": "5f1026df6e339be49753398a41ca950c5507c70a558f3312c029acda96eaeed4",
+      "failed_gate": "Historical weak/base prefix parity failed",
+      "log": "bolt.log",
+      "bookkeeping_audit": "failure_bookkeeping_audit.json",
+      "attribution": "Historical replay failed; no evidence that the matched current64/current32 direct-head prefix itself failed."
+    }
+  ],
+  "next_decision": "CLOSED. Slot2 released. Preserve partial arrays and logs; no retry, threshold relaxation, source amendment, further native branch, or analysis using invalid forecasts.",
+  "design": {
+    "question": "Does weak-versus-strong output-frequency distortion transfer over the direct64 horizon and sharpen the finite-window frequency comparison?",
+    "stage": "prepared_native_held",
+    "models": [
+      "bolt"
+    ],
+    "policies": [
+      "native"
+    ],
+    "nodes": 544,
+    "context": 128,
+    "horizon": 64,
+    "analysis_horizons": [
+      32,
+      64
+    ],
+    "cohorts": {
+      "FIT": 16,
+      "TEST": 16
+    },
+    "new_sources": 0,
+    "amplitudes": [
+      0.1,
+      2.0
+    ],
+    "input_periods": [
+      19.2,
+      24.0
+    ],
+    "phases": [
+      0.0,
+      1.5707963267948966,
+      3.141592653589793,
+      4.71238898038469
+    ],
+    "output_period_candidates": [
+      16.0,
+      18.0,
+      19.2,
+      20.0,
+      22.0,
+      24.0,
+      26.0,
+      28.0,
+      32.0
+    ],
+    "conditional_authorization": {
+      "oblique_run": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_oblique4954500",
+      "oblique_gain": {
+        "model": "bolt",
+        "policy": "native",
+        "contrast": "oblique_scalar_minus_fullH",
+        "mean": 0.24816757777846288,
+        "positive_sources": 14,
+        "source_differences": [
+          0.12234821633461551,
+          0.043299034145133475,
+          0.5393817302631823,
+          0.29188925480340194,
+          0.05600859025694671,
+          0.010589539460546471,
+          0.682469368316557,
+          0.3900400645773262,
+          0.14269494014104467,
+          -0.05268926429361992,
+          0.17977271376751847,
+          0.44302265890929216,
+          0.15607638205062846,
+          -0.038036462783750113,
+          0.8077069102595965,
+          0.19610756824698627
+        ],
+        "percentile95": [
+          0.1820132629649184,
+          0.30652601466359786
+        ],
+        "family4_percentile": [
+          0.16488455363199903,
+          0.31861438122355634
+        ]
+      },
+      "audit_sha256": "34f199d98281ffad061ba9df10c7f5698e9fc78350120e868c256c1acafe379d"
+    },
+    "capability": {
+      "static_supported": true,
+      "declared_direct_head": 64,
+      "autoregression_required_for64": false,
+      "implementation": "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/chronos/chronos_bolt.py",
+      "implementation_sha256": "572a3ffd23a7887c423d234fd0086a4dfa2bac0c3e34d4b7d42eb9cda2e3d1d4",
+      "config_sha256": "9ca0ebbe049ccebacb0546361e8aa728f0cf104cd18d1838d78d296aa317bd21",
+      "dynamic_prefix_parity": "PENDING coordinator-granted native gate; no native model loaded",
+      "evidence": "Configuration plus installed source: fixed64 quantile head, one initial forward, autoregression only when remaining>0. Static evidence alone does not establish bitwise parity."
+    },
+    "controls": "Require declared head64; limit_prediction_length=True; exactly one model forward for every64 AND32 request; bit-exact prefix parity on identical batches<=4; exact repeated64/32 background; exact same-batch replay; all288 historical weak/base32 forecasts match at batch4 geometry. Save both64 and separately requested32 arrays. Any mismatch stops capability and invalidates run, no autoregressive rescue.",
+    "selection": "Separate OLD-source LOSO selection among fixed9 output periods per amplitude/input period/analysis horizon/variant. Tone-only2x2 and matched tone+DC+lineartrend4x2 maps; same-input map and OLD mean horizonx2 waveform controls. Freeze all OLD-selected maps before TEST scoring. No TEST selection.",
+    "primary": "19.2input tone-only, TEST same-frequency minus OLD-selected-frequency phase-pooled NMSE, four cells amplitude.1/2 x horizon32/64. Paired16TEST-source balanced-type16384 bootstrap draws seed4954600; nominal95 and family4 Bonferroni98.75 percentile CIs, descriptive small-sample coverage; no threshold/oscillator claim.",
+    "interactions": "Descriptive source-paired weak-minus-strong selected-map gain at each horizon and64-minus32 gain at each amplitude.24h and nuisance variants descriptive; retain all FIT-train/CV and TEST curves, source rows, rank/conditioning and even residual.",
+    "limitations": "Same OLD16 and previously examined TEST16 synthetic sources, native normalization only. Strong amplitude changes normalization as well as signal dominance.32prefix reuses identical direct64 forecast; neither horizon is a new independent source. Four cardinal phases: weak32 interpolation has external oblique support, strong/64 phase behavior is not separately validated. Response prediction is not forecast improvement; no training-prior or oscillator/patch-causality attribution.",
+    "cpu_threads": 1,
+    "worker_cap": 3221225472,
+    "seconds_per_model": 300,
+    "estimated_seconds": 203.3557805299552,
+    "budget_formula": "1.1*(20s allowance + measured oblique Bolt elapsed *544/144 *2 for64/32 requests); conservative estimate, not guarantee",
+    "capture_hold": true,
+    "grant_contract": "No native until new coordinator grant bound to this protocol. Bolt only. Gate failure stops; no extra horizon/grid or TimesFM.",
+    "checkpoints": {
+      "bolt": {
+        "repo": "amazon/chronos-bolt-small",
+        "path": "/common/home/djk255/.cache/huggingface/hub/models--amazon--chronos-bolt-small/snapshots/772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "revision": "772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "weights": {
+          "model.safetensors": "06a6a19bbe74bc10a9cd193bd4bf2bf638ae07f7e0d51653ae7ab8ea968a21dd"
+        }
+      }
+    },
+    "source_hashes": {
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_transfer.py": "a3e17fcd057a2ca92698d5a71d070e4b3b77a9037bbc05f10b4d538eacabad2c",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tests/test_response_phase_transfer.py": "b14de4d33859f8d696cae13c95a4462096196152d74b65757a95cd91e03f03c3",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_transfer_plants.py": "8daed827a1e205ba25ff6563d409e586367f2c31a9ac9bc56bb9d943d0a5150d",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_transfer_audit.py": "29b0f96aa022005a3a0bbd1650ed80c493dfd225b50a3edcb90e483bfa4499ec",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_study.py": "baa8f5a94890b89411df99e108e9ab01e906e8419c1696002cc9a6d6f8a48187",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_surface_focused.py": "758b73564af323796355c51c16b8332f7710fef57fe748ecdfd2c9bc1b907b1e",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_surface_crossed.py": "4882c7aeda3269bb48bc6675196fbd984f6db12b98617d2a8f2fba2b6979d41d",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/selective_study.py": "d87ed477e46d72604fa6824fcc5b146880142a730fc52f0f70bf933b652604eb",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/coherence_study.py": "e9bd4dc10d57cfbc30cb4b01cfafe96789cccb6d34fe85616699ecfef799aec7",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/real_background_poc.py": "c88868ab339608f52afa8041d89cf3b48aa4260e87fb497b64fa7bf058b3eda6",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/homogeneous_normalizer.py": "2670effb2dfc0b631d368a69cab4263a8d2a90eb1208acc93d246a5c0ef55051",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tsfm_lens/extraction/hooks.py": "6f161d02a472c246691caed21bd301a201d7219d3aeef90de2854baa7bdc4281",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_horizon.py": "c19575d7593d242db44d3175f70947769543e7e8b74bd06cb37187cab62c564d",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_horizon_analysis.py": "5ea68ab734bbf48f9a0b41e947784e182b4f18b29f8366b5876715c8e21214f2",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_horizon_audit.py": "c4336e51061c12132925673b0113c956a5a5bdd17f64f261fcce483e9285912b",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_horizon_plants.py": "efc940f5d90c080af05ba5bfbaa0285bf0b8ce77e82bc624bf67aca2ef42452c",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tests/test_response_phase_horizon.py": "a7dd267da68b6e7eafa786b446a1ff5f124e8b3e584fbf98e3064061f2440389",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/chronos/chronos_bolt.py": "572a3ffd23a7887c423d234fd0086a4dfa2bac0c3e34d4b7d42eb9cda2e3d1d4",
+      "/common/users/djk255/hf_cache_home/huggingface/hub/models--amazon--chronos-bolt-small/blobs/d8f9b65552d4d211e28d332ad5666484092bbf77": "9ca0ebbe049ccebacb0546361e8aa728f0cf104cd18d1838d78d296aa317bd21"
+    },
+    "hashes": {
+      "inputs.npy": "45f272955f04fc6774e65162b3eac68cc3ab0f009328ce23e530ead5934cc0f7",
+      "historical_prefix32.npy": "ba59ed4ec43aff8e7754b9aadc3cf89c2ecfb3f191155e8328b51000fdefd2d4",
+      "historical_reference_mask.npy": "1c6eebbd243f4c727df4785f7b8b2773b4f043f0d5d0e1c6b63e14028fe21727",
+      "nodes.json": "a0db0a163f4882ed0ee0ec3a8173853eaf1c17cf75f826ff6af5ae4ca0d023c9",
+      "groups.json": "0f7149874c3e3a951038417a8488316281ec573453e0cb0ec397d18dfed9ff7d",
+      "sources.json": "884a4b74bfc80c5707f67a1476b11742aab4fa9cfcf00ea17066e48606b124de",
+      "static_capability.json": "5926299416131d288220b541ed1a0c4ca0b37ec6108f8e8cb5c96990fcdd9c82"
+    },
+    "prior_hashes": {
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_surface_focused4954100/inputs.npy": "30489820fe91db02fe81362cf835134f9507a418e7ad3c205eb2a387f9bb4692",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_surface_focused4954100/nodes.json": "ae5c34467ad4f04b0d8f59fdd8b719fd0a0b0ab483ee7bd93155a4875c4144a7",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_surface_focused4954100/sources.json": "462064575313677c3f9c28a2e344ada82dd7ae1a44a652ef30a9a47d4ca4b588",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_surface_focused4954100/bolt_native_forecast.npy": "03e2bc05a8fd3ffc50f13b0f6ecfc2b38ad64349f257bd14bfa3518234b4fbea",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_surface_focused4954100/bolt_worker.json": "9294b85d36af2e1a12220259dedbf067bf9eb9955656459c35e0e58faef6072a",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_surface_focused4954100/execution.json": "0f3526f9231b229bb0733452066c8d127a4e278938f010bda66f2f69b9fd37b3",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_surface_focused4954100/protocol.json": "12f90d5aef20c09f29f4850651b868564d9acfcd4131dba2754f599e9cd32a27",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase4954200/groups.json": "9657f70716e4a0de241e3b75c39e6f6eea5f901c836ba781c0c2247c65224a25",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/inputs.npy": "d60f13fd2278e782be817f7a580fba6a9cebc8387a3c6fbb62363f3f588f6d0c",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/nodes.json": "7ada0a56374df284806b0388c2b30028c7b72e271979e709e8c03b2c40949a0b",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/sources.json": "759549340b1747c32439c94d8a5eeec7684159553c169cb091bb6ec31d49ac28",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/bolt_native_forecast.npy": "3d736b5a1d63faaaafc2cb7d75dc2f8b1c1c284e2a4a8a21bf074ca0cb6b63cf",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/bolt_worker.json": "8c064d477e62c20e1694efdf9215cf7a596cd6402f1b913d6669c5ba616ba59a",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/execution.json": "9963b7325032deeb500c19d8f0c50191d8fe1bcac54900b9e15e762b24fd0990",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/protocol.json": "fc5b74295f9d30e0afb23809699b339f647976685d2b9637951511fea2231572",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/groups.json": "ea5909cd07e132407b9cc9187c3961e7fc415386b5fdd0ad134cf533026911f2"
+    },
+    "input_gate": {
+      "nominal_rms_over_peak_max": 2.729557082621205e-07,
+      "antipodal_rms_over_peak_max": 2.2595863366571957e-07
+    },
+    "historical_reference_rows": 288
+  },
+  "verification": {
+    "tests_passed": 6,
+    "test_session": 32014,
+    "test_seconds": 1.08,
+    "plants_detected": 7,
+    "plant_session": 15879,
+    "preflight": {
+      "passed": true,
+      "checks": 128,
+      "maximum_absolute_discrepancy": 0.0,
+      "results_checked": false,
+      "native_loaded": false,
+      "nodes": 544,
+      "old_fit_sources": 16,
+      "test_sources": 16,
+      "source_and_artifact_hashes_verified": true
+    },
+    "standin": {
+      "passed": true,
+      "checks": 1210,
+      "maximum_absolute_discrepancy": 1.887379141862766e-15,
+      "results_checked": true,
+      "native_loaded": false,
+      "nodes": 544,
+      "old_fit_sources": 16,
+      "test_sources": 16,
+      "source_and_artifact_hashes_verified": true
+    }
+  },
+  "execution": {
+    "bolt": {
+      "valid": false,
+      "returncode": 1,
+      "seconds": 10.21139372792095,
+      "peak_rss": 1027821568,
+      "failure": "Native/capability failure, exit1; see bolt.log",
+      "slot": 2,
+      "grant_sha256": "5f1026df6e339be49753398a41ca950c5507c70a558f3312c029acda96eaeed4"
+    }
+  },
+  "slot2_release": {
+    "slot": 2,
+    "released": true,
+    "run": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_horizon4954600",
+    "session": 65500,
+    "execution": {
+      "bolt": {
+        "valid": false,
+        "returncode": 1,
+        "seconds": 10.21139372792095,
+        "peak_rss": 1027821568,
+        "failure": "Native/capability failure, exit1; see bolt.log",
+        "slot": 2,
+        "grant_sha256": "5f1026df6e339be49753398a41ca950c5507c70a558f3312c029acda96eaeed4"
+      }
+    },
+    "native_workers_remaining": 0,
+    "scientific_capture_valid": false
+  }
+}

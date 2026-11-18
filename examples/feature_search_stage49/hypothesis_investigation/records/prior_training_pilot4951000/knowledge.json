@@ -1,0 +1,238 @@
+{
+  "question": "Can a continuation prior cause attenuation while histories and optimization are held fixed?",
+  "evidence_class": "Controlled toy training / supervised recoverability",
+  "conclusion": "Yes in both adequately fitted tiny architectures: forecast gain tracks the exact conditional-mean survival probability.",
+  "exact_results": {
+    "records": [
+      {
+        "architecture": "mlp",
+        "seed": 495710,
+        "training_probability": 0.0,
+        "key": "mlp_495710_0.0",
+        "training_mse": 0.00013898834004066885,
+        "last_loss": 0.00014648536220192908,
+        "mean_gain": 0.00020204356405884027,
+        "conditional_mean_nmse": 0.0005097293902545663,
+        "risks": {
+          "0.0": 0.0005097293904082902,
+          "0.5": 0.5003076857794029,
+          "1.0": 1.0001056421683976
+        },
+        "decoded_tone_nmse": 0.016827709793355333,
+        "input_probe_nmse": 0.0026657713808921073,
+        "scope": "Supervised fixed ridge on normalized latent future, native input normalizer restored identically for hidden and input probes; additional task labels; not zero-shot prediction nor causal head repair"
+      },
+      {
+        "architecture": "mlp",
+        "seed": 495710,
+        "training_probability": 0.5,
+        "key": "mlp_495710_0.5",
+        "training_mse": 0.0005904691061004996,
+        "last_loss": 0.0006118365400470794,
+        "mean_gain": 0.49643564224243164,
+        "conditional_mean_nmse": 0.0020541728215303667,
+        "risks": {
+          "0.0": 0.2484898197082115,
+          "0.5": 0.2520541728280376,
+          "1.0": 0.25561852594786366
+        },
+        "decoded_tone_nmse": 0.003982980467368967,
+        "input_probe_nmse": 0.0026657713808921073,
+        "scope": "Supervised fixed ridge on normalized latent future, native input normalizer restored identically for hidden and input probes; additional task labels; not zero-shot prediction nor causal head repair"
+      },
+      {
+        "architecture": "mlp",
+        "seed": 495710,
+        "training_probability": 1.0,
+        "key": "mlp_495710_1.0",
+        "training_mse": 0.0014363736845552921,
+        "last_loss": 0.0014567500539124012,
+        "mean_gain": 0.9938386082649231,
+        "conditional_mean_nmse": 0.004892312253843462,
+        "risks": {
+          "0.0": 0.9925695202448483,
+          "0.5": 0.49873091625020116,
+          "1.0": 0.004892312255553908
+        },
+        "decoded_tone_nmse": 0.0033629933400281878,
+        "input_probe_nmse": 0.0026657713808921073,
+        "scope": "Supervised fixed ridge on normalized latent future, native input normalizer restored identically for hidden and input probes; additional task labels; not zero-shot prediction nor causal head repair"
+      },
+      {
+        "architecture": "mlp",
+        "seed": 495711,
+        "training_probability": 0.0,
+        "key": "mlp_495711_0.0",
+        "training_mse": 0.0001396150910295546,
+        "last_loss": 0.0001446342299459502,
+        "mean_gain": -0.0003772288328036666,
+        "conditional_mean_nmse": 0.0005107781425906367,
+        "risks": {
+          "0.0": 0.0005107781421448247,
+          "0.5": 0.5008880070050727,
+          "1.0": 1.0012652358680008
+        },
+        "decoded_tone_nmse": 0.01536392071152469,
+        "input_probe_nmse": 0.0026657713808921073,
+        "scope": "Supervised fixed ridge on normalized latent future, native input normalizer restored identically for hidden and input probes; additional task labels; not zero-shot prediction nor causal head repair"
+      },
+      {
+        "architecture": "mlp",
+        "seed": 495711,
+        "training_probability": 0.5,
+        "key": "mlp_495711_0.5",
+        "training_mse": 0.0005669872043654323,
+        "last_loss": 0.0006092458660714328,
+        "mean_gain": 0.49768996238708496,
+        "conditional_mean_nmse": 0.0019120685007332457,
+        "risks": {
+          "0.0": 0.24960201131333493,
+          "0.5": 0.2519120685139249,
+          "1.0": 0.25422212571451486
+        },
+        "decoded_tone_nmse": 0.0037707465185951115,
+        "input_probe_nmse": 0.0026657713808921073,
+        "scope": "Supervised fixed ridge on normalized latent future, native input normalizer restored identically for hidden and input probes; additional task labels; not zero-shot prediction nor causal head repair"
+      },
+      {
+        "architecture": "mlp",
+        "seed": 495711,
+        "training_probability": 1.0,
+        "key": "mlp_495711_1.0",
+        "training_mse": 0.0014051060425117612,
+        "last_loss": 0.0014621987100690602,
+        "mean_gain": 0.994098961353302,
+        "conditional_mean_nmse": 0.004500800342236599,
+        "risks": {
+          "0.0": 0.992698726683859,
+          "0.5": 0.49859976350958246,
+          "1.0": 0.0045008003353059056
+        },
+        "decoded_tone_nmse": 0.0032892856877808872,
+        "input_probe_nmse": 0.0026657713808921073,
+        "scope": "Supervised fixed ridge on normalized latent future, native input normalizer restored identically for hidden and input probes; additional task labels; not zero-shot prediction nor causal head repair"
+      },
+      {
+        "architecture": "transformer",
+        "seed": 495710,
+        "training_probability": 0.0,
+        "key": "transformer_495710_0.0",
+        "training_mse": 0.00028308035689406097,
+        "last_loss": 0.00028137176006566735,
+        "mean_gain": -0.0006038331193849444,
+        "conditional_mean_nmse": 0.0007327491728479072,
+        "risks": {
+          "0.0": 0.0007327491750211066,
+          "0.5": 0.5013365822290197,
+          "1.0": 1.001940415283018
+        },
+        "decoded_tone_nmse": 0.47648969898855154,
+        "input_probe_nmse": 0.0026657713808921073,
+        "scope": "Supervised fixed ridge on normalized latent future, native input normalizer restored identically for hidden and input probes; additional task labels; not zero-shot prediction nor causal head repair"
+      },
+      {
+        "architecture": "transformer",
+        "seed": 495710,
+        "training_probability": 0.5,
+        "key": "transformer_495710_0.5",
+        "training_mse": 0.0012184533989056945,
+        "last_loss": 0.0012951711704954506,
+        "mean_gain": 0.49440494179725647,
+        "conditional_mean_nmse": 0.004054007193566743,
+        "risks": {
+          "0.0": 0.2484589465977401,
+          "0.5": 0.2540540071867332,
+          "1.0": 0.2596490677757263
+        },
+        "decoded_tone_nmse": 0.010779347769511796,
+        "input_probe_nmse": 0.0026657713808921073,
+        "scope": "Supervised fixed ridge on normalized latent future, native input normalizer restored identically for hidden and input probes; additional task labels; not zero-shot prediction nor causal head repair"
+      },
+      {
+        "architecture": "transformer",
+        "seed": 495710,
+        "training_probability": 1.0,
+        "key": "transformer_495710_1.0",
+        "training_mse": 0.0027121661696583033,
+        "last_loss": 0.0030129474587738516,
+        "mean_gain": 0.994004487991333,
+        "conditional_mean_nmse": 0.009585155030262187,
+        "risks": {
+          "0.0": 0.9975941097562251,
+          "0.5": 0.5035896324271905,
+          "1.0": 0.009585155098155891
+        },
+        "decoded_tone_nmse": 0.007489487740437474,
+        "input_probe_nmse": 0.0026657713808921073,
+        "scope": "Supervised fixed ridge on normalized latent future, native input normalizer restored identically for hidden and input probes; additional task labels; not zero-shot prediction nor causal head repair"
+      },
+      {
+        "architecture": "transformer",
+        "seed": 495711,
+        "training_probability": 0.0,
+        "key": "transformer_495711_0.0",
+        "training_mse": 0.0003481806779745966,
+        "last_loss": 0.00034987778170034287,
+        "mean_gain": -0.0006357901147566736,
+        "conditional_mean_nmse": 0.0009332066722608841,
+        "risks": {
+          "0.0": 0.0009332066786423443,
+          "0.5": 0.5015689968075213,
+          "1.0": 1.0022047869364004
+        },
+        "decoded_tone_nmse": 0.5042714721036291,
+        "input_probe_nmse": 0.0026657713808921073,
+        "scope": "Supervised fixed ridge on normalized latent future, native input normalizer restored identically for hidden and input probes; additional task labels; not zero-shot prediction nor causal head repair"
+      },
+      {
+        "architecture": "transformer",
+        "seed": 495711,
+        "training_probability": 0.5,
+        "key": "transformer_495711_0.5",
+        "training_mse": 0.0009897121926769614,
+        "last_loss": 0.0010566936153918504,
+        "mean_gain": 0.4973456859588623,
+        "conditional_mean_nmse": 0.00359427588861504,
+        "risks": {
+          "0.0": 0.2509399425896077,
+          "0.5": 0.2535942759035117,
+          "1.0": 0.25624860921741566
+        },
+        "decoded_tone_nmse": 0.009800148398355663,
+        "input_probe_nmse": 0.0026657713808921073,
+        "scope": "Supervised fixed ridge on normalized latent future, native input normalizer restored identically for hidden and input probes; additional task labels; not zero-shot prediction nor causal head repair"
+      },
+      {
+        "architecture": "transformer",
+        "seed": 495711,
+        "training_probability": 1.0,
+        "key": "transformer_495711_1.0",
+        "training_mse": 0.0028309961780905724,
+        "last_loss": 0.0028177115228027105,
+        "mean_gain": 0.996536910533905,
+        "conditional_mean_nmse": 0.010274565811407219,
+        "risks": {
+          "0.0": 1.0033484306724991,
+          "0.5": 0.5068114982075542,
+          "1.0": 0.010274565742609272
+        },
+        "decoded_tone_nmse": 0.008199706984791656,
+        "input_probe_nmse": 0.0026657713808921073,
+        "scope": "Supervised fixed ridge on normalized latent future, native input normalizer restored identically for hidden and input probes; additional task labels; not zero-shot prediction nor causal head repair"
+      }
+    ],
+    "adequate_p1_fit": {
+      "mlp": true,
+      "transformer": true
+    },
+    "audit_passed": true,
+    "analysis_sha256": "bc996ec319ecde214870ef64275549ba320e280e2a909e96119283a303fa8f37",
+    "unit": "Training seed for training interventions; TEST histories for conditional forecast risk only"
+  },
+  "limitations": "Two training seeds; toy architectures; exact conditional-mean targets; not evidence about pretrained TSFM training data.",
+  "next_step": "Test initialization recovery baseline, then fresh-seed expansion and whether visible cues override the prior.",
+  "durable_references": [
+    "ROADMAP.md section49.38",
+    "FINDINGS.md PM-35"
+  ]
+}

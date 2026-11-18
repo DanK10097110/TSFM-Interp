@@ -1,0 +1,186 @@
+[
+  {
+    "model": "bolt",
+    "contrast": "grouping/interleaved",
+    "cell": "m4_hourly/real",
+    "discovery": 0.29296924151532944,
+    "check": 0.44572710327666254,
+    "direction": "positive contrast"
+  },
+  {
+    "model": "bolt",
+    "contrast": "grouping/interleaved",
+    "cell": "monash_electricity_hourly/real",
+    "discovery": 0.16970830826262476,
+    "check": 0.6011352811804693,
+    "direction": "positive contrast"
+  },
+  {
+    "model": "bolt",
+    "contrast": "grouping/linear_detrend",
+    "cell": "monash_electricity_hourly/real",
+    "discovery": 0.12887990547500972,
+    "check": 0.6917974828116193,
+    "direction": "positive contrast"
+  },
+  {
+    "model": "bolt",
+    "contrast": "grouping/linear_detrend",
+    "cell": "monash_pedestrian_counts/real",
+    "discovery": -0.3344636445221019,
+    "check": -0.11705612558325351,
+    "direction": "negative contrast"
+  },
+  {
+    "model": "bolt",
+    "contrast": "phase/1",
+    "cell": "phase_coherent",
+    "discovery": 0.3533095856965087,
+    "check": 0.420042734724729,
+    "direction": "positive contrast"
+  },
+  {
+    "model": "bolt",
+    "contrast": "phase/4",
+    "cell": "phase_coherent",
+    "discovery": -0.40715583569847547,
+    "check": -0.4702682506077729,
+    "direction": "negative contrast"
+  },
+  {
+    "model": "bolt",
+    "contrast": "phase/8",
+    "cell": "phase_coherent",
+    "discovery": 0.10124773615895791,
+    "check": 0.19597085611786358,
+    "direction": "positive contrast"
+  },
+  {
+    "model": "bolt",
+    "contrast": "K4 minus native fidelity gain",
+    "cell": "m4_hourly/real",
+    "discovery": -0.4125575668887806,
+    "check": -0.45363538103642553,
+    "direction": "degradation"
+  },
+  {
+    "model": "bolt",
+    "contrast": "K4 minus native fidelity gain",
+    "cell": "monash_pedestrian_counts/real",
+    "discovery": -0.6208090200849038,
+    "check": -0.20057663904974943,
+    "direction": "degradation"
+  },
+  {
+    "model": "bolt",
+    "contrast": "K4 minus native fidelity gain",
+    "cell": "synthetic/chirp",
+    "discovery": -1.0491644718176332,
+    "check": -0.8012413693393214,
+    "direction": "degradation"
+  },
+  {
+    "model": "bolt",
+    "contrast": "K4 minus native fidelity gain",
+    "cell": "synthetic/coupled",
+    "discovery": -0.42257780290597297,
+    "check": -0.25138220377959763,
+    "direction": "degradation"
+  },
+  {
+    "model": "bolt",
+    "contrast": "K4 minus native fidelity gain",
+    "cell": "synthetic/off_grid",
+    "discovery": -0.4669314419918918,
+    "check": -0.7237471062309415,
+    "direction": "degradation"
+  },
+  {
+    "model": "bolt",
+    "contrast": "K4 minus native fidelity gain",
+    "cell": "synthetic/phase_coherent",
+    "discovery": 0.5566992809534579,
+    "check": 0.5461734839486143,
+    "direction": "improvement"
+  },
+  {
+    "model": "bolt",
+    "contrast": "K4 minus native fidelity gain",
+    "cell": "synthetic/stationary",
+    "discovery": -0.20376614044152624,
+    "check": -0.3441375013838876,
+    "direction": "degradation"
+  },
+  {
+    "model": "timesfm",
+    "contrast": "grouping/linear_detrend",
+    "cell": "monash_electricity_hourly/real",
+    "discovery": 0.47672331650377153,
+    "check": 0.6789729637422589,
+    "direction": "positive contrast"
+  },
+  {
+    "model": "timesfm",
+    "contrast": "grouping/interleaved",
+    "cell": "monash_pedestrian_counts/real",
+    "discovery": -0.5928636897570772,
+    "check": -0.3017128023459228,
+    "direction": "negative contrast"
+  },
+  {
+    "model": "timesfm",
+    "contrast": "K4 minus native fidelity gain",
+    "cell": "m4_hourly/real",
+    "discovery": -1.3865158688334804,
+    "check": -1.7679545498401255,
+    "direction": "degradation"
+  },
+  {
+    "model": "timesfm",
+    "contrast": "K4 minus native fidelity gain",
+    "cell": "monash_electricity_hourly/real",
+    "discovery": -0.8762333542098353,
+    "check": -0.8184384900809238,
+    "direction": "degradation"
+  },
+  {
+    "model": "timesfm",
+    "contrast": "K4 minus native fidelity gain",
+    "cell": "monash_pedestrian_counts/real",
+    "discovery": -1.7462018311995136,
+    "check": -1.5403105494844886,
+    "direction": "degradation"
+  },
+  {
+    "model": "timesfm",
+    "contrast": "K4 minus native fidelity gain",
+    "cell": "synthetic/chirp",
+    "discovery": -1.2224092970083928,
+    "check": -0.9444994905598938,
+    "direction": "degradation"
+  },
+  {
+    "model": "timesfm",
+    "contrast": "K4 minus native fidelity gain",
+    "cell": "synthetic/coupled",
+    "discovery": 0.19911986260030662,
+    "check": 0.24738943262776109,
+    "direction": "improvement"
+  },
+  {
+    "model": "timesfm",
+    "contrast": "K4 minus native fidelity gain",
+    "cell": "synthetic/off_grid",
+    "discovery": -0.8960386866463532,
+    "check": -0.7302740637133964,
+    "direction": "degradation"
+  },
+  {
+    "model": "timesfm",
+    "contrast": "K4 minus native fidelity gain",
+    "cell": "synthetic/phase_coherent",
+    "discovery": 0.16350743811129853,
+    "check": 0.15988704036992762,
+    "direction": "improvement"
+  }
+]

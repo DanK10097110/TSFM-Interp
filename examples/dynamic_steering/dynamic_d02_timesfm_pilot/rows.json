@@ -1,0 +1,345 @@
+[
+  {
+    "request_index": 0,
+    "context_index": 0,
+    "kind": "level",
+    "window": "short",
+    "context_window": "recent",
+    "strength": 0.1,
+    "replay_max_abs": 0.0,
+    "gain": 0.0,
+    "collateral": 0.0,
+    "relative_error": 1.0,
+    "achieved": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.0,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_quantiles.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear"
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 1.0,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": false,
+        "relative_error": 1.0,
+        "coefficient_norm": 0.0,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": false,
+        "relative_error": 1.0,
+        "coefficient_norm": 0.0,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "two signed interventions match singleton forecasts",
+          "probe_step": 0.005
+        }
+      },
+      {
+        "iteration": 2,
+        "accepted": false,
+        "relative_error": 1.0,
+        "coefficient_norm": 0.0,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "two signed interventions match singleton forecasts",
+          "probe_step": 0.005
+        }
+      }
+    ],
+    "model_calls": 53,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 1,
+    "context_index": 0,
+    "kind": "trend",
+    "window": "long",
+    "context_window": "recent",
+    "strength": 0.1,
+    "replay_max_abs": 0.0,
+    "gain": 1.019352745466129,
+    "collateral": 0.6558800042917344,
+    "relative_error": 0.6561654583920143,
+    "achieved": false,
+    "protected_rms": 0.006506164105900933,
+    "protected_relative_error": 0.5385173533347781,
+    "coefficient_norm": 0.09035773391752736,
+    "radius": 0.2,
+    "site": {
+      "module": "__input__",
+      "path": [],
+      "occurrence": 0,
+      "shape": [
+        128
+      ],
+      "mode": "single",
+      "source": "input",
+      "module_type": "forecast_input"
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.9162541438981693,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.921469376092802,
+        "coefficient_norm": 0.05988647511228479,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 0.6625083818449853,
+        "coefficient_norm": 0.0549478604587525,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "two signed interventions match singleton forecasts",
+          "probe_step": 0.005
+        }
+      },
+      {
+        "iteration": 2,
+        "accepted": true,
+        "relative_error": 0.6561654583920143,
+        "coefficient_norm": 0.09035773391752736,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "two signed interventions match singleton forecasts",
+          "probe_step": 0.005
+        }
+      }
+    ],
+    "model_calls": 45,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 2,
+    "context_index": 0,
+    "kind": "seasonality",
+    "window": "all",
+    "context_window": "recent",
+    "strength": 0.1,
+    "replay_max_abs": 0.0,
+    "gain": 0.9778333641095758,
+    "collateral": 0.2311011225417544,
+    "relative_error": 0.23216177244920755,
+    "achieved": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.10117709221782475,
+    "radius": 0.2,
+    "site": {
+      "module": "__input__",
+      "path": [],
+      "occurrence": 0,
+      "shape": [
+        128
+      ],
+      "mode": "single",
+      "source": "input",
+      "module_type": "forecast_input"
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.4731590043414673,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.35009315663760354,
+        "coefficient_norm": 0.09576214093047936,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 0.27455476632328585,
+        "coefficient_norm": 0.09912573964615415,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "two signed interventions match singleton forecasts",
+          "probe_step": 0.005
+        }
+      },
+      {
+        "iteration": 2,
+        "accepted": true,
+        "relative_error": 0.23216177244920752,
+        "coefficient_norm": 0.10117709221782475,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "two signed interventions match singleton forecasts",
+          "probe_step": 0.005
+        }
+      }
+    ],
+    "model_calls": 46,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 3,
+    "context_index": 0,
+    "kind": "context_ignore",
+    "window": "all",
+    "context_window": "recent",
+    "strength": 0.5,
+    "replay_max_abs": 0.0,
+    "gain": 0.8453001330227752,
+    "collateral": 0.07743084665941098,
+    "relative_error": 0.17299590994345584,
+    "achieved": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.1857717614507302,
+    "radius": 0.2,
+    "site": {
+      "module": "__input__",
+      "path": [],
+      "occurrence": 0,
+      "shape": [
+        128
+      ],
+      "mode": "single",
+      "source": "input",
+      "module_type": "forecast_input"
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.6113091061205222,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.5494829881486947,
+        "coefficient_norm": 0.19999999999999996,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 0.2996126690610962,
+        "coefficient_norm": 0.2,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "two signed interventions match singleton forecasts",
+          "probe_step": 0.005
+        }
+      },
+      {
+        "iteration": 2,
+        "accepted": true,
+        "relative_error": 0.17299590994345584,
+        "coefficient_norm": 0.1857717614507302,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "two signed interventions match singleton forecasts",
+          "probe_step": 0.005
+        }
+      }
+    ],
+    "model_calls": 46,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": true
+  },
+  {
+    "request_index": 4,
+    "context_index": 0,
+    "kind": "uncertainty",
+    "window": "all",
+    "context_window": "recent",
+    "strength": 0.2,
+    "replay_max_abs": 0.0,
+    "gain": 0.0,
+    "collateral": 0.0,
+    "relative_error": 1.0,
+    "achieved": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.0,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_quantiles.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear"
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 1.0,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": false,
+        "relative_error": 1.0,
+        "coefficient_norm": 0.0,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": false,
+        "relative_error": 1.0,
+        "coefficient_norm": 0.0,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "two signed interventions match singleton forecasts",
+          "probe_step": 0.005
+        }
+      },
+      {
+        "iteration": 2,
+        "accepted": false,
+        "relative_error": 1.0,
+        "coefficient_norm": 0.0,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "two signed interventions match singleton forecasts",
+          "probe_step": 0.005
+        }
+      }
+    ],
+    "model_calls": 53,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  }
+]

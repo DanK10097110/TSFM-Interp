@@ -1,0 +1,9 @@
+{
+  "n": 168,
+  "successes": 159,
+  "mean_error": 0.039731060861487325,
+  "replay_max_abs": 0.0,
+  "seconds": 65.38832406396978,
+  "model_calls": 1330,
+  "evaluated_rows": 6546
+}

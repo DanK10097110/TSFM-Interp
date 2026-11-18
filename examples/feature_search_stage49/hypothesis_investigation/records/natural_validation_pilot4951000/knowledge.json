@@ -1,0 +1,385 @@
+{
+  "schema_version": 1,
+  "timestamp_utc": "2026-11-16T17:43:30.340018+00:00",
+  "phase": "prepare",
+  "status": "failed",
+  "question": "Do selective hybrids improve unmodified real forecasts, and can two past hindcasts identify continuation failure?",
+  "design": {
+    "requested_sources": 32,
+    "domains": [
+      "monash_electricity_hourly",
+      "m4_hourly",
+      "monash_pedestrian_counts",
+      "monash_traffic"
+    ],
+    "ranks": [
+      64,
+      65,
+      66,
+      67,
+      68,
+      69,
+      70,
+      71
+    ],
+    "split": "4 FIT / 4 TEST per domain",
+    "origins": [
+      192,
+      224,
+      256
+    ],
+    "history": 128,
+    "horizon": 32,
+    "selector": "Strict lower mean of two own-history-normalized hindcast losses; ties native",
+    "methods": [
+      "native",
+      "hybrid1",
+      "hybrid2",
+      "hybrid3",
+      "output_free1",
+      "output_free2",
+      "output_free3",
+      "seasonal_naive24",
+      "tone_last1",
+      "tone_last2",
+      "tone_last3"
+    ],
+    "native_budget": "Sequential CPU, one compute thread, 3GiB, 600 seconds/model"
+  },
+  "exact_findings": {
+    "command": "python -m experiments.feature_search.natural_validation_study prepare --out runs/natural_validation_pilot4951000",
+    "error_type": "ValueError",
+    "error": "Only 66 eligible sources in monash_pedestrian_counts",
+    "requested_ranks": [
+      64,
+      65,
+      66,
+      67,
+      68,
+      69,
+      70,
+      71
+    ],
+    "available_requested_pedestrian_ranks": [
+      64,
+      65
+    ],
+    "unavailable_pedestrian_ranks": [
+      66,
+      67,
+      68,
+      69,
+      70,
+      71
+    ],
+    "requested_sources_per_domain": 8,
+    "requested_total_sources": 32,
+    "protocol_prepared": false,
+    "native_models_loaded": false,
+    "native_workers_launched": false,
+    "real_future_losses_evaluated": false,
+    "source_substitutions": [],
+    "slot1_granted_after_preparation_failure": true,
+    "slot1_used": false,
+    "verification": {
+      "focused_tests_passed": 16,
+      "focused_tests_failed": 0,
+      "regression_plants_detected": 19,
+      "regression_plants_total": 19,
+      "plants": [
+        {
+          "name": "later_normalizer",
+          "failing_test": "test_origins_normalize_only_own_history_and_exact_targets"
+        },
+        {
+          "name": "inherited_scale",
+          "failing_test": "test_helper_last_history_scale_is_removed_and_future_poison_is_isolated"
+        },
+        {
+          "name": "missing_zero_anchor",
+          "failing_test": "test_composition_keeps_dc_and_zero_anchor_and_tone_last_baseline"
+        },
+        {
+          "name": "forced_constant_eligibility",
+          "failing_test": "test_constant_hindcast_abstains_without_dropping_main_source"
+        },
+        {
+          "name": "roundoff_constant_scale",
+          "failing_test": "test_constant_hindcast_abstains_without_dropping_main_source"
+        },
+        {
+          "name": "ties_hybrid",
+          "failing_test": "test_selector_requires_two_losses_ties_native_and_usable_history"
+        },
+        {
+          "name": "one_hindcast_only",
+          "failing_test": "test_selector_requires_two_losses_ties_native_and_usable_history"
+        },
+        {
+          "name": "worker_reads_future",
+          "failing_test": "test_worker_never_opens_targets_and_slot_is_required"
+        },
+        {
+          "name": "slot_bypass",
+          "failing_test": "test_worker_never_opens_targets_and_slot_is_required"
+        },
+        {
+          "name": "premature_TEST_read",
+          "failing_test": "test_end_to_end_future_poison_preserves_choices_and_fit_rules"
+        },
+        {
+          "name": "peak_order_matching",
+          "failing_test": "test_stability_matches_swapped_peaks_and_records_abstention"
+        },
+        {
+          "name": "source_reuse",
+          "failing_test": "test_prepare_checks_fresh_source_ids_and_freezes_32_sources"
+        },
+        {
+          "name": "forecast_hash_bypass",
+          "failing_test": "test_hash_and_execution_gates_reject_planted_damage[forecast]"
+        },
+        {
+          "name": "input_hash_bypass",
+          "failing_test": "test_hash_and_execution_gates_reject_planted_damage[input]"
+        },
+        {
+          "name": "execution_bypass",
+          "failing_test": "test_hash_and_execution_gates_reject_planted_damage[invalid_execution]"
+        },
+        {
+          "name": "gain_sign",
+          "failing_test": "test_source_bootstrap_counts_ties_and_has_known_gain"
+        },
+        {
+          "name": "resource_gate_bypass",
+          "failing_test": "test_monitor_serializes_models_and_rejects_resource_overrun[True]"
+        },
+        {
+          "name": "missing_second_model",
+          "failing_test": "test_monitor_serializes_models_and_rejects_resource_overrun[False]"
+        },
+        {
+          "name": "lost_failure_history",
+          "failing_test": "test_knowledge_retains_failed_attempt_and_exact_analysis"
+        }
+      ],
+      "native_models_loaded": false
+    },
+    "source_sha256": {
+      "experiments/feature_search/natural_validation_study.py": "92d6946d43fe7ba302696837aabbeaa0ce253979d204c67d00b0e267f3f9b7a0",
+      "experiments/feature_search/natural_validation_analysis.py": "48b0f10cf9a116b05149c2abf42e9a1b452af9af07dc0b26e3cccdb009e11970",
+      "experiments/feature_search/natural_validation_plants.py": "bac6ccf5f8027387b070564d132806bc10d447fdcedac4eb4624a7b500ed6998",
+      "tests/test_natural_validation_study.py": "ba73563cab46bd8fd0a0dc2cefdfff74aa5c87f30fc7afd5efea8549120ff747"
+    }
+  },
+  "controls": [
+    "Independent origin normalization",
+    "Future poisoning and scale invariance",
+    "Target-blind worker",
+    "Fixed depths and native ties",
+    "Source freshness and FIT/TEST separation",
+    "Hash, finite, repeat, reconstruction and resource gates"
+  ],
+  "limitations": [
+    "Pilot is exploratory; hindcasts are overlapping past selector features, not independent prospective tests",
+    "Stability/abstention are descriptive cues",
+    "Cached-source pretraining overlap unknown",
+    "No scientific improvement claim before valid native forecasts and held-out analysis"
+  ],
+  "evidence_class": "instrumentation",
+  "next_decision": "Coordinator must authorize an alternate cohort/rank allocation or domain before a new fresh preparation. No source substitution inferred from the slot grant. Slot1 is unused and may be reassigned.",
+  "events": [
+    {
+      "timestamp_utc": "2026-11-16T17:43:30.340018+00:00",
+      "phase": "prepare",
+      "status": "failed",
+      "question": "Do selective hybrids improve unmodified real forecasts, and can two past hindcasts identify continuation failure?",
+      "design": {
+        "requested_sources": 32,
+        "domains": [
+          "monash_electricity_hourly",
+          "m4_hourly",
+          "monash_pedestrian_counts",
+          "monash_traffic"
+        ],
+        "ranks": [
+          64,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70,
+          71
+        ],
+        "split": "4 FIT / 4 TEST per domain",
+        "origins": [
+          192,
+          224,
+          256
+        ],
+        "history": 128,
+        "horizon": 32,
+        "selector": "Strict lower mean of two own-history-normalized hindcast losses; ties native",
+        "methods": [
+          "native",
+          "hybrid1",
+          "hybrid2",
+          "hybrid3",
+          "output_free1",
+          "output_free2",
+          "output_free3",
+          "seasonal_naive24",
+          "tone_last1",
+          "tone_last2",
+          "tone_last3"
+        ],
+        "native_budget": "Sequential CPU, one compute thread, 3GiB, 600 seconds/model"
+      },
+      "exact_findings": {
+        "command": "python -m experiments.feature_search.natural_validation_study prepare --out runs/natural_validation_pilot4951000",
+        "error_type": "ValueError",
+        "error": "Only 66 eligible sources in monash_pedestrian_counts",
+        "requested_ranks": [
+          64,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70,
+          71
+        ],
+        "available_requested_pedestrian_ranks": [
+          64,
+          65
+        ],
+        "unavailable_pedestrian_ranks": [
+          66,
+          67,
+          68,
+          69,
+          70,
+          71
+        ],
+        "requested_sources_per_domain": 8,
+        "requested_total_sources": 32,
+        "protocol_prepared": false,
+        "native_models_loaded": false,
+        "native_workers_launched": false,
+        "real_future_losses_evaluated": false,
+        "source_substitutions": [],
+        "slot1_granted_after_preparation_failure": true,
+        "slot1_used": false,
+        "verification": {
+          "focused_tests_passed": 16,
+          "focused_tests_failed": 0,
+          "regression_plants_detected": 19,
+          "regression_plants_total": 19,
+          "plants": [
+            {
+              "name": "later_normalizer",
+              "failing_test": "test_origins_normalize_only_own_history_and_exact_targets"
+            },
+            {
+              "name": "inherited_scale",
+              "failing_test": "test_helper_last_history_scale_is_removed_and_future_poison_is_isolated"
+            },
+            {
+              "name": "missing_zero_anchor",
+              "failing_test": "test_composition_keeps_dc_and_zero_anchor_and_tone_last_baseline"
+            },
+            {
+              "name": "forced_constant_eligibility",
+              "failing_test": "test_constant_hindcast_abstains_without_dropping_main_source"
+            },
+            {
+              "name": "roundoff_constant_scale",
+              "failing_test": "test_constant_hindcast_abstains_without_dropping_main_source"
+            },
+            {
+              "name": "ties_hybrid",
+              "failing_test": "test_selector_requires_two_losses_ties_native_and_usable_history"
+            },
+            {
+              "name": "one_hindcast_only",
+              "failing_test": "test_selector_requires_two_losses_ties_native_and_usable_history"
+            },
+            {
+              "name": "worker_reads_future",
+              "failing_test": "test_worker_never_opens_targets_and_slot_is_required"
+            },
+            {
+              "name": "slot_bypass",
+              "failing_test": "test_worker_never_opens_targets_and_slot_is_required"
+            },
+            {
+              "name": "premature_TEST_read",
+              "failing_test": "test_end_to_end_future_poison_preserves_choices_and_fit_rules"
+            },
+            {
+              "name": "peak_order_matching",
+              "failing_test": "test_stability_matches_swapped_peaks_and_records_abstention"
+            },
+            {
+              "name": "source_reuse",
+              "failing_test": "test_prepare_checks_fresh_source_ids_and_freezes_32_sources"
+            },
+            {
+              "name": "forecast_hash_bypass",
+              "failing_test": "test_hash_and_execution_gates_reject_planted_damage[forecast]"
+            },
+            {
+              "name": "input_hash_bypass",
+              "failing_test": "test_hash_and_execution_gates_reject_planted_damage[input]"
+            },
+            {
+              "name": "execution_bypass",
+              "failing_test": "test_hash_and_execution_gates_reject_planted_damage[invalid_execution]"
+            },
+            {
+              "name": "gain_sign",
+              "failing_test": "test_source_bootstrap_counts_ties_and_has_known_gain"
+            },
+            {
+              "name": "resource_gate_bypass",
+              "failing_test": "test_monitor_serializes_models_and_rejects_resource_overrun[True]"
+            },
+            {
+              "name": "missing_second_model",
+              "failing_test": "test_monitor_serializes_models_and_rejects_resource_overrun[False]"
+            },
+            {
+              "name": "lost_failure_history",
+              "failing_test": "test_knowledge_retains_failed_attempt_and_exact_analysis"
+            }
+          ],
+          "native_models_loaded": false
+        },
+        "source_sha256": {
+          "experiments/feature_search/natural_validation_study.py": "92d6946d43fe7ba302696837aabbeaa0ce253979d204c67d00b0e267f3f9b7a0",
+          "experiments/feature_search/natural_validation_analysis.py": "48b0f10cf9a116b05149c2abf42e9a1b452af9af07dc0b26e3cccdb009e11970",
+          "experiments/feature_search/natural_validation_plants.py": "bac6ccf5f8027387b070564d132806bc10d447fdcedac4eb4624a7b500ed6998",
+          "tests/test_natural_validation_study.py": "ba73563cab46bd8fd0a0dc2cefdfff74aa5c87f30fc7afd5efea8549120ff747"
+        }
+      },
+      "controls": [
+        "Independent origin normalization",
+        "Future poisoning and scale invariance",
+        "Target-blind worker",
+        "Fixed depths and native ties",
+        "Source freshness and FIT/TEST separation",
+        "Hash, finite, repeat, reconstruction and resource gates"
+      ],
+      "limitations": [
+        "Pilot is exploratory; hindcasts are overlapping past selector features, not independent prospective tests",
+        "Stability/abstention are descriptive cues",
+        "Cached-source pretraining overlap unknown",
+        "No scientific improvement claim before valid native forecasts and held-out analysis"
+      ],
+      "evidence_class": "instrumentation",
+      "next_decision": "Coordinator must authorize an alternate cohort/rank allocation or domain before a new fresh preparation. No source substitution inferred from the slot grant. Slot1 is unused and may be reassigned."
+    }
+  ]
+}

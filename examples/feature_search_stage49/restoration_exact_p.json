@@ -1,0 +1,5 @@
+{
+  "raw_p_bit_exact": true,
+  "holm_adjusted_p_bit_exact": true,
+  "method": "Independent integer binomial sums at p=0.5 and manual global Holm2; exact Python float equality against saved producer values."
+}

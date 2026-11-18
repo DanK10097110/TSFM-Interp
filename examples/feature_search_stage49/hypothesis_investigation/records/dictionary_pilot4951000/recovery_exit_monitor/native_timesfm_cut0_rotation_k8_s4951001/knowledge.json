@@ -1,0 +1,81 @@
+{
+  "question": "Does reconstruction preserve native forecasts, and does feature removal affect sinusoid more than nuisance?",
+  "exact_results": {
+    "results_file": "results.json",
+    "sha256": "c9e9b6b3e37e91afc89c1e64826a086ab4084aabc45c47da3dd7fe7ec7a481e5",
+    "rows": 20,
+    "exact_identity_gates": true,
+    "preservation": {
+      "m4_hourly": {
+        "n_sources": 4,
+        "mean": 0.9835455864667892,
+        "per_source": {
+          "m4_hourly:T000066": 1.2183889150619507,
+          "m4_hourly:T000212": 0.775641143321991,
+          "m4_hourly:T000235": 1.0427353382110596,
+          "m4_hourly:T000262": 0.8974169492721558
+        }
+      },
+      "monash_electricity_hourly": {
+        "n_sources": 4,
+        "mean": 0.5533453949868079,
+        "per_source": {
+          "monash_electricity_hourly:T000068": 0.6785980079886899,
+          "monash_electricity_hourly:T000129": 0.3493592441082001,
+          "monash_electricity_hourly:T000140": 0.5136220455169678,
+          "monash_electricity_hourly:T000241": 0.671802282333374
+        }
+      },
+      "monash_pedestrian_counts": {
+        "n_sources": 4,
+        "mean": 0.5994711668360688,
+        "per_source": {
+          "monash_pedestrian_counts:T000013": 0.4791529749814225,
+          "monash_pedestrian_counts:T000019": 0.7623279094696045,
+          "monash_pedestrian_counts:T000034": 0.5244085817824085,
+          "monash_pedestrian_counts:T000050": 0.6319952011108398
+        }
+      },
+      "monash_traffic": {
+        "n_sources": 4,
+        "mean": 0.6221258402240221,
+        "per_source": {
+          "monash_traffic:T000026": 0.5216285612140352,
+          "monash_traffic:T000600": 0.6796112870706638,
+          "monash_traffic:T000772": 0.662842869758606,
+          "monash_traffic:T000784": 0.6244206428527832
+        }
+      },
+      "synthetic": {
+        "n_sources": 4,
+        "mean": 0.5310864470803697,
+        "per_source": {
+          "syn:4942016": 0.5752225461568615,
+          "syn:4942017": 0.5500518428731141,
+          "syn:4942018": 0.4897588383620019,
+          "syn:4942019": 0.509312560929501
+        }
+      }
+    },
+    "reconstruction_random_invalid": 0
+  },
+  "controls": [
+    "exact singleton self/repeat/saved gates",
+    "same-cut counterfactual oracle",
+    "two Gram-matched reconstruction/edit random controls",
+    "FIT-selected feature IDs"
+  ],
+  "limitations": [
+    "spectral cache only; four independent TEST real sources/domain",
+    "residual coordinates are not post-activation FFN expansion neurons",
+    "random initialization can retain decodable tones (PM35); trained-vs-init causal control missing",
+    "Matryoshka-inspired global TopK two-prefix loss; no full paper reproduction",
+    "TSAE main controlled comparison PatchTST/ETT; univariate variable routing inapplicable; no TSAE implemented",
+    "BatchTopK deferred; if added, threshold must be FIT-frozen and batch-independent",
+    "all claims exploratory; no TEST-best selection or token-level confidence intervals",
+    "fixed perturbation phase; no semantic uniqueness or learned-concept verdict",
+    "random sign-branch controls are independent, so response specificity null is conservative"
+  ],
+  "next_step": "Coordinator reviews preservation, reach, null validity and target-v-noise effects jointly; fresh crossed-phase test before usefulness claim.",
+  "status": "causal_pilot_complete_no_automatic_claim"
+}

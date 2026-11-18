@@ -1,0 +1,29 @@
+{
+  "status": "passed",
+  "unique_focused_tests": 51,
+  "test_files": {
+    "test_selective_steering.py": 12,
+    "test_steering_api.py": 3,
+    "test_modern_sae.py": 5,
+    "test_steering.py": 8,
+    "existing_sae_adapter_differentiable_tests": 23
+  },
+  "native_replication_interventions_replayed": 2048,
+  "replication_audit_files": [
+    "e06_bolt_fresh64/independent_audit.json",
+    "e06_timesfm_fresh64/independent_audit.json",
+    "e07_bolt_offgrid64/independent_audit.json",
+    "e07_timesfm_offgrid64/independent_audit.json"
+  ],
+  "actual_dictionary_checkpoints_roundtripped": [
+    "legacy TopK E01",
+    "centered TopK E02",
+    "AbsTopK E02",
+    "BatchTopK E02"
+  ],
+  "plot_selection": "first fresh replication context, seed5210000; no outcome selection",
+  "no_dependency_changes": true,
+  "no_model_weight_changes": true,
+  "provenance": "provenance.json",
+  "scope": "research API, CPU float32; not full repository test suite or sealed benchmark confirmation"
+}

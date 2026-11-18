@@ -1,0 +1,358 @@
+{
+  "question": "Are reproducible October2026 airport temperature observations accessible and chronologically after the exact cached weight revisions?",
+  "design": {
+    "question": "Are reproducible October2026 airport temperature observations accessible and chronologically after the exact cached weight revisions?",
+    "stage": "GHCNh successor amendment; PREPARATION ONLY; native HOLD",
+    "created_utc": "2026-11-16T18:50:42.064474+00:00",
+    "airports": [
+      {
+        "icao": "KSEA",
+        "isd_id": "72793024233",
+        "ghcnh_id": "USW00024233",
+        "name": "SEATTLE TACOMA AP",
+        "latitude": 47.4447,
+        "longitude": -122.3144,
+        "official_line": "USW00024233  47.4447 -122.3144  112.5 WA SEATTLE TACOMA AP                      72793 US",
+        "url": "https://www.ncei.noaa.gov/oa/global-historical-climatology-network/hourly/access/by-year/2026/parquet/GHCNh_USW00024233_2026.parquet"
+      },
+      {
+        "icao": "KPHX",
+        "isd_id": "72278023183",
+        "ghcnh_id": "USW00023183",
+        "name": "PHOENIX AP",
+        "latitude": 33.4278,
+        "longitude": -112.0036,
+        "official_line": "USW00023183  33.4278 -112.0036  339.2 AZ PHOENIX AP                             72278 US",
+        "url": "https://www.ncei.noaa.gov/oa/global-historical-climatology-network/hourly/access/by-year/2026/parquet/GHCNh_USW00023183_2026.parquet"
+      },
+      {
+        "icao": "KDEN",
+        "isd_id": "72565003017",
+        "ghcnh_id": "USW00003017",
+        "name": "DENVER INTL AP",
+        "latitude": 39.8467,
+        "longitude": -104.6561,
+        "official_line": "USW00003017  39.8467 -104.6561 1647.1 CO DENVER INTL AP                         72565 US",
+        "url": "https://www.ncei.noaa.gov/oa/global-historical-climatology-network/hourly/access/by-year/2026/parquet/GHCNh_USW00003017_2026.parquet"
+      },
+      {
+        "icao": "KMSP",
+        "isd_id": "72658014922",
+        "ghcnh_id": "USW00014922",
+        "name": "MINNEAPOLIS-ST PAUL INTL AP",
+        "latitude": 44.8853,
+        "longitude": -93.2314,
+        "official_line": "USW00014922  44.8853  -93.2314  254.5 MN MINNEAPOLIS-ST PAUL INTL AP            72658 US",
+        "url": "https://www.ncei.noaa.gov/oa/global-historical-climatology-network/hourly/access/by-year/2026/parquet/GHCNh_USW00014922_2026.parquet"
+      },
+      {
+        "icao": "KDFW",
+        "isd_id": "72259003927",
+        "ghcnh_id": "USW00003927",
+        "name": "DAL-FTW WSCMO AP",
+        "latitude": 32.8975,
+        "longitude": -97.0219,
+        "official_line": "USW00003927  32.8975  -97.0219  165.8 TX DAL-FTW WSCMO AP                       72259 US",
+        "url": "https://www.ncei.noaa.gov/oa/global-historical-climatology-network/hourly/access/by-year/2026/parquet/GHCNh_USW00003927_2026.parquet"
+      },
+      {
+        "icao": "KJFK",
+        "isd_id": "74486094789",
+        "ghcnh_id": "USW00094789",
+        "name": "JFK INTL AP",
+        "latitude": 40.6392,
+        "longitude": -73.7639,
+        "official_line": "USW00094789  40.6392  -73.7639    2.7 NY JFK INTL AP                            74486 US",
+        "url": "https://www.ncei.noaa.gov/oa/global-historical-climatology-network/hourly/access/by-year/2026/parquet/GHCNh_USW00094789_2026.parquet"
+      },
+      {
+        "icao": "KATL",
+        "isd_id": "72219013874",
+        "ghcnh_id": "USW00013874",
+        "name": "ATLANTA HARTSFIELD-JACKSON INT",
+        "latitude": 33.6297,
+        "longitude": -84.4422,
+        "official_line": "USW00013874  33.6297  -84.4422  308.2 GA ATLANTA HARTSFIELD-JACKSON INT         72219 US",
+        "url": "https://www.ncei.noaa.gov/oa/global-historical-climatology-network/hourly/access/by-year/2026/parquet/GHCNh_USW00013874_2026.parquet"
+      },
+      {
+        "icao": "KMIA",
+        "isd_id": "72202012839",
+        "ghcnh_id": "USW00012839",
+        "name": "MIAMI INTL AP",
+        "latitude": 25.7881,
+        "longitude": -80.3169,
+        "official_line": "USW00012839  25.7881  -80.3169    1.5 FL MIAMI INTL AP                          72202 US",
+        "url": "https://www.ncei.noaa.gov/oa/global-historical-climatology-network/hourly/access/by-year/2026/parquet/GHCNh_USW00012839_2026.parquet"
+      }
+    ],
+    "checkpoints": {
+      "bolt": {
+        "repo": "amazon/chronos-bolt-small",
+        "path": "/common/home/djk255/.cache/huggingface/hub/models--amazon--chronos-bolt-small/snapshots/772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "revision": "772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "weights": {
+          "model.safetensors": "06a6a19bbe74bc10a9cd193bd4bf2bf638ae07f7e0d51653ae7ab8ea968a21dd"
+        }
+      },
+      "timesfm": {
+        "repo": "google/timesfm-2.5-200m-pytorch",
+        "path": "/common/home/djk255/.cache/huggingface/hub/models--google--timesfm-2.5-200m-pytorch/snapshots/1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+        "revision": "1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+        "weights": {
+          "model.safetensors": "2f776efe6245e42b24bc4153ffdf61810140210e4bd3b01fb21f7aa779ab6ce8"
+        }
+      }
+    },
+    "max_download_bytes": 40000000,
+    "credentials": "none; public HTTPS GET only; no model weight downloads",
+    "month": "2026-10",
+    "origins_utc": [
+      "2026-10-08T00:00:00Z",
+      "2026-10-15T00:00:00Z",
+      "2026-10-22T00:00:00Z",
+      "2026-10-29T00:00:00Z"
+    ],
+    "context_hours": 128,
+    "horizon_hours": 32,
+    "cohort": "8 predetermined airports x4 predetermined origins; no replacements based on missingness or outcomes",
+    "sampling_unit": "station, n<=8; four origins remain dependent, not32 independent samples",
+    "chronology": "Exact HF revision commit timestamp before2026-10-01 AND model.safetensors LFS SHA256 at that revision equals cached bytes. No cached mtime inference.",
+    "scope": "Temporal observation holdout only; no new-location or unseen-temperature-distribution claim. Cached Monash pretraining overlap remains unknown.",
+    "access": "One official station-year2026 Parquet per fixed airport, selected columns only on reading; crop October locally. HEAD total before GET; cumulative all-stage body bytes<=40,000,000.",
+    "quality": "temperature is degrees Celsius at tenths precision (no divide-by10). Accept only finite values with blank/null temperature_Quality_Code (no GHCNh flags); reject any nonblank quality code. Missing stays missing.",
+    "aggregation": "UTC left-closed hour bins[h,h+1); average distinct accepted temperatures at each exact timestamp, then average timestamps within hour; all history timestamps strictly before origin.",
+    "history_missing": "At most2 missing hourly bins total per128h history; forward-fill only from preceding observed bins within context. Leading missing or>2 missing makes history ineligible. No backward/interpolated/future fill.",
+    "future_missing": "No future imputation. Preserve every scheduled origin and missing mask; score only complete32h futures, report excluded origins/stations. Do not replace them. History eligibility is independent of future completeness.",
+    "methods": [
+      "native median",
+      "fixed depth1 selective tones + native residual median",
+      "seasonal24 repeat last24h"
+    ],
+    "hybrid": "Reuse frozen selective_tree.decompose(depth=1), stability>=.65,energy>=.15,prominence>=8,continuous frequencies2..48/128; continuation on horizon32; abstention exactly native; no veto/refit/new tuning or forecast selection.",
+    "metrics": "Future squared error in Celsius^2 and divided by history variance; station averages across complete fixed origins, then equally weight stations. Missingness counts and actual station n always reported.",
+    "caveats": [
+      "Archived quality control may be retrospective; this is not a real-time data-vintage test.",
+      "Post-checkpoint dates do not imply unfamiliar geography, climate, seasonality, or distribution."
+    ],
+    "next_decision": "First verify public accessibility, station IDs, exact checkpoint chronology and eligible-window counts; then wait for native slot grant.",
+    "dataset": "NOAA GHCNh v1.1.0",
+    "source_change": "Legacy ISD discontinued; authorized user amendment to official replacement. Same8 airports, origins, forecast recipes; no outcome-driven station/date choice.",
+    "station_mapping": "Official GHCNh documentation: USW station last5 digits equal WBAN. Exact registry IDs plus coordinates within.01 degrees of the verified ISD ICAO station.",
+    "metadata_sources": {
+      "ghcnh_documentation.pdf": "df5694efdc2d498f006a343165bae65701d14809174b9bed660149bd4fe591b7",
+      "ghcnh-station-list.txt": "ff451fafc8f251560029e9ed31ebf0f4d12a2ddd492516c0b166c3744cad182a"
+    },
+    "prior_protocol_sha256": "77982e37e3c5e4bf1410a5fc59b6e153c525a63bd66e2fc7045c4db66d5c6840",
+    "legacy_record_sha256": "03a51b1015f16cb59d0b9cfd0238d1e9a65d0a3cfbd8cc8cde6a8af9d793378d",
+    "source_urls": [
+      "https://www.ncei.noaa.gov/products/global-historical-climatology-network-hourly",
+      "https://www.ncei.noaa.gov/oa/global-historical-climatology-network/hourly/doc/ghcnh_DOCUMENTATION.pdf"
+    ]
+  },
+  "exact_findings": {
+    "status": "Actual October2026 observations retrieved for all8 fixed airports",
+    "utc": "2026-11-16T18:54:16.732657+00:00",
+    "stations": [
+      {
+        "icao": "KSEA",
+        "ghcnh_id": "USW00024233",
+        "annual_rows": 84189,
+        "october_rows": 8631,
+        "october_finite_unflagged": 1148,
+        "raw_sha256": "980b3f0d893305fca5f51ef3f3da87e63ac705fb3ef425463fe278363181d5c3",
+        "raw_bytes": 1716231,
+        "first_date": "2026-01-01T00:00:00",
+        "last_date": "2026-11-14T15:53:00"
+      },
+      {
+        "icao": "KPHX",
+        "ghcnh_id": "USW00023183",
+        "annual_rows": 68938,
+        "october_rows": 8853,
+        "october_finite_unflagged": 916,
+        "raw_sha256": "82c838fa4bf01dd33ce80b8579756955d110cdd9d2e95a8d7a1620f8d8337fe4",
+        "raw_bytes": 1285121,
+        "first_date": "2026-01-01T00:00:00",
+        "last_date": "2026-11-14T15:51:00"
+      },
+      {
+        "icao": "KDEN",
+        "ghcnh_id": "USW00003017",
+        "annual_rows": 89966,
+        "october_rows": 9218,
+        "october_finite_unflagged": 976,
+        "raw_sha256": "5cda65405c8ff0bcec08b1bfd38f9a079129c0e516b7db73dd9df493b6d9dd9a",
+        "raw_bytes": 1550692,
+        "first_date": "2026-01-01T00:00:00",
+        "last_date": "2026-11-14T15:53:00"
+      },
+      {
+        "icao": "KMSP",
+        "ghcnh_id": "USW00014922",
+        "annual_rows": 62048,
+        "october_rows": 8270,
+        "october_finite_unflagged": 968,
+        "raw_sha256": "edea1631ef8eff037ddd1551c5c861aedf7337933071d0c408627bee21cef2cc",
+        "raw_bytes": 1378568,
+        "first_date": "2026-01-01T00:00:00",
+        "last_date": "2026-11-14T15:53:00"
+      },
+      {
+        "icao": "KDFW",
+        "ghcnh_id": "USW00003927",
+        "annual_rows": 76201,
+        "october_rows": 8897,
+        "october_finite_unflagged": 942,
+        "raw_sha256": "cd47e8e94a2f7e4453292d41470daba2199d9873c05366b15cc3d93cae3ac065",
+        "raw_bytes": 1417448,
+        "first_date": "2026-01-01T00:00:00",
+        "last_date": "2026-11-14T15:53:00"
+      },
+      {
+        "icao": "KJFK",
+        "ghcnh_id": "USW00094789",
+        "annual_rows": 58545,
+        "october_rows": 8438,
+        "october_finite_unflagged": 896,
+        "raw_sha256": "18b7e39ae30769bee569c1be6945eab1c8b7a4ec0d67dca4fba1e29a194f8f80",
+        "raw_bytes": 1299142,
+        "first_date": "2026-01-01T00:00:00",
+        "last_date": "2026-11-14T15:51:00"
+      },
+      {
+        "icao": "KATL",
+        "ghcnh_id": "USW00013874",
+        "annual_rows": 79983,
+        "october_rows": 7635,
+        "october_finite_unflagged": 958,
+        "raw_sha256": "3a6661014d62e72680405a07e2ecd76cdbe7058e7464c5449f0c0f62d44beba0",
+        "raw_bytes": 1584923,
+        "first_date": "2026-01-01T00:00:00",
+        "last_date": "2026-11-14T15:52:00"
+      },
+      {
+        "icao": "KMIA",
+        "ghcnh_id": "USW00012839",
+        "annual_rows": 66521,
+        "october_rows": 8793,
+        "october_finite_unflagged": 936,
+        "raw_sha256": "b0959d3d6618796971a618937506ad344b5a497369fedfa3527e16cd96fa568d",
+        "raw_bytes": 1500968,
+        "first_date": "2026-01-01T00:00:00",
+        "last_date": "2026-11-14T15:53:00"
+      }
+    ],
+    "all_stage_download_bytes": 19808320,
+    "native_launched": false,
+    "window_audit": {
+      "created_utc": "2026-11-16T18:55:56.896943+00:00",
+      "scheduled_windows": 32,
+      "eligible_histories": 32,
+      "complete_futures": 30,
+      "scoreable_windows": 30,
+      "scoreable_stations": 8,
+      "history_filled_bins": 3,
+      "station_inventory": [
+        {
+          "icao": "KSEA",
+          "accepted_hours": 743,
+          "missing_month_hours": 1
+        },
+        {
+          "icao": "KPHX",
+          "accepted_hours": 743,
+          "missing_month_hours": 1
+        },
+        {
+          "icao": "KDEN",
+          "accepted_hours": 744,
+          "missing_month_hours": 0
+        },
+        {
+          "icao": "KMSP",
+          "accepted_hours": 744,
+          "missing_month_hours": 0
+        },
+        {
+          "icao": "KDFW",
+          "accepted_hours": 743,
+          "missing_month_hours": 1
+        },
+        {
+          "icao": "KJFK",
+          "accepted_hours": 742,
+          "missing_month_hours": 2
+        },
+        {
+          "icao": "KATL",
+          "accepted_hours": 744,
+          "missing_month_hours": 0
+        },
+        {
+          "icao": "KMIA",
+          "accepted_hours": 744,
+          "missing_month_hours": 0
+        }
+      ],
+      "native_launched": false,
+      "target_storage": "Zeros ONLY masked storage placeholders, never imputed or scored; target row index is scheduled window index.",
+      "input_mapping": "histories rows indexed by windows.input_index; eligibility does not depend on targets."
+    },
+    "audit": {
+      "focused_tests_passed": 3,
+      "planted_regressions_caught": 8,
+      "independent_raw_replay_windows": 32,
+      "future_removal_exact_identity_windows": 32
+    },
+    "excluded_scoring_windows": [
+      {
+        "icao": "KJFK",
+        "origin": "2026-10-08T00:00:00Z",
+        "input_index": 20,
+        "history_eligible": true,
+        "history_missing": 0,
+        "future_missing": 1,
+        "future_complete": false
+      },
+      {
+        "icao": "KJFK",
+        "origin": "2026-10-29T00:00:00Z",
+        "input_index": 23,
+        "history_eligible": true,
+        "history_missing": 0,
+        "future_missing": 1,
+        "future_complete": false
+      }
+    ],
+    "checkpoint_verification": {
+      "bolt": {
+        "revision": "772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "commit_utc": "2025-11-21T12:54:10.000Z",
+        "weight_sha256": "06a6a19bbe74bc10a9cd193bd4bf2bf638ae07f7e0d51653ae7ab8ea968a21dd",
+        "weights_match": true,
+        "predates_observations": true,
+        "commit_url": "https://huggingface.co/amazon/chronos-bolt-small/commit/772f3d25d38aec6d914c8949dab4462e2d46f5d8"
+      },
+      "timesfm": {
+        "revision": "1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+        "commit_utc": "2025-10-02T17:21:38.000Z",
+        "weight_sha256": "2f776efe6245e42b24bc4153ffdf61810140210e4bd3b01fb21f7aa779ab6ce8",
+        "weights_match": true,
+        "predates_observations": true,
+        "commit_url": "https://huggingface.co/google/timesfm-2.5-200m-pytorch/commit/1d952420fba87f3c6dee4f240de0f1a0fbc790e3"
+      }
+    }
+  },
+  "controls": "Outcome-blind successor amendment, unchanged airports/dates/methods, verified cached-weight chronology, global40MB limit; 3 focused tests,8 isolated in-memory plants,independent32-window raw-data replay,exact history identity after deleting all future observations. Source/native code and prior studies unchanged.",
+  "limitations": [
+    "Archived quality control may be retrospective; this is not a real-time data-vintage test.",
+    "Post-checkpoint dates do not imply unfamiliar geography, climate, seasonality, or distribution.",
+    "QC blank means unflagged, not proof of perfect quality; retrospective QC remains a limitation.",
+    "Native forecasts are medians, not means; MSE comparison cannot attribute a training prior.",
+    "Every October temperature Quality_Code is null in these files. This establishes unflagged status only, not whether QC has run; no claim all temperatures passed QC.",
+    "Thirty complete futures are unevenly distributed: JFK two, all other stations four. Equally weight station means; n=8, not30."
+  ],
+  "evidence_class": "observational data availability and provenance; no model performance evidence",
+  "next_decision": "Wait for native slot grant; unchanged fixed depth1 hybrid versus native medians and seasonal24. No expansion."
+}

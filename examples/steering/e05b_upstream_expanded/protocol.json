@@ -1,0 +1,18 @@
+{
+  "out": "runs/steering_e05b_upstream_expanded",
+  "test": 4,
+  "seed": 5200000,
+  "dose": 0.2,
+  "radius": 0.2,
+  "steps": 6,
+  "ridge": 1e-05,
+  "patterns": {
+    "shared": "same direction over all tokens divided by sqrt(token count)",
+    "reg": "only REG token",
+    "full": "independent per-token edits"
+  },
+  "shifted": false,
+  "site": "encoder output after final norm; includes REG",
+  "scope": "context-specific internal control; original tokens plus edit; no labels",
+  "radius_units": "fraction of whole encoder-output Frobenius norm"
+}

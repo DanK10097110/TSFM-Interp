@@ -1,0 +1,3765 @@
+[
+  {
+    "model": "bolt",
+    "domain": "m4_hourly",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.01,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.02793436049250886,
+    "far_nmse": 0.09911186434328556,
+    "native_signal_nmse": 0.04092650898710161,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.02474334352882579,
+      "ci": [
+        0.015616555698215961,
+        0.03327466448536143
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.0711775038507767,
+      "ci": [
+        -0.01686397404409945,
+        0.13729804201284423
+      ],
+      "positive": 3,
+      "p": 0.3125
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "m4_hourly",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.01,
+    "scope": "semantic_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.02793436049250886,
+    "far_nmse": 0.09911186434328556,
+    "native_signal_nmse": 0.04092650898710161,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.02474334352882579,
+      "ci": [
+        0.015616555698215961,
+        0.03327466448536143
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.0711775038507767,
+      "ci": [
+        -0.01686397404409945,
+        0.13729804201284423
+      ],
+      "positive": 3,
+      "p": 0.3125
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "m4_hourly",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.02863664419783163,
+    "far_nmse": 0.09514872916042805,
+    "native_signal_nmse": 0.03812949341702312,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.023663117015530588,
+      "ci": [
+        0.009745738003402948,
+        0.03758049602765823
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.06651208496259642,
+      "ci": [
+        -0.02757227508118376,
+        0.1275045525871974
+      ],
+      "positive": 3,
+      "p": 0.3125
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "m4_hourly",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.02863664419783163,
+    "far_nmse": 0.09514872916042805,
+    "native_signal_nmse": 0.03812949341702312,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.023663117015530588,
+      "ci": [
+        0.009745738003402948,
+        0.03758049602765823
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.06651208496259642,
+      "ci": [
+        -0.02757227508118376,
+        0.1275045525871974
+      ],
+      "positive": 3,
+      "p": 0.3125
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "m4_hourly",
+    "period": 23.925233644859816,
+    "cut": "1",
+    "epsilon": 0.01,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.03023223756463267,
+    "far_nmse": 0.10858029127120972,
+    "native_signal_nmse": 0.04092650898710161,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.028182181617012247,
+      "ci": [
+        0.013544118031859398,
+        0.05077748323674314
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.07834805370657705,
+      "ci": [
+        -0.02383061178261414,
+        0.15367354606860317
+      ],
+      "positive": 3,
+      "p": 0.3125
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "m4_hourly",
+    "period": 23.925233644859816,
+    "cut": "1",
+    "epsilon": 0.01,
+    "scope": "semantic_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.03023223756463267,
+    "far_nmse": 0.10858029127120972,
+    "native_signal_nmse": 0.04092650898710161,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.028182181617012247,
+      "ci": [
+        0.013544118031859398,
+        0.05077748323674314
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.07834805370657705,
+      "ci": [
+        -0.02383061178261414,
+        0.15367354606860317
+      ],
+      "positive": 3,
+      "p": 0.3125
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "m4_hourly",
+    "period": 23.925233644859816,
+    "cut": "1",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.029486359017028008,
+    "far_nmse": 0.1059846063144505,
+    "native_signal_nmse": 0.03812949341702312,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.02779712955089053,
+      "ci": [
+        0.008044131769565865,
+        0.047635287141019944
+      ],
+      "positive": 3,
+      "p": 0.3125
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.0764982472974225,
+      "ci": [
+        -0.030271299910964444,
+        0.14617795857338933
+      ],
+      "positive": 3,
+      "p": 0.3125
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "m4_hourly",
+    "period": 23.925233644859816,
+    "cut": "1",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.029486359017028008,
+    "far_nmse": 0.1059846063144505,
+    "native_signal_nmse": 0.03812949341702312,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.02779712955089053,
+      "ci": [
+        0.008044131769565865,
+        0.047635287141019944
+      ],
+      "positive": 3,
+      "p": 0.3125
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.0764982472974225,
+      "ci": [
+        -0.030271299910964444,
+        0.14617795857338933
+      ],
+      "positive": 3,
+      "p": 0.3125
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "m4_hourly",
+    "period": 23.925233644859816,
+    "cut": "3",
+    "epsilon": 0.01,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.03395110071869567,
+    "far_nmse": 0.11944074742496014,
+    "native_signal_nmse": 0.04092650898710161,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.03258237725822255,
+      "ci": [
+        0.020650125108659267,
+        0.04842495248885825
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.08548964670626447,
+      "ci": [
+        -0.03698023420292884,
+        0.17639345425413921
+      ],
+      "positive": 3,
+      "p": 0.3125
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "m4_hourly",
+    "period": 23.925233644859816,
+    "cut": "3",
+    "epsilon": 0.01,
+    "scope": "semantic_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.03395110071869567,
+    "far_nmse": 0.11944074742496014,
+    "native_signal_nmse": 0.04092650898710161,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.03258237725822255,
+      "ci": [
+        0.020650125108659267,
+        0.04842495248885825
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.08548964670626447,
+      "ci": [
+        -0.03698023420292884,
+        0.17639345425413921
+      ],
+      "positive": 3,
+      "p": 0.3125
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "m4_hourly",
+    "period": 23.925233644859816,
+    "cut": "3",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.03337078680488048,
+    "far_nmse": 0.11868066666647792,
+    "native_signal_nmse": 0.03812949341702312,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.03002534574625315,
+      "ci": [
+        0.008849297155393288,
+        0.048679152845579665
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.08530987986159744,
+      "ci": [
+        -0.04144510629703291,
+        0.1697028016569675
+      ],
+      "positive": 3,
+      "p": 0.3125
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "m4_hourly",
+    "period": 23.925233644859816,
+    "cut": "3",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.03337078680488048,
+    "far_nmse": 0.11868066666647792,
+    "native_signal_nmse": 0.03812949341702312,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.03002534574625315,
+      "ci": [
+        0.008849297155393288,
+        0.048679152845579665
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.08530987986159744,
+      "ci": [
+        -0.04144510629703291,
+        0.1697028016569675
+      ],
+      "positive": 3,
+      "p": 0.3125
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_electricity_hourly",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.01,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.09262481657788157,
+    "far_nmse": 0.2048149835318327,
+    "native_signal_nmse": 0.18857505694589533,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.1860748860053718,
+      "ci": [
+        0.0016101319342851639,
+        0.37053964007645845
+      ],
+      "positive": 3,
+      "p": 0.3125
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.11219016695395112,
+      "ci": [
+        -0.05701475730165839,
+        0.32968199998140335
+      ],
+      "positive": 3,
+      "p": 0.3125
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_electricity_hourly",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.01,
+    "scope": "semantic_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.09262481657788157,
+    "far_nmse": 0.2048149835318327,
+    "native_signal_nmse": 0.18857505694589533,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.1860748860053718,
+      "ci": [
+        0.0016101319342851639,
+        0.37053964007645845
+      ],
+      "positive": 3,
+      "p": 0.3125
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.11219016695395112,
+      "ci": [
+        -0.05701475730165839,
+        0.32968199998140335
+      ],
+      "positive": 3,
+      "p": 0.3125
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_electricity_hourly",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.050152258947491646,
+    "far_nmse": 0.2908925786614418,
+    "native_signal_nmse": 0.11423590662073514,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.3393797967582941,
+      "ci": [
+        0.11521477904170752,
+        0.600069192238152
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.24074031971395016,
+      "ci": [
+        0.054341765120625496,
+        0.4271388743072748
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_electricity_hourly",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.050152258947491646,
+    "far_nmse": 0.2908925786614418,
+    "native_signal_nmse": 0.11423590662073514,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.3393797967582941,
+      "ci": [
+        0.11521477904170752,
+        0.600069192238152
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.24074031971395016,
+      "ci": [
+        0.054341765120625496,
+        0.4271388743072748
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_electricity_hourly",
+    "period": 23.925233644859816,
+    "cut": "1",
+    "epsilon": 0.01,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.2424832470715046,
+    "far_nmse": 0.17824002169072628,
+    "native_signal_nmse": 0.18857505694589533,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.052366193383932114,
+      "ci": [
+        -0.24649458937346935,
+        0.3202091380953789
+      ],
+      "positive": 3,
+      "p": 0.3125
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": -0.06424322538077831,
+      "ci": [
+        -0.47543009743094444,
+        0.2691119182854891
+      ],
+      "positive": 2,
+      "p": 0.6875
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_electricity_hourly",
+    "period": 23.925233644859816,
+    "cut": "1",
+    "epsilon": 0.01,
+    "scope": "semantic_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.2424832470715046,
+    "far_nmse": 0.17824002169072628,
+    "native_signal_nmse": 0.18857505694589533,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.052366193383932114,
+      "ci": [
+        -0.24649458937346935,
+        0.3202091380953789
+      ],
+      "positive": 3,
+      "p": 0.3125
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": -0.06424322538077831,
+      "ci": [
+        -0.47543009743094444,
+        0.2691119182854891
+      ],
+      "positive": 2,
+      "p": 0.6875
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_electricity_hourly",
+    "period": 23.925233644859816,
+    "cut": "1",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.1956141134724021,
+    "far_nmse": 0.18187279906123877,
+    "native_signal_nmse": 0.11423590662073514,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.0812796214595437,
+      "ci": [
+        -0.16320117004215717,
+        0.3077039048075676
+      ],
+      "positive": 3,
+      "p": 0.3125
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": -0.01374131441116333,
+      "ci": [
+        -0.3848320785909891,
+        0.3428400009870529
+      ],
+      "positive": 2,
+      "p": 0.6875
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_electricity_hourly",
+    "period": 23.925233644859816,
+    "cut": "1",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.1956141134724021,
+    "far_nmse": 0.18187279906123877,
+    "native_signal_nmse": 0.11423590662073514,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.0812796214595437,
+      "ci": [
+        -0.16320117004215717,
+        0.3077039048075676
+      ],
+      "positive": 3,
+      "p": 0.3125
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": -0.01374131441116333,
+      "ci": [
+        -0.3848320785909891,
+        0.3428400009870529
+      ],
+      "positive": 2,
+      "p": 0.6875
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_electricity_hourly",
+    "period": 23.925233644859816,
+    "cut": "3",
+    "epsilon": 0.01,
+    "scope": "oracle_valid",
+    "eligible_sources": 3,
+    "total_sources": 4,
+    "near_nmse": 0.07974349955717723,
+    "far_nmse": 0.24591563269495964,
+    "native_signal_nmse": 0.1058269091025019,
+    "near_random_advantage": {
+      "n": 3,
+      "mean": 0.23973712821801504,
+      "ci": [
+        0.09641459584236145,
+        0.41909733414649963
+      ],
+      "positive": 3,
+      "p": 0.125
+    },
+    "near_over_far": {
+      "n": 3,
+      "mean": 0.16617213313778242,
+      "ci": [
+        -0.033367570489645004,
+        0.4610476493835449
+      ],
+      "positive": 2,
+      "p": 0.5
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_electricity_hourly",
+    "period": 23.925233644859816,
+    "cut": "3",
+    "epsilon": 0.01,
+    "scope": "semantic_valid",
+    "eligible_sources": 3,
+    "total_sources": 4,
+    "near_nmse": 0.07974349955717723,
+    "far_nmse": 0.24591563269495964,
+    "native_signal_nmse": 0.1058269091025019,
+    "near_random_advantage": {
+      "n": 3,
+      "mean": 0.23973712821801504,
+      "ci": [
+        0.09641459584236145,
+        0.41909733414649963
+      ],
+      "positive": 3,
+      "p": 0.125
+    },
+    "near_over_far": {
+      "n": 3,
+      "mean": 0.16617213313778242,
+      "ci": [
+        -0.033367570489645004,
+        0.4610476493835449
+      ],
+      "positive": 2,
+      "p": 0.5
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_electricity_hourly",
+    "period": 23.925233644859816,
+    "cut": "3",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.15134514216333628,
+    "far_nmse": 0.21031237300485373,
+    "native_signal_nmse": 0.11423590662073514,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.23878684919327497,
+      "ci": [
+        0.06090391427278519,
+        0.45254753436893225
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.05896723084151745,
+      "ci": [
+        -0.25241371151059866,
+        0.4144349852576852
+      ],
+      "positive": 2,
+      "p": 0.6875
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_electricity_hourly",
+    "period": 23.925233644859816,
+    "cut": "3",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.15134514216333628,
+    "far_nmse": 0.21031237300485373,
+    "native_signal_nmse": 0.11423590662073514,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.23878684919327497,
+      "ci": [
+        0.06090391427278519,
+        0.45254753436893225
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.05896723084151745,
+      "ci": [
+        -0.25241371151059866,
+        0.4144349852576852
+      ],
+      "positive": 2,
+      "p": 0.6875
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_pedestrian_counts",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.01,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.024973471416160464,
+    "far_nmse": 0.2303372472524643,
+    "native_signal_nmse": 0.12782867350847307,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.05915219918824732,
+      "ci": [
+        0.014776608441025019,
+        0.10352778993546963
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.20536377583630383,
+      "ci": [
+        0.1394519240129739,
+        0.3014929792843759
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_pedestrian_counts",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.01,
+    "scope": "semantic_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.024973471416160464,
+    "far_nmse": 0.2303372472524643,
+    "native_signal_nmse": 0.12782867350847307,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.05915219918824732,
+      "ci": [
+        0.014776608441025019,
+        0.10352778993546963
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.20536377583630383,
+      "ci": [
+        0.1394519240129739,
+        0.3014929792843759
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_pedestrian_counts",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.017463293857872486,
+    "far_nmse": 0.2223925106227398,
+    "native_signal_nmse": 0.10747726500120844,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.05227621179074049,
+      "ci": [
+        0.02482507284730673,
+        0.08123428141698241
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.2049292167648673,
+      "ci": [
+        0.12509102327749133,
+        0.314746777061373
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_pedestrian_counts",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.017463293857872486,
+    "far_nmse": 0.2223925106227398,
+    "native_signal_nmse": 0.10747726500120844,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.05227621179074049,
+      "ci": [
+        0.02482507284730673,
+        0.08123428141698241
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.2049292167648673,
+      "ci": [
+        0.12509102327749133,
+        0.314746777061373
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_pedestrian_counts",
+    "period": 23.925233644859816,
+    "cut": "1",
+    "epsilon": 0.01,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.031234533991664648,
+    "far_nmse": 0.30171195417642593,
+    "native_signal_nmse": 0.12782867350847307,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.0875678826123476,
+      "ci": [
+        0.022372360341250896,
+        0.1527634048834443
+      ],
+      "positive": 3,
+      "p": 0.3125
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.2704774201847613,
+      "ci": [
+        0.18679416552186012,
+        0.3750952328555286
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_pedestrian_counts",
+    "period": 23.925233644859816,
+    "cut": "1",
+    "epsilon": 0.01,
+    "scope": "semantic_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.031234533991664648,
+    "far_nmse": 0.30171195417642593,
+    "native_signal_nmse": 0.12782867350847307,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.0875678826123476,
+      "ci": [
+        0.022372360341250896,
+        0.1527634048834443
+      ],
+      "positive": 3,
+      "p": 0.3125
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.2704774201847613,
+      "ci": [
+        0.18679416552186012,
+        0.3750952328555286
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_pedestrian_counts",
+    "period": 23.925233644859816,
+    "cut": "1",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.03292803862132132,
+    "far_nmse": 0.30203961953520775,
+    "native_signal_nmse": 0.10747726500120844,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.07219933508895338,
+      "ci": [
+        0.0352757154032588,
+        0.10912295477464795
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.26911158091388643,
+      "ci": [
+        0.17321656923741102,
+        0.3705229035113007
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_pedestrian_counts",
+    "period": 23.925233644859816,
+    "cut": "1",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.03292803862132132,
+    "far_nmse": 0.30203961953520775,
+    "native_signal_nmse": 0.10747726500120844,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.07219933508895338,
+      "ci": [
+        0.0352757154032588,
+        0.10912295477464795
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.26911158091388643,
+      "ci": [
+        0.17321656923741102,
+        0.3705229035113007
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_pedestrian_counts",
+    "period": 23.925233644859816,
+    "cut": "3",
+    "epsilon": 0.01,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.031083491863682866,
+    "far_nmse": 0.3231441341340542,
+    "native_signal_nmse": 0.12782867350847307,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.11526874895207584,
+      "ci": [
+        0.05100309522822499,
+        0.19263906427659094
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.2920606422703713,
+      "ci": [
+        0.21293965028598905,
+        0.3778996388427913
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_pedestrian_counts",
+    "period": 23.925233644859816,
+    "cut": "3",
+    "epsilon": 0.01,
+    "scope": "semantic_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.031083491863682866,
+    "far_nmse": 0.3231441341340542,
+    "native_signal_nmse": 0.12782867350847307,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.11526874895207584,
+      "ci": [
+        0.05100309522822499,
+        0.19263906427659094
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.2920606422703713,
+      "ci": [
+        0.21293965028598905,
+        0.3778996388427913
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_pedestrian_counts",
+    "period": 23.925233644859816,
+    "cut": "3",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.034627251559868455,
+    "far_nmse": 0.3221305012702942,
+    "native_signal_nmse": 0.10747726500120844,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.09951742528937757,
+      "ci": [
+        0.05700454255566001,
+        0.14203030802309513
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.28750324971042573,
+      "ci": [
+        0.1908720750361681,
+        0.38413442438468337
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_pedestrian_counts",
+    "period": 23.925233644859816,
+    "cut": "3",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.034627251559868455,
+    "far_nmse": 0.3221305012702942,
+    "native_signal_nmse": 0.10747726500120844,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.09951742528937757,
+      "ci": [
+        0.05700454255566001,
+        0.14203030802309513
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.28750324971042573,
+      "ci": [
+        0.1908720750361681,
+        0.38413442438468337
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_traffic",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.01,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.0027368612645659596,
+    "far_nmse": 0.05710184574127197,
+    "native_signal_nmse": 0.02153368504140763,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.08912746803252958,
+      "ci": [
+        0.025079325918341056,
+        0.1979601675993763
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.05436498447670601,
+      "ci": [
+        0.046602646238170564,
+        0.06212732271524146
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_traffic",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.01,
+    "scope": "semantic_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.0027368612645659596,
+    "far_nmse": 0.05710184574127197,
+    "native_signal_nmse": 0.02153368504140763,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.08912746803252958,
+      "ci": [
+        0.025079325918341056,
+        0.1979601675993763
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.05436498447670601,
+      "ci": [
+        0.046602646238170564,
+        0.06212732271524146
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_traffic",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.002543308452004567,
+    "far_nmse": 0.06314659398049116,
+    "native_signal_nmse": 0.019461633528911948,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.10039432891062461,
+      "ci": [
+        0.02793991903308779,
+        0.22343450001790188
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.060603285528486595,
+      "ci": [
+        0.05020896959467791,
+        0.07051903975661844
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_traffic",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.002543308452004567,
+    "far_nmse": 0.06314659398049116,
+    "native_signal_nmse": 0.019461633528911948,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.10039432891062461,
+      "ci": [
+        0.02793991903308779,
+        0.22343450001790188
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.060603285528486595,
+      "ci": [
+        0.05020896959467791,
+        0.07051903975661844
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_traffic",
+    "period": 23.925233644859816,
+    "cut": "1",
+    "epsilon": 0.01,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.004811370396055281,
+    "far_nmse": 0.1670013703405857,
+    "native_signal_nmse": 0.02153368504140763,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.12383547925855964,
+      "ci": [
+        0.030929827131330967,
+        0.2582325633848086
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.16218999994453043,
+      "ci": [
+        0.1415819765534252,
+        0.18279802333563566
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_traffic",
+    "period": 23.925233644859816,
+    "cut": "1",
+    "epsilon": 0.01,
+    "scope": "semantic_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.004811370396055281,
+    "far_nmse": 0.1670013703405857,
+    "native_signal_nmse": 0.02153368504140763,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.12383547925855964,
+      "ci": [
+        0.030929827131330967,
+        0.2582325633848086
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.16218999994453043,
+      "ci": [
+        0.1415819765534252,
+        0.18279802333563566
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_traffic",
+    "period": 23.925233644859816,
+    "cut": "1",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.0037109882396180183,
+    "far_nmse": 0.12152967229485512,
+    "native_signal_nmse": 0.019461633528911948,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.11890702761593275,
+      "ci": [
+        0.04607258643954992,
+        0.22927754581905901
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.1178186840552371,
+      "ci": [
+        0.10395264346152544,
+        0.1309972433373332
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_traffic",
+    "period": 23.925233644859816,
+    "cut": "1",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.0037109882396180183,
+    "far_nmse": 0.12152967229485512,
+    "native_signal_nmse": 0.019461633528911948,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.11890702761593275,
+      "ci": [
+        0.04607258643954992,
+        0.22927754581905901
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.1178186840552371,
+      "ci": [
+        0.10395264346152544,
+        0.1309972433373332
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_traffic",
+    "period": 23.925233644859816,
+    "cut": "3",
+    "epsilon": 0.01,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.00478537954040803,
+    "far_nmse": 0.27850696444511414,
+    "native_signal_nmse": 0.02153368504140763,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.17668053958914243,
+      "ci": [
+        0.06629444018471986,
+        0.3537679490400478
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.2737215849047061,
+      "ci": [
+        0.246177520690253,
+        0.3085952895344235
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_traffic",
+    "period": 23.925233644859816,
+    "cut": "3",
+    "epsilon": 0.01,
+    "scope": "semantic_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.00478537954040803,
+    "far_nmse": 0.27850696444511414,
+    "native_signal_nmse": 0.02153368504140763,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.17668053958914243,
+      "ci": [
+        0.06629444018471986,
+        0.3537679490400478
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.2737215849047061,
+      "ci": [
+        0.246177520690253,
+        0.3085952895344235
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_traffic",
+    "period": 23.925233644859816,
+    "cut": "3",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.003710473974933848,
+    "far_nmse": 0.16366981714963913,
+    "native_signal_nmse": 0.019461633528911948,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.18550548414350487,
+      "ci": [
+        0.07173293200321496,
+        0.34573096805252135
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.15995934317470528,
+      "ci": [
+        0.12959283255622722,
+        0.20782656385563314
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_traffic",
+    "period": 23.925233644859816,
+    "cut": "3",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.003710473974933848,
+    "far_nmse": 0.16366981714963913,
+    "native_signal_nmse": 0.019461633528911948,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.18550548414350487,
+      "ci": [
+        0.07173293200321496,
+        0.34573096805252135
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.15995934317470528,
+      "ci": [
+        0.12959283255622722,
+        0.20782656385563314
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "m4_hourly",
+    "period": 19.2,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.030678330454975367,
+    "far_nmse": 0.4250300768762827,
+    "native_signal_nmse": 1.1794843015754986,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.8047189279459417,
+      "ci": [
+        0.22155293077230453,
+        1.797968344995752
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.3943517464213073,
+      "ci": [
+        0.10881897690705955,
+        0.7648691169451922
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "m4_hourly",
+    "period": 19.2,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "bolt",
+    "domain": "m4_hourly",
+    "period": 19.2,
+    "cut": "1",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 3,
+    "total_sources": 4,
+    "near_nmse": 0.07456410862505436,
+    "far_nmse": 0.31343991061051685,
+    "native_signal_nmse": 1.2377886127197006,
+    "near_random_advantage": {
+      "n": 3,
+      "mean": 0.9840687420219183,
+      "ci": [
+        0.4202731717377901,
+        2.0484061241149902
+      ],
+      "positive": 3,
+      "p": 0.125
+    },
+    "near_over_far": {
+      "n": 3,
+      "mean": 0.23887580198546252,
+      "ci": [
+        -0.07755875587463379,
+        0.5020105708390474
+      ],
+      "positive": 2,
+      "p": 0.5
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "m4_hourly",
+    "period": 19.2,
+    "cut": "1",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "bolt",
+    "domain": "m4_hourly",
+    "period": 19.2,
+    "cut": "3",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.0918293921276927,
+    "far_nmse": 0.5752427559345961,
+    "native_signal_nmse": 1.1794843015754986,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.8957163514569402,
+      "ci": [
+        0.5147490575909615,
+        1.276683645322919
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.48341336380690336,
+      "ci": [
+        0.031122184358537197,
+        0.9672599956393242
+      ],
+      "positive": 3,
+      "p": 0.3125
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "m4_hourly",
+    "period": 19.2,
+    "cut": "3",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_electricity_hourly",
+    "period": 19.2,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.3593886389862746,
+    "far_nmse": 0.47059112787246704,
+    "native_signal_nmse": 1.8966143767030272,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.31273899343796074,
+      "ci": [
+        -0.07429030537605286,
+        0.9906127974390984
+      ],
+      "positive": 2,
+      "p": 0.6875
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.11120248888619244,
+      "ci": [
+        -0.4081135615706444,
+        0.5489361465442926
+      ],
+      "positive": 3,
+      "p": 0.3125
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_electricity_hourly",
+    "period": 19.2,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_electricity_hourly",
+    "period": 19.2,
+    "cut": "1",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.3521706190658733,
+    "far_nmse": 3.7939020544290543,
+    "native_signal_nmse": 1.8966143767030272,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.04993112862575799,
+      "ci": [
+        -0.19535231590270996,
+        0.19527238607406616
+      ],
+      "positive": 3,
+      "p": 0.3125
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 3.441731435363181,
+      "ci": [
+        -0.24423281103372574,
+        10.17830592871178
+      ],
+      "positive": 3,
+      "p": 0.3125
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_electricity_hourly",
+    "period": 19.2,
+    "cut": "1",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_electricity_hourly",
+    "period": 19.2,
+    "cut": "3",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.39772521087434143,
+    "far_nmse": 7.548727184534073,
+    "native_signal_nmse": 1.8966143767030272,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 1.9937417699256912,
+      "ci": [
+        -0.28239936381578445,
+        5.923585605458356
+      ],
+      "positive": 3,
+      "p": 0.3125
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 7.1510019736597314,
+      "ci": [
+        -0.1704200729727745,
+        21.07701974234078
+      ],
+      "positive": 3,
+      "p": 0.3125
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_electricity_hourly",
+    "period": 19.2,
+    "cut": "3",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_pedestrian_counts",
+    "period": 19.2,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.07765889097936451,
+    "far_nmse": 0.25579576939344406,
+    "native_signal_nmse": 2.2319666531312925,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.3484146750997752,
+      "ci": [
+        0.17355726240202785,
+        0.5232720877975225
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.17813687841407955,
+      "ci": [
+        0.0942795667797327,
+        0.2701839080546051
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_pedestrian_counts",
+    "period": 19.2,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_pedestrian_counts",
+    "period": 19.2,
+    "cut": "1",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.11654903087764978,
+    "far_nmse": 0.31930480897426605,
+    "native_signal_nmse": 2.2319666531312925,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.41971177514642477,
+      "ci": [
+        0.3007293650880456,
+        0.5785396173596382
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.20275577809661627,
+      "ci": [
+        0.034524256363511086,
+        0.37814158480614424
+      ],
+      "positive": 3,
+      "p": 0.3125
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_pedestrian_counts",
+    "period": 19.2,
+    "cut": "1",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_pedestrian_counts",
+    "period": 19.2,
+    "cut": "3",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.141886780038476,
+    "far_nmse": 0.4104074463248253,
+    "native_signal_nmse": 2.2319666531312925,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.5457529406994581,
+      "ci": [
+        0.42487564124166965,
+        0.6815513968467712
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.2685206662863493,
+      "ci": [
+        0.012292438186705112,
+        0.5016440888866782
+      ],
+      "positive": 3,
+      "p": 0.3125
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_pedestrian_counts",
+    "period": 19.2,
+    "cut": "3",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_traffic",
+    "period": 19.2,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.050276183523237705,
+    "far_nmse": 0.9602233916521072,
+    "native_signal_nmse": 1.5430394803554104,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.6345105161890388,
+      "ci": [
+        0.48467203602194786,
+        0.8140653953887522
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.9099472081288695,
+      "ci": [
+        0.7584070824086666,
+        1.0006701331585646
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_traffic",
+    "period": 19.2,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_traffic",
+    "period": 19.2,
+    "cut": "1",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.07048172038048506,
+    "far_nmse": 1.5223229080438614,
+    "native_signal_nmse": 1.5430394803554104,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.8292209850624204,
+      "ci": [
+        0.46304815262556076,
+        1.2104993155226111
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 1.4518411876633763,
+      "ci": [
+        1.0019047902897,
+        2.174164593219757
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_traffic",
+    "period": 19.2,
+    "cut": "1",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_traffic",
+    "period": 19.2,
+    "cut": "3",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.0660449443385005,
+    "far_nmse": 1.5837588608264923,
+    "native_signal_nmse": 1.5430394803554104,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.6491517769172788,
+      "ci": [
+        0.3827349953353405,
+        1.0444401185959578
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 1.5177139164879918,
+      "ci": [
+        1.074542699381709,
+        2.1835260167717934
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "bolt",
+    "domain": "monash_traffic",
+    "period": 19.2,
+    "cut": "3",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "m4_hourly",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.01,
+    "scope": "oracle_valid",
+    "eligible_sources": 2,
+    "total_sources": 4,
+    "near_nmse": 0.11835982277989388,
+    "far_nmse": 0.7092208303511143,
+    "native_signal_nmse": 0.15622598891462375,
+    "near_random_advantage": {
+      "n": 2,
+      "mean": 0.035091131925582886,
+      "ci": [
+        0.001414462924003601,
+        0.06876780092716217
+      ],
+      "positive": 2,
+      "p": 0.25
+    },
+    "near_over_far": {
+      "n": 2,
+      "mean": 0.5908610075712204,
+      "ci": [
+        0.06058184802532196,
+        1.1211401671171188
+      ],
+      "positive": 2,
+      "p": 0.25
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "m4_hourly",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.01,
+    "scope": "semantic_valid",
+    "eligible_sources": 2,
+    "total_sources": 4,
+    "near_nmse": 0.11835982277989388,
+    "far_nmse": 0.7092208303511143,
+    "native_signal_nmse": 0.15622598891462375,
+    "near_random_advantage": {
+      "n": 2,
+      "mean": 0.035091131925582886,
+      "ci": [
+        0.001414462924003601,
+        0.06876780092716217
+      ],
+      "positive": 2,
+      "p": 0.25
+    },
+    "near_over_far": {
+      "n": 2,
+      "mean": 0.5908610075712204,
+      "ci": [
+        0.06058184802532196,
+        1.1211401671171188
+      ],
+      "positive": 2,
+      "p": 0.25
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "m4_hourly",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.05180928102345206,
+    "far_nmse": 0.30918633565306664,
+    "native_signal_nmse": 0.05911836161510669,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.042482244403799996,
+      "ci": [
+        -0.0006741637480445206,
+        0.0959470201341901
+      ],
+      "positive": 3,
+      "p": 0.3125
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.2573770546296146,
+      "ci": [
+        0.09125356739968993,
+        0.5654887819546275
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "m4_hourly",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.05180928102345206,
+    "far_nmse": 0.30918633565306664,
+    "native_signal_nmse": 0.05911836161510669,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.042482244403799996,
+      "ci": [
+        -0.0006741637480445206,
+        0.0959470201341901
+      ],
+      "positive": 3,
+      "p": 0.3125
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.2573770546296146,
+      "ci": [
+        0.09125356739968993,
+        0.5654887819546275
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "m4_hourly",
+    "period": 23.925233644859816,
+    "cut": "5",
+    "epsilon": 0.01,
+    "scope": "oracle_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "m4_hourly",
+    "period": 23.925233644859816,
+    "cut": "5",
+    "epsilon": 0.01,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "m4_hourly",
+    "period": 23.925233644859816,
+    "cut": "5",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 3,
+    "total_sources": 4,
+    "near_nmse": 0.042162952275248244,
+    "far_nmse": 0.23132664834459624,
+    "native_signal_nmse": 0.0641250087070989,
+    "near_random_advantage": {
+      "n": 3,
+      "mean": 0.10759202147407147,
+      "ci": [
+        0.07813524073571898,
+        0.14256279170513153
+      ],
+      "positive": 3,
+      "p": 0.125
+    },
+    "near_over_far": {
+      "n": 3,
+      "mean": 0.189163696069348,
+      "ci": [
+        0.048330299789085984,
+        0.4272550493478775
+      ],
+      "positive": 3,
+      "p": 0.125
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "m4_hourly",
+    "period": 23.925233644859816,
+    "cut": "5",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 3,
+    "total_sources": 4,
+    "near_nmse": 0.042162952275248244,
+    "far_nmse": 0.23132664834459624,
+    "native_signal_nmse": 0.0641250087070989,
+    "near_random_advantage": {
+      "n": 3,
+      "mean": 0.10759202147407147,
+      "ci": [
+        0.07813524073571898,
+        0.14256279170513153
+      ],
+      "positive": 3,
+      "p": 0.125
+    },
+    "near_over_far": {
+      "n": 3,
+      "mean": 0.189163696069348,
+      "ci": [
+        0.048330299789085984,
+        0.4272550493478775
+      ],
+      "positive": 3,
+      "p": 0.125
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "m4_hourly",
+    "period": 23.925233644859816,
+    "cut": "10",
+    "epsilon": 0.01,
+    "scope": "oracle_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "m4_hourly",
+    "period": 23.925233644859816,
+    "cut": "10",
+    "epsilon": 0.01,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "m4_hourly",
+    "period": 23.925233644859816,
+    "cut": "10",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 2,
+    "total_sources": 4,
+    "near_nmse": 0.054993150813970715,
+    "far_nmse": 0.35359809920191765,
+    "native_signal_nmse": 0.09184101955240213,
+    "near_random_advantage": {
+      "n": 2,
+      "mean": 0.29249602364143357,
+      "ci": [
+        0.11899030569475144,
+        0.4660017415881157
+      ],
+      "positive": 2,
+      "p": 0.25
+    },
+    "near_over_far": {
+      "n": 2,
+      "mean": 0.29860494838794693,
+      "ci": [
+        0.09417650464456528,
+        0.5030333921313286
+      ],
+      "positive": 2,
+      "p": 0.25
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "m4_hourly",
+    "period": 23.925233644859816,
+    "cut": "10",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 2,
+    "total_sources": 4,
+    "near_nmse": 0.054993150813970715,
+    "far_nmse": 0.35359809920191765,
+    "native_signal_nmse": 0.09184101955240213,
+    "near_random_advantage": {
+      "n": 2,
+      "mean": 0.29249602364143357,
+      "ci": [
+        0.11899030569475144,
+        0.4660017415881157
+      ],
+      "positive": 2,
+      "p": 0.25
+    },
+    "near_over_far": {
+      "n": 2,
+      "mean": 0.29860494838794693,
+      "ci": [
+        0.09417650464456528,
+        0.5030333921313286
+      ],
+      "positive": 2,
+      "p": 0.25
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_electricity_hourly",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.01,
+    "scope": "oracle_valid",
+    "eligible_sources": 1,
+    "total_sources": 4,
+    "near_nmse": 0.014717543497681618,
+    "far_nmse": 0.06173096224665642,
+    "native_signal_nmse": 0.3906084603428934,
+    "near_random_advantage": {
+      "n": 1,
+      "mean": 0.1340364720672369,
+      "ci": [
+        0.1340364720672369,
+        0.1340364720672369
+      ],
+      "positive": 1,
+      "p": 0.5
+    },
+    "near_over_far": {
+      "n": 1,
+      "mean": 0.0470134187489748,
+      "ci": [
+        0.0470134187489748,
+        0.0470134187489748
+      ],
+      "positive": 1,
+      "p": 0.5
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_electricity_hourly",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.01,
+    "scope": "semantic_valid",
+    "eligible_sources": 1,
+    "total_sources": 4,
+    "near_nmse": 0.014717543497681618,
+    "far_nmse": 0.06173096224665642,
+    "native_signal_nmse": 0.3906084603428934,
+    "near_random_advantage": {
+      "n": 1,
+      "mean": 0.1340364720672369,
+      "ci": [
+        0.1340364720672369,
+        0.1340364720672369
+      ],
+      "positive": 1,
+      "p": 0.5
+    },
+    "near_over_far": {
+      "n": 1,
+      "mean": 0.0470134187489748,
+      "ci": [
+        0.0470134187489748,
+        0.0470134187489748
+      ],
+      "positive": 1,
+      "p": 0.5
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_electricity_hourly",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.0652598082087934,
+    "far_nmse": 0.3084088768810034,
+    "native_signal_nmse": 2.1696406300482427,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.4388079480268061,
+      "ci": [
+        0.12379943300038576,
+        0.9684928269125521
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.24314906867220998,
+      "ci": [
+        0.11133673554286361,
+        0.31555311381816864
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_electricity_hourly",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 2,
+    "total_sources": 4,
+    "near_nmse": 0.04930170904844999,
+    "far_nmse": 0.2217024825513363,
+    "native_signal_nmse": 0.2583725159099211,
+    "near_random_advantage": {
+      "n": 2,
+      "mean": 0.12379943300038576,
+      "ci": [
+        0.07821599394083023,
+        0.1693828720599413
+      ],
+      "positive": 2,
+      "p": 0.25
+    },
+    "near_over_far": {
+      "n": 2,
+      "mean": 0.1724007735028863,
+      "ci": [
+        0.04625844396650791,
+        0.2985431030392647
+      ],
+      "positive": 2,
+      "p": 0.25
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_electricity_hourly",
+    "period": 23.925233644859816,
+    "cut": "5",
+    "epsilon": 0.01,
+    "scope": "oracle_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_electricity_hourly",
+    "period": 23.925233644859816,
+    "cut": "5",
+    "epsilon": 0.01,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_electricity_hourly",
+    "period": 23.925233644859816,
+    "cut": "5",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 2,
+    "total_sources": 4,
+    "near_nmse": 0.33271336182951927,
+    "far_nmse": 0.8575135171413422,
+    "native_signal_nmse": 3.770081455584082,
+    "near_random_advantage": {
+      "n": 2,
+      "mean": 0.5270111002027988,
+      "ci": [
+        0.48530948907136917,
+        0.5687127113342285
+      ],
+      "positive": 2,
+      "p": 0.25
+    },
+    "near_over_far": {
+      "n": 2,
+      "mean": 0.5248001553118229,
+      "ci": [
+        0.29105979204177856,
+        0.7585405185818672
+      ],
+      "positive": 2,
+      "p": 0.25
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_electricity_hourly",
+    "period": 23.925233644859816,
+    "cut": "5",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 1,
+    "total_sources": 4,
+    "near_nmse": 0.06393574923276901,
+    "far_nmse": 0.8224762678146362,
+    "native_signal_nmse": 0.05972540065344814,
+    "near_random_advantage": {
+      "n": 1,
+      "mean": 0.48530948907136917,
+      "ci": [
+        0.48530948907136917,
+        0.48530948907136917
+      ],
+      "positive": 1,
+      "p": 0.5
+    },
+    "near_over_far": {
+      "n": 1,
+      "mean": 0.7585405185818672,
+      "ci": [
+        0.7585405185818672,
+        0.7585405185818672
+      ],
+      "positive": 1,
+      "p": 0.5
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_electricity_hourly",
+    "period": 23.925233644859816,
+    "cut": "10",
+    "epsilon": 0.01,
+    "scope": "oracle_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_electricity_hourly",
+    "period": 23.925233644859816,
+    "cut": "10",
+    "epsilon": 0.01,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_electricity_hourly",
+    "period": 23.925233644859816,
+    "cut": "10",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_electricity_hourly",
+    "period": 23.925233644859816,
+    "cut": "10",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_pedestrian_counts",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.01,
+    "scope": "oracle_valid",
+    "eligible_sources": 1,
+    "total_sources": 4,
+    "near_nmse": 0.019027983769774437,
+    "far_nmse": 0.09759486466646194,
+    "native_signal_nmse": 0.04848181306510204,
+    "near_random_advantage": {
+      "n": 1,
+      "mean": 0.062014276161789894,
+      "ci": [
+        0.062014276161789894,
+        0.062014276161789894
+      ],
+      "positive": 1,
+      "p": 0.5
+    },
+    "near_over_far": {
+      "n": 1,
+      "mean": 0.07856688089668751,
+      "ci": [
+        0.07856688089668751,
+        0.07856688089668751
+      ],
+      "positive": 1,
+      "p": 0.5
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_pedestrian_counts",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.01,
+    "scope": "semantic_valid",
+    "eligible_sources": 1,
+    "total_sources": 4,
+    "near_nmse": 0.019027983769774437,
+    "far_nmse": 0.09759486466646194,
+    "native_signal_nmse": 0.04848181306510204,
+    "near_random_advantage": {
+      "n": 1,
+      "mean": 0.062014276161789894,
+      "ci": [
+        0.062014276161789894,
+        0.062014276161789894
+      ],
+      "positive": 1,
+      "p": 0.5
+    },
+    "near_over_far": {
+      "n": 1,
+      "mean": 0.07856688089668751,
+      "ci": [
+        0.07856688089668751,
+        0.07856688089668751
+      ],
+      "positive": 1,
+      "p": 0.5
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_pedestrian_counts",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.028532708063721657,
+    "far_nmse": 0.0942582506686449,
+    "native_signal_nmse": 0.0919852071669701,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.17616896517574787,
+      "ci": [
+        0.06729886773973703,
+        0.37468995060771704
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.06572554260492325,
+      "ci": [
+        0.03478613495826721,
+        0.10053527820855379
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_pedestrian_counts",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.028532708063721657,
+    "far_nmse": 0.0942582506686449,
+    "native_signal_nmse": 0.0919852071669701,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.17616896517574787,
+      "ci": [
+        0.06729886773973703,
+        0.37468995060771704
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.06572554260492325,
+      "ci": [
+        0.03478613495826721,
+        0.10053527820855379
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_pedestrian_counts",
+    "period": 23.925233644859816,
+    "cut": "5",
+    "epsilon": 0.01,
+    "scope": "oracle_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_pedestrian_counts",
+    "period": 23.925233644859816,
+    "cut": "5",
+    "epsilon": 0.01,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_pedestrian_counts",
+    "period": 23.925233644859816,
+    "cut": "5",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 1,
+    "total_sources": 4,
+    "near_nmse": 0.03399819880723953,
+    "far_nmse": 0.18384414911270142,
+    "native_signal_nmse": 0.06931812831606109,
+    "near_random_advantage": {
+      "n": 1,
+      "mean": 0.3155188485980034,
+      "ci": [
+        0.3155188485980034,
+        0.3155188485980034
+      ],
+      "positive": 1,
+      "p": 0.5
+    },
+    "near_over_far": {
+      "n": 1,
+      "mean": 0.14984595030546188,
+      "ci": [
+        0.14984595030546188,
+        0.14984595030546188
+      ],
+      "positive": 1,
+      "p": 0.5
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_pedestrian_counts",
+    "period": 23.925233644859816,
+    "cut": "5",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 1,
+    "total_sources": 4,
+    "near_nmse": 0.03399819880723953,
+    "far_nmse": 0.18384414911270142,
+    "native_signal_nmse": 0.06931812831606109,
+    "near_random_advantage": {
+      "n": 1,
+      "mean": 0.3155188485980034,
+      "ci": [
+        0.3155188485980034,
+        0.3155188485980034
+      ],
+      "positive": 1,
+      "p": 0.5
+    },
+    "near_over_far": {
+      "n": 1,
+      "mean": 0.14984595030546188,
+      "ci": [
+        0.14984595030546188,
+        0.14984595030546188
+      ],
+      "positive": 1,
+      "p": 0.5
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_pedestrian_counts",
+    "period": 23.925233644859816,
+    "cut": "10",
+    "epsilon": 0.01,
+    "scope": "oracle_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_pedestrian_counts",
+    "period": 23.925233644859816,
+    "cut": "10",
+    "epsilon": 0.01,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_pedestrian_counts",
+    "period": 23.925233644859816,
+    "cut": "10",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 1,
+    "total_sources": 4,
+    "near_nmse": 0.11112402379512787,
+    "far_nmse": 0.29473862051963806,
+    "native_signal_nmse": 0.0704657935067104,
+    "near_random_advantage": {
+      "n": 1,
+      "mean": 0.6024734526872635,
+      "ci": [
+        0.6024734526872635,
+        0.6024734526872635
+      ],
+      "positive": 1,
+      "p": 0.5
+    },
+    "near_over_far": {
+      "n": 1,
+      "mean": 0.1836145967245102,
+      "ci": [
+        0.1836145967245102,
+        0.1836145967245102
+      ],
+      "positive": 1,
+      "p": 0.5
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_pedestrian_counts",
+    "period": 23.925233644859816,
+    "cut": "10",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 1,
+    "total_sources": 4,
+    "near_nmse": 0.11112402379512787,
+    "far_nmse": 0.29473862051963806,
+    "native_signal_nmse": 0.0704657935067104,
+    "near_random_advantage": {
+      "n": 1,
+      "mean": 0.6024734526872635,
+      "ci": [
+        0.6024734526872635,
+        0.6024734526872635
+      ],
+      "positive": 1,
+      "p": 0.5
+    },
+    "near_over_far": {
+      "n": 1,
+      "mean": 0.1836145967245102,
+      "ci": [
+        0.1836145967245102,
+        0.1836145967245102
+      ],
+      "positive": 1,
+      "p": 0.5
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_traffic",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.01,
+    "scope": "oracle_valid",
+    "eligible_sources": 2,
+    "total_sources": 4,
+    "near_nmse": 0.0056062203366309404,
+    "far_nmse": 0.08188523352146149,
+    "native_signal_nmse": 0.05634008945634726,
+    "near_random_advantage": {
+      "n": 2,
+      "mean": 0.09927889588288963,
+      "ci": [
+        0.043531638104468584,
+        0.15502615366131067
+      ],
+      "positive": 2,
+      "p": 0.25
+    },
+    "near_over_far": {
+      "n": 2,
+      "mean": 0.07627901318483055,
+      "ci": [
+        0.05766116501763463,
+        0.09489686135202646
+      ],
+      "positive": 2,
+      "p": 0.25
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_traffic",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.01,
+    "scope": "semantic_valid",
+    "eligible_sources": 2,
+    "total_sources": 4,
+    "near_nmse": 0.0056062203366309404,
+    "far_nmse": 0.08188523352146149,
+    "native_signal_nmse": 0.05634008945634726,
+    "near_random_advantage": {
+      "n": 2,
+      "mean": 0.09927889588288963,
+      "ci": [
+        0.043531638104468584,
+        0.15502615366131067
+      ],
+      "positive": 2,
+      "p": 0.25
+    },
+    "near_over_far": {
+      "n": 2,
+      "mean": 0.07627901318483055,
+      "ci": [
+        0.05766116501763463,
+        0.09489686135202646
+      ],
+      "positive": 2,
+      "p": 0.25
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_traffic",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.007919382973341271,
+    "far_nmse": 0.09015978965908289,
+    "native_signal_nmse": 0.08172123977220443,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.18556534897652455,
+      "ci": [
+        0.07623848944786005,
+        0.29983816749881953
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.08224040668574162,
+      "ci": [
+        0.046062547771725804,
+        0.1254227337485645
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_traffic",
+    "period": 23.925233644859816,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.007919382973341271,
+    "far_nmse": 0.09015978965908289,
+    "native_signal_nmse": 0.08172123977220443,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 0.18556534897652455,
+      "ci": [
+        0.07623848944786005,
+        0.29983816749881953
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 0.08224040668574162,
+      "ci": [
+        0.046062547771725804,
+        0.1254227337485645
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_traffic",
+    "period": 23.925233644859816,
+    "cut": "5",
+    "epsilon": 0.01,
+    "scope": "oracle_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_traffic",
+    "period": 23.925233644859816,
+    "cut": "5",
+    "epsilon": 0.01,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_traffic",
+    "period": 23.925233644859816,
+    "cut": "5",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 2,
+    "total_sources": 4,
+    "near_nmse": 0.017988019506447017,
+    "far_nmse": 0.08511653635650873,
+    "native_signal_nmse": 0.038555589698022655,
+    "near_random_advantage": {
+      "n": 2,
+      "mean": 0.3811305380659178,
+      "ci": [
+        0.3756827360484749,
+        0.38657834008336067
+      ],
+      "positive": 2,
+      "p": 0.25
+    },
+    "near_over_far": {
+      "n": 2,
+      "mean": 0.06712851685006171,
+      "ci": [
+        0.02259285398758948,
+        0.11166417971253395
+      ],
+      "positive": 2,
+      "p": 0.25
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_traffic",
+    "period": 23.925233644859816,
+    "cut": "5",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 2,
+    "total_sources": 4,
+    "near_nmse": 0.017988019506447017,
+    "far_nmse": 0.08511653635650873,
+    "native_signal_nmse": 0.038555589698022655,
+    "near_random_advantage": {
+      "n": 2,
+      "mean": 0.3811305380659178,
+      "ci": [
+        0.3756827360484749,
+        0.38657834008336067
+      ],
+      "positive": 2,
+      "p": 0.25
+    },
+    "near_over_far": {
+      "n": 2,
+      "mean": 0.06712851685006171,
+      "ci": [
+        0.02259285398758948,
+        0.11166417971253395
+      ],
+      "positive": 2,
+      "p": 0.25
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_traffic",
+    "period": 23.925233644859816,
+    "cut": "10",
+    "epsilon": 0.01,
+    "scope": "oracle_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_traffic",
+    "period": 23.925233644859816,
+    "cut": "10",
+    "epsilon": 0.01,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_traffic",
+    "period": 23.925233644859816,
+    "cut": "10",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 1,
+    "total_sources": 4,
+    "near_nmse": 0.04739460349082947,
+    "far_nmse": 0.3416956961154938,
+    "native_signal_nmse": 0.105724399535054,
+    "near_random_advantage": {
+      "n": 1,
+      "mean": 1.0387817919254303,
+      "ci": [
+        1.0387817919254303,
+        1.0387817919254303
+      ],
+      "positive": 1,
+      "p": 0.5
+    },
+    "near_over_far": {
+      "n": 1,
+      "mean": 0.2943010926246643,
+      "ci": [
+        0.2943010926246643,
+        0.2943010926246643
+      ],
+      "positive": 1,
+      "p": 0.5
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_traffic",
+    "period": 23.925233644859816,
+    "cut": "10",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 1,
+    "total_sources": 4,
+    "near_nmse": 0.04739460349082947,
+    "far_nmse": 0.3416956961154938,
+    "native_signal_nmse": 0.105724399535054,
+    "near_random_advantage": {
+      "n": 1,
+      "mean": 1.0387817919254303,
+      "ci": [
+        1.0387817919254303,
+        1.0387817919254303
+      ],
+      "positive": 1,
+      "p": 0.5
+    },
+    "near_over_far": {
+      "n": 1,
+      "mean": 0.2943010926246643,
+      "ci": [
+        0.2943010926246643,
+        0.2943010926246643
+      ],
+      "positive": 1,
+      "p": 0.5
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "m4_hourly",
+    "period": 19.2,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.19399182100096368,
+    "far_nmse": 2.1628846526145935,
+    "native_signal_nmse": 0.4200309845949408,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 1.8069359252949653,
+      "ci": [
+        1.1441163089439215,
+        2.9893572105502244
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 1.9688928316136298,
+      "ci": [
+        0.06155892513197614,
+        5.611030145020777
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "m4_hourly",
+    "period": 19.2,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 2,
+    "total_sources": 4,
+    "near_nmse": 0.0009723375042085536,
+    "far_nmse": 0.06253126263618469,
+    "native_signal_nmse": 0.2377811600076476,
+    "near_random_advantage": {
+      "n": 2,
+      "mean": 1.28733425639075,
+      "ci": [
+        1.2281807953258976,
+        1.3464877174556023
+      ],
+      "positive": 2,
+      "p": 0.25
+    },
+    "near_over_far": {
+      "n": 2,
+      "mean": 0.06155892513197614,
+      "ci": [
+        0.037559739663265646,
+        0.08555811060068663
+      ],
+      "positive": 2,
+      "p": 0.25
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "m4_hourly",
+    "period": 19.2,
+    "cut": "5",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 3,
+    "total_sources": 4,
+    "near_nmse": 0.2902845689095557,
+    "far_nmse": 2.590309500694275,
+    "native_signal_nmse": 0.33290430664548637,
+    "near_random_advantage": {
+      "n": 3,
+      "mean": 2.106422091679027,
+      "ci": [
+        1.4388609030283988,
+        3.1934571862220764
+      ],
+      "positive": 3,
+      "p": 0.125
+    },
+    "near_over_far": {
+      "n": 3,
+      "mean": 2.3000249317847192,
+      "ci": [
+        0.8642474468797445,
+        5.029847204685211
+      ],
+      "positive": 3,
+      "p": 0.125
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "m4_hourly",
+    "period": 19.2,
+    "cut": "5",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 2,
+    "total_sources": 4,
+    "near_nmse": 0.012327365344390273,
+    "far_nmse": 0.9474411606788635,
+    "native_signal_nmse": 0.2377811600076476,
+    "near_random_advantage": {
+      "n": 2,
+      "mean": 1.5629045444075018,
+      "ci": [
+        1.4388609030283988,
+        1.6869481857866049
+      ],
+      "positive": 2,
+      "p": 0.25
+    },
+    "near_over_far": {
+      "n": 2,
+      "mean": 0.9351137953344733,
+      "ci": [
+        0.8642474468797445,
+        1.005980143789202
+      ],
+      "positive": 2,
+      "p": 0.25
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "m4_hourly",
+    "period": 19.2,
+    "cut": "10",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 2,
+    "total_sources": 4,
+    "near_nmse": 0.11139772180467844,
+    "far_nmse": 1.3290392756462097,
+    "native_signal_nmse": 0.45900416932295013,
+    "near_random_advantage": {
+      "n": 2,
+      "mean": 1.41049041505903,
+      "ci": [
+        1.2186875939369202,
+        1.60229323618114
+      ],
+      "positive": 2,
+      "p": 0.25
+    },
+    "near_over_far": {
+      "n": 2,
+      "mean": 1.2176415538415313,
+      "ci": [
+        0.9910064339637756,
+        1.444276673719287
+      ],
+      "positive": 2,
+      "p": 0.25
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "m4_hourly",
+    "period": 19.2,
+    "cut": "10",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 1,
+    "total_sources": 4,
+    "near_nmse": 0.009641425684094429,
+    "far_nmse": 1.4539180994033813,
+    "native_signal_nmse": 0.23659732020259616,
+    "near_random_advantage": {
+      "n": 1,
+      "mean": 1.60229323618114,
+      "ci": [
+        1.60229323618114,
+        1.60229323618114
+      ],
+      "positive": 1,
+      "p": 0.5
+    },
+    "near_over_far": {
+      "n": 1,
+      "mean": 1.444276673719287,
+      "ci": [
+        1.444276673719287,
+        1.444276673719287
+      ],
+      "positive": 1,
+      "p": 0.5
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_electricity_hourly",
+    "period": 19.2,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.49488014029338956,
+    "far_nmse": 1.7674143426120281,
+    "native_signal_nmse": 1.523301935720844,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 3.9205206031911075,
+      "ci": [
+        1.6661461158655584,
+        8.127596709877253
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 1.2725342023186386,
+      "ci": [
+        0.13998384680598974,
+        2.6182613712735474
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_electricity_hourly",
+    "period": 19.2,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_electricity_hourly",
+    "period": 19.2,
+    "cut": "5",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_electricity_hourly",
+    "period": 19.2,
+    "cut": "5",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_electricity_hourly",
+    "period": 19.2,
+    "cut": "10",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_electricity_hourly",
+    "period": 19.2,
+    "cut": "10",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_pedestrian_counts",
+    "period": 19.2,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.1091679148375988,
+    "far_nmse": 1.6167998388409615,
+    "native_signal_nmse": 1.5641437977899375,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 1.5880451537668705,
+      "ci": [
+        0.5432208813726902,
+        3.094967056065798
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 1.5076319240033627,
+      "ci": [
+        0.1249782182276249,
+        4.205449383705854
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_pedestrian_counts",
+    "period": 19.2,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_pedestrian_counts",
+    "period": 19.2,
+    "cut": "5",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 1,
+    "total_sources": 4,
+    "near_nmse": 0.7188293933868408,
+    "far_nmse": 0.7815061211585999,
+    "native_signal_nmse": 1.9972824597391412,
+    "near_random_advantage": {
+      "n": 1,
+      "mean": 0.06951987743377686,
+      "ci": [
+        0.06951987743377686,
+        0.06951987743377686
+      ],
+      "positive": 1,
+      "p": 0.5
+    },
+    "near_over_far": {
+      "n": 1,
+      "mean": 0.06267672777175903,
+      "ci": [
+        0.06267672777175903,
+        0.06267672777175903
+      ],
+      "positive": 1,
+      "p": 0.5
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_pedestrian_counts",
+    "period": 19.2,
+    "cut": "5",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_pedestrian_counts",
+    "period": 19.2,
+    "cut": "10",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_pedestrian_counts",
+    "period": 19.2,
+    "cut": "10",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_traffic",
+    "period": 19.2,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.052258410141803324,
+    "far_nmse": 1.9061079137027264,
+    "native_signal_nmse": 1.5672934469335194,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 1.2946577140828595,
+      "ci": [
+        0.8952813679352403,
+        1.8866316120838746
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 1.853849503560923,
+      "ci": [
+        0.21970289084129035,
+        4.8923256288981065
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_traffic",
+    "period": 19.2,
+    "cut": "0",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_traffic",
+    "period": 19.2,
+    "cut": "5",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 4,
+    "total_sources": 4,
+    "near_nmse": 0.46039103902876377,
+    "far_nmse": 1.4828195571899414,
+    "native_signal_nmse": 1.5672934469335194,
+    "near_random_advantage": {
+      "n": 4,
+      "mean": 1.0925831850618124,
+      "ci": [
+        0.7375178039073944,
+        1.4608945325016975
+      ],
+      "positive": 4,
+      "p": 0.0625
+    },
+    "near_over_far": {
+      "n": 4,
+      "mean": 1.0224285181611776,
+      "ci": [
+        0.4183078370988369,
+        2.0926774870604277
+      ],
+      "positive": 4,
+      "p": 0.0625
+    }
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_traffic",
+    "period": 19.2,
+    "cut": "5",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_traffic",
+    "period": 19.2,
+    "cut": "10",
+    "epsilon": 0.1,
+    "scope": "oracle_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  },
+  {
+    "model": "timesfm",
+    "domain": "monash_traffic",
+    "period": 19.2,
+    "cut": "10",
+    "epsilon": 0.1,
+    "scope": "semantic_valid",
+    "eligible_sources": 0,
+    "total_sources": 4
+  }
+]

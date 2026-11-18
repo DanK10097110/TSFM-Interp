@@ -1,0 +1,32 @@
+{
+  "out": "runs/steering_e03_timesfm_pilot",
+  "train": 128,
+  "calibration": 8,
+  "test": 8,
+  "seed": 5180000,
+  "dictionary": 512,
+  "k": 16,
+  "steps": 200,
+  "sae_kind": "topk",
+  "model": "timesfm",
+  "horizon": 32,
+  "threads": 2,
+  "ridge": 0.001,
+  "radius": 0.2,
+  "budgets": [
+    1,
+    16,
+    64
+  ],
+  "doses": [
+    0.05,
+    0.2
+  ],
+  "shifted": false,
+  "evidence": "causal within-model; exploratory fresh synthetic seeds; not sealed confirmation",
+  "intervention": "native decoder head input; original hidden + signed decoder combination",
+  "test_selection": "no test-based selection; all methods and doses reported",
+  "success": "full requested change relative RMS error < 0.1; no crossing postprocessing",
+  "scope": "width is not calibration; seasonal prior is an external desired edit",
+  "source_sha256": "761a3c1c495336d63b55ed476b2240d428526de9e4a77ad2abe2bc178b0de6f4"
+}

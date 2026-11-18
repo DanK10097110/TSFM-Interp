@@ -1,0 +1,76 @@
+{
+  "question": "Do signed native, orthogonal/PCA or bounded sparse dictionaries provide stable, selective and function-preserving early-block features?",
+  "status": "complete_with_unscorable_causal_selectivity",
+  "evidence_class": "Exploratory held-out-source geometry, point-forecast reconstruction interventions and saved-only paired-response audit; no monosemanticity claim",
+  "exact_results": {
+    "fits": 44,
+    "native_stages": 44,
+    "stability_stages": 4,
+    "saved_response_stages": 2,
+    "comparison_table": "comparison_summary.json",
+    "tables": "review/",
+    "validity": "validity_audit/groups.json",
+    "responses": [
+      "response_audit_bolt/paired_response.json",
+      "response_audit_timesfm/paired_response.json"
+    ],
+    "native_identity_gates_passed": 880,
+    "reconstruction_random_invalid": 8,
+    "causal_response_cells": 3520,
+    "causal_invalid_random_geometry": 2048,
+    "measured_zero_selected_response_cells": 1882,
+    "tf_topk_k8_base_zero_edits": "119/120",
+    "tf_topk_k8_cached_pair_zero_edits": "478/480 (proxy only)",
+    "test_count": 19,
+    "plants_caught": 19,
+    "arithmetic_checks": 8890,
+    "resources": {
+      "stages": 94,
+      "all_success": true,
+      "max_seconds": 156.44872333400417,
+      "max_rss_bytes": 2340925440,
+      "cpu_threads": 1
+    }
+  },
+  "interpretation": [
+    "PCA is a strong no-SAE compression baseline. At k16 it beats the seed-mean learned models on global state reconstruction and mean point-forecast distortion in both models; per-domain outcomes and k8 differ.",
+    "Full-state NMSE is not weak-response preservation. Direct central differences show substantial residual error, even when static offsets cancel. At k16 PCA and nested have similar Bolt sinusoid-response error; TimesFM sinusoid errors are similar across PCA/TopK/nested, while PCA better preserves noise responses.",
+    "No causal monosemanticity/usefulness verdict: invalid/fallback random controls are unscorable, natural-input reach does not certify selected-edit reach, and independent +/- random edits are not calibrated smooth-response nulls.",
+    "Zero output effect does not imply a zero activation edit. Base edit replay is exactly bound to native states; cached +/- edits cannot certify fresh singleton branch edits.",
+    "Static position-conditioned FIT means explain part of the global compression baseline, especially Bolt, but cannot explain all PCA gains or preserve input-dependent responses.",
+    "Seed-direction stability is modest and few-feature predictive selectivity depends on representation, budget, metadata and seed. Decodability can survive random initialization (PM35)."
+  ],
+  "controls": [
+    "FIT-only center/scalar, PCA, dictionaries, probe selection and metadata residualization; equal source weighting; TEST holdout",
+    "Signed native versus orthogonal controls; budgets1/4; k8/16; three learned/rotation seeds; actual L0 matched on full and audited +/- tokens",
+    "Exact native singleton self/repeat/saved-state and natural counterfactual replay; source-specific random validity retained",
+    "Nuisance/noise, background/domain and phase slices; raw and model-normalized coefficient targets; input and normalizer metadata controls"
+  ],
+  "limitations": [
+    "Spectral reused cache; four independent TEST real sources/domain. Native subset has four synthetic receivers; state/response audits have16 synthetic TEST sources.",
+    "No fresh crossed injected phase, no random-initialized native control, no FFN neuron result; those axes are not inferred from residual coordinates.",
+    "Nested is Matryoshka-inspired global TopK with two prefix losses, no AuxK/temporal/forecast consistency; 1.25x dense forward matmul FLOPs versus TopK at equal parameters/steps.",
+    "PCA stores a fitted d-by-d basis; zero optimizer parameters is not zero fitted capacity. No equal-compute claim across direct and neural fits.",
+    "Posthoc validity and response audits are diagnostic; preservation of native behavior is not correctness of known signal semantics or forecast improvement.",
+    "Earlier conservative-null wording is superseded by interpretation_corrections.json and validity_audit/knowledge.json.",
+    "PCA uses a FIT-frozen full orthogonal basis with input-dependent magnitude-top-k coefficients; it is not a fixed rank-k projection."
+  ],
+  "external_context": {
+    "monitor_failure": "../monitor_failure.json",
+    "recovery_audit": "monitor_audit/knowledge.json",
+    "independent_edit_audit": "../../comparability_dictionary_edit_audit20261116/knowledge.json",
+    "independent_position_audit": "../../comparability_position_mean20261116/knowledge.json",
+    "position_mean_relative_error": {
+      "bolt": 0.19695331486428444,
+      "timesfm": 0.8989298433693919
+    },
+    "prior_results": "CA15 SAE-free adaptive late-head steering, MN47 reconstruction/control dissociation, CA16 final-encoder control boundary: different intervention sites and multi-quantile endpoints",
+    "modern_reuse": "Existing sae/modern.py inspected read-only; any future signed/BatchTopK candidate should reuse its classes; no follow-up launched"
+  },
+  "next_step": "Coordinator reviews findings first. No fit/native authorization remains. Possible bounded Bolt-only paired-response objective may reuse existing classes only after review; no launch. Plato owns FFN and dictionary-smoothness work.",
+  "slot": {
+    "id": 1,
+    "released": true
+  },
+  "completed_utc": "2026-11-16T19:46:41.282367+00:00"
+}

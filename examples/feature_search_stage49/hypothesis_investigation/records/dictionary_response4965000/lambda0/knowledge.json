@@ -1,0 +1,28 @@
+{
+  "question": "Does paired response loss improve frozen held-out response fidelity?",
+  "status": "complete",
+  "exact_results": {
+    "table": "results.json",
+    "global_nmse": 0.013896715445253071,
+    "old_response": {
+      "sinusoid": 0.33706543732597316,
+      "noise": 0.6499851374406904
+    },
+    "focused_nmse": 0.4779692525911392,
+    "fit_seconds": 6.626201824983582,
+    "steps": 500
+  },
+  "controls": [
+    "same initialization, schedule, full and paired branches",
+    "FIT-only scalars and floors",
+    "no native inference"
+  ],
+  "limitations": [
+    "one new seed; old spectral TEST reused, not confirmatory",
+    "four old real TEST sources/domain;16 focused synthetic sources",
+    "hidden response fidelity predicts model response, not true signal semantics or monosemanticity",
+    "response-aware inspired, not TSAE replication; residual output, not FFN neurons",
+    "no native authorization; no lambda grid; no selection/refitting on focused holdout"
+  ],
+  "next_step": "Compare fixed lambda0/lambda1 against frozen gate; no grid."
+}

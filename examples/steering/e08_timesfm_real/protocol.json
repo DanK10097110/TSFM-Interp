@@ -1,0 +1,31 @@
+{
+  "model": "timesfm",
+  "source": "runs/real_background_poc492306",
+  "selected_indices": [
+    4,
+    5,
+    6,
+    7,
+    12,
+    13,
+    14,
+    15,
+    20,
+    21,
+    22,
+    23
+  ],
+  "corpus_sha256": "da1b2ae642ba6f2c4e995ca5eff897db107453e68a40dfdd2a1d4494d7c064be",
+  "metadata_sha256": "9eecad1c45cd61f788756bf2237a955755443dfb0a5fd7db28f3766f5f3f0bda",
+  "context_slice": [
+    128,
+    256
+  ],
+  "future_used": false,
+  "period": 24.0,
+  "strength": "interval fraction .2; seasonal/upper .2 context SD",
+  "radius": 0.2,
+  "steps": 6,
+  "ridge": 1e-05,
+  "scope": "external validity on reused real sources; pretraining overlap unknown"
+}

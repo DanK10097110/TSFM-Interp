@@ -1,0 +1,6098 @@
+[
+  {
+    "request_index": 0,
+    "context_index": 0,
+    "kind": "seasonality",
+    "strength": 0.1,
+    "window": "all",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000285",
+    "replay_max_abs": 0.0,
+    "gain": 1.0758147992770668,
+    "collateral": 7.225856916318702e-05,
+    "relative_error": 0.07581483371163449,
+    "achieved": true,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.1984880556230383,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.0758037191819739,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.07581483371163449,
+        "coefficient_norm": 0.1984880556230383,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 1.1857452070836445e-05,
+          "unrestricted_minimum_norm": 0.19855863171081492,
+          "unreachable_fraction": 1.9088478391914387e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 0,
+    "context_index": 1,
+    "kind": "seasonality",
+    "strength": 0.1,
+    "window": "all",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000046",
+    "replay_max_abs": 0.0,
+    "gain": 0.9854561458965699,
+    "collateral": 0.0018186686703599397,
+    "relative_error": 0.014657122770667342,
+    "achieved": true,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.2,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.0758037191819739,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.014657122770667342,
+        "coefficient_norm": 0.2,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 0.0018433818000295281,
+          "unrestricted_minimum_norm": 0.2114462038188335,
+          "unreachable_fraction": 2.1886023485818715e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.0015569106211245094
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 0,
+    "context_index": 2,
+    "kind": "seasonality",
+    "strength": 0.1,
+    "window": "all",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000287",
+    "replay_max_abs": 0.0,
+    "gain": 1.0751352321466174,
+    "collateral": 6.970448244925033e-05,
+    "relative_error": 0.07513526447974327,
+    "achieved": true,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.19349397958251024,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.0758037191819739,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.07513526447974327,
+        "coefficient_norm": 0.19349397958251024,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 1.1192605272127131e-05,
+          "unrestricted_minimum_norm": 0.1935578532355772,
+          "unreachable_fraction": 1.9518829055843873e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 0,
+    "context_index": 3,
+    "kind": "seasonality",
+    "strength": 0.1,
+    "window": "all",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000185",
+    "replay_max_abs": 0.0,
+    "gain": 0.9930196922273747,
+    "collateral": 6.0893912031563425e-05,
+    "relative_error": 0.006980573376814622,
+    "achieved": true,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.17685875763509143,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.0758037191819739,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.006980573376814623,
+        "coefficient_norm": 0.17685875763509143,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 8.744669062297118e-06,
+          "unrestricted_minimum_norm": 0.17689968396956854,
+          "unreachable_fraction": 1.9271148576426972e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 0,
+    "context_index": 4,
+    "kind": "seasonality",
+    "strength": 0.1,
+    "window": "all",
+    "dataset": "m4_hourly",
+    "source_id": "T000216",
+    "replay_max_abs": 0.0,
+    "gain": 1.0736831074593698,
+    "collateral": 6.716989065321491e-05,
+    "relative_error": 0.07368313807556824,
+    "achieved": true,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.18407886120388642,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.0758037191819739,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.07368313807556824,
+        "coefficient_norm": 0.18407886120388642,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 9.862196414294754e-06,
+          "unrestricted_minimum_norm": 0.18412987083847535,
+          "unreachable_fraction": 1.897923181762997e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 0,
+    "context_index": 5,
+    "kind": "seasonality",
+    "strength": 0.1,
+    "window": "all",
+    "dataset": "m4_hourly",
+    "source_id": "T000099",
+    "replay_max_abs": 0.0,
+    "gain": 0.954928444705233,
+    "collateral": 6.272500645374747e-05,
+    "relative_error": 0.04507159894119214,
+    "achieved": true,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.19403600113457242,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.0758037191819739,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.04507159894119215,
+        "coefficient_norm": 0.19403600113457242,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 1.1265870143382749e-05,
+          "unrestricted_minimum_norm": 0.19410060587689273,
+          "unreachable_fraction": 1.902940985614006e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 0,
+    "context_index": 6,
+    "kind": "seasonality",
+    "strength": 0.1,
+    "window": "all",
+    "dataset": "m4_hourly",
+    "source_id": "T000013",
+    "replay_max_abs": 0.0,
+    "gain": 0.9999979613879085,
+    "collateral": 2.7676445139905067e-05,
+    "relative_error": 2.775142437502114e-05,
+    "achieved": true,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.1662342819590472,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.0758037191819739,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.265459187428791,
+        "coefficient_norm": 0.2,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 0.0016823636713670896,
+          "unrestricted_minimum_norm": 0.2104146741159471,
+          "unreachable_fraction": 2.3052403814167416e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.0014046015825152516
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 2.7751424375021143e-05,
+        "coefficient_norm": 0.1662342819590472,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 8.459379657133876e-06,
+          "unrestricted_minimum_norm": 0.1662771525949977,
+          "unreachable_fraction": 1.535337180003742e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 0,
+    "context_index": 7,
+    "kind": "seasonality",
+    "strength": 0.1,
+    "window": "all",
+    "dataset": "m4_hourly",
+    "source_id": "T000297",
+    "replay_max_abs": 0.0,
+    "gain": 1.0969380149247698,
+    "collateral": 7.09783958627066e-05,
+    "relative_error": 0.09693804091009664,
+    "achieved": true,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.18992013571416763,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.0758037191819739,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.09693804091009665,
+        "coefficient_norm": 0.18992013571416763,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 1.0701393525714705e-05,
+          "unrestricted_minimum_norm": 0.18997916410108132,
+          "unreachable_fraction": 1.8745132336422394e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 0,
+    "context_index": 8,
+    "kind": "seasonality",
+    "strength": 0.1,
+    "window": "all",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000046",
+    "replay_max_abs": 0.0,
+    "gain": 0.989438689679197,
+    "collateral": 6.119025413161656e-05,
+    "relative_error": 0.010561487581751927,
+    "achieved": true,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.1787594893117347,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.0758037191819739,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.01056148758175193,
+        "coefficient_norm": 0.1787594893117347,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 9.04878449439853e-06,
+          "unrestricted_minimum_norm": 0.17880308680681667,
+          "unreachable_fraction": 1.935775836668194e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 0,
+    "context_index": 9,
+    "kind": "seasonality",
+    "strength": 0.1,
+    "window": "all",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000057",
+    "replay_max_abs": 0.0,
+    "gain": 0.999997871289787,
+    "collateral": 1.652702233591664e-05,
+    "relative_error": 1.6663549275684184e-05,
+    "achieved": true,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.14659870104736425,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.0758037191819739,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.20064175186723698,
+        "coefficient_norm": 0.17597108637716333,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 8.600026134872868e-06,
+          "unrestricted_minimum_norm": 0.1760107621598905,
+          "unreachable_fraction": 1.999162723057749e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 1.6663549275684187e-05,
+        "coefficient_norm": 0.14659870104736425,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 5.972408468125866e-06,
+          "unrestricted_minimum_norm": 0.14662166636324195,
+          "unreachable_fraction": 1.6942328789518874e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 0,
+    "context_index": 10,
+    "kind": "seasonality",
+    "strength": 0.1,
+    "window": "all",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000021",
+    "replay_max_abs": 0.0,
+    "gain": 1.0682192464671885,
+    "collateral": 6.680844154315972e-05,
+    "relative_error": 0.06821927918058711,
+    "achieved": true,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.18315190998714787,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.0758037191819739,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.06821927918058711,
+        "coefficient_norm": 0.18315190998714787,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 9.724152560277432e-06,
+          "unrestricted_minimum_norm": 0.18320163537175385,
+          "unreachable_fraction": 1.9162177217845263e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 0,
+    "context_index": 11,
+    "kind": "seasonality",
+    "strength": 0.1,
+    "window": "all",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000012",
+    "replay_max_abs": 0.0,
+    "gain": 0.9999591047914427,
+    "collateral": 0.0009096274285764405,
+    "relative_error": 0.0009105462519287668,
+    "achieved": true,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.19999999999999998,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.0758037191819739,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.17137874256556226,
+        "coefficient_norm": 0.16924233375043024,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 7.476582943828124e-06,
+          "unrestricted_minimum_norm": 0.16927265822136445,
+          "unreachable_fraction": 2.16409976417158e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 0.0009105462519287667,
+        "coefficient_norm": 0.19999999999999998,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 0.0009099845875033104,
+          "unrestricted_minimum_norm": 0.20430172399443136,
+          "unreachable_fraction": 1.6097957938556908e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.0009152168581177216
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 1,
+    "context_index": 0,
+    "kind": "uncertainty",
+    "strength": 0.1,
+    "window": "all",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000285",
+    "replay_max_abs": 0.0,
+    "gain": 1.0834362827365844,
+    "collateral": 0.0021181553283620455,
+    "relative_error": 0.08346316468295652,
+    "achieved": true,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.20000000000000012,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.046031929465713405,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.08346316468295652,
+        "coefficient_norm": 0.20000000000000012,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 0.0019563092434430225,
+          "unrestricted_minimum_norm": 0.2084663270144856,
+          "unreachable_fraction": 1.6113076064533989e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.003268798869035579
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 1,
+    "context_index": 1,
+    "kind": "uncertainty",
+    "strength": 0.1,
+    "window": "all",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000046",
+    "replay_max_abs": 0.0,
+    "gain": 0.9999989586146502,
+    "collateral": 1.5364495603065423e-05,
+    "relative_error": 1.5399747029857877e-05,
+    "achieved": true,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.14098950176779546,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.046031929465713405,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.20618442055720848,
+        "coefficient_norm": 0.17005462135331073,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 1.4746446287332145e-05,
+          "unrestricted_minimum_norm": 0.17010572172048075,
+          "unreachable_fraction": 1.5100748683312478e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 1.5399747029857874e-05,
+        "coefficient_norm": 0.14098950176779546,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 1.0142884250577103e-05,
+          "unrestricted_minimum_norm": 0.14101865768172983,
+          "unreachable_fraction": 1.5607113000627516e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 1,
+    "context_index": 2,
+    "kind": "uncertainty",
+    "strength": 0.1,
+    "window": "all",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000287",
+    "replay_max_abs": 0.0,
+    "gain": 0.9999994442868797,
+    "collateral": 7.382922400498433e-06,
+    "relative_error": 7.403807145232937e-06,
+    "achieved": true,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.17857913419620722,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.046031929465713405,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.15134491684546864,
+        "coefficient_norm": 0.2,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 0.001159467721292291,
+          "unrestricted_minimum_norm": 0.20564419549483298,
+          "unreachable_fraction": 1.6137915464713012e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.0015617157796972828
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 7.4038071452329384e-06,
+        "coefficient_norm": 0.17857913419620722,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 6.238280947887834e-06,
+          "unrestricted_minimum_norm": 0.17860658046444336,
+          "unreachable_fraction": 1.8241343701782478e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 1,
+    "context_index": 3,
+    "kind": "uncertainty",
+    "strength": 0.1,
+    "window": "all",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000185",
+    "replay_max_abs": 0.0,
+    "gain": 0.9999991659923967,
+    "collateral": 9.721132901616536e-06,
+    "relative_error": 9.756843422590154e-06,
+    "achieved": true,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.14755538736614912,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.046031929465713405,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.19676861896960737,
+        "coefficient_norm": 0.17656952084679403,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 1.0442164905704673e-05,
+          "unrestricted_minimum_norm": 0.17661832675430456,
+          "unreachable_fraction": 1.56922636299433e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 9.756843422590157e-06,
+        "coefficient_norm": 0.14755538736614912,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 7.293478705121838e-06,
+          "unrestricted_minimum_norm": 0.14758387622714397,
+          "unreachable_fraction": 1.5341740580973262e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 1,
+    "context_index": 4,
+    "kind": "uncertainty",
+    "strength": 0.1,
+    "window": "all",
+    "dataset": "m4_hourly",
+    "source_id": "T000216",
+    "replay_max_abs": 0.0,
+    "gain": 0.9999980378841485,
+    "collateral": 9.205401970842675e-05,
+    "relative_error": 9.207492841753346e-05,
+    "achieved": true,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.03089275865685841,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.046031929465713405,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.13358481616518383,
+        "coefficient_norm": 0.026766817747768477,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 4.1795489829261376e-05,
+          "unrestricted_minimum_norm": 0.026783469245335412,
+          "unreachable_fraction": 1.6846003819992194e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 9.207492841753346e-05,
+        "coefficient_norm": 0.03089275865685841,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 5.5680056393202535e-05,
+          "unrestricted_minimum_norm": 0.030918364730898686,
+          "unreachable_fraction": 1.4304709566938847e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 1,
+    "context_index": 5,
+    "kind": "uncertainty",
+    "strength": 0.1,
+    "window": "all",
+    "dataset": "m4_hourly",
+    "source_id": "T000099",
+    "replay_max_abs": 0.0,
+    "gain": 1.0000016980446382,
+    "collateral": 1.6795524160116282e-05,
+    "relative_error": 1.6881142953223576e-05,
+    "achieved": true,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.11396199812857839,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.046031929465713405,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.30262303095855625,
+        "coefficient_norm": 0.14842638179712314,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 1.5129632488349435e-05,
+          "unrestricted_minimum_norm": 0.14847759365553678,
+          "unreachable_fraction": 1.6840812414597135e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 1.6881142953223572e-05,
+        "coefficient_norm": 0.11396199812857839,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 8.922477656205715e-06,
+          "unrestricted_minimum_norm": 0.11398519258409742,
+          "unreachable_fraction": 1.1528892222717356e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 1,
+    "context_index": 6,
+    "kind": "uncertainty",
+    "strength": 0.1,
+    "window": "all",
+    "dataset": "m4_hourly",
+    "source_id": "T000013",
+    "replay_max_abs": 0.0,
+    "gain": 1.0000011029581501,
+    "collateral": 1.3113150781262638e-05,
+    "relative_error": 1.3159454399524966e-05,
+    "achieved": true,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.15861706034370796,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.046031929465713405,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.1822408563262331,
+        "coefficient_norm": 0.1875168125891471,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 8.632113879716109e-06,
+          "unrestricted_minimum_norm": 0.18755421287554877,
+          "unreachable_fraction": 1.6478194059813078e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 1.3159454399524968e-05,
+        "coefficient_norm": 0.15861706034370796,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 6.17670432517814e-06,
+          "unrestricted_minimum_norm": 0.1586396973908238,
+          "unreachable_fraction": 1.4892071948881503e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 1,
+    "context_index": 7,
+    "kind": "uncertainty",
+    "strength": 0.1,
+    "window": "all",
+    "dataset": "m4_hourly",
+    "source_id": "T000297",
+    "replay_max_abs": 0.0,
+    "gain": 0.999998090633382,
+    "collateral": 3.855719676018173e-05,
+    "relative_error": 3.860444408207093e-05,
+    "achieved": true,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.0315612545803887,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.046031929465713405,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.10596340436439024,
+        "coefficient_norm": 0.02822117640811583,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 1.6188749806122124e-05,
+          "unrestricted_minimum_norm": 0.028231825528727033,
+          "unreachable_fraction": 1.761126290219972e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 3.8604444082070926e-05,
+        "coefficient_norm": 0.0315612545803887,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 2.024489798593542e-05,
+          "unrestricted_minimum_norm": 0.031576146936522866,
+          "unreachable_fraction": 1.280664378754432e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 1,
+    "context_index": 8,
+    "kind": "uncertainty",
+    "strength": 0.1,
+    "window": "all",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000046",
+    "replay_max_abs": 0.0,
+    "gain": 0.9999993584830709,
+    "collateral": 1.3279234624394357e-05,
+    "relative_error": 1.3294721365264885e-05,
+    "achieved": true,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.13413001537715208,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.046031929465713405,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.10277072677744309,
+        "coefficient_norm": 0.14788846515953,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 1.590975219130857e-05,
+          "unrestricted_minimum_norm": 0.14794610588123192,
+          "unreachable_fraction": 1.9785921912918726e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 1.3294721365264885e-05,
+        "coefficient_norm": 0.13413001537715208,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 1.3092358037245318e-05,
+          "unrestricted_minimum_norm": 0.13417304977308606,
+          "unreachable_fraction": 1.845951512960102e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 1,
+    "context_index": 9,
+    "kind": "uncertainty",
+    "strength": 0.1,
+    "window": "all",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000057",
+    "replay_max_abs": 0.0,
+    "gain": 0.9999982374161864,
+    "collateral": 1.2958309139247885e-05,
+    "relative_error": 1.3077632715747076e-05,
+    "achieved": true,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.1203053272299094,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.046031929465713405,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.20406197045039695,
+        "coefficient_norm": 0.14483041056968401,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 1.5885652332595643e-05,
+          "unrestricted_minimum_norm": 0.14488760962634595,
+          "unreachable_fraction": 1.6910177050913343e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 1.3077632715747076e-05,
+        "coefficient_norm": 0.1203053272299094,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 1.0962573922118508e-05,
+          "unrestricted_minimum_norm": 0.12033811619640772,
+          "unreachable_fraction": 1.6505288380157382e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 1,
+    "context_index": 10,
+    "kind": "uncertainty",
+    "strength": 0.1,
+    "window": "all",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000021",
+    "replay_max_abs": 0.0,
+    "gain": 0.9999995744175457,
+    "collateral": 1.0460069686881006e-05,
+    "relative_error": 1.0468723813317607e-05,
+    "achieved": true,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.1013997070108049,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.046031929465713405,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.10329925104964355,
+        "coefficient_norm": 0.1118563334900598,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 1.213191778394596e-05,
+          "unrestricted_minimum_norm": 0.11188711307159747,
+          "unreachable_fraction": 1.7989698428098063e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 1.0468723813317607e-05,
+        "coefficient_norm": 0.1013997070108049,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 9.972636798156836e-06,
+          "unrestricted_minimum_norm": 0.10142264842089307,
+          "unreachable_fraction": 1.5432529945034024e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 1,
+    "context_index": 11,
+    "kind": "uncertainty",
+    "strength": 0.1,
+    "window": "all",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000012",
+    "replay_max_abs": 0.0,
+    "gain": 1.0000018275253044,
+    "collateral": 1.4676647670063402e-05,
+    "relative_error": 1.4789991060468523e-05,
+    "achieved": true,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.09461079356767732,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.046031929465713405,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.6664471806307454,
+        "coefficient_norm": 0.15763318685423744,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 1.2761372517206281e-05,
+          "unrestricted_minimum_norm": 0.15767983848913347,
+          "unreachable_fraction": 1.4741483838839413e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 1.4789991060468523e-05,
+        "coefficient_norm": 0.09461079356767732,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 4.597208278793121e-06,
+          "unrestricted_minimum_norm": 0.0946208786389706,
+          "unreachable_fraction": 3.3282665406613977e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 2,
+    "context_index": 0,
+    "kind": "level",
+    "strength": 0.1,
+    "window": "short",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000285",
+    "replay_max_abs": 0.0,
+    "gain": 1.0758024733220413,
+    "collateral": 6.857473714527091e-05,
+    "relative_error": 0.07580250434011652,
+    "achieved": true,
+    "protected_rms": 0.0010435294777856338,
+    "protected_relative_error": 5.1508864756804395e-05,
+    "coefficient_norm": 0.18424863929743865,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.07581853861461857,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.07580250434011654,
+        "coefficient_norm": 0.18424863929743865,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 1.1799233854254175e-05,
+          "unrestricted_minimum_norm": 0.184321203086474,
+          "unreachable_fraction": 1.5494432576197394e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 2,
+    "context_index": 1,
+    "kind": "level",
+    "strength": 0.1,
+    "window": "short",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000046",
+    "replay_max_abs": 0.0,
+    "gain": 0.9855142947330037,
+    "collateral": 6.276497399883652e-05,
+    "relative_error": 0.014485841243236307,
+    "achieved": true,
+    "protected_rms": 0.00011676507822044943,
+    "protected_relative_error": 4.667078855124722e-05,
+    "coefficient_norm": 0.18424864756845227,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.07581853861461857,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.014485841243236304,
+        "coefficient_norm": 0.18424864756845227,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 1.1799233854304036e-05,
+          "unrestricted_minimum_norm": 0.18432121136074506,
+          "unreachable_fraction": 1.5701838069893468e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 2,
+    "context_index": 2,
+    "kind": "level",
+    "strength": 0.1,
+    "window": "short",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000287",
+    "replay_max_abs": 0.0,
+    "gain": 1.0751232694401123,
+    "collateral": 6.825497536270776e-05,
+    "relative_error": 0.07512330044742051,
+    "achieved": true,
+    "protected_rms": 0.00070729852162224,
+    "protected_relative_error": 5.123399371638384e-05,
+    "coefficient_norm": 0.18424864051856935,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.07581853861461857,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.07512330044742052,
+        "coefficient_norm": 0.18424864051856935,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 1.1799233854255293e-05,
+          "unrestricted_minimum_norm": 0.18432120430808563,
+          "unreachable_fraction": 1.6121474490198339e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 2,
+    "context_index": 3,
+    "kind": "level",
+    "strength": 0.1,
+    "window": "short",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000185",
+    "replay_max_abs": 0.0,
+    "gain": 0.9930076496954581,
+    "collateral": 6.347789661013427e-05,
+    "relative_error": 0.006992638430862999,
+    "achieved": true,
+    "protected_rms": 0.0015144588362856922,
+    "protected_relative_error": 4.738279529436253e-05,
+    "coefficient_norm": 0.18424863511131517,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.07581853861461857,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.006992638430862999,
+        "coefficient_norm": 0.18424863511131517,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 1.179923385428209e-05,
+          "unrestricted_minimum_norm": 0.18432119889870188,
+          "unreachable_fraction": 1.6481733069976718e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 2,
+    "context_index": 4,
+    "kind": "level",
+    "strength": 0.1,
+    "window": "short",
+    "dataset": "m4_hourly",
+    "source_id": "T000216",
+    "replay_max_abs": 0.0,
+    "gain": 1.0736694463984424,
+    "collateral": 6.83222624040405e-05,
+    "relative_error": 0.07366947808003349,
+    "achieved": true,
+    "protected_rms": 1.589496929943574e-05,
+    "protected_relative_error": 5.091350632418703e-05,
+    "coefficient_norm": 0.18424863451860804,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.07581853861461857,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.0736694780800335,
+        "coefficient_norm": 0.18424863451860804,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 1.1799233854300965e-05,
+          "unrestricted_minimum_norm": 0.18432119830576132,
+          "unreachable_fraction": 1.579534689206157e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 2,
+    "context_index": 5,
+    "kind": "level",
+    "strength": 0.1,
+    "window": "short",
+    "dataset": "m4_hourly",
+    "source_id": "T000099",
+    "replay_max_abs": 0.0,
+    "gain": 0.9549169076375977,
+    "collateral": 6.067776548944113e-05,
+    "relative_error": 0.045083133195776524,
+    "achieved": true,
+    "protected_rms": 0.0013234305863498222,
+    "protected_relative_error": 4.5472237692745465e-05,
+    "coefficient_norm": 0.18424864040685376,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.07581853861461857,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.04508313319577652,
+        "coefficient_norm": 0.18424864040685376,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 1.1799233854322849e-05,
+          "unrestricted_minimum_norm": 0.18432120419632608,
+          "unreachable_fraction": 1.5651940496375138e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 2,
+    "context_index": 6,
+    "kind": "level",
+    "strength": 0.1,
+    "window": "short",
+    "dataset": "m4_hourly",
+    "source_id": "T000013",
+    "replay_max_abs": 0.0,
+    "gain": 0.9999999626522476,
+    "collateral": 2.9524974744956998e-05,
+    "relative_error": 2.9524998366553278e-05,
+    "achieved": true,
+    "protected_rms": 4.8684116432572246e-05,
+    "protected_relative_error": 1.9896828397030657e-05,
+    "coefficient_norm": 0.1456157848682856,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.07581853861461857,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.26551982962980936,
+        "coefficient_norm": 0.18424864457577372,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 1.1799233854301956e-05,
+          "unrestricted_minimum_norm": 0.1843212083668879,
+          "unreachable_fraction": 1.5940717754301629e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 2.9524998366553278e-05,
+        "coefficient_norm": 0.1456157848682856,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 7.372017306337677e-06,
+          "unrestricted_minimum_norm": 0.1456516216325597,
+          "unreachable_fraction": 1.7270939838955475e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 2,
+    "context_index": 7,
+    "kind": "level",
+    "strength": 0.1,
+    "window": "short",
+    "dataset": "m4_hourly",
+    "source_id": "T000297",
+    "replay_max_abs": 0.0,
+    "gain": 1.0969248200338604,
+    "collateral": 6.996349352081605e-05,
+    "relative_error": 0.0969248452848219,
+    "achieved": true,
+    "protected_rms": 1.9586150364104386e-05,
+    "protected_relative_error": 5.238945697768275e-05,
+    "coefficient_norm": 0.18424864020660725,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.07581853861461857,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.0969248452848219,
+        "coefficient_norm": 0.18424864020660725,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 1.179923385431325e-05,
+          "unrestricted_minimum_norm": 0.18432120399600066,
+          "unreachable_fraction": 1.5689796008390752e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 2,
+    "context_index": 8,
+    "kind": "level",
+    "strength": 0.1,
+    "window": "short",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000046",
+    "replay_max_abs": 0.0,
+    "gain": 0.9894253105729586,
+    "collateral": 6.288141559786356e-05,
+    "relative_error": 0.010574876384658765,
+    "achieved": true,
+    "protected_rms": 0.0008148062987123965,
+    "protected_relative_error": 4.7508567271360555e-05,
+    "coefficient_norm": 0.1842486396501642,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.07581853861461857,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.010574876384658764,
+        "coefficient_norm": 0.1842486396501642,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 1.179923385430007e-05,
+          "unrestricted_minimum_norm": 0.1843212034393385,
+          "unreachable_fraction": 1.5771407367907682e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 2,
+    "context_index": 9,
+    "kind": "level",
+    "strength": 0.1,
+    "window": "short",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000057",
+    "replay_max_abs": 0.0,
+    "gain": 0.9999996585096039,
+    "collateral": 2.126259260120083e-05,
+    "relative_error": 2.126533469793404e-05,
+    "achieved": true,
+    "protected_rms": 0.00014757423148657544,
+    "protected_relative_error": 1.4797419873135606e-05,
+    "coefficient_norm": 0.15347139482689273,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.07581853861461857,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.20062647713603998,
+        "coefficient_norm": 0.18424863571720296,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 1.1799233854317674e-05,
+          "unrestricted_minimum_norm": 0.18432119950482828,
+          "unreachable_fraction": 1.5731912253333241e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 2.126533469793404e-05,
+        "coefficient_norm": 0.15347139482689273,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 8.187085881998736e-06,
+          "unrestricted_minimum_norm": 0.1535133322393827,
+          "unreachable_fraction": 1.7368782321185722e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 2,
+    "context_index": 10,
+    "kind": "level",
+    "strength": 0.1,
+    "window": "short",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000021",
+    "replay_max_abs": 0.0,
+    "gain": 1.0682059072190673,
+    "collateral": 6.809888451734432e-05,
+    "relative_error": 0.06820594121507387,
+    "achieved": true,
+    "protected_rms": 0.0019357098574301318,
+    "protected_relative_error": 5.079966983224177e-05,
+    "coefficient_norm": 0.18424863508429604,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.07581853861461857,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.06820594121507388,
+        "coefficient_norm": 0.18424863508429604,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 1.1799233854293442e-05,
+          "unrestricted_minimum_norm": 0.18432119887167212,
+          "unreachable_fraction": 1.5907323978802444e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 2,
+    "context_index": 11,
+    "kind": "level",
+    "strength": 0.1,
+    "window": "short",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000012",
+    "replay_max_abs": 0.0,
+    "gain": 0.9998779484399628,
+    "collateral": 0.003331747487303408,
+    "relative_error": 0.0033339822888641926,
+    "achieved": true,
+    "protected_rms": 0.2484742104836196,
+    "protected_relative_error": 0.0021359164125804575,
+    "coefficient_norm": 0.19999999999999557,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.07581853861461857,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.17138840364730049,
+        "coefficient_norm": 0.18424863266302227,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 1.179923385429033e-05,
+          "unrestricted_minimum_norm": 0.18432119644944478,
+          "unreachable_fraction": 1.6721443121198152e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 0.003333982288864192,
+        "coefficient_norm": 0.19999999999999557,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 0.003333291576080225,
+          "unrestricted_minimum_norm": 0.22244138539092145,
+          "unreachable_fraction": 1.880648042418733e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.002640564626838759
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 3,
+    "context_index": 0,
+    "kind": "level",
+    "strength": 0.1,
+    "window": "long",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000285",
+    "replay_max_abs": 0.0,
+    "gain": 1.0758085379698732,
+    "collateral": 4.986203113815158e-05,
+    "relative_error": 0.07580855436790704,
+    "achieved": true,
+    "protected_rms": 0.0006755371839364501,
+    "protected_relative_error": 3.334467706596312e-05,
+    "coefficient_norm": 0.13174368875632492,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.07582522028602923,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.07580855436790705,
+        "coefficient_norm": 0.13174368875632492,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 6.177099737253085e-06,
+          "unrestricted_minimum_norm": 0.1317715037779204,
+          "unreachable_fraction": 1.7778897385949403e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 3,
+    "context_index": 1,
+    "kind": "level",
+    "strength": 0.1,
+    "window": "long",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000046",
+    "replay_max_abs": 0.0,
+    "gain": 0.9855192183323241,
+    "collateral": 4.544735646727135e-05,
+    "relative_error": 0.014480852984859504,
+    "achieved": true,
+    "protected_rms": 7.613483367880607e-05,
+    "protected_relative_error": 3.043095399892978e-05,
+    "coefficient_norm": 0.1317436946703656,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.07582522028602923,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.014480852984859502,
+        "coefficient_norm": 0.1317436946703656,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 6.177099737224806e-06,
+          "unrestricted_minimum_norm": 0.13177150969320972,
+          "unreachable_fraction": 1.751453062413047e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 3,
+    "context_index": 2,
+    "kind": "level",
+    "strength": 0.1,
+    "window": "long",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000287",
+    "replay_max_abs": 0.0,
+    "gain": 1.075129244904391,
+    "collateral": 5.094190601790414e-05,
+    "relative_error": 0.07512926217514573,
+    "achieved": true,
+    "protected_rms": 0.00046774654760766885,
+    "protected_relative_error": 3.388176696033124e-05,
+    "coefficient_norm": 0.1317436896294725,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.07582522028602923,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.07512926217514576,
+        "coefficient_norm": 0.1317436896294725,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 6.1770997372495705e-06,
+          "unrestricted_minimum_norm": 0.1317715046512523,
+          "unreachable_fraction": 1.8275245397925337e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 3,
+    "context_index": 3,
+    "kind": "level",
+    "strength": 0.1,
+    "window": "long",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000185",
+    "replay_max_abs": 0.0,
+    "gain": 0.9930137166657922,
+    "collateral": 4.6445864203687887e-05,
+    "relative_error": 0.006986437722053154,
+    "achieved": true,
+    "protected_rms": 0.0009902991327608633,
+    "protected_relative_error": 3.098343775580903e-05,
+    "coefficient_norm": 0.1317436857631125,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.07582522028602923,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.006986437722053155,
+        "coefficient_norm": 0.1317436857631125,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 6.177099737232169e-06,
+          "unrestricted_minimum_norm": 0.131771500784076,
+          "unreachable_fraction": 1.858433395994883e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 3,
+    "context_index": 4,
+    "kind": "level",
+    "strength": 0.1,
+    "window": "long",
+    "dataset": "m4_hourly",
+    "source_id": "T000216",
+    "replay_max_abs": 0.0,
+    "gain": 1.0736761922693854,
+    "collateral": 4.977984964845199e-05,
+    "relative_error": 0.07367620908644076,
+    "achieved": true,
+    "protected_rms": 1.027507550487136e-05,
+    "protected_relative_error": 3.291230777761479e-05,
+    "coefficient_norm": 0.13174368533930778,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.07582522028602923,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.07367620908644078,
+        "coefficient_norm": 0.13174368533930778,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 6.177099737251336e-06,
+          "unrestricted_minimum_norm": 0.13177150036018181,
+          "unreachable_fraction": 1.779584592315798e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 3,
+    "context_index": 5,
+    "kind": "level",
+    "strength": 0.1,
+    "window": "long",
+    "dataset": "m4_hourly",
+    "source_id": "T000099",
+    "replay_max_abs": 0.0,
+    "gain": 0.954922565517838,
+    "collateral": 4.445281419292811e-05,
+    "relative_error": 0.04507745640058115,
+    "achieved": true,
+    "protected_rms": 0.0008589311378245416,
+    "protected_relative_error": 2.9512330502034958e-05,
+    "coefficient_norm": 0.13174368954959234,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.07582522028602923,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.04507745640058115,
+        "coefficient_norm": 0.13174368954959234,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 6.177099737273898e-06,
+          "unrestricted_minimum_norm": 0.13177150457135534,
+          "unreachable_fraction": 1.7573014422800438e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 3,
+    "context_index": 6,
+    "kind": "level",
+    "strength": 0.1,
+    "window": "long",
+    "dataset": "m4_hourly",
+    "source_id": "T000013",
+    "replay_max_abs": 0.0,
+    "gain": 0.9999999951322013,
+    "collateral": 2.3111649682557724e-05,
+    "relative_error": 2.311165019518805e-05,
+    "achieved": true,
+    "protected_rms": 4.52970202905194e-05,
+    "protected_relative_error": 1.8512547944986115e-05,
+    "coefficient_norm": 0.10412410771042634,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.07582522028602923,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.2655266444466149,
+        "coefficient_norm": 0.1317436925305041,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 6.177099737253734e-06,
+          "unrestricted_minimum_norm": 0.1317715075528964,
+          "unreachable_fraction": 1.8240249651887767e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 2.311165019518805e-05,
+        "coefficient_norm": 0.10412410771042634,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 3.859613183004419e-06,
+          "unrestricted_minimum_norm": 0.10413784545187024,
+          "unreachable_fraction": 1.540511208087684e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 3,
+    "context_index": 7,
+    "kind": "level",
+    "strength": 0.1,
+    "window": "long",
+    "dataset": "m4_hourly",
+    "source_id": "T000297",
+    "replay_max_abs": 0.0,
+    "gain": 1.0969319944643217,
+    "collateral": 5.105046349424876e-05,
+    "relative_error": 0.09693200790750761,
+    "achieved": true,
+    "protected_rms": 1.2953832347112774e-05,
+    "protected_relative_error": 3.4649189852485444e-05,
+    "coefficient_norm": 0.13174368940640982,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.07582522028602923,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.09693200790750761,
+        "coefficient_norm": 0.13174368940640982,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 6.17709973724719e-06,
+          "unrestricted_minimum_norm": 0.13177150442814256,
+          "unreachable_fraction": 1.7905830155920656e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 3,
+    "context_index": 8,
+    "kind": "level",
+    "strength": 0.1,
+    "window": "long",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000046",
+    "replay_max_abs": 0.0,
+    "gain": 0.9894311398814306,
+    "collateral": 4.591069101584752e-05,
+    "relative_error": 0.010568959835170033,
+    "achieved": true,
+    "protected_rms": 0.0005271797988631222,
+    "protected_relative_error": 3.07380502310419e-05,
+    "coefficient_norm": 0.13174368900853506,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.07582522028602923,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.010568959835170031,
+        "coefficient_norm": 0.13174368900853506,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 6.1770997372542716e-06,
+          "unrestricted_minimum_norm": 0.13177150403018378,
+          "unreachable_fraction": 1.8267059391346602e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 3,
+    "context_index": 9,
+    "kind": "level",
+    "strength": 0.1,
+    "window": "long",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000057",
+    "replay_max_abs": 0.0,
+    "gain": 0.9999999852314424,
+    "collateral": 1.2240945760354854e-05,
+    "relative_error": 1.224095466939735e-05,
+    "achieved": true,
+    "protected_rms": 8.510708434037439e-05,
+    "protected_relative_error": 8.53377482285887e-06,
+    "coefficient_norm": 0.10974794424931916,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.07582522028602923,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.20063386564565663,
+        "coefficient_norm": 0.13174368619634166,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 6.177099737239398e-06,
+          "unrestricted_minimum_norm": 0.13177150121739667,
+          "unreachable_fraction": 1.8472162385558686e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 1.2240954669397349e-05,
+        "coefficient_norm": 0.10974794424931916,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 4.289888590962903e-06,
+          "unrestricted_minimum_norm": 0.10976404649907752,
+          "unreachable_fraction": 1.7709030338927928e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 3,
+    "context_index": 10,
+    "kind": "level",
+    "strength": 0.1,
+    "window": "long",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000021",
+    "replay_max_abs": 0.0,
+    "gain": 1.068211780382946,
+    "collateral": 4.938732073513512e-05,
+    "relative_error": 0.06821179826187486,
+    "achieved": true,
+    "protected_rms": 0.0012396426006172914,
+    "protected_relative_error": 3.253247617643696e-05,
+    "coefficient_norm": 0.1317436857437932,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.07582522028602923,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.06821179826187486,
+        "coefficient_norm": 0.1317436857437932,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 6.177099737244709e-06,
+          "unrestricted_minimum_norm": 0.13177150076475264,
+          "unreachable_fraction": 1.7461472713595056e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 3,
+    "context_index": 11,
+    "kind": "level",
+    "strength": 0.1,
+    "window": "long",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000012",
+    "replay_max_abs": 0.0,
+    "gain": 1.0000008487384369,
+    "collateral": 1.1591332141339388e-05,
+    "relative_error": 1.1622363690078894e-05,
+    "achieved": true,
+    "protected_rms": 0.0009968507841386777,
+    "protected_relative_error": 8.569058119115607e-06,
+    "coefficient_norm": 0.15900193149810057,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.07582522028602923,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.17138370788957932,
+        "coefficient_norm": 0.13174368401250444,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 6.177099737268054e-06,
+          "unrestricted_minimum_norm": 0.13177149903309837,
+          "unreachable_fraction": 1.775456203567915e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 1.1622363690078892e-05,
+        "coefficient_norm": 0.15900193149810057,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 8.997123779239793e-06,
+          "unrestricted_minimum_norm": 0.1590508324797022,
+          "unreachable_fraction": 1.4409808587029017e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 4,
+    "context_index": 0,
+    "kind": "uncertainty",
+    "strength": 0.2,
+    "window": "short",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000285",
+    "replay_max_abs": 0.0,
+    "gain": 0.9553708302089535,
+    "collateral": 0.11551623001173196,
+    "relative_error": 0.12383764448810147,
+    "achieved": false,
+    "protected_rms": 2.277515269014603,
+    "protected_relative_error": 0.08380182301711851,
+    "coefficient_norm": 0.19999999999999998,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.051972471273249485,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.14053545860080693,
+        "coefficient_norm": 0.19999999999999998,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 0.14593623265894207,
+          "unrestricted_minimum_norm": 0.8412074449476441,
+          "unreachable_fraction": 1.6964361870820222e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 1.998491206902466
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 0.12383781776810482,
+        "coefficient_norm": 0.19999999999999998,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 0.1238381258816738,
+          "unrestricted_minimum_norm": 0.7764339922418403,
+          "unreachable_fraction": 1.7992419210758655e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 1.2651584598392391
+        }
+      },
+      {
+        "iteration": 2,
+        "accepted": true,
+        "relative_error": 0.12383764448810146,
+        "coefficient_norm": 0.19999999999999998,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 0.12383734046442482,
+          "unrestricted_minimum_norm": 0.7762464115282591,
+          "unreachable_fraction": 1.6848852281468026e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 1.265179918691325
+        }
+      }
+    ],
+    "model_calls": 80,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 4,
+    "context_index": 1,
+    "kind": "uncertainty",
+    "strength": 0.2,
+    "window": "short",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000046",
+    "replay_max_abs": 0.0,
+    "gain": 0.9899586826843892,
+    "collateral": 0.05455826712739169,
+    "relative_error": 0.055474611899287866,
+    "achieved": true,
+    "protected_rms": 0.10178233744339546,
+    "protected_relative_error": 0.03925028972284128,
+    "coefficient_norm": 0.19999999999999996,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.051972471273249485,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.19564762112182976,
+        "coefficient_norm": 0.19999999999999996,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 0.09040066736125613,
+          "unrestricted_minimum_norm": 0.513358180871526,
+          "unreachable_fraction": 1.6257939111691471e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.624966832994797
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 0.05547461189928787,
+        "coefficient_norm": 0.19999999999999996,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 0.05547300472165357,
+          "unrestricted_minimum_norm": 0.4256128916070297,
+          "unreachable_fraction": 1.6976328880785534e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.17955150900678515
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 4,
+    "context_index": 2,
+    "kind": "uncertainty",
+    "strength": 0.2,
+    "window": "short",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000287",
+    "replay_max_abs": 0.0,
+    "gain": 0.9551846280536678,
+    "collateral": 0.10615698159603919,
+    "relative_error": 0.11522899940670273,
+    "achieved": false,
+    "protected_rms": 1.5098654330334162,
+    "protected_relative_error": 0.07636406660062141,
+    "coefficient_norm": 0.1999999997302292,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.051972471273249485,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.15799478785417848,
+        "coefficient_norm": 0.19999999999999998,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 0.16470987449231456,
+          "unrestricted_minimum_norm": 0.790340279359821,
+          "unreachable_fraction": 1.656212440056292e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 3.4546204755933045
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 0.11522911490764648,
+        "coefficient_norm": 0.19999999999999996,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 0.1152293766829841,
+          "unrestricted_minimum_norm": 0.6863907834206416,
+          "unreachable_fraction": 1.9147868205390333e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 1.5525691123351066
+        }
+      },
+      {
+        "iteration": 2,
+        "accepted": true,
+        "relative_error": 0.11522899940670274,
+        "coefficient_norm": 0.1999999997302292,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 0.1152288783009097,
+          "unrestricted_minimum_norm": 0.6865405720493173,
+          "unreachable_fraction": 1.8088003854543697e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 1.5525088661376616
+        }
+      }
+    ],
+    "model_calls": 82,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 4,
+    "context_index": 3,
+    "kind": "uncertainty",
+    "strength": 0.2,
+    "window": "short",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000185",
+    "replay_max_abs": 0.0,
+    "gain": 0.994395344454714,
+    "collateral": 0.04542687500513762,
+    "relative_error": 0.04577131346721112,
+    "achieved": true,
+    "protected_rms": 1.1365138798046601,
+    "protected_relative_error": 0.03364986397864842,
+    "coefficient_norm": 0.2,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.051972471273249485,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.1966426637881647,
+        "coefficient_norm": 0.19999999999999998,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 0.06331220210378961,
+          "unrestricted_minimum_norm": 0.5159729444260719,
+          "unreachable_fraction": 1.7008353737593264e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.22205616718430152
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 0.04577131346721112,
+        "coefficient_norm": 0.2,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 0.04576946795434973,
+          "unrestricted_minimum_norm": 0.4311180811829711,
+          "unreachable_fraction": 1.4946055084875827e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.09404890414333074
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 4,
+    "context_index": 4,
+    "kind": "uncertainty",
+    "strength": 0.2,
+    "window": "short",
+    "dataset": "m4_hourly",
+    "source_id": "T000216",
+    "replay_max_abs": 0.0,
+    "gain": 0.9999962406248847,
+    "collateral": 0.00013438638187128807,
+    "relative_error": 0.00013443895467353615,
+    "achieved": true,
+    "protected_rms": 1.7947498624541306e-06,
+    "protected_relative_error": 8.733832461299626e-05,
+    "coefficient_norm": 0.06494865742102174,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.051972471273249485,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.1335864868859718,
+        "coefficient_norm": 0.05628708376563653,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 8.110380830402392e-05,
+          "unrestricted_minimum_norm": 0.05633569784273218,
+          "unreachable_fraction": 1.7329942083586286e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 0.00013443895467353618,
+        "coefficient_norm": 0.06494865742102174,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 0.00010798312233044705,
+          "unrestricted_minimum_norm": 0.06502334614273618,
+          "unreachable_fraction": 1.5630067468366947e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 4,
+    "context_index": 5,
+    "kind": "uncertainty",
+    "strength": 0.2,
+    "window": "short",
+    "dataset": "m4_hourly",
+    "source_id": "T000099",
+    "replay_max_abs": 0.0,
+    "gain": 0.9943438269123807,
+    "collateral": 0.04607525770923133,
+    "relative_error": 0.046421133839763026,
+    "achieved": true,
+    "protected_rms": 0.6584614977431802,
+    "protected_relative_error": 0.033151206178476375,
+    "coefficient_norm": 0.19999999999999998,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.051972471273249485,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.30226146304172385,
+        "coefficient_norm": 0.20000000000000007,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 0.06689557846591813,
+          "unrestricted_minimum_norm": 0.4700705805406301,
+          "unreachable_fraction": 1.558086378289608e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.06076054260649127
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 0.046421133839763026,
+        "coefficient_norm": 0.19999999999999998,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 0.04642196682951847,
+          "unrestricted_minimum_norm": 0.36091648996472864,
+          "unreachable_fraction": 1.5199900295951255e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.0391388276874975
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 4,
+    "context_index": 6,
+    "kind": "uncertainty",
+    "strength": 0.2,
+    "window": "short",
+    "dataset": "m4_hourly",
+    "source_id": "T000013",
+    "replay_max_abs": 0.0,
+    "gain": 0.9789920004421389,
+    "collateral": 0.08205533085288623,
+    "relative_error": 0.08470190887341157,
+    "achieved": true,
+    "protected_rms": 0.176630773371582,
+    "protected_relative_error": 0.05917551094497332,
+    "coefficient_norm": 0.20000000000000004,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.051972471273249485,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.17862565072950812,
+        "coefficient_norm": 0.19999999999999998,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 0.12229879561964142,
+          "unrestricted_minimum_norm": 0.677869254642453,
+          "unreachable_fraction": 1.6766759642706654e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 1.3065799592664846
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 0.08470190887341159,
+        "coefficient_norm": 0.20000000000000004,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 0.08470049836167654,
+          "unrestricted_minimum_norm": 0.5733706221614365,
+          "unreachable_fraction": 1.5418253275566849e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.49413000830791054
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 4,
+    "context_index": 7,
+    "kind": "uncertainty",
+    "strength": 0.2,
+    "window": "short",
+    "dataset": "m4_hourly",
+    "source_id": "T000297",
+    "replay_max_abs": 0.0,
+    "gain": 0.9999976997677599,
+    "collateral": 8.398997806716835e-05,
+    "relative_error": 8.402147037562533e-05,
+    "achieved": true,
+    "protected_rms": 2.6477704443864315e-06,
+    "protected_relative_error": 5.790435933444341e-05,
+    "coefficient_norm": 0.08922179083335151,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.051972471273249485,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.10596324373122666,
+        "coefficient_norm": 0.07977277846765524,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 5.9206659905852465e-05,
+          "unrestricted_minimum_norm": 0.07983589924957968,
+          "unreachable_fraction": 1.6054775197008894e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 8.402147037562533e-05,
+        "coefficient_norm": 0.08922179083335151,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 7.411124999500948e-05,
+          "unrestricted_minimum_norm": 0.0893102185799149,
+          "unreachable_fraction": 1.9717569471453038e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 4,
+    "context_index": 8,
+    "kind": "uncertainty",
+    "strength": 0.2,
+    "window": "short",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000046",
+    "replay_max_abs": 0.0,
+    "gain": 0.9984358970271197,
+    "collateral": 0.018960737394943153,
+    "relative_error": 0.019025140752955527,
+    "achieved": true,
+    "protected_rms": 0.19859105905150543,
+    "protected_relative_error": 0.013156687522943068,
+    "coefficient_norm": 0.2,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.051972471273249485,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.10357343623296102,
+        "coefficient_norm": 0.2,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 0.02616870188754117,
+          "unrestricted_minimum_norm": 0.32100924992243673,
+          "unreachable_fraction": 1.7714110838254257e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.04199635708116739
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 0.019025140752955524,
+        "coefficient_norm": 0.2,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 0.019025094010116723,
+          "unrestricted_minimum_norm": 0.2911389494825895,
+          "unreachable_fraction": 2.0492170699123334e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.02234686134642757
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 4,
+    "context_index": 9,
+    "kind": "uncertainty",
+    "strength": 0.2,
+    "window": "short",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000057",
+    "replay_max_abs": 0.0,
+    "gain": 0.9989758927037675,
+    "collateral": 0.013913059090149112,
+    "relative_error": 0.013950699229794096,
+    "achieved": true,
+    "protected_rms": 0.08761180125496916,
+    "protected_relative_error": 0.010367772277265364,
+    "coefficient_norm": 0.2,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.051972471273249485,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.2030497965154098,
+        "coefficient_norm": 0.2,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 0.026763569766345877,
+          "unrestricted_minimum_norm": 0.31134870129672937,
+          "unreachable_fraction": 1.7058449824404475e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.03853351168063492
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 0.013950699229794096,
+        "coefficient_norm": 0.2,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 0.013950525126023211,
+          "unrestricted_minimum_norm": 0.25858718889095805,
+          "unreachable_fraction": 1.3720878536009264e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.014276318385049391
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 4,
+    "context_index": 10,
+    "kind": "uncertainty",
+    "strength": 0.2,
+    "window": "short",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000021",
+    "replay_max_abs": 0.0,
+    "gain": 0.9996074718821044,
+    "collateral": 0.006757429052565081,
+    "relative_error": 0.006768820113120851,
+    "achieved": true,
+    "protected_rms": 0.13738543461471495,
+    "protected_relative_error": 0.005048596339403587,
+    "coefficient_norm": 0.19999999999999998,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.051972471273249485,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.10324443080722177,
+        "coefficient_norm": 0.19999999999999954,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 0.012021679834954727,
+          "unrestricted_minimum_norm": 0.2529110343563006,
+          "unreachable_fraction": 1.736424744467277e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.008299309258731005
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 0.006768820113120851,
+        "coefficient_norm": 0.19999999999999998,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 0.0067690469959516926,
+          "unrestricted_minimum_norm": 0.22926781054913853,
+          "unreachable_fraction": 2.1376495089153084e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.0042430883494016655
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 4,
+    "context_index": 11,
+    "kind": "uncertainty",
+    "strength": 0.2,
+    "window": "short",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000012",
+    "replay_max_abs": 0.0,
+    "gain": 0.998638669163096,
+    "collateral": 0.017502446076904373,
+    "relative_error": 0.01755530803838118,
+    "achieved": true,
+    "protected_rms": 1.479411214616793,
+    "protected_relative_error": 0.012752516373799382,
+    "coefficient_norm": 0.2,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.051972471273249485,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.6575223789927624,
+        "coefficient_norm": 0.19999999999999998,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 0.05566480334738528,
+          "unrestricted_minimum_norm": 0.4485776083814422,
+          "unreachable_fraction": 1.5644801665420613e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.14540686227165603
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 0.017555308038381182,
+        "coefficient_norm": 0.2,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 0.017555139932453168,
+          "unrestricted_minimum_norm": 0.2691924845282854,
+          "unreachable_fraction": 2.268294745781222e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.02516219246369074
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 5,
+    "context_index": 0,
+    "kind": "uncertainty",
+    "strength": 0.2,
+    "window": "long",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000285",
+    "replay_max_abs": 0.0,
+    "gain": 0.8572921537496523,
+    "collateral": 0.1424727849065914,
+    "relative_error": 0.20165322665519836,
+    "achieved": false,
+    "protected_rms": 3.848654506903067,
+    "protected_relative_error": 0.09799841895582881,
+    "coefficient_norm": 0.2,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.04987145850496196,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.20622808070472304,
+        "coefficient_norm": 0.2,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 0.24320175158883828,
+          "unrestricted_minimum_norm": 0.8794343974266424,
+          "unreachable_fraction": 1.7092194113813654e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 11.5486933746019
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 0.2016533227728507,
+        "coefficient_norm": 0.19999999999999998,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 0.20165261560930467,
+          "unrestricted_minimum_norm": 0.8116725464625798,
+          "unreachable_fraction": 1.788041354215028e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 9.203108287399024
+        }
+      },
+      {
+        "iteration": 2,
+        "accepted": true,
+        "relative_error": 0.20165322665519833,
+        "coefficient_norm": 0.2,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 0.20165317969652588,
+          "unrestricted_minimum_norm": 0.8116420219758236,
+          "unreachable_fraction": 1.458481659114548e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 9.203039043090136
+        }
+      }
+    ],
+    "model_calls": 80,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 5,
+    "context_index": 1,
+    "kind": "uncertainty",
+    "strength": 0.2,
+    "window": "long",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000046",
+    "replay_max_abs": 0.0,
+    "gain": 0.997304645838817,
+    "collateral": 0.02984814929739005,
+    "relative_error": 0.02996960044000409,
+    "achieved": true,
+    "protected_rms": 0.03798247246788744,
+    "protected_relative_error": 0.01976139467493457,
+    "coefficient_norm": 0.2,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.04987145850496196,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.20695605724722804,
+        "coefficient_norm": 0.20000000000000007,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 0.04155741774467604,
+          "unrestricted_minimum_norm": 0.39608645353865857,
+          "unreachable_fraction": 1.6510444024165086e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.03797234044746584
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 0.029969600440004095,
+        "coefficient_norm": 0.2,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 0.029970797559191426,
+          "unrestricted_minimum_norm": 0.3284245809832887,
+          "unreachable_fraction": 1.5161434204474989e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.025465903337891622
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 5,
+    "context_index": 2,
+    "kind": "uncertainty",
+    "strength": 0.2,
+    "window": "long",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000287",
+    "replay_max_abs": 0.0,
+    "gain": 0.935320902922671,
+    "collateral": 0.10419145053168212,
+    "relative_error": 0.12263459529282314,
+    "achieved": false,
+    "protected_rms": 1.6851701366708216,
+    "protected_relative_error": 0.06828657724983031,
+    "coefficient_norm": 0.2000000000000001,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.04987145850496196,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.1539558146621994,
+        "coefficient_norm": 0.2,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 0.1888167878057945,
+          "unrestricted_minimum_norm": 0.7597543842082469,
+          "unreachable_fraction": 1.6265993102202823e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 7.490727940422489
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 0.12263464768578644,
+        "coefficient_norm": 0.19999999999999996,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 0.12263466248903909,
+          "unrestricted_minimum_norm": 0.6598970995949205,
+          "unreachable_fraction": 1.2043449134242826e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 3.8068849833717997
+        }
+      },
+      {
+        "iteration": 2,
+        "accepted": true,
+        "relative_error": 0.12263459529282313,
+        "coefficient_norm": 0.2000000000000001,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 0.12263463379022806,
+          "unrestricted_minimum_norm": 0.6597957976266509,
+          "unreachable_fraction": 1.4796419766748657e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 3.8068922125108293
+        }
+      }
+    ],
+    "model_calls": 80,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 5,
+    "context_index": 3,
+    "kind": "uncertainty",
+    "strength": 0.2,
+    "window": "long",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000185",
+    "replay_max_abs": 0.0,
+    "gain": 0.9846859539386499,
+    "collateral": 0.058169417560681315,
+    "relative_error": 0.060151484986806864,
+    "achieved": true,
+    "protected_rms": 1.6030438339779527,
+    "protected_relative_error": 0.03400527111558783,
+    "coefficient_norm": 0.19999999999999996,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.04987145850496196,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.1702039072358378,
+        "coefficient_norm": 0.19999999999999998,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 0.11403408851193958,
+          "unrestricted_minimum_norm": 0.5104038552321497,
+          "unreachable_fraction": 1.787285754017725e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 2.4662584276963964
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 0.06015148498680687,
+        "coefficient_norm": 0.19999999999999996,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 0.060151327987927626,
+          "unrestricted_minimum_norm": 0.42650113537190676,
+          "unreachable_fraction": 1.7157463648886939e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.610629243457956
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 5,
+    "context_index": 4,
+    "kind": "uncertainty",
+    "strength": 0.2,
+    "window": "long",
+    "dataset": "m4_hourly",
+    "source_id": "T000216",
+    "replay_max_abs": 0.0,
+    "gain": 0.9999985531813492,
+    "collateral": 0.00010517214032291983,
+    "relative_error": 0.00010518209155703232,
+    "achieved": true,
+    "protected_rms": 1.7520115919946514e-06,
+    "protected_relative_error": 7.072350651197121e-05,
+    "coefficient_norm": 0.06498206325654776,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.04987145850496196,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.13358174234567477,
+        "coefficient_norm": 0.05630590993909729,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 6.316094647207817e-05,
+          "unrestricted_minimum_norm": 0.056348744611086916,
+          "unreachable_fraction": 1.6243668583490725e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 0.00010518209155703234,
+        "coefficient_norm": 0.06498206325654776,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 8.410907667841648e-05,
+          "unrestricted_minimum_norm": 0.06504788373375171,
+          "unreachable_fraction": 1.5449725625297675e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 5,
+    "context_index": 5,
+    "kind": "uncertainty",
+    "strength": 0.2,
+    "window": "long",
+    "dataset": "m4_hourly",
+    "source_id": "T000099",
+    "replay_max_abs": 0.0,
+    "gain": 0.9959442896836189,
+    "collateral": 0.03784515511110709,
+    "relative_error": 0.038061851656930115,
+    "achieved": true,
+    "protected_rms": 0.7274151322348017,
+    "protected_relative_error": 0.02609441569797598,
+    "coefficient_norm": 0.19999999999999998,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.04987145850496196,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.30030107378280285,
+        "coefficient_norm": 0.2,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 0.05918180638693,
+          "unrestricted_minimum_norm": 0.4760250714906573,
+          "unreachable_fraction": 1.736126314136262e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.12800284164593032
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 0.03806185165693011,
+        "coefficient_norm": 0.19999999999999998,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 0.038064258455639564,
+          "unrestricted_minimum_norm": 0.3655179535927565,
+          "unreachable_fraction": 1.5217180084737432e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.05741379314874939
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 5,
+    "context_index": 6,
+    "kind": "uncertainty",
+    "strength": 0.2,
+    "window": "long",
+    "dataset": "m4_hourly",
+    "source_id": "T000013",
+    "replay_max_abs": 0.0,
+    "gain": 0.985988640389867,
+    "collateral": 0.06754618594160942,
+    "relative_error": 0.06898409551036339,
+    "achieved": true,
+    "protected_rms": 0.17850309488571225,
+    "protected_relative_error": 0.046775098328577173,
+    "coefficient_norm": 0.2,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.04987145850496196,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.1707319156486342,
+        "coefficient_norm": 0.19999999999999998,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 0.10467257277555134,
+          "unrestricted_minimum_norm": 0.6799114484209791,
+          "unreachable_fraction": 1.6213071658286258e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 1.985394660770644
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 0.0689840955103634,
+        "coefficient_norm": 0.2,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 0.06898365292777336,
+          "unrestricted_minimum_norm": 0.5751042670261975,
+          "unreachable_fraction": 1.9102396269923413e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.5402114704533018
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 5,
+    "context_index": 7,
+    "kind": "uncertainty",
+    "strength": 0.2,
+    "window": "long",
+    "dataset": "m4_hourly",
+    "source_id": "T000297",
+    "replay_max_abs": 0.0,
+    "gain": 0.9999961786481786,
+    "collateral": 5.4777073544701403e-05,
+    "relative_error": 5.491020411421833e-05,
+    "achieved": true,
+    "protected_rms": 2.4157657867385013e-06,
+    "protected_relative_error": 3.56748532234389e-05,
+    "coefficient_norm": 0.09472986562119984,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.04987145850496196,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.10596327767172678,
+        "coefficient_norm": 0.08469901765724348,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 3.911566295043653e-05,
+          "unrestricted_minimum_norm": 0.08475592392609539,
+          "unreachable_fraction": 1.7341214172487125e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 5.491020411421834e-05,
+        "coefficient_norm": 0.09472986562119984,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 4.893618217149629e-05,
+          "unrestricted_minimum_norm": 0.09480950565730295,
+          "unreachable_fraction": 1.4857602613588469e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 5,
+    "context_index": 8,
+    "kind": "uncertainty",
+    "strength": 0.2,
+    "window": "long",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000046",
+    "replay_max_abs": 0.0,
+    "gain": 0.9999995519676523,
+    "collateral": 1.3549802080485918e-05,
+    "relative_error": 1.3557207286360769e-05,
+    "achieved": true,
+    "protected_rms": 0.00012030668594892963,
+    "protected_relative_error": 8.850986466383063e-06,
+    "coefficient_norm": 0.18828392292163318,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.04987145850496196,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.10270107774725906,
+        "coefficient_norm": 0.19999999999999998,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 0.0016672026657398146,
+          "unrestricted_minimum_norm": 0.20770504854332172,
+          "unreachable_fraction": 1.8728898347711073e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.0011304932841158682
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 1.3557207286360766e-05,
+        "coefficient_norm": 0.18828392292163318,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 1.3570660328226078e-05,
+          "unrestricted_minimum_norm": 0.18834291822047916,
+          "unreachable_fraction": 1.5860371752642981e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 5,
+    "context_index": 9,
+    "kind": "uncertainty",
+    "strength": 0.2,
+    "window": "long",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000057",
+    "replay_max_abs": 0.0,
+    "gain": 0.9996742624293654,
+    "collateral": 0.004776545430833583,
+    "relative_error": 0.004787639420188208,
+    "achieved": true,
+    "protected_rms": 0.024748725765313583,
+    "protected_relative_error": 0.0030794624503912,
+    "coefficient_norm": 0.2,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.04987145850496196,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.2030683786307849,
+        "coefficient_norm": 0.2,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 0.017991602748416467,
+          "unrestricted_minimum_norm": 0.26065319319756763,
+          "unreachable_fraction": 1.717139230323514e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.02264595596176319
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 0.004787639420188209,
+        "coefficient_norm": 0.2,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 0.004787404357953006,
+          "unrestricted_minimum_norm": 0.21646855800109527,
+          "unreachable_fraction": 1.3854479470675562e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.004705648147948242
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 5,
+    "context_index": 10,
+    "kind": "uncertainty",
+    "strength": 0.2,
+    "window": "long",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000021",
+    "replay_max_abs": 0.0,
+    "gain": 0.9999993511189269,
+    "collateral": 1.3541075254214755e-05,
+    "relative_error": 1.3556613356113273e-05,
+    "achieved": true,
+    "protected_rms": 0.0002477791967629239,
+    "protected_relative_error": 9.54320120893238e-06,
+    "coefficient_norm": 0.16348351688523982,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.04987145850496196,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.10329795406034203,
+        "coefficient_norm": 0.18035667255366156,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 1.5915046028202475e-05,
+          "unrestricted_minimum_norm": 0.18041928760534937,
+          "unreachable_fraction": 1.7599797577994132e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 1.3556613356113275e-05,
+        "coefficient_norm": 0.16348351688523982,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 1.3079981614581409e-05,
+          "unrestricted_minimum_norm": 0.16353017340601242,
+          "unreachable_fraction": 1.2094376235105494e-15,
+          "rank": 192,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 5,
+    "context_index": 11,
+    "kind": "uncertainty",
+    "strength": 0.2,
+    "window": "long",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000012",
+    "replay_max_abs": 0.0,
+    "gain": 0.9986676298046704,
+    "collateral": 0.01586586964896688,
+    "relative_error": 0.015921715675624004,
+    "achieved": true,
+    "protected_rms": 1.2097348580141283,
+    "protected_relative_error": 0.011045205968133942,
+    "coefficient_norm": 0.19999999999999998,
+    "radius": 0.2,
+    "site": {
+      "module": "output_projection_point.output_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        4,
+        1280
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear",
+      "occurrences": null,
+      "batch_multiplier": 1,
+      "invocation_multipliers": null
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.04987145850496196,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.6551219048023583,
+        "coefficient_norm": 0.20000000000000004,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 0.06152210457178471,
+          "unrestricted_minimum_norm": 0.42692351502443926,
+          "unreachable_fraction": 1.619640527836725e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.16339801919689617
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 0.015921715675624008,
+        "coefficient_norm": 0.19999999999999998,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 0.015922915290910417,
+          "unrestricted_minimum_norm": 0.25620731100977306,
+          "unreachable_fraction": 1.5617812342836471e-15,
+          "rank": 192,
+          "norm_constraint_active": true,
+          "penalty": 0.022949675413624637
+        }
+      }
+    ],
+    "model_calls": 41,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 6,
+    "context_index": 0,
+    "kind": "context_ignore",
+    "strength": 1.0,
+    "window": "all",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000285",
+    "replay_max_abs": 0.0,
+    "gain": 1.0,
+    "collateral": 0.0,
+    "relative_error": 0.0,
+    "achieved": true,
+    "zero_target": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": null,
+    "radius": null,
+    "input_relative_norm": 0.6024055480957031,
+    "site": {
+      "source": "context_policy",
+      "module": "__input__",
+      "mode": "relevance_gate"
+    },
+    "selection": "explicit input relevance policy; no learned internal intervention",
+    "validation_error": null,
+    "history": [],
+    "model_calls": 3,
+    "context_policy": true,
+    "crossing_fraction": 0.0078125,
+    "baseline_crossing_fraction": 0.0,
+    "caveat": "target equals native forecast on gated context by definition; not evidence of internal controllability"
+  },
+  {
+    "request_index": 6,
+    "context_index": 1,
+    "kind": "context_ignore",
+    "strength": 1.0,
+    "window": "all",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000046",
+    "replay_max_abs": 0.0,
+    "gain": 1.0,
+    "collateral": 0.0,
+    "relative_error": 0.0,
+    "achieved": true,
+    "zero_target": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": null,
+    "radius": null,
+    "input_relative_norm": 1.3039149045944214,
+    "site": {
+      "source": "context_policy",
+      "module": "__input__",
+      "mode": "relevance_gate"
+    },
+    "selection": "explicit input relevance policy; no learned internal intervention",
+    "validation_error": null,
+    "history": [],
+    "model_calls": 3,
+    "context_policy": true,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "caveat": "target equals native forecast on gated context by definition; not evidence of internal controllability"
+  },
+  {
+    "request_index": 6,
+    "context_index": 2,
+    "kind": "context_ignore",
+    "strength": 1.0,
+    "window": "all",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000287",
+    "replay_max_abs": 0.0,
+    "gain": 1.0,
+    "collateral": 0.0,
+    "relative_error": 0.0,
+    "achieved": true,
+    "zero_target": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": null,
+    "radius": null,
+    "input_relative_norm": 0.6050005555152893,
+    "site": {
+      "source": "context_policy",
+      "module": "__input__",
+      "mode": "relevance_gate"
+    },
+    "selection": "explicit input relevance policy; no learned internal intervention",
+    "validation_error": null,
+    "history": [],
+    "model_calls": 3,
+    "context_policy": true,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "caveat": "target equals native forecast on gated context by definition; not evidence of internal controllability"
+  },
+  {
+    "request_index": 6,
+    "context_index": 3,
+    "kind": "context_ignore",
+    "strength": 1.0,
+    "window": "all",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000185",
+    "replay_max_abs": 0.0,
+    "gain": 1.0,
+    "collateral": 0.0,
+    "relative_error": 0.0,
+    "achieved": true,
+    "zero_target": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": null,
+    "radius": null,
+    "input_relative_norm": 0.8283145427703857,
+    "site": {
+      "source": "context_policy",
+      "module": "__input__",
+      "mode": "relevance_gate"
+    },
+    "selection": "explicit input relevance policy; no learned internal intervention",
+    "validation_error": null,
+    "history": [],
+    "model_calls": 3,
+    "context_policy": true,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "caveat": "target equals native forecast on gated context by definition; not evidence of internal controllability"
+  },
+  {
+    "request_index": 6,
+    "context_index": 4,
+    "kind": "context_ignore",
+    "strength": 1.0,
+    "window": "all",
+    "dataset": "m4_hourly",
+    "source_id": "T000216",
+    "replay_max_abs": 0.0,
+    "gain": 1.0,
+    "collateral": 0.0,
+    "relative_error": 0.0,
+    "achieved": true,
+    "zero_target": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": null,
+    "radius": null,
+    "input_relative_norm": 0.8927801847457886,
+    "site": {
+      "source": "context_policy",
+      "module": "__input__",
+      "mode": "relevance_gate"
+    },
+    "selection": "explicit input relevance policy; no learned internal intervention",
+    "validation_error": null,
+    "history": [],
+    "model_calls": 3,
+    "context_policy": true,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "caveat": "target equals native forecast on gated context by definition; not evidence of internal controllability"
+  },
+  {
+    "request_index": 6,
+    "context_index": 5,
+    "kind": "context_ignore",
+    "strength": 1.0,
+    "window": "all",
+    "dataset": "m4_hourly",
+    "source_id": "T000099",
+    "replay_max_abs": 0.0,
+    "gain": 1.0,
+    "collateral": 0.0,
+    "relative_error": 0.0,
+    "achieved": true,
+    "zero_target": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": null,
+    "radius": null,
+    "input_relative_norm": 0.695382297039032,
+    "site": {
+      "source": "context_policy",
+      "module": "__input__",
+      "mode": "relevance_gate"
+    },
+    "selection": "explicit input relevance policy; no learned internal intervention",
+    "validation_error": null,
+    "history": [],
+    "model_calls": 3,
+    "context_policy": true,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "caveat": "target equals native forecast on gated context by definition; not evidence of internal controllability"
+  },
+  {
+    "request_index": 6,
+    "context_index": 6,
+    "kind": "context_ignore",
+    "strength": 1.0,
+    "window": "all",
+    "dataset": "m4_hourly",
+    "source_id": "T000013",
+    "replay_max_abs": 0.0,
+    "gain": 1.0,
+    "collateral": 0.0,
+    "relative_error": 0.0,
+    "achieved": true,
+    "zero_target": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": null,
+    "radius": null,
+    "input_relative_norm": 0.805751621723175,
+    "site": {
+      "source": "context_policy",
+      "module": "__input__",
+      "mode": "relevance_gate"
+    },
+    "selection": "explicit input relevance policy; no learned internal intervention",
+    "validation_error": null,
+    "history": [],
+    "model_calls": 3,
+    "context_policy": true,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "caveat": "target equals native forecast on gated context by definition; not evidence of internal controllability"
+  },
+  {
+    "request_index": 6,
+    "context_index": 7,
+    "kind": "context_ignore",
+    "strength": 1.0,
+    "window": "all",
+    "dataset": "m4_hourly",
+    "source_id": "T000297",
+    "replay_max_abs": 0.0,
+    "gain": 1.0,
+    "collateral": 0.0,
+    "relative_error": 0.0,
+    "achieved": true,
+    "zero_target": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": null,
+    "radius": null,
+    "input_relative_norm": 0.846166729927063,
+    "site": {
+      "source": "context_policy",
+      "module": "__input__",
+      "mode": "relevance_gate"
+    },
+    "selection": "explicit input relevance policy; no learned internal intervention",
+    "validation_error": null,
+    "history": [],
+    "model_calls": 3,
+    "context_policy": true,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "caveat": "target equals native forecast on gated context by definition; not evidence of internal controllability"
+  },
+  {
+    "request_index": 6,
+    "context_index": 8,
+    "kind": "context_ignore",
+    "strength": 1.0,
+    "window": "all",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000046",
+    "replay_max_abs": 0.0,
+    "gain": 1.0,
+    "collateral": 0.0,
+    "relative_error": 0.0,
+    "achieved": true,
+    "zero_target": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": null,
+    "radius": null,
+    "input_relative_norm": 0.9943781495094299,
+    "site": {
+      "source": "context_policy",
+      "module": "__input__",
+      "mode": "relevance_gate"
+    },
+    "selection": "explicit input relevance policy; no learned internal intervention",
+    "validation_error": null,
+    "history": [],
+    "model_calls": 3,
+    "context_policy": true,
+    "crossing_fraction": 0.015625,
+    "baseline_crossing_fraction": 0.0,
+    "caveat": "target equals native forecast on gated context by definition; not evidence of internal controllability"
+  },
+  {
+    "request_index": 6,
+    "context_index": 9,
+    "kind": "context_ignore",
+    "strength": 1.0,
+    "window": "all",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000057",
+    "replay_max_abs": 0.0,
+    "gain": 1.0,
+    "collateral": 0.0,
+    "relative_error": 0.0,
+    "achieved": true,
+    "zero_target": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": null,
+    "radius": null,
+    "input_relative_norm": 1.129961371421814,
+    "site": {
+      "source": "context_policy",
+      "module": "__input__",
+      "mode": "relevance_gate"
+    },
+    "selection": "explicit input relevance policy; no learned internal intervention",
+    "validation_error": null,
+    "history": [],
+    "model_calls": 3,
+    "context_policy": true,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "caveat": "target equals native forecast on gated context by definition; not evidence of internal controllability"
+  },
+  {
+    "request_index": 6,
+    "context_index": 10,
+    "kind": "context_ignore",
+    "strength": 1.0,
+    "window": "all",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000021",
+    "replay_max_abs": 0.0,
+    "gain": 1.0,
+    "collateral": 0.0,
+    "relative_error": 0.0,
+    "achieved": true,
+    "zero_target": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": null,
+    "radius": null,
+    "input_relative_norm": 1.016430139541626,
+    "site": {
+      "source": "context_policy",
+      "module": "__input__",
+      "mode": "relevance_gate"
+    },
+    "selection": "explicit input relevance policy; no learned internal intervention",
+    "validation_error": null,
+    "history": [],
+    "model_calls": 3,
+    "context_policy": true,
+    "crossing_fraction": 0.0234375,
+    "baseline_crossing_fraction": 0.0,
+    "caveat": "target equals native forecast on gated context by definition; not evidence of internal controllability"
+  },
+  {
+    "request_index": 6,
+    "context_index": 11,
+    "kind": "context_ignore",
+    "strength": 1.0,
+    "window": "all",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000012",
+    "replay_max_abs": 0.0,
+    "gain": 1.0,
+    "collateral": 0.0,
+    "relative_error": 0.0,
+    "achieved": true,
+    "zero_target": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": null,
+    "radius": null,
+    "input_relative_norm": 0.5416064262390137,
+    "site": {
+      "source": "context_policy",
+      "module": "__input__",
+      "mode": "relevance_gate"
+    },
+    "selection": "explicit input relevance policy; no learned internal intervention",
+    "validation_error": null,
+    "history": [],
+    "model_calls": 3,
+    "context_policy": true,
+    "crossing_fraction": 0.078125,
+    "baseline_crossing_fraction": 0.0,
+    "caveat": "target equals native forecast on gated context by definition; not evidence of internal controllability"
+  },
+  {
+    "request_index": 7,
+    "context_index": 0,
+    "kind": "context_focus",
+    "strength": 0.2,
+    "window": "all",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000285",
+    "replay_max_abs": 0.0,
+    "gain": 1.0,
+    "collateral": 0.0,
+    "relative_error": 0.0,
+    "achieved": true,
+    "zero_target": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": null,
+    "radius": null,
+    "input_relative_norm": 0.6285322904586792,
+    "site": {
+      "source": "context_policy",
+      "module": "__input__",
+      "mode": "relevance_gate"
+    },
+    "selection": "explicit input relevance policy; no learned internal intervention",
+    "validation_error": null,
+    "history": [],
+    "model_calls": 3,
+    "context_policy": true,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "caveat": "target equals native forecast on gated context by definition; not evidence of internal controllability"
+  },
+  {
+    "request_index": 7,
+    "context_index": 1,
+    "kind": "context_focus",
+    "strength": 0.2,
+    "window": "all",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000046",
+    "replay_max_abs": 0.0,
+    "gain": 1.0,
+    "collateral": 0.0,
+    "relative_error": 0.0,
+    "achieved": true,
+    "zero_target": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": null,
+    "radius": null,
+    "input_relative_norm": 0.6727455258369446,
+    "site": {
+      "source": "context_policy",
+      "module": "__input__",
+      "mode": "relevance_gate"
+    },
+    "selection": "explicit input relevance policy; no learned internal intervention",
+    "validation_error": null,
+    "history": [],
+    "model_calls": 3,
+    "context_policy": true,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "caveat": "target equals native forecast on gated context by definition; not evidence of internal controllability"
+  },
+  {
+    "request_index": 7,
+    "context_index": 2,
+    "kind": "context_focus",
+    "strength": 0.2,
+    "window": "all",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000287",
+    "replay_max_abs": 0.0,
+    "gain": 1.0,
+    "collateral": 0.0,
+    "relative_error": 0.0,
+    "achieved": true,
+    "zero_target": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": null,
+    "radius": null,
+    "input_relative_norm": 0.6458463072776794,
+    "site": {
+      "source": "context_policy",
+      "module": "__input__",
+      "mode": "relevance_gate"
+    },
+    "selection": "explicit input relevance policy; no learned internal intervention",
+    "validation_error": null,
+    "history": [],
+    "model_calls": 3,
+    "context_policy": true,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "caveat": "target equals native forecast on gated context by definition; not evidence of internal controllability"
+  },
+  {
+    "request_index": 7,
+    "context_index": 3,
+    "kind": "context_focus",
+    "strength": 0.2,
+    "window": "all",
+    "dataset": "monash_electricity_hourly",
+    "source_id": "T000185",
+    "replay_max_abs": 0.0,
+    "gain": 1.0,
+    "collateral": 0.0,
+    "relative_error": 0.0,
+    "achieved": true,
+    "zero_target": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": null,
+    "radius": null,
+    "input_relative_norm": 0.6785270571708679,
+    "site": {
+      "source": "context_policy",
+      "module": "__input__",
+      "mode": "relevance_gate"
+    },
+    "selection": "explicit input relevance policy; no learned internal intervention",
+    "validation_error": null,
+    "history": [],
+    "model_calls": 3,
+    "context_policy": true,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "caveat": "target equals native forecast on gated context by definition; not evidence of internal controllability"
+  },
+  {
+    "request_index": 7,
+    "context_index": 4,
+    "kind": "context_focus",
+    "strength": 0.2,
+    "window": "all",
+    "dataset": "m4_hourly",
+    "source_id": "T000216",
+    "replay_max_abs": 0.0,
+    "gain": 1.0,
+    "collateral": 0.0,
+    "relative_error": 0.0,
+    "achieved": true,
+    "zero_target": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": null,
+    "radius": null,
+    "input_relative_norm": 0.7263129949569702,
+    "site": {
+      "source": "context_policy",
+      "module": "__input__",
+      "mode": "relevance_gate"
+    },
+    "selection": "explicit input relevance policy; no learned internal intervention",
+    "validation_error": null,
+    "history": [],
+    "model_calls": 3,
+    "context_policy": true,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "caveat": "target equals native forecast on gated context by definition; not evidence of internal controllability"
+  },
+  {
+    "request_index": 7,
+    "context_index": 5,
+    "kind": "context_focus",
+    "strength": 0.2,
+    "window": "all",
+    "dataset": "m4_hourly",
+    "source_id": "T000099",
+    "replay_max_abs": 0.0,
+    "gain": 1.0,
+    "collateral": 0.0,
+    "relative_error": 0.0,
+    "achieved": true,
+    "zero_target": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": null,
+    "radius": null,
+    "input_relative_norm": 0.6931086778640747,
+    "site": {
+      "source": "context_policy",
+      "module": "__input__",
+      "mode": "relevance_gate"
+    },
+    "selection": "explicit input relevance policy; no learned internal intervention",
+    "validation_error": null,
+    "history": [],
+    "model_calls": 3,
+    "context_policy": true,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "caveat": "target equals native forecast on gated context by definition; not evidence of internal controllability"
+  },
+  {
+    "request_index": 7,
+    "context_index": 6,
+    "kind": "context_focus",
+    "strength": 0.2,
+    "window": "all",
+    "dataset": "m4_hourly",
+    "source_id": "T000013",
+    "replay_max_abs": 0.0,
+    "gain": 1.0,
+    "collateral": 0.0,
+    "relative_error": 0.0,
+    "achieved": true,
+    "zero_target": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": null,
+    "radius": null,
+    "input_relative_norm": 0.9188719987869263,
+    "site": {
+      "source": "context_policy",
+      "module": "__input__",
+      "mode": "relevance_gate"
+    },
+    "selection": "explicit input relevance policy; no learned internal intervention",
+    "validation_error": null,
+    "history": [],
+    "model_calls": 3,
+    "context_policy": true,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "caveat": "target equals native forecast on gated context by definition; not evidence of internal controllability"
+  },
+  {
+    "request_index": 7,
+    "context_index": 7,
+    "kind": "context_focus",
+    "strength": 0.2,
+    "window": "all",
+    "dataset": "m4_hourly",
+    "source_id": "T000297",
+    "replay_max_abs": 0.0,
+    "gain": 1.0,
+    "collateral": 0.0,
+    "relative_error": 0.0,
+    "achieved": true,
+    "zero_target": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": null,
+    "radius": null,
+    "input_relative_norm": 0.7250863313674927,
+    "site": {
+      "source": "context_policy",
+      "module": "__input__",
+      "mode": "relevance_gate"
+    },
+    "selection": "explicit input relevance policy; no learned internal intervention",
+    "validation_error": null,
+    "history": [],
+    "model_calls": 3,
+    "context_policy": true,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "caveat": "target equals native forecast on gated context by definition; not evidence of internal controllability"
+  },
+  {
+    "request_index": 7,
+    "context_index": 8,
+    "kind": "context_focus",
+    "strength": 0.2,
+    "window": "all",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000046",
+    "replay_max_abs": 0.0,
+    "gain": 1.0,
+    "collateral": 0.0,
+    "relative_error": 0.0,
+    "achieved": true,
+    "zero_target": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": null,
+    "radius": null,
+    "input_relative_norm": 0.6990290284156799,
+    "site": {
+      "source": "context_policy",
+      "module": "__input__",
+      "mode": "relevance_gate"
+    },
+    "selection": "explicit input relevance policy; no learned internal intervention",
+    "validation_error": null,
+    "history": [],
+    "model_calls": 3,
+    "context_policy": true,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "caveat": "target equals native forecast on gated context by definition; not evidence of internal controllability"
+  },
+  {
+    "request_index": 7,
+    "context_index": 9,
+    "kind": "context_focus",
+    "strength": 0.2,
+    "window": "all",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000057",
+    "replay_max_abs": 0.0,
+    "gain": 1.0,
+    "collateral": 0.0,
+    "relative_error": 0.0,
+    "achieved": true,
+    "zero_target": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": null,
+    "radius": null,
+    "input_relative_norm": 0.7916721701622009,
+    "site": {
+      "source": "context_policy",
+      "module": "__input__",
+      "mode": "relevance_gate"
+    },
+    "selection": "explicit input relevance policy; no learned internal intervention",
+    "validation_error": null,
+    "history": [],
+    "model_calls": 3,
+    "context_policy": true,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "caveat": "target equals native forecast on gated context by definition; not evidence of internal controllability"
+  },
+  {
+    "request_index": 7,
+    "context_index": 10,
+    "kind": "context_focus",
+    "strength": 0.2,
+    "window": "all",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000021",
+    "replay_max_abs": 0.0,
+    "gain": 1.0,
+    "collateral": 0.0,
+    "relative_error": 0.0,
+    "achieved": true,
+    "zero_target": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": null,
+    "radius": null,
+    "input_relative_norm": 0.7056032419204712,
+    "site": {
+      "source": "context_policy",
+      "module": "__input__",
+      "mode": "relevance_gate"
+    },
+    "selection": "explicit input relevance policy; no learned internal intervention",
+    "validation_error": null,
+    "history": [],
+    "model_calls": 3,
+    "context_policy": true,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "caveat": "target equals native forecast on gated context by definition; not evidence of internal controllability"
+  },
+  {
+    "request_index": 7,
+    "context_index": 11,
+    "kind": "context_focus",
+    "strength": 0.2,
+    "window": "all",
+    "dataset": "monash_pedestrian_counts",
+    "source_id": "T000012",
+    "replay_max_abs": 0.0,
+    "gain": 1.0,
+    "collateral": 0.0,
+    "relative_error": 0.0,
+    "achieved": true,
+    "zero_target": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": null,
+    "radius": null,
+    "input_relative_norm": 0.6088913083076477,
+    "site": {
+      "source": "context_policy",
+      "module": "__input__",
+      "mode": "relevance_gate"
+    },
+    "selection": "explicit input relevance policy; no learned internal intervention",
+    "validation_error": null,
+    "history": [],
+    "model_calls": 3,
+    "context_policy": true,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "caveat": "target equals native forecast on gated context by definition; not evidence of internal controllability"
+  }
+]

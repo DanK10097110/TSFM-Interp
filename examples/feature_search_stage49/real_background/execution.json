@@ -1,0 +1,16 @@
+{
+  "bolt": {
+    "returncode": 0,
+    "peak_observed_rss": 1083756544,
+    "elapsed_seconds": 25.226434530050028,
+    "failure": null,
+    "valid": true
+  },
+  "timesfm": {
+    "returncode": 0,
+    "peak_observed_rss": 1788338176,
+    "elapsed_seconds": 63.65477888402529,
+    "failure": null,
+    "valid": true
+  }
+}

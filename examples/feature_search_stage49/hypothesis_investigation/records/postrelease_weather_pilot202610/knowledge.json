@@ -1,0 +1,485 @@
+{
+  "question": "Does fixed depth1 tone continuation improve chronological-holdout airport temperature forecasts over native median and seasonal24?",
+  "design": {
+    "created_utc": "2026-11-16T19:04:01.717633+00:00",
+    "question": "Does fixed depth1 tone continuation improve chronological-holdout airport temperature forecasts over native median and seasonal24?",
+    "cohort": "Same fixed8 airports and October08/15/22/29 UTC origins; two incomplete JFK futures excluded prospectively before native inference.",
+    "stations": [
+      "KSEA",
+      "KPHX",
+      "KDEN",
+      "KMSP",
+      "KDFW",
+      "KJFK",
+      "KATL",
+      "KMIA"
+    ],
+    "windows_by_station": [
+      4,
+      4,
+      4,
+      4,
+      4,
+      2,
+      4,
+      4
+    ],
+    "windows": 30,
+    "context": 128,
+    "horizon": 32,
+    "methods": [
+      "native",
+      "hybrid",
+      "seasonal24",
+      "tones_zero"
+    ],
+    "primary": "hybrid versus native, separately for each model",
+    "secondary": "native and hybrid versus seasonal24; tones_zero versus hybrid descriptive diagnostic",
+    "tones_zero": "Predeclared analytic control: accepted oscillatory tones only with zero residual, including zero DC; if abstained predicts zero. Diagnostic, not a competitive temperature baseline.",
+    "rule": "Unmodified selective_tree.decompose(depth=1), stability=.65 energy=.15 prominence=8, frequency2..48/128. No training, new tuning, veto, refit, depth selection or forecast selection.",
+    "numeric": "Decompose original float64 Celsius history; verify reconstruction rtol=atol=1e-12. Native inputs cast once to float32; singleton geometry. Native repeat and abstention gates are exact, never tolerance-based.",
+    "gates": "All finite; every bank input predicted twice in separate batch1 calls (second pass reversed); exact repeat; additive reconstruction; exact abstention identity for all abstentions and a planted constant-history instrument. Deny all target/raw-data reads in worker.",
+    "loss": "Per window: mean32 squared errors / original float64 population history variance (ddof0). No epsilon: fail if variance<=0. Then mean windows within each station, then equal mean8 stations.",
+    "uncertainty": {
+      "kind": "descriptive paired station bootstrap percentile95%",
+      "draws": 4096,
+      "seed": 4954100,
+      "resample": "Same8 station indices with replacement shared across all methods/models; preserve all windows within station.",
+      "caution": "Shared weather creates dependence across stations; intervals are descriptive, not calibrated population confidence or significance. No sign-test/population-mean claim."
+    },
+    "hypothesis": "Forecast grounding on chronologically unseen observations; geography, climate and temperature distribution can have been seen. Native outputs are medians, not means; squared-error findings do not identify training prior.",
+    "budget": "<=300seconds/model including loading and gates; CPU1, RSS<=3GiB; cached offline weights. At most1 native worker in this track; explicit later slot2 grant required; no partial scoring.",
+    "budget_estimate": "<=122 singleton calls/model (2*(30+30+1)); previous TF3968 calls plus gates560.7s, conservative estimate<90s/model including load. Hard300s supervisor bound.",
+    "preparation_sha256": "c27a5cc629c351ba72e28675be8cb08c41b73280c6d6544238d8fc09e87cdd63",
+    "checkpoint_chronology": {
+      "bolt": {
+        "revision": "772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "commit_utc": "2025-11-21T12:54:10.000Z",
+        "weight_sha256": "06a6a19bbe74bc10a9cd193bd4bf2bf638ae07f7e0d51653ae7ab8ea968a21dd",
+        "weights_match": true,
+        "predates_observations": true,
+        "commit_url": "https://huggingface.co/amazon/chronos-bolt-small/commit/772f3d25d38aec6d914c8949dab4462e2d46f5d8"
+      },
+      "timesfm": {
+        "revision": "1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+        "commit_utc": "2025-10-02T17:21:38.000Z",
+        "weight_sha256": "2f776efe6245e42b24bc4153ffdf61810140210e4bd3b01fb21f7aa779ab6ce8",
+        "weights_match": true,
+        "predates_observations": true,
+        "commit_url": "https://huggingface.co/google/timesfm-2.5-200m-pytorch/commit/1d952420fba87f3c6dee4f240de0f1a0fbc790e3"
+      }
+    },
+    "preflight_manifest_sha256": "02571532539a5547805113e5e3e17ebc92b808d47ef6c42c9f70b3c6059e86b5",
+    "target_sha256": "f0603a4a14d04d7c8c11fa60a9f72f6b7cdcaac3ce754153b37339a4675cde79",
+    "inference_sha256": "09677d2912628b0c3da15f6ed9e9b480ab23701a465cc3cef033512037bb6286"
+  },
+  "exact_findings": {
+    "status": "COMPLETE: both native workers valid, exact gates passed, independent replay passed; slot2 released",
+    "windows": 30,
+    "stations": 8,
+    "windows_by_station": [
+      4,
+      4,
+      4,
+      4,
+      4,
+      2,
+      4,
+      4
+    ],
+    "accepted_histories": 18,
+    "bank_inputs": 49,
+    "singleton_calls_per_model": 98,
+    "native_launched": true,
+    "preparation_replay": {
+      "windows": 30,
+      "station_counts": {
+        "KSEA": 4,
+        "KPHX": 4,
+        "KDEN": 4,
+        "KMSP": 4,
+        "KDFW": 4,
+        "KJFK": 2,
+        "KATL": 4,
+        "KMIA": 4
+      },
+      "analytic_replay": true,
+      "max_residual_float32_cast_error": 1.9020023671600939e-06,
+      "forecast_replay": false
+    },
+    "readiness": {
+      "status": "READY; native HOLD pending explicit slot2 grant after FFN",
+      "protocol_sha256": "172116a6b42be80dacd295732cd2ac66922609acfc7791770e1f7091cd98911c",
+      "tests_passed": 5,
+      "plants_caught": 11,
+      "target_roots_denied": 2,
+      "slot_grants_absent": [
+        "bolt",
+        "timesfm"
+      ],
+      "preparation_replay": {
+        "windows": 30,
+        "station_counts": {
+          "KSEA": 4,
+          "KPHX": 4,
+          "KDEN": 4,
+          "KMSP": 4,
+          "KDFW": 4,
+          "KJFK": 2,
+          "KATL": 4,
+          "KMIA": 4
+        },
+        "analytic_replay": true,
+        "max_residual_float32_cast_error": 1.9020023671600939e-06,
+        "forecast_replay": false
+      },
+      "source_bindings_verified": 54,
+      "planned_calls_per_model": 98,
+      "max_seconds": 300,
+      "max_rss_bytes": 3221225472,
+      "native_launched": false
+    },
+    "native_execution": {
+      "bolt": {
+        "valid": true,
+        "returncode": 0,
+        "failure": null,
+        "seconds": 18.514538735034876,
+        "peak_rss_bytes": 1065062400,
+        "pid": 4
+      },
+      "timesfm": {
+        "valid": true,
+        "returncode": 0,
+        "failure": null,
+        "seconds": 25.224370492971502,
+        "peak_rss_bytes": 1630466048,
+        "pid": 4
+      }
+    },
+    "native_sessions": {
+      "slot": 2,
+      "run": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/postrelease_weather_pilot202610",
+      "bolt": {
+        "session": 43543,
+        "execution": {
+          "valid": true,
+          "returncode": 0,
+          "failure": null,
+          "seconds": 18.514538735034876,
+          "peak_rss_bytes": 1065062400,
+          "pid": 4
+        }
+      },
+      "timesfm": {
+        "session": 92625,
+        "status": "complete",
+        "execution": {
+          "valid": true,
+          "returncode": 0,
+          "failure": null,
+          "seconds": 25.224370492971502,
+          "peak_rss_bytes": 1630466048,
+          "pid": 4
+        }
+      },
+      "updated_utc": "2026-11-16T19:06:16.875248+00:00",
+      "status": "slot2 released for Carsonphase",
+      "released_utc": "2026-11-16T19:06:46.478947+00:00"
+    },
+    "native_gates": {
+      "bolt": {
+        "valid": true,
+        "gates": {
+          "singleton_repeat": 49,
+          "abstentions": 12,
+          "constant_abstention": 1,
+          "all_finite": true,
+          "target_roots_denied": 2
+        },
+        "seconds": 16.78628524101805,
+        "peak_rss_bytes": 1065070592,
+        "threads": 1,
+        "interop": 1,
+        "forecast_sha256": "24f600bc6a8fad1b20df4d177cd04127b61aa5a8c93bb3ae2c2d09301846b10a",
+        "protocol_sha256": "172116a6b42be80dacd295732cd2ac66922609acfc7791770e1f7091cd98911c"
+      },
+      "timesfm": {
+        "valid": true,
+        "gates": {
+          "singleton_repeat": 49,
+          "abstentions": 12,
+          "constant_abstention": 1,
+          "all_finite": true,
+          "target_roots_denied": 2
+        },
+        "seconds": 23.765015949029475,
+        "peak_rss_bytes": 1630474240,
+        "threads": 1,
+        "interop": 1,
+        "forecast_sha256": "d8d7db43d9cf6f95106a955b16485522877ce1be26130abb1186bb82672ebf5a",
+        "protocol_sha256": "172116a6b42be80dacd295732cd2ac66922609acfc7791770e1f7091cd98911c"
+      }
+    },
+    "forecast_results": {
+      "bolt": {
+        "losses": {
+          "native": {
+            "equal_station_normalized_mse": 0.4729334720068331,
+            "station_losses": [
+              0.27510852909463673,
+              0.163163918727607,
+              0.48429932268069376,
+              0.6319521367160927,
+              0.3983883148908679,
+              1.225957502568305,
+              0.13738591292185212,
+              0.46721213845460996
+            ]
+          },
+          "hybrid": {
+            "equal_station_normalized_mse": 0.6547303222032483,
+            "station_losses": [
+              0.3079900419860647,
+              0.1397632697292565,
+              0.5496040692051661,
+              0.644087231848357,
+              0.4242161986062043,
+              2.311653141785628,
+              0.14038000500183834,
+              0.7201486194634718
+            ]
+          },
+          "seasonal24": {
+            "equal_station_normalized_mse": 0.6059731631636294,
+            "station_losses": [
+              0.6020082775308916,
+              0.3230380441959698,
+              0.28295499196253165,
+              0.5935114417910967,
+              0.623940372662356,
+              1.2234460005563204,
+              0.29107412694342283,
+              0.9078120496664465
+            ]
+          },
+          "tones_zero": {
+            "equal_station_normalized_mse": 50.726728059060875,
+            "station_losses": [
+              17.588633160841486,
+              49.4069206047578,
+              6.426167102263641,
+              7.332583241189298,
+              40.82568788102999,
+              18.0549886362473,
+              28.461770882732424,
+              237.7170729634251
+            ]
+          }
+        },
+        "comparisons": {
+          "hybrid_vs_native": {
+            "mean_gain": -0.18179685019641523,
+            "station_wins": 1,
+            "percentile95": [
+              -0.4652814900347783,
+              -0.01292937713999504
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "native_vs_seasonal24": {
+            "mean_gain": 0.13303969115679629,
+            "station_wins": 5,
+            "percentile95": [
+              -0.0005411060059964425,
+              0.26689112979351953
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "hybrid_vs_seasonal24": {
+            "mean_gain": -0.0487571590396189,
+            "station_wins": 5,
+            "percentile95": [
+              -0.4078997526198418,
+              0.18844642598381708
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "tones_zero_vs_hybrid": {
+            "mean_gain": -50.07199773685763,
+            "station_wins": 0,
+            "percentile95": [
+              -106.4327497950107,
+              -15.421532322947218
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          }
+        }
+      },
+      "timesfm": {
+        "losses": {
+          "native": {
+            "equal_station_normalized_mse": 0.4503466537272577,
+            "station_losses": [
+              0.308945907593176,
+              0.23160819412779002,
+              0.44574818573490393,
+              0.622928493805565,
+              0.419144351652692,
+              0.9914255525254189,
+              0.20750971043281125,
+              0.3754628339457047
+            ]
+          },
+          "hybrid": {
+            "equal_station_normalized_mse": 0.5064548545682812,
+            "station_losses": [
+              0.3713566293738017,
+              0.16435650735466367,
+              0.40399604253931776,
+              0.5929505767454347,
+              0.434805422102577,
+              1.3222968552450334,
+              0.21177466611264648,
+              0.5501021370727753
+            ]
+          },
+          "seasonal24": {
+            "equal_station_normalized_mse": 0.6059731631636294,
+            "station_losses": [
+              0.6020082775308916,
+              0.3230380441959698,
+              0.28295499196253165,
+              0.5935114417910967,
+              0.623940372662356,
+              1.2234460005563204,
+              0.29107412694342283,
+              0.9078120496664465
+            ]
+          },
+          "tones_zero": {
+            "equal_station_normalized_mse": 50.726728059060875,
+            "station_losses": [
+              17.588633160841486,
+              49.4069206047578,
+              6.426167102263641,
+              7.332583241189298,
+              40.82568788102999,
+              18.0549886362473,
+              28.461770882732424,
+              237.7170729634251
+            ]
+          }
+        },
+        "comparisons": {
+          "hybrid_vs_native": {
+            "mean_gain": -0.05610820084102354,
+            "station_wins": 3,
+            "percentile95": [
+              -0.15435815654050505,
+              0.019018129665790105
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "native_vs_seasonal24": {
+            "mean_gain": 0.15562650943637174,
+            "station_wins": 6,
+            "percentile95": [
+              0.02564512193726783,
+              0.29748396714073627
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "hybrid_vs_seasonal24": {
+            "mean_gain": 0.09951830859534817,
+            "station_wins": 6,
+            "percentile95": [
+              -0.011334858275302383,
+              0.20678512736096913
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "tones_zero_vs_hybrid": {
+            "mean_gain": -50.2202732044926,
+            "station_wins": 0,
+            "percentile95": [
+              -106.60378069338498,
+              -15.741677048709644
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          }
+        }
+      }
+    },
+    "forecast_replay": {
+      "windows": 30,
+      "station_counts": {
+        "KSEA": 4,
+        "KPHX": 4,
+        "KDEN": 4,
+        "KMSP": 4,
+        "KDFW": 4,
+        "KJFK": 2,
+        "KATL": 4,
+        "KMIA": 4
+      },
+      "analytic_replay": true,
+      "max_residual_float32_cast_error": 1.9020023671600939e-06,
+      "forecast_replay": true,
+      "window_losses_replayed": 240,
+      "station_losses_replayed": 64,
+      "paired_intervals_replayed": 8
+    },
+    "final_audit": {
+      "saved_forecast_assembly_exact_models": 2,
+      "finite_artifacts": true,
+      "frozen_source_bindings": 54,
+      "replay_corruption_plant": {
+        "caught": true,
+        "returncode": 1,
+        "planted_change": "bolt_native_window[0] +=1 in isolated copy only",
+        "original": 0.19782935577017927,
+        "mutant": 1.1978293557701793,
+        "original_forecast_source_unchanged": true
+      },
+      "independent_replay": {
+        "windows": 30,
+        "station_counts": {
+          "KSEA": 4,
+          "KPHX": 4,
+          "KDEN": 4,
+          "KMSP": 4,
+          "KDFW": 4,
+          "KJFK": 2,
+          "KATL": 4,
+          "KMIA": 4
+        },
+        "analytic_replay": true,
+        "max_residual_float32_cast_error": 1.9020023671600939e-06,
+        "forecast_replay": true,
+        "window_losses_replayed": 240,
+        "station_losses_replayed": 64,
+        "paired_intervals_replayed": 8
+      }
+    },
+    "interpretation": {
+      "primary": "Fixed depth1 hybrid increases equal-station mean normalized MSE versus native for both models in this pilot.",
+      "station_wins": {
+        "bolt": "1/8",
+        "timesfm": "3/8"
+      },
+      "uncertainty": "Bolt descriptive gain interval entirely negative; TimesFM interval crosses zero. Neither is a calibrated population inference because stations share weather and n=8.",
+      "native_vs_seasonal": "Both native median models have lower observed equal-station mean normalized MSE than seasonal24.",
+      "tone_only": "Zero-residual diagnostic omits temperature DC and is not a competitive baseline; high loss does not isolate tone quality.",
+      "scope": "Observed October2026 observations postdate exact cached weight revisions. No unseen-location or unseen-distribution claim; MSE does not identify a median forecaster training prior."
+    }
+  },
+  "controls": "All finite; every bank input predicted twice in separate batch1 calls (second pass reversed); exact repeat; additive reconstruction; exact abstention identity for all abstentions and a planted constant-history instrument. Deny all target/raw-data reads in worker.",
+  "limitations": [
+    "Shared weather creates dependence across stations; intervals are descriptive, not calibrated population confidence or significance. No sign-test/population-mean claim.",
+    "Forecast grounding on chronologically unseen observations; geography, climate and temperature distribution can have been seen. Native outputs are medians, not means; squared-error findings do not identify training prior.",
+    "Quality flags null means unflagged, not evidence that QC completed; archived data are not a real-time vintage."
+  ],
+  "evidence_class": "behavioral chronological-observation holdout, descriptive8-station pilot with independent instrumentation audit",
+  "next_decision": "Pilot complete. Review negative hybrid-versus-native result before any additional weather conditions, tuning, downloads or native compute. No expansion authorized; slot2 released for Carsonphase."
+}

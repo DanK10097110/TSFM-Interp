@@ -1,0 +1,1663 @@
+{
+  "question": "Can visible-history stability predict when selective continuation helps, and does recent refitting remedy old-history oversmoothing?",
+  "design": {
+    "version": 1,
+    "stage": "fresh replication",
+    "seeds": [
+      4953000,
+      4953001,
+      4953002,
+      4953003,
+      4953004,
+      4953005,
+      4953006,
+      4953007,
+      4953008,
+      4953009,
+      4953010,
+      4953011,
+      4953012,
+      4953013,
+      4953014,
+      4953015,
+      4953016,
+      4953017,
+      4953018,
+      4953019,
+      4953020,
+      4953021,
+      4953022,
+      4953023,
+      4953024,
+      4953025,
+      4953026,
+      4953027,
+      4953028,
+      4953029,
+      4953030,
+      4953031,
+      4953032,
+      4953033,
+      4953034,
+      4953035,
+      4953036,
+      4953037,
+      4953038,
+      4953039,
+      4953040,
+      4953041,
+      4953042,
+      4953043,
+      4953044,
+      4953045,
+      4953046,
+      4953047,
+      4953048,
+      4953049,
+      4953050,
+      4953051,
+      4953052,
+      4953053,
+      4953054,
+      4953055,
+      4953056,
+      4953057,
+      4953058,
+      4953059,
+      4953060,
+      4953061,
+      4953062,
+      4953063
+    ],
+    "periods": [
+      19.2,
+      24.0
+    ],
+    "leads": [
+      0,
+      8,
+      16,
+      32,
+      64
+    ],
+    "regimes": [
+      "persistent",
+      "amplitude_decay",
+      "frequency_drift",
+      "abrupt_cessation"
+    ],
+    "context": 128,
+    "horizon": 32,
+    "rows": 2560,
+    "source_split": "FIT4953000..31;TEST4953032..63",
+    "generator": "pilot exact family, dominant amplitude8, weak .5 at17.35/128,offset.3,noise.05,decay half-life16,drift+.5 frequency/32 steps",
+    "methods": [
+      "native",
+      "hybrid",
+      "tones_zero",
+      "seasonal",
+      "recent_hybrid",
+      "recent_zero"
+    ],
+    "refit": "last32 only; unthresholded candidate conditional on same full depth1 acceptance; no TEST tuning; residual=x-refitted tone over128",
+    "veto": {
+      "feature": "max(norm(latest32-full),norm(latest32-previous32))/norm(full coefficients), fixed full frequency, intercept, absolute phase",
+      "thresholds": [
+        -1.0,
+        0.0,
+        0.1,
+        0.25,
+        0.5,
+        1.0,
+        2.0,
+        4.0,
+        null
+      ],
+      "fit": "Per model minimize mean normalized loss on all FIT seed/cell means; one threshold shared across both periods and all leads/regimes; deterministic ties first grid candidate, native first",
+      "test": "Freeze selection.json and its hash before opening TEST targets; no TEST feature/outcome tuning"
+    },
+    "loss": "MSE / persistent-history variance shared by seed and period across all conditions",
+    "expected_priors": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "primary_hypotheses": [
+      "H1_Bolt/H1_TimesFM: FIT-only veto improves TEST loss over always native",
+      "H2_Bolt/H2_TimesFM: FIT-only veto improves TEST loss over always hybrid",
+      "H3_19.2/H3_24: recent-zero improves full-tones-zero on visible changing futures (lead>0,regime!=persistent)"
+    ],
+    "primary_scope": "Six one-sided sign tests on32 TEST seed-level paired gains; Holm family6; require mean gain>.01 AND adjusted p<=.05. No window/condition pseudoreplication. Native/selector endpoints average all40 balanced cells per seed.",
+    "diagnostics": [
+      "Risk curves per period on lead0 only: no detection claim",
+      "Cue gain compares lead0 and cued predictions on the SAME cued future",
+      "Recent_hybrid versus hybrid and recent_zero versus tones_zero separates continuation fit from native residual effects",
+      "Veto acceptance/benefit per lead/regime/period, reported without TEST threshold selection",
+      "Fixed future-mixture probabilities are hypothetical deployment weights, not estimates of pretraining priors"
+    ],
+    "uncertainty": "4096 paired source bootstrap percentile95%, seed4953999; intervals descriptive, primary inference via6-test Holm family",
+    "execution": "HOLD until explicit coordinator slot grant; at most1 worker for this track;<=900s/model,CPU1,3GiB,cached/offline,kill on cap; partial artifacts invalid, no subset scoring",
+    "pilot_protocol_sha256": "491f8ff3e150c26bcc5213451715c5ee38085aa1e306f87d45f90727f82d0c51",
+    "sealed": {
+      "inference/protocol.json": "8eb9e90dff673f754dfa269b68e18aaa845e589c5bcb12d5136dc51bf1bc6630",
+      "inference/seal.json": "290cfd9dc03d1a0e68ee8fdb36a58b95a2f5e7f15c224ca40392990890e4eed3",
+      "evaluation/fit/rows.json": "a0523ba0e2a621129d23537271045adce5f81f0cdab5f4d21185da9a3391af84",
+      "evaluation/fit/targets.npz": "4a8dcc938471223020b86207ffe47cef66bbb622f419ac6cca34b86bd740d83b",
+      "evaluation/test/rows.json": "ae1779841661921646b0a3322624cea39ea7384c53353ea75da318c03067205c",
+      "evaluation/test/targets.npz": "ae17bcb30e808f46a933bce0993ae891ab78f79c3e60c545a01c34238e037f98"
+    }
+  },
+  "exact_findings": {
+    "primary": [
+      {
+        "hypothesis": "H1_bolt",
+        "mean": 0.050279347550187634,
+        "ci95": [
+          -0.013501866681060655,
+          0.12331475490158621
+        ],
+        "n_sources": 32,
+        "positive_sources": 19,
+        "values": [
+          0.0539150943733554,
+          0.05938083182115372,
+          -0.04125267945676536,
+          0.018885465763722187,
+          -0.06149934536710244,
+          -0.10042044301804987,
+          0.004696333748186676,
+          0.057938756121981405,
+          0.05249122997450062,
+          0.05075352807744338,
+          0.008188730097324903,
+          -0.03409077913893244,
+          0.11038648448680377,
+          -0.02715165537630082,
+          0.009576417756658073,
+          0.7222720548504389,
+          -0.32817321433593527,
+          -0.05534707377880321,
+          -0.039655991336283725,
+          -0.031697518712352935,
+          -0.01780963411842995,
+          0.06294012050935094,
+          -0.006424951335949447,
+          0.6686461386573669,
+          0.00032369981737812026,
+          0.378025220843206,
+          -0.07980054498164413,
+          0.04172802642624074,
+          0.03822734853799803,
+          0.0912083285012224,
+          0.04659800594968,
+          -0.04391886375145826
+        ],
+        "one_sided_sign_p": 0.18854279373772442,
+        "holm_p": 0.37708558747544885,
+        "passes": false
+      },
+      {
+        "hypothesis": "H2_bolt",
+        "mean": 0.024316141847413635,
+        "ci95": [
+          -0.012248115026278854,
+          0.05250180964470645
+        ],
+        "n_sources": 32,
+        "positive_sources": 30,
+        "values": [
+          0.041132391199071194,
+          0.03196227670286311,
+          0.028838096715575356,
+          0.03367268517614508,
+          0.049402145370221695,
+          -0.17470621984158152,
+          0.04109803292188441,
+          0.037809581194832464,
+          0.02434832442210888,
+          0.03642589179137179,
+          0.03559877893242991,
+          0.041524826630621625,
+          0.052442705779871424,
+          0.05926083672759286,
+          0.02106481212118727,
+          0.25447108029289156,
+          -0.3868321842787914,
+          0.016619605351434696,
+          0.009977912643326259,
+          0.021852476709403934,
+          0.03331381273462153,
+          0.02911506264903585,
+          0.036971685452417136,
+          0.053355781254120216,
+          0.08375032544224192,
+          0.0337181913933029,
+          0.0643730674312154,
+          0.021819047118266544,
+          0.0372937652385148,
+          0.05405540913097939,
+          0.024519725619744026,
+          0.02986660909031602
+        ],
+        "one_sided_sign_p": 1.2316741049289703e-07,
+        "holm_p": 3.695022314786911e-07,
+        "passes": true
+      },
+      {
+        "hypothesis": "H1_timesfm",
+        "mean": 0.035381285186970174,
+        "ci95": [
+          0.003845470226476344,
+          0.07481744398576726
+        ],
+        "n_sources": 32,
+        "positive_sources": 13,
+        "values": [
+          0.030053199322325197,
+          -0.019067818019428473,
+          0.13146235160972752,
+          0.043432892908149445,
+          -0.014141137404668491,
+          -0.021332123931198765,
+          -0.014359620047017962,
+          0.003351634734744424,
+          -0.004105338626486876,
+          -0.021836844219795426,
+          0.10167269100306964,
+          -0.01084332463023785,
+          -0.016776188122412883,
+          -0.021377198301480604,
+          -0.019039915747457448,
+          -0.010203068387427572,
+          -0.008864233924071208,
+          0.4501326957971902,
+          0.3330952381286567,
+          0.1444382670891693,
+          -0.017261876772347473,
+          0.004982971964046845,
+          -0.007073927730557039,
+          0.02793954242049157,
+          -0.018143900201895435,
+          -0.006553418304439118,
+          -0.016468079613230824,
+          -0.01595638523457643,
+          0.03685279411907738,
+          0.014904102714386025,
+          -0.016470759886668962,
+          0.08975790327741007
+        ],
+        "one_sided_sign_p": 0.8923364251386374,
+        "holm_p": 0.8923364251386374,
+        "passes": false
+      },
+      {
+        "hypothesis": "H2_timesfm",
+        "mean": 0.11701714686534168,
+        "ci95": [
+          0.0968216670785933,
+          0.13666716367716314
+        ],
+        "n_sources": 32,
+        "positive_sources": 32,
+        "values": [
+          0.09171113868870195,
+          0.1933534474785334,
+          0.06850739838769404,
+          0.0908348413025647,
+          0.09761566610102934,
+          0.07456232914395866,
+          0.08737554266533443,
+          0.08280582200737241,
+          0.19718799370285195,
+          0.2307500794836509,
+          0.0846981581126851,
+          0.12647383864832862,
+          0.07953296104525531,
+          0.1906559680303993,
+          0.0908401055002962,
+          0.155581396009568,
+          0.10049973106575882,
+          0.04416487082487108,
+          0.06142698736191332,
+          0.07192909380807622,
+          0.20159636646796908,
+          0.15073509422194653,
+          0.08515159897237701,
+          0.07298366438205905,
+          0.1910854945845929,
+          0.09078352515450416,
+          0.019324007880036853,
+          0.20968155160951274,
+          0.09701729506621182,
+          0.12872384217809463,
+          0.20532781852841153,
+          0.07163107127637347
+        ],
+        "one_sided_sign_p": 2.3283064365386963e-10,
+        "holm_p": 1.3969838619232178e-09,
+        "passes": true
+      },
+      {
+        "hypothesis": "H3_19.2",
+        "mean": 0.12318180842823585,
+        "ci95": [
+          0.11357770467539388,
+          0.13261481278738993
+        ],
+        "n_sources": 32,
+        "positive_sources": 32,
+        "values": [
+          0.15720636345016015,
+          0.14264940415887795,
+          0.14989833021137344,
+          0.14405816790207482,
+          0.08636850495264436,
+          0.07741620577819974,
+          0.1026275572052755,
+          0.13815490906481886,
+          0.13579499013346086,
+          0.10516953814420316,
+          0.16990435647187252,
+          0.09715798545815768,
+          0.0910457811027523,
+          0.08524031654879738,
+          0.11238687713171203,
+          0.11957055309186682,
+          0.07356600014057646,
+          0.14230536916508496,
+          0.11949121517512684,
+          0.13364433227148154,
+          0.09585447937884584,
+          0.14532261445031058,
+          0.1198686423150418,
+          0.1454771499102434,
+          0.09756547186780773,
+          0.15855065271597624,
+          0.08242333091371701,
+          0.12231292624859791,
+          0.15306165381491532,
+          0.15547041143127127,
+          0.1251619895537477,
+          0.15709178954455494
+        ],
+        "one_sided_sign_p": 2.3283064365386963e-10,
+        "holm_p": 1.3969838619232178e-09,
+        "passes": true
+      },
+      {
+        "hypothesis": "H3_24.0",
+        "mean": 0.11615768959478193,
+        "ci95": [
+          0.10506159850672948,
+          0.12705264711208739
+        ],
+        "n_sources": 32,
+        "positive_sources": 32,
+        "values": [
+          0.14809995497136663,
+          0.13110375815966024,
+          0.14126043935160926,
+          0.1346669050421957,
+          0.050475510972676774,
+          0.07047425771612703,
+          0.10435174290753235,
+          0.1500430021167386,
+          0.12436059471757366,
+          0.09543107388019101,
+          0.1586978366936107,
+          0.08127425703382885,
+          0.08729391485722737,
+          0.07635953189135924,
+          0.10573424729417147,
+          0.12203180640808264,
+          0.07504621810102485,
+          0.15539331996925854,
+          0.12679689643342595,
+          0.11508626712001113,
+          0.07828104899500077,
+          0.1404753492584302,
+          0.13061555239383593,
+          0.15062121824327634,
+          0.07309953304836503,
+          0.1703934872591022,
+          0.06916953224194278,
+          0.10900691862542611,
+          0.1418968612717929,
+          0.1416106814781436,
+          0.10858456388183368,
+          0.14930978469820022
+        ],
+        "one_sided_sign_p": 2.3283064365386963e-10,
+        "holm_p": 1.3969838619232178e-09,
+        "passes": true
+      }
+    ],
+    "selection": {
+      "bolt": {
+        "threshold": 0.5,
+        "candidates": [
+          {
+            "threshold": -1.0,
+            "fit_mean": 1.0724043101162557
+          },
+          {
+            "threshold": 0.0,
+            "fit_mean": 1.0724043101162557
+          },
+          {
+            "threshold": 0.1,
+            "fit_mean": 1.0385539060705264
+          },
+          {
+            "threshold": 0.25,
+            "fit_mean": 1.0363418644305145
+          },
+          {
+            "threshold": 0.5,
+            "fit_mean": 0.8729165461121826
+          },
+          {
+            "threshold": 1.0,
+            "fit_mean": 0.901906739272388
+          },
+          {
+            "threshold": 2.0,
+            "fit_mean": 0.901906739272388
+          },
+          {
+            "threshold": 4.0,
+            "fit_mean": 0.901906739272388
+          },
+          {
+            "threshold": null,
+            "fit_mean": 0.901906739272388
+          }
+        ],
+        "n_fit_sources": 32
+      },
+      "timesfm": {
+        "threshold": 0.1,
+        "candidates": [
+          {
+            "threshold": -1.0,
+            "fit_mean": 0.5539446922396603
+          },
+          {
+            "threshold": 0.0,
+            "fit_mean": 0.5539446922396603
+          },
+          {
+            "threshold": 0.1,
+            "fit_mean": 0.528956319160808
+          },
+          {
+            "threshold": 0.25,
+            "fit_mean": 0.5676818873987618
+          },
+          {
+            "threshold": 0.5,
+            "fit_mean": 0.5923438346147623
+          },
+          {
+            "threshold": 1.0,
+            "fit_mean": 0.6272105919322191
+          },
+          {
+            "threshold": 2.0,
+            "fit_mean": 0.6272105919322191
+          },
+          {
+            "threshold": 4.0,
+            "fit_mean": 0.6272105919322191
+          },
+          {
+            "threshold": null,
+            "fit_mean": 0.6272105919322191
+          }
+        ],
+        "n_fit_sources": 32
+      },
+      "binding": {
+        "protocol.json": "a2adf42d004f61230672ce182ed8d16ff542d3ce9677cecca441552e02c76ccf",
+        "evaluation/fit/rows.json": "a0523ba0e2a621129d23537271045adce5f81f0cdab5f4d21185da9a3391af84",
+        "evaluation/fit/targets.npz": "4a8dcc938471223020b86207ffe47cef66bbb622f419ac6cca34b86bd740d83b",
+        "bolt_forecasts.npz": "128104e41cb9735fd4c3a5723506a13d7d2d8bb88bc1950a7e82f74370dbd010",
+        "timesfm_forecasts.npz": "6863aed846ab6eef07b39f9e64ea4ab503ca5827e388f6ba76ca4857bdd67a0e"
+      }
+    },
+    "all_cells": "analysis.json",
+    "source_scores": "scores.json",
+    "cue_gains": "cue_rows.json",
+    "expected_risk": "risk_rows.json",
+    "status": "Completed native replication, FIT-only selector freeze, TEST scoring, and independent audit;4/6 primary screens pass"
+  },
+  "controls": "Every input finite/shape;20 preregistered sentinel histories: exact repeat, capture/plain, three self patches, duplicate singleton calls; both residual repeats. Every abstention exact.",
+  "limitations": [
+    "Prospective synthetic replication; no results yet",
+    "Recent refit conditional on full-history acceptance; does not test salvaging abstained cases",
+    "Recent32 refit remains a stationary sinusoid; its failure cannot establish that a model ignored a cue.",
+    "Exact native replay gates cover20 preregistered sentinel histories rather than every history; all inputs/outputs and abstention identities are still checked.",
+    "Runtime estimate comes from pilot geometry; actual replication runtime is unknown. Hard900s/3GiB limits invalidate partial runs.",
+    "Hypothetical mixture MSE remains a valid descriptive risk comparison for these point forecasts. It does not identify native training priors or justify treating median outputs as conditional means. Toy MSE-prior training demonstrates a possible mechanism only, not attribution to these TSFMs.",
+    "Holm significance is for source-level gain signs, not population-mean improvement. The empirical mean>.01 screen is descriptive; mean bootstrap intervals are uncorrected. Bolt H2 has30/32 wins but two costly observed losses and a mean interval crossing zero."
+  ],
+  "evidence_class": "prospective source-held-out synthetic replication; six corrected primary screens; other slices descriptive",
+  "next_decision": {
+    "status": "complete; slot2 released and transferred to Plato natural replication",
+    "recommendation": "Do not promote the veto as generally better than native. Retain recent-only refit and zero-residual controls in future work. Coordinate phase- and residual-specific diagnostics with the already queued crossed-phase/quantile tracks; no further native launch without a new slot grant.",
+    "reason": "Source-dependent mean/sign disagreement and TimesFM residual harm limit a universal continuation-selector explanation."
+  },
+  "prelaunch_verification": {
+    "focused_tests_passed": 20,
+    "new_replication_tests": 9,
+    "new_planted_faults_caught": 9,
+    "model_free_fixture": {
+      "scores": 1120,
+      "primary_endpoints": 6,
+      "exact_arithmetic_checks": 80
+    },
+    "source_counts": {
+      "fit": 32,
+      "test": 32
+    },
+    "exact_identical_history_groups": 128,
+    "finite_arrays": 6,
+    "all_manifest_hashes_valid": true,
+    "frozen_pilot_valid": true,
+    "native_launched": false
+  },
+  "launch_commands": {
+    "bolt": "PYTHONPATH=tsfm_lens [frozen offline/thread1 environment] cudaPy/python -m experiments.feature_search.persistence_replication_worker run --out tsfm_lens/runs/persistence_replication4953000 --model bolt --slot-grant [EXPLICIT_COORDINATOR_GRANT]",
+    "timesfm": "PYTHONPATH=tsfm_lens [frozen offline/thread1 environment] cudaPy/python -m experiments.feature_search.persistence_replication_worker run --out tsfm_lens/runs/persistence_replication4953000 --model timesfm --slot-grant [EXPLICIT_COORDINATOR_GRANT]"
+  },
+  "launch_preflight": {
+    "status": "passed",
+    "estimates": {
+      "bolt": {
+        "estimated_seconds": 407.3204104527443,
+        "pilot_seconds": 26.324679799028672,
+        "pilot_singleton_passes": 288,
+        "replication_singleton_passes": 4128,
+        "extra_margin_seconds": 30
+      },
+      "timesfm": {
+        "estimated_seconds": 713.0958865355157,
+        "pilot_seconds": 47.65785254898947,
+        "pilot_singleton_passes": 288,
+        "replication_singleton_passes": 4128,
+        "extra_margin_seconds": 30
+      }
+    },
+    "all_frozen_hashes_valid": true,
+    "conditions_reduced": false,
+    "slot_grant": "User: SLOT2 GRANTED; slot1 dictionary; run frozen replication serially",
+    "protocol_sha256": "a2adf42d004f61230672ce182ed8d16ff542d3ce9677cecca441552e02c76ccf",
+    "focused_tests_passed": 20
+  },
+  "active_stage": {
+    "stage": "complete",
+    "native_slot": null,
+    "native_workers_running": 0
+  },
+  "native_execution": {
+    "bolt": {
+      "valid": true,
+      "returncode": 0,
+      "failure": null,
+      "seconds": 197.46204074297566,
+      "peak_rss_bytes": 1078210560
+    },
+    "timesfm": {
+      "valid": true,
+      "returncode": 0,
+      "failure": null,
+      "seconds": 560.6846855089534,
+      "peak_rss_bytes": 1642631168
+    }
+  },
+  "session_ids": {
+    "bolt": 98764,
+    "timesfm": 54004
+  },
+  "post_audit_fixture": {
+    "pristine": {
+      "passed": true,
+      "counts": {
+        "scores": 1120,
+        "cues": 1120,
+        "risks": 280,
+        "primary_means": 6,
+        "finite_arrays": 16
+      },
+      "largest_arithmetic_difference": 7.771561172376096e-16,
+      "source_sha256": "505c548d5128220406df4102873cc6beb8cf6fe63bf5b52b80ca2c37a5e6d130"
+    },
+    "score_plant_caught": true,
+    "original_loss": 1.1011682835027214,
+    "planted_loss": 2.1011682835027212
+  },
+  "forecast_estimand": {
+    "native_forecast_estimand": "Both current Native outputs are medians (0.5 quantiles), not conditional means",
+    "bolt": "chronos_bolt.py lines642-644 explicitly return training_quantile_levels.index(0.5) as variable mean",
+    "timesfm": "timesfm_2p5_torch.py aridx=config.decode_index=5; base config quantiles0.1..0.9; index0 extra point channel, index5=.5; Native slices aridx",
+    "interpretation": "Hypothetical mixture MSE remains a valid descriptive risk comparison for these point forecasts. It does not identify native training priors or justify treating median outputs as conditional means. Toy MSE-prior training demonstrates a possible mechanism only, not attribution to these TSFMs.",
+    "coverage": "Applies also to frozen pilot because it uses the same Native helper; frozen pilot files unchanged.",
+    "followup": "Distribution/quantile-coherence follow-up owned by coordinator; no extra native work launched here.",
+    "source_sha256": {
+      "/common/home/djk255/miniforge3/envs/cudaPy/lib/python3.12/site-packages/chronos/chronos_bolt.py": "572a3ffd23a7887c423d234fd0086a4dfa2bac0c3e34d4b7d42eb9cda2e3d1d4",
+      "/common/home/djk255/miniforge3/envs/cudaPy/lib/python3.12/site-packages/timesfm/timesfm_2p5/timesfm_2p5_torch.py": "07e135cbf3f5099e60469f7c2bb0781426f7109d62c51634775b6be470608371",
+      "/common/home/djk255/miniforge3/envs/cudaPy/lib/python3.12/site-packages/timesfm/timesfm_2p5/timesfm_2p5_base.py": "35a9f096cf676b2d4c84b0bc6f66a756bea4c91e7e7da27d0b165ba95875bf57"
+    }
+  },
+  "slot_release": {
+    "slot": 2,
+    "released": true,
+    "native_workers_running": 0,
+    "execution": {
+      "bolt": {
+        "valid": true,
+        "returncode": 0,
+        "failure": null,
+        "seconds": 197.46204074297566,
+        "peak_rss_bytes": 1078210560
+      },
+      "timesfm": {
+        "valid": true,
+        "returncode": 0,
+        "failure": null,
+        "seconds": 560.6846855089534,
+        "peak_rss_bytes": 1642631168
+      }
+    },
+    "gates": {
+      "bolt": {
+        "repeat": 20,
+        "self_patch": 60,
+        "duplicate": 20,
+        "residual_repeat": 40,
+        "target_denied": true
+      },
+      "timesfm": {
+        "repeat": 20,
+        "self_patch": 60,
+        "duplicate": 20,
+        "residual_repeat": 40,
+        "target_denied": true
+      }
+    },
+    "next": "saved-array analysis only; coordinator natural run may launch"
+  },
+  "fit_selection": {
+    "bolt": {
+      "threshold": 0.5,
+      "candidates": [
+        {
+          "threshold": -1.0,
+          "fit_mean": 1.0724043101162557
+        },
+        {
+          "threshold": 0.0,
+          "fit_mean": 1.0724043101162557
+        },
+        {
+          "threshold": 0.1,
+          "fit_mean": 1.0385539060705264
+        },
+        {
+          "threshold": 0.25,
+          "fit_mean": 1.0363418644305145
+        },
+        {
+          "threshold": 0.5,
+          "fit_mean": 0.8729165461121826
+        },
+        {
+          "threshold": 1.0,
+          "fit_mean": 0.901906739272388
+        },
+        {
+          "threshold": 2.0,
+          "fit_mean": 0.901906739272388
+        },
+        {
+          "threshold": 4.0,
+          "fit_mean": 0.901906739272388
+        },
+        {
+          "threshold": null,
+          "fit_mean": 0.901906739272388
+        }
+      ],
+      "n_fit_sources": 32
+    },
+    "timesfm": {
+      "threshold": 0.1,
+      "candidates": [
+        {
+          "threshold": -1.0,
+          "fit_mean": 0.5539446922396603
+        },
+        {
+          "threshold": 0.0,
+          "fit_mean": 0.5539446922396603
+        },
+        {
+          "threshold": 0.1,
+          "fit_mean": 0.528956319160808
+        },
+        {
+          "threshold": 0.25,
+          "fit_mean": 0.5676818873987618
+        },
+        {
+          "threshold": 0.5,
+          "fit_mean": 0.5923438346147623
+        },
+        {
+          "threshold": 1.0,
+          "fit_mean": 0.6272105919322191
+        },
+        {
+          "threshold": 2.0,
+          "fit_mean": 0.6272105919322191
+        },
+        {
+          "threshold": 4.0,
+          "fit_mean": 0.6272105919322191
+        },
+        {
+          "threshold": null,
+          "fit_mean": 0.6272105919322191
+        }
+      ],
+      "n_fit_sources": 32
+    },
+    "binding": {
+      "protocol.json": "a2adf42d004f61230672ce182ed8d16ff542d3ce9677cecca441552e02c76ccf",
+      "evaluation/fit/rows.json": "a0523ba0e2a621129d23537271045adce5f81f0cdab5f4d21185da9a3391af84",
+      "evaluation/fit/targets.npz": "4a8dcc938471223020b86207ffe47cef66bbb622f419ac6cca34b86bd740d83b",
+      "bolt_forecasts.npz": "128104e41cb9735fd4c3a5723506a13d7d2d8bb88bc1950a7e82f74370dbd010",
+      "timesfm_forecasts.npz": "6863aed846ab6eef07b39f9e64ea4ab503ca5827e388f6ba76ca4857bdd67a0e"
+    }
+  },
+  "selection_target_guard": {
+    "test_target_read_denied": true,
+    "selector_sha256": "a4095a0bfbd79b63eb0057a1a1c1d369bd2998335b213c38fed08f9f09ea932f"
+  },
+  "post_analysis": {
+    "overall": [
+      {
+        "split": "fit",
+        "model": "bolt",
+        "method": "native",
+        "mean": 1.0724043101162555
+      },
+      {
+        "split": "fit",
+        "model": "bolt",
+        "method": "hybrid",
+        "mean": 0.901906739272388
+      },
+      {
+        "split": "fit",
+        "model": "bolt",
+        "method": "veto",
+        "mean": 0.8729165461121827
+      },
+      {
+        "split": "fit",
+        "model": "bolt",
+        "method": "recent_hybrid",
+        "mean": 0.6102727327858083
+      },
+      {
+        "split": "fit",
+        "model": "bolt",
+        "method": "tones_zero",
+        "mean": 0.6359148069958421
+      },
+      {
+        "split": "fit",
+        "model": "bolt",
+        "method": "recent_zero",
+        "mean": 0.5625784420861172
+      },
+      {
+        "split": "fit",
+        "model": "bolt",
+        "method": "seasonal",
+        "mean": 0.6478656138300625
+      },
+      {
+        "split": "fit",
+        "model": "timesfm",
+        "method": "native",
+        "mean": 0.5539446922396604
+      },
+      {
+        "split": "fit",
+        "model": "timesfm",
+        "method": "hybrid",
+        "mean": 0.6272105919322192
+      },
+      {
+        "split": "fit",
+        "model": "timesfm",
+        "method": "veto",
+        "mean": 0.528956319160808
+      },
+      {
+        "split": "fit",
+        "model": "timesfm",
+        "method": "recent_hybrid",
+        "mean": 0.6033293271004551
+      },
+      {
+        "split": "fit",
+        "model": "timesfm",
+        "method": "tones_zero",
+        "mean": 0.6359148069958421
+      },
+      {
+        "split": "fit",
+        "model": "timesfm",
+        "method": "recent_zero",
+        "mean": 0.5625784420861172
+      },
+      {
+        "split": "fit",
+        "model": "timesfm",
+        "method": "seasonal",
+        "mean": 0.6478656138300625
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "native",
+        "mean": 0.7975724959262678
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "hybrid",
+        "mean": 0.7716092902234937
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "veto",
+        "mean": 0.7472931483760801
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "recent_hybrid",
+        "mean": 0.6020191756973894
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "tones_zero",
+        "mean": 0.6301289237352489
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "recent_zero",
+        "mean": 0.5585881740913642
+      },
+      {
+        "split": "test",
+        "model": "bolt",
+        "method": "seasonal",
+        "mean": 0.6426905314202163
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "native",
+        "mean": 0.5677474183322653
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "hybrid",
+        "mean": 0.6493832800106368
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "veto",
+        "mean": 0.5323661331452951
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "recent_hybrid",
+        "mean": 0.6046294010530298
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "tones_zero",
+        "mean": 0.6301289237352489
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "recent_zero",
+        "mean": 0.5585881740913642
+      },
+      {
+        "split": "test",
+        "model": "timesfm",
+        "method": "seasonal",
+        "mean": 0.6426905314202163
+      }
+    ],
+    "visible_change_by_lead": [
+      {
+        "model": "bolt",
+        "period": 19.2,
+        "lead": 0,
+        "losses": {
+          "native": 0.8909088693443644,
+          "hybrid": 0.7406473415076308,
+          "veto": 0.7406473415076308,
+          "recent_hybrid": 0.7378472222289768,
+          "tones_zero": 0.745078239181541,
+          "recent_zero": 0.7450946734479352,
+          "seasonal": 0.7216991619522343
+        },
+        "veto_accept_fraction": 1.0
+      },
+      {
+        "model": "bolt",
+        "period": 19.2,
+        "lead": 8,
+        "losses": {
+          "native": 0.8399774776483148,
+          "hybrid": 1.2281959025799842,
+          "veto": 1.2281959025799842,
+          "recent_hybrid": 0.8386284544370771,
+          "tones_zero": 1.07458651612632,
+          "recent_zero": 0.9601528760844525,
+          "seasonal": 0.9719378342112992
+        },
+        "veto_accept_fraction": 1.0
+      },
+      {
+        "model": "bolt",
+        "period": 19.2,
+        "lead": 16,
+        "losses": {
+          "native": 0.941724718999196,
+          "hybrid": 1.405251219632422,
+          "veto": 1.2361204678526665,
+          "recent_hybrid": 0.9317917421392282,
+          "tones_zero": 1.196316047642938,
+          "recent_zero": 0.9707097639167719,
+          "seasonal": 0.9519281433887504
+        },
+        "veto_accept_fraction": 0.78125
+      },
+      {
+        "model": "bolt",
+        "period": 19.2,
+        "lead": 32,
+        "losses": {
+          "native": 0.736122360305758,
+          "hybrid": 1.1785393861690452,
+          "veto": 0.81166521893297,
+          "recent_hybrid": 0.8661469650114529,
+          "tones_zero": 0.9475850350690799,
+          "recent_zero": 0.7948977251241698,
+          "seasonal": 0.9283924624647207
+        },
+        "veto_accept_fraction": 0.125
+      },
+      {
+        "model": "bolt",
+        "period": 19.2,
+        "lead": 64,
+        "losses": {
+          "native": 0.5700814747991313,
+          "hybrid": 0.5700814747991313,
+          "veto": 0.5700814747991313,
+          "recent_hybrid": 0.5700814747991313,
+          "tones_zero": 0.3381453536455081,
+          "recent_zero": 0.3381453536455081,
+          "seasonal": 0.6673982401003468
+        },
+        "veto_accept_fraction": 0.0
+      },
+      {
+        "model": "bolt",
+        "period": 24.0,
+        "lead": 0,
+        "losses": {
+          "native": 0.6752980670777164,
+          "hybrid": 0.6617242452262754,
+          "veto": 0.6617242452262754,
+          "recent_hybrid": 0.6632856337257266,
+          "tones_zero": 0.6558454565886397,
+          "recent_zero": 0.6559946185667636,
+          "seasonal": 0.6653344100986037
+        },
+        "veto_accept_fraction": 1.0
+      },
+      {
+        "model": "bolt",
+        "period": 24.0,
+        "lead": 8,
+        "losses": {
+          "native": 1.1919480336434873,
+          "hybrid": 1.0918132675940417,
+          "veto": 1.0918132675940417,
+          "recent_hybrid": 0.8561491445595503,
+          "tones_zero": 0.9607839654826339,
+          "recent_zero": 0.867976325514466,
+          "seasonal": 0.9146377911780131
+        },
+        "veto_accept_fraction": 1.0
+      },
+      {
+        "model": "bolt",
+        "period": 24.0,
+        "lead": 16,
+        "losses": {
+          "native": 1.2149711099962028,
+          "hybrid": 1.52942413801508,
+          "veto": 1.3609460091600853,
+          "recent_hybrid": 0.8966095901592427,
+          "tones_zero": 1.206610228782833,
+          "recent_zero": 0.9255826567332015,
+          "seasonal": 1.0827813735487584
+        },
+        "veto_accept_fraction": 0.8020833333333334
+      },
+      {
+        "model": "bolt",
+        "period": 24.0,
+        "lead": 32,
+        "losses": {
+          "native": 2.472931636242692,
+          "hybrid": 1.2983994548502382,
+          "veto": 1.6786672780888823,
+          "recent_hybrid": 1.077665290179804,
+          "tones_zero": 0.91483027123633,
+          "recent_zero": 0.8240347248750016,
+          "seasonal": 0.9167251387300235
+        },
+        "veto_accept_fraction": 0.4270833333333333
+      },
+      {
+        "model": "bolt",
+        "period": 24.0,
+        "lead": 64,
+        "losses": {
+          "native": 0.5642107107047974,
+          "hybrid": 0.5642107107047974,
+          "veto": 0.5642107107047974,
+          "recent_hybrid": 0.5642107107047974,
+          "tones_zero": 0.3395228999283802,
+          "recent_zero": 0.3395228999283802,
+          "seasonal": 0.6980904089803279
+        },
+        "veto_accept_fraction": 0.0
+      },
+      {
+        "model": "timesfm",
+        "period": 19.2,
+        "lead": 0,
+        "losses": {
+          "native": 0.6744589778033546,
+          "hybrid": 0.7373212094597057,
+          "veto": 0.7373212094597057,
+          "recent_hybrid": 0.7376719231896325,
+          "tones_zero": 0.745078239181541,
+          "recent_zero": 0.7450946734479352,
+          "seasonal": 0.7216991619522343
+        },
+        "veto_accept_fraction": 1.0
+      },
+      {
+        "model": "timesfm",
+        "period": 19.2,
+        "lead": 8,
+        "losses": {
+          "native": 0.8106394501884638,
+          "hybrid": 1.2085334478746976,
+          "veto": 0.8947475401033785,
+          "recent_hybrid": 0.9107078825687503,
+          "tones_zero": 1.07458651612632,
+          "recent_zero": 0.9601528760844525,
+          "seasonal": 0.9719378342112992
+        },
+        "veto_accept_fraction": 0.6666666666666666
+      },
+      {
+        "model": "timesfm",
+        "period": 19.2,
+        "lead": 16,
+        "losses": {
+          "native": 1.4768387815912174,
+          "hybrid": 1.2506988962287522,
+          "veto": 0.8958411707496436,
+          "recent_hybrid": 0.9729791811372704,
+          "tones_zero": 1.196316047642938,
+          "recent_zero": 0.9707097639167719,
+          "seasonal": 0.9519281433887504
+        },
+        "veto_accept_fraction": 0.34375
+      },
+      {
+        "model": "timesfm",
+        "period": 19.2,
+        "lead": 32,
+        "losses": {
+          "native": 0.5722369704469648,
+          "hybrid": 0.7693492985321617,
+          "veto": 0.5722369704469648,
+          "recent_hybrid": 1.0536607303207501,
+          "tones_zero": 0.9475850350690799,
+          "recent_zero": 0.7948977251241698,
+          "seasonal": 0.9283924624647207
+        },
+        "veto_accept_fraction": 0.0
+      },
+      {
+        "model": "timesfm",
+        "period": 19.2,
+        "lead": 64,
+        "losses": {
+          "native": 0.3744888058370646,
+          "hybrid": 0.3744888058370646,
+          "veto": 0.3744888058370646,
+          "recent_hybrid": 0.3744888058370646,
+          "tones_zero": 0.3381453536455081,
+          "recent_zero": 0.3381453536455081,
+          "seasonal": 0.6673982401003468
+        },
+        "veto_accept_fraction": 0.0
+      },
+      {
+        "model": "timesfm",
+        "period": 24.0,
+        "lead": 0,
+        "losses": {
+          "native": 0.646734833513123,
+          "hybrid": 0.6547375421924592,
+          "veto": 0.6547375421924592,
+          "recent_hybrid": 0.6568561054436499,
+          "tones_zero": 0.6558454565886397,
+          "recent_zero": 0.6559946185667636,
+          "seasonal": 0.6653344100986037
+        },
+        "veto_accept_fraction": 1.0
+      },
+      {
+        "model": "timesfm",
+        "period": 24.0,
+        "lead": 8,
+        "losses": {
+          "native": 0.8774055592673493,
+          "hybrid": 1.061023417222373,
+          "veto": 0.9107465531275163,
+          "recent_hybrid": 0.7986121570334289,
+          "tones_zero": 0.9607839654826339,
+          "recent_zero": 0.867976325514466,
+          "seasonal": 0.9146377911780131
+        },
+        "veto_accept_fraction": 0.6666666666666666
+      },
+      {
+        "model": "timesfm",
+        "period": 24.0,
+        "lead": 16,
+        "losses": {
+          "native": 1.0346082559479928,
+          "hybrid": 1.2948553059363228,
+          "veto": 0.9842966257298195,
+          "recent_hybrid": 0.9194085157764676,
+          "tones_zero": 1.206610228782833,
+          "recent_zero": 0.9255826567332015,
+          "seasonal": 1.0827813735487584
+        },
+        "veto_accept_fraction": 0.3645833333333333
+      },
+      {
+        "model": "timesfm",
+        "period": 24.0,
+        "lead": 32,
+        "losses": {
+          "native": 0.5110098719340114,
+          "hybrid": 0.7446469911682488,
+          "veto": 0.5110098719340114,
+          "recent_hybrid": 1.0715507170316414,
+          "tones_zero": 0.91483027123633,
+          "recent_zero": 0.8240347248750016,
+          "seasonal": 0.9167251387300235
+        },
+        "veto_accept_fraction": 0.0
+      },
+      {
+        "model": "timesfm",
+        "period": 24.0,
+        "lead": 64,
+        "losses": {
+          "native": 0.5587388905361855,
+          "hybrid": 0.5587388905361855,
+          "veto": 0.5587388905361855,
+          "recent_hybrid": 0.5587388905361855,
+          "tones_zero": 0.3395228999283802,
+          "recent_zero": 0.3395228999283802,
+          "seasonal": 0.6980904089803279
+        },
+        "veto_accept_fraction": 0.0
+      }
+    ],
+    "equal_prior_no_cue": [
+      {
+        "model": "bolt",
+        "period": 19.2,
+        "method": "native",
+        "equal_prior_loss": 0.7470599304097165
+      },
+      {
+        "model": "bolt",
+        "period": 19.2,
+        "method": "hybrid",
+        "equal_prior_loss": 0.5569766585485543
+      },
+      {
+        "model": "bolt",
+        "period": 19.2,
+        "method": "veto",
+        "equal_prior_loss": 0.5569766585485543
+      },
+      {
+        "model": "bolt",
+        "period": 19.2,
+        "method": "recent_hybrid",
+        "equal_prior_loss": 0.5548794105028613
+      },
+      {
+        "model": "bolt",
+        "period": 19.2,
+        "method": "tones_zero",
+        "equal_prior_loss": 0.5604956995430547
+      },
+      {
+        "model": "bolt",
+        "period": 19.2,
+        "method": "recent_zero",
+        "equal_prior_loss": 0.5607364240830186
+      },
+      {
+        "model": "bolt",
+        "period": 19.2,
+        "method": "seasonal",
+        "equal_prior_loss": 0.5462295417730937
+      },
+      {
+        "model": "bolt",
+        "period": 24.0,
+        "method": "native",
+        "equal_prior_loss": 0.5080140949451305
+      },
+      {
+        "model": "bolt",
+        "period": 24.0,
+        "method": "hybrid",
+        "equal_prior_loss": 0.49777754078706576
+      },
+      {
+        "model": "bolt",
+        "period": 24.0,
+        "method": "veto",
+        "equal_prior_loss": 0.49777754078706576
+      },
+      {
+        "model": "bolt",
+        "period": 24.0,
+        "method": "recent_hybrid",
+        "equal_prior_loss": 0.49964614866619667
+      },
+      {
+        "model": "bolt",
+        "period": 24.0,
+        "method": "tones_zero",
+        "equal_prior_loss": 0.4935593177024478
+      },
+      {
+        "model": "bolt",
+        "period": 24.0,
+        "method": "recent_zero",
+        "equal_prior_loss": 0.49394015043523615
+      },
+      {
+        "model": "bolt",
+        "period": 24.0,
+        "method": "seasonal",
+        "equal_prior_loss": 0.5015879554075056
+      },
+      {
+        "model": "timesfm",
+        "period": 19.2,
+        "method": "native",
+        "equal_prior_loss": 0.5092819813744587
+      },
+      {
+        "model": "timesfm",
+        "period": 19.2,
+        "method": "hybrid",
+        "equal_prior_loss": 0.5532938834146444
+      },
+      {
+        "model": "timesfm",
+        "period": 19.2,
+        "method": "veto",
+        "equal_prior_loss": 0.5532938834146444
+      },
+      {
+        "model": "timesfm",
+        "period": 19.2,
+        "method": "recent_hybrid",
+        "equal_prior_loss": 0.5537135612598874
+      },
+      {
+        "model": "timesfm",
+        "period": 19.2,
+        "method": "tones_zero",
+        "equal_prior_loss": 0.5604956995430547
+      },
+      {
+        "model": "timesfm",
+        "period": 19.2,
+        "method": "recent_zero",
+        "equal_prior_loss": 0.5607364240830186
+      },
+      {
+        "model": "timesfm",
+        "period": 19.2,
+        "method": "seasonal",
+        "equal_prior_loss": 0.5462295417730937
+      },
+      {
+        "model": "timesfm",
+        "period": 24.0,
+        "method": "native",
+        "equal_prior_loss": 0.48653415421757124
+      },
+      {
+        "model": "timesfm",
+        "period": 24.0,
+        "method": "hybrid",
+        "equal_prior_loss": 0.49135766959755733
+      },
+      {
+        "model": "timesfm",
+        "period": 24.0,
+        "method": "veto",
+        "equal_prior_loss": 0.49135766959755733
+      },
+      {
+        "model": "timesfm",
+        "period": 24.0,
+        "method": "recent_hybrid",
+        "equal_prior_loss": 0.4932400259899077
+      },
+      {
+        "model": "timesfm",
+        "period": 24.0,
+        "method": "tones_zero",
+        "equal_prior_loss": 0.4935593177024478
+      },
+      {
+        "model": "timesfm",
+        "period": 24.0,
+        "method": "recent_zero",
+        "equal_prior_loss": 0.49394015043523615
+      },
+      {
+        "model": "timesfm",
+        "period": 24.0,
+        "method": "seasonal",
+        "equal_prior_loss": 0.5015879554075056
+      }
+    ],
+    "cue_gains": [
+      {
+        "model": "bolt",
+        "method": "native",
+        "regime": "amplitude_decay",
+        "mean_gain": 0.44305361119348785
+      },
+      {
+        "model": "bolt",
+        "method": "native",
+        "regime": "frequency_drift",
+        "mean_gain": -0.41889274436334434
+      },
+      {
+        "model": "bolt",
+        "method": "native",
+        "regime": "abrupt_cessation",
+        "mean_gain": 0.6529991215324185
+      },
+      {
+        "model": "bolt",
+        "method": "hybrid",
+        "regime": "amplitude_decay",
+        "mean_gain": 0.22346045678040857
+      },
+      {
+        "model": "bolt",
+        "method": "hybrid",
+        "regime": "frequency_drift",
+        "mean_gain": -0.08233335755955265
+      },
+      {
+        "model": "bolt",
+        "method": "hybrid",
+        "regime": "abrupt_cessation",
+        "mean_gain": 0.37120289637515724
+      },
+      {
+        "model": "bolt",
+        "method": "veto",
+        "regime": "amplitude_decay",
+        "mean_gain": 0.28880797870614683
+      },
+      {
+        "model": "bolt",
+        "method": "veto",
+        "regime": "frequency_drift",
+        "mean_gain": -0.15270350048625406
+      },
+      {
+        "model": "bolt",
+        "method": "veto",
+        "regime": "abrupt_cessation",
+        "mean_gain": 0.49780622661318846
+      },
+      {
+        "model": "bolt",
+        "method": "recent_hybrid",
+        "regime": "amplitude_decay",
+        "mean_gain": 0.44754008926628897
+      },
+      {
+        "model": "bolt",
+        "method": "recent_hybrid",
+        "regime": "frequency_drift",
+        "mean_gain": 0.12049167706687977
+      },
+      {
+        "model": "bolt",
+        "method": "recent_hybrid",
+        "regime": "abrupt_cessation",
+        "mean_gain": 0.7911475645186765
+      },
+      {
+        "model": "timesfm",
+        "method": "native",
+        "regime": "amplitude_decay",
+        "mean_gain": 0.45645829475495375
+      },
+      {
+        "model": "timesfm",
+        "method": "native",
+        "regime": "frequency_drift",
+        "mean_gain": 0.1434668697490991
+      },
+      {
+        "model": "timesfm",
+        "method": "native",
+        "regime": "abrupt_cessation",
+        "mean_gain": 0.7837544868831773
+      },
+      {
+        "model": "timesfm",
+        "method": "hybrid",
+        "regime": "amplitude_decay",
+        "mean_gain": 0.35736810367278216
+      },
+      {
+        "model": "timesfm",
+        "method": "hybrid",
+        "regime": "frequency_drift",
+        "mean_gain": 0.28650001459366403
+      },
+      {
+        "model": "timesfm",
+        "method": "hybrid",
+        "regime": "abrupt_cessation",
+        "mean_gain": 0.45626011871834715
+      },
+      {
+        "model": "timesfm",
+        "method": "veto",
+        "regime": "amplitude_decay",
+        "mean_gain": 0.4537083021133756
+      },
+      {
+        "model": "timesfm",
+        "method": "veto",
+        "regime": "frequency_drift",
+        "mean_gain": 0.4133228301193484
+      },
+      {
+        "model": "timesfm",
+        "method": "veto",
+        "regime": "abrupt_cessation",
+        "mean_gain": 0.8181828390787778
+      },
+      {
+        "model": "timesfm",
+        "method": "recent_hybrid",
+        "regime": "amplitude_decay",
+        "mean_gain": 0.505025968636398
+      },
+      {
+        "model": "timesfm",
+        "method": "recent_hybrid",
+        "regime": "frequency_drift",
+        "mean_gain": 0.11974617332891949
+      },
+      {
+        "model": "timesfm",
+        "method": "recent_hybrid",
+        "regime": "abrupt_cessation",
+        "mean_gain": 0.7045460003773284
+      }
+    ],
+    "execution": {
+      "bolt": {
+        "valid": true,
+        "returncode": 0,
+        "failure": null,
+        "seconds": 197.46204074297566,
+        "peak_rss_bytes": 1078210560
+      },
+      "timesfm": {
+        "valid": true,
+        "returncode": 0,
+        "failure": null,
+        "seconds": 560.6846855089534,
+        "peak_rss_bytes": 1642631168
+      }
+    },
+    "gates": {
+      "bolt": {
+        "repeat": 20,
+        "self_patch": 60,
+        "duplicate": 20,
+        "residual_repeat": 40,
+        "target_denied": true
+      },
+      "timesfm": {
+        "repeat": 20,
+        "self_patch": 60,
+        "duplicate": 20,
+        "residual_repeat": 40,
+        "target_denied": true
+      }
+    },
+    "independent_replay": {
+      "passed": true,
+      "counts": {
+        "scores": 35840,
+        "cues": 35840,
+        "risks": 8960,
+        "primary_means": 6,
+        "finite_arrays": 134
+      },
+      "largest_arithmetic_difference": 1.4210854715202004e-14,
+      "source_sha256": "cd5ccf94ee70f859acb41ba434c13060c4590322f42704cbdab78468bb185f58"
+    }
+  },
+  "interpretation": [
+    "FIT-only cutoffs are Bolt0.5 and TimesFM0.1; the actual selection process denied TEST-target reads. No TEST retuning.",
+    "Both vetoes pass the preregistered observed mean-gain>.01 plus Holm sign-test screen versus always-hybrid. Neither passes versus native.",
+    "Bolt versus native: mean gain0.050279347550187634,19/32 positive sources,Holm p0.37708558747544885; no native-beating primary claim.",
+    "TimesFM versus native: mean gain0.035381285186970174,13/32 positive sources,Holm p0.8923364251386374. Its positive mean bootstrap interval does not rescue the failed preregistered sign endpoint; benefits are uneven across sources.",
+    "Bolt versus hybrid: mean gain0.024316141847413635,30/32 positives,Holm p3.695022314786911e-07. Its95% mean bootstrap interval[-0.012248115026278854,0.05250180964470645] crosses zero. The sign-based primary passes, but mean gain remains uncertain under source resampling.",
+    "TimesFM versus hybrid: mean gain0.11701714686534168,32/32 positives,Holm p1.3969838619232178e-09.",
+    "Recent-only tone continuation with zero residual improves visible-changing futures at both periods:19.2 mean gain0.12318180842823585;24 mean gain0.11615768959478193;32/32 positives each;Holm p1.3969838619232178e-09 each. This is controlled evidence that the fitting window contributes to continuation error in this generator.",
+    "Recent refitting is not a general native hybrid remedy: TEST all-cell recent_hybrid losses0.6020191756973894 Bolt and0.6046294010530298 TimesFM; corresponding native losses0.7975724959262678 and0.5677474183322653. These are secondary descriptive comparisons, not additional corrected primary claims.",
+    "Native and native-residual outputs are medians, not means. Hypothetical MSE risk remains valid for these forecasts but cannot identify their training priors. Toy squared-loss prior results are possible mechanisms, not attribution to these TSFMs."
+  ],
+  "verification_final": {
+    "focused_tests_passed": 20,
+    "new_prelaunch_plants_caught": 9,
+    "post_audit_score_plant_caught": true,
+    "independent_replay": {
+      "passed": true,
+      "counts": {
+        "scores": 35840,
+        "cues": 35840,
+        "risks": 8960,
+        "primary_means": 6,
+        "finite_arrays": 134
+      },
+      "largest_arithmetic_difference": 1.4210854715202004e-14,
+      "source_sha256": "cd5ccf94ee70f859acb41ba434c13060c4590322f42704cbdab78468bb185f58"
+    },
+    "all_native_hashes_reverified": true,
+    "selector_target_access_denied": true,
+    "source_influence": "source_influence.json",
+    "median_audit": "median_output_audit.json"
+  },
+  "statistical_interpretation": [
+    "Inference scope: the one-sided sign test concerns P(source-level gain > 0 | nonzero gain) > 0.5. It does not test whether the population mean gain is positive.",
+    "The preregistered pass flag combines an OBSERVED sample mean gain > 0.01 with a Holm-corrected sign test. The empirical mean threshold is not a significance test of the population mean. A pass must not be described as statistically significant population-mean improvement.",
+    "Source-bootstrap intervals describe uncertainty in the mean separately; they are descriptive and uncorrected, and do not replace the preregistered sign endpoint.",
+    "Observed Bolt H2 downside risk: 30/32 positive sources, but two observed losses [-0.3868321842787914, -0.17470621984158152]; mean bootstrap95% interval [-0.012248115026278854, 0.05250180964470645] crosses zero. Frequent wins coexist with costly losses; the sign-based screen passes while population-mean improvement is not established.",
+    "TimesFM H1: observed mean gain 0.035381285186970174, but only 13/32 positive sources; H1 fails. A positive descriptive mean interval does not rescue its failed sign endpoint.",
+    "H3 passes at both periods with32/32 positive TEST sources each. Its sign-test significance concerns source-level win probability, not population-mean improvement; sample means and descriptive intervals remain separate evidence."
+  ]
+}

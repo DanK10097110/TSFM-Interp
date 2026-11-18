@@ -1,0 +1,73 @@
+{
+  "passed": true,
+  "frozen_source_bindings": true,
+  "pilot_weights_unchanged": true,
+  "mutation_plants": [
+    {
+      "plant": "frequency_round",
+      "test": "test_offgrid_tone_is_peeled_without_losing_residual_or_level",
+      "caught": true
+    },
+    {
+      "plant": "drop_level",
+      "test": "test_offgrid_tone_is_peeled_without_losing_residual_or_level",
+      "caught": true
+    },
+    {
+      "plant": "force_noise",
+      "test": "test_noise_and_constant_are_not_forced_into_three_splits",
+      "caught": true
+    },
+    {
+      "plant": "missing_zero",
+      "test": "test_anchored_fusion_recovers_affine_model_and_is_translation_invariant",
+      "caught": true
+    },
+    {
+      "plant": "no_curvature",
+      "test": "test_local_curvature_distinguishes_linear_from_nonlinear_response",
+      "caught": true
+    },
+    {
+      "plant": "future_leak",
+      "test": "test_policy_selection_does_not_use_test_losses",
+      "caught": true
+    },
+    {
+      "plant": "state_leak",
+      "test": "test_geometry_weights_use_fit_states_and_recover_known_composition",
+      "caught": true
+    },
+    {
+      "plant": "no_weight_fit",
+      "test": "test_geometry_weights_use_fit_states_and_recover_known_composition",
+      "caught": true
+    },
+    {
+      "plant": "complexity_tie",
+      "test": "test_forecast_policy_ties_keep_native_instead_of_unsupported_edit",
+      "caught": true
+    },
+    {
+      "plant": "future_loss",
+      "caught": true
+    },
+    {
+      "plant": "hidden_closure",
+      "caught": true
+    },
+    {
+      "plant": "transfer_response",
+      "caught": true
+    }
+  ],
+  "focused_tests": 7,
+  "smoke_tests": 5,
+  "smoke_note": "Initial combined smoke and six focused tests passed11; final focused suite adds tie test. Existing PytestReturnNotNoneWarning retained.",
+  "audit_files": [
+    "independent_audit.json",
+    "strong_signal_audit.json",
+    "transfer_audit.json"
+  ],
+  "postprocessing_fix": "Frequency-transfer rows already carry period; removed duplicate keyword from merged summary. Inference artifacts unchanged."
+}

@@ -11,6 +11,50 @@ It consumes labeled benchmarks produced by the companion `tsfm_benchmark`
 package (sealed corpora with per-sample provenance and a public/private
 split) and produces one self-contained interactive HTML report.
 
+Two opt-in diagnostics support targeted comparisons without changing pipeline
+defaults:
+
+- [Feature interference](docs/feature_interference.md) varies known periodic
+  components independently, compares pure and mixed forecasts, and reports
+  seed-paired uncertainty with one multiplicity correction across model pairs.
+  It includes a runnable CPU example and an immutable prepare/infer workflow.
+- [Window robustness](docs/window_robustness.md) audits a cached activation store
+  across pooling methods, physical window sizes and training-only PCA ranks.
+  It makes changes in the observational unit visible; a larger CKA score alone
+  does not establish more shared task information.
+
+The [discovery and replication planner](docs/feature_search_plan.md) registers
+a complete comparison catalog, screens it with one global correction and
+predeclared practical thresholds, and freezes only qualifying claims for fresh
+seeds. It emits bounded inference commands; it never launches models itself.
+
+These diagnostics produce separate offline HTML reports. Behavioral interference,
+feature recoverability and causal use remain distinct evidence classes.
+Start with the [worked research overview](../examples/feature_search_20261111/index.html)
+for replicated comparisons, closed negative results and links to both diagnostic
+reports. The [comparison figure](../examples/feature_search_20261111/spectral_composition_summary.pdf)
+shows the spectral-composition case, its context boundary, and the limitations
+of the stronger causal interpretation. Its
+[portable source data](../examples/feature_search_20261111/source_data.json)
+can be plotted without loading any model.
+
+The [fresh frequency/composition study](../examples/feature_search_stage49/index.html)
+distinguishes TimesFM's mixture-specific failure from Chronos-Bolt's substantial
+pure-frequency errors. Its 64-seed replication preserves the failed primary
+accuracy-ranking test alongside the positive component-response comparisons.
+The [figure](../examples/feature_search_stage49/crossover_summary.pdf) and
+[source data](../examples/feature_search_stage49/source_data.json) are portable.
+
+The [anchored composition study](../examples/feature_search_stage49/restoration/index.html)
+tests whether component representations can support a better native forecast.
+On 64 fresh mixtures, composing TimesFM states after 15 of 20 blocks reduces
+mean normalized error from 0.463 to 0.039 and beats geometry-matched random
+edits on all 64 seeds. The edit uses separated component inputs: this is a
+controlled mechanistic diagnostic, with three worsening cases retained, rather
+than an established forecasting method or an isolated semantic feature.
+The report includes the frozen protocol, failed controls, independent audit,
+and a [standalone figure](../examples/feature_search_stage49/restoration/restoration_summary.pdf).
+
 ## The layered method
 
 No single measurement supports the claim "these models share structure."
@@ -861,3 +905,61 @@ run_spectral_lens.py, run_meta_report.py, ...   standalone scripts that
 configs/               default.yaml (real pair), smoke.yaml (mocks)
 tests/test_smoke.py    full pipeline end-to-end + confirmation verdict test
 ```
+
+## Section49 coherence follow-up
+
+The [grounded coherence study](../examples/feature_search_stage49/coherence_followup/index.html)
+implements the parked interference, matched-training and model-selection studies,
+then replicates selected Fourier-response findings on fresh synthetic seeds and
+real sources. It includes normalization/history controls, off-grid frequencies,
+shifted band boundaries, independent arithmetic audits and portable figures.
+See the [reproduction commands](../examples/feature_search_stage49/coherence_followup/README.md).
+These are standalone behavioral experiments; real pretraining overlap is unknown.
+
+The [selective decomposition and hidden composition study](../examples/feature_search_stage49/selective_composition/index.html)
+peels only stable spectral patterns and retains the full residual. It compares
+output composition with causal hidden-state fusion, checks local activation
+smoothness, and tests component-effect transfer between real backgrounds.
+Balanced mixtures, dominant-only states, stronger injections and a second
+frequency distinguish reconstruction from forecasting and semantic accuracy.
+See its [reproduction commands](../examples/feature_search_stage49/selective_composition/README.md).
+
+## Section49 hypothesis investigation
+
+The [hypothesis investigation](../examples/feature_search_stage49/hypothesis_investigation/index.html)
+tests continuation priors, cross-model predictive utility, phase structure,
+normalization, token boundaries, direct FFN neurons and modern sparse dictionaries.
+It includes fresh synthetic replications, a192-source public-data validation and
+an October2026 weather holdout that postdates the exact cached checkpoints.
+The [session handoff](docs/section49_investigation_20261116.md) distinguishes
+reviewed findings from active work and links durable per-experiment records.
+
+## Selective forecast steering
+
+The opt-in [steering API](docs/steering.md) controls interval width, adds an
+explicit seasonal prior, or targets a single quantile using bounded internal
+activation edits. It supports SAE mixtures and an SAE-free adaptive controller
+for Chronos-Bolt and TimesFM2.5. Every returned forecast is checked through the
+full model, with per-request success, collateral and quantile-crossing diagnostics.
+
+See the [worked experiments and figures](../examples/steering/README.md),
+[persistent experiment log](docs/steering_research_log.md), and
+[literature notes](docs/steering_literature.md). Width control is not evidence
+of calibrated uncertainty, and adaptive output control does not establish
+monosemantic neurons or a universally reusable steering vector.
+
+## Dynamic steering for new models
+
+The [dynamic steering API](docs/dynamic_steering.md) accepts a deterministic
+forecast callable and optional PyTorch module, discovers useful intervention
+sites, and trains reusable response profiles without SAE features or forecast
+gradients. It offers 19 request types, short/long/explicit forecast windows,
+context ignore/emphasis/focus policies, profile save/load and measured failure
+diagnostics. Layer and token choices are optional configuration.
+
+Start with the [download-free custom-model example](../examples/dynamic_steering/custom_model.py).
+See [results and scientific figures](../examples/dynamic_steering/README.md) and
+the [durable experiment log](docs/dynamic_steering_research_log.md). The common
+interface works across registered models; steering success depends on the model,
+target and intervention budget. Full-horizon context preprocessing is explicitly
+distinguished from learned internal control.

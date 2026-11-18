@@ -1,0 +1,7 @@
+# Historical exploratory artifacts retain their original reproduce paths.
+/activation_poc_*/
+/activation_interchange_poc_*/
+/normalization_audit_poc_*/
+
+# Prospective experimental designs are source, unlike generated run JSON.
+!/*_protocol.json

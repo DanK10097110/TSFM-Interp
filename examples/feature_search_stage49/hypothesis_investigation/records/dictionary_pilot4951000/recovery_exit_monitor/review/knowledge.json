@@ -1,0 +1,29 @@
+{
+  "question": "What do the completed matched dictionary pilots establish?",
+  "exact_results": {
+    "completed_fits": 44,
+    "forecast_domain_rows": 220,
+    "probe_domain_rows": 36960,
+    "incomplete": [],
+    "fit_table": "fit.csv",
+    "forecast_table": "forecast.csv",
+    "probe_table": "probe.csv"
+  },
+  "controls": [
+    "frozen FIT-only representations and probes; input/normalizer metadata controls",
+    "source-level domain scores; actual L0; exact native replay and matched random controls"
+  ],
+  "limitations": [
+    "No TEST model selection; no general monosemanticity or learned-concept claim",
+    "Four TEST real sources/domain and four synthetic receivers in native pilot",
+    "Random controls compare only against the matching valid receiver subset; unmatched all-receiver preservation remains separate",
+    "Response-change NMSE describes intervention sensitivity, not true-signal accuracy",
+    "Causal response cells require validity/edit-reach audit; fallback nulls are invalid and zero effects are not harmlessness evidence",
+    "Earlier conservative-null wording is superseded: independently sampled +/- edits are not a calibrated smooth-response null",
+    "Native preservation concerns the point forecast; CA15/MN47/CA16 late-head or encoder-output multi-quantile steering are different sites/endpoints",
+    "PCA stores a fitted d-by-d basis; zero neural optimizer parameters is not zero fitted capacity",
+    "FFN and response-aware SAE follow-ups are parked until review"
+  ],
+  "next_step": "Review full three-seed/k comparisons, preservation and specific perturbation effects jointly.",
+  "status": "review_tables"
+}

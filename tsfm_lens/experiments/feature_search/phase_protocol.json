@@ -1,0 +1,39 @@
+{
+  "seed_base": 993000,
+  "n_pairs": 192,
+  "period": 32,
+  "context": 128,
+  "horizon": 32,
+  "split": "seed index<96 train;96..143 validation;144..191 test",
+  "phase_difference": 1.5707963267948966,
+  "noise": 0,
+  "conditional_noise_replication": 0.1,
+  "amplitude": [
+    0.5,
+    2
+  ],
+  "offset": [
+    -2,
+    2
+  ],
+  "slope": 0,
+  "representation": "final context token at first/middle/final layers",
+  "ridge_alpha": [
+    0.01,
+    1,
+    100
+  ],
+  "candidate_subspaces": [
+    "phase_probe_rank2",
+    "response_svd_rank2",
+    "response_svd_rank4"
+  ],
+  "selection": "train fit;validation layer/rank/direction;frozen test",
+  "primary": "phase-selective donor restoration vs equal-energy topPC/random",
+  "multiplicity": "Holm4claims:2models*2direction;no phase claim from decode",
+  "nuisance": [
+    "relative_amplitude_change",
+    "offset_change_divided_by_latent_amplitude"
+  ],
+  "control": "whole donor,self,zero,equal-energy topPC/random,rotated-neuron"
+}

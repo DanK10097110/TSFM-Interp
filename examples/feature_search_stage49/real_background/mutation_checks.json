@@ -1,0 +1,38 @@
+[
+  {
+    "plant": "response_error",
+    "test": "test_response_phase_and_off_frequency_have_known_answer",
+    "caught": true,
+    "summary": "1 failed in 0.52s"
+  },
+  {
+    "plant": "phase_origin",
+    "test": "test_physical_phase_is_identical_across_histories_and_linear_baseline",
+    "caught": true,
+    "summary": "1 failed in 0.45s"
+  },
+  {
+    "plant": "irrelevant_identity",
+    "test": "test_irrelevant_history_preserves_distribution_and_recent_junction_but_changes_old_order",
+    "caught": true,
+    "summary": "1 failed in 0.46s"
+  },
+  {
+    "plant": "donor_leak",
+    "test": "test_donor_selection_cannot_use_heldout_perfect_self_match",
+    "caught": true,
+    "summary": "1 failed in 0.43s"
+  },
+  {
+    "plant": "pooled_gate",
+    "test": "test_dataset_gate_cannot_be_rescued_by_pooled_success_or_training_rows",
+    "caught": true,
+    "summary": "1 failed in 0.43s"
+  },
+  {
+    "plant": "target_leak",
+    "test": "test_supervised_predictions_do_not_fit_heldout_targets",
+    "caught": true,
+    "summary": "1 failed in 2.44s"
+  }
+]

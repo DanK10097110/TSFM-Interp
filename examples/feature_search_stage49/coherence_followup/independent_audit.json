@@ -1,0 +1,10 @@
+{
+  "losses": 19008,
+  "responses": 13440,
+  "oddness": 6016,
+  "primary_tests": 12,
+  "selector_rows": 1152,
+  "source_disjoint": true,
+  "passed": true,
+  "source_sha256": "e4b29ec4026d3b715e21d3bc31cd6705f987f975da993d6ffe0002d79f7e983f"
+}

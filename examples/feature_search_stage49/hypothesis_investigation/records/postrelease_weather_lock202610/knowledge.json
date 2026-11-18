@@ -1,0 +1,1010 @@
+{
+  "question": "Does locking residual forward/inverse normalization to full history reduce weather hybrid harm?",
+  "design": {
+    "created_utc": "2026-11-16T19:20:44.544327+00:00",
+    "stage": "PREPARED; native HOLD awaiting a new coordinator slot grant",
+    "question": "Does locking residual forward/inverse normalization to full history reduce weather hybrid harm?",
+    "hypotheses": [
+      "Locked hybrid versus ordinary hybrid: positive mean gain supports a beneficial normalizer-mediated response in this fixed cohort.",
+      "Locked hybrid versus native: does locking recover or exceed original native forecast accuracy?"
+    ],
+    "data": "Original30 complete windows only;8 stations with counts4/4/4/4/4/2/4/4; no replacement or new data.",
+    "intervention": "Unmodified coherence_study.normalization(native, full_raw_FP32_singleton, background) locks BOTH forward normalization and inverse. Ordinary uses contextlib.nullcontext; never another policy string.",
+    "methods": [
+      "native",
+      "ordinary_hybrid",
+      "locked_hybrid"
+    ],
+    "recipe": "Same saved past/future tones, FP32 residual and full contexts. No refit, altered coefficients, thresholds, scaling, location centering or selection.",
+    "gates": "All finite FP32 native outputs; exact replay of all30 full/residual/ordinary-hybrid references; exact30 locked-full anchor identities;18 locked-residual repeats;30 restored-full identities;12 abstention identities; active-lock plumbing and restoration verified.",
+    "reconstruction": "Float64 original residual+tone rtol=atol1e-12; FP32 full/residual cast closure bounded by sum of maximum one-ULP spacings +1e-12. Forecast equality gates remain bit-exact.",
+    "primary": "Two descriptive paired contrasts per model: ordinary_hybrid loss minus locked_hybrid loss; native loss minus locked_hybrid loss. Positive favors locking. No significance gate or multiplicity-adjusted confirmatory claim.",
+    "loss": "Per window: mean32 squared errors / original float64 population history variance (ddof0). No epsilon: fail if variance<=0. Then mean windows within each station, then equal mean8 stations.",
+    "stations": [
+      "KSEA",
+      "KPHX",
+      "KDEN",
+      "KMSP",
+      "KDFW",
+      "KJFK",
+      "KATL",
+      "KMIA"
+    ],
+    "windows_by_station": [
+      4,
+      4,
+      4,
+      4,
+      4,
+      2,
+      4,
+      4
+    ],
+    "bootstrap": {
+      "kind": "descriptive paired station bootstrap percentile95%",
+      "draws": 4096,
+      "seed": 4954100,
+      "resample": "Same8 station indices with replacement shared across all methods/models; preserve all windows within station.",
+      "caution": "Shared weather creates dependence across stations; intervals are descriptive, not calibrated population confidence or significance. No sign-test/population-mean claim."
+    },
+    "projection": "Same saved past-frequency QR tone plane as natural_gain_location.py; error and update-energy partitions only, unchanged targets. Equal station weights; exactzero abstentions, no undefined plane estimates.",
+    "interpretation": "Normalizer-mediated response of these frozen median forecasters, not training diagnosis. Locking can change internal input/output scales and relative dynamic range; plane partitions are geometric, not true-component causal labels.",
+    "limits": [
+      "Descriptive8-station cohort with shared-weather dependence; reused outcomes, no new confirmation.",
+      "Chronological observation holdout does not imply unseen geography/distribution.",
+      "Forward and inverse are changed together; this intervention does not distinguish their separate causal contributions."
+    ],
+    "source": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/postrelease_weather_pilot202610",
+    "primary_protocol_sha256": "172116a6b42be80dacd295732cd2ac66922609acfc7791770e1f7091cd98911c",
+    "source_forecast_sha256": {
+      "bolt": "24f600bc6a8fad1b20df4d177cd04127b61aa5a8c93bb3ae2c2d09301846b10a",
+      "timesfm": "d8d7db43d9cf6f95106a955b16485522877ce1be26130abb1186bb82672ebf5a"
+    },
+    "checkpoints": {
+      "bolt": {
+        "repo": "amazon/chronos-bolt-small",
+        "path": "/common/home/djk255/.cache/huggingface/hub/models--amazon--chronos-bolt-small/snapshots/772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "revision": "772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "weights": {
+          "model.safetensors": "06a6a19bbe74bc10a9cd193bd4bf2bf638ae07f7e0d51653ae7ab8ea968a21dd"
+        }
+      },
+      "timesfm": {
+        "repo": "google/timesfm-2.5-200m-pytorch",
+        "path": "/common/home/djk255/.cache/huggingface/hub/models--google--timesfm-2.5-200m-pytorch/snapshots/1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+        "revision": "1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+        "weights": {
+          "model.safetensors": "2f776efe6245e42b24bc4153ffdf61810140210e4bd3b01fb21f7aa779ab6ce8"
+        }
+      }
+    },
+    "sources": {
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/postrelease_weather_pilot_audit.py": "d52b39d5b2d472e732d5af0a8660af2a1ed28d135c8373b617740d1e81aa2a09",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/postrelease_weather_prepare.py": "f21f004d2d42b1ba735f620cfaa04db3e527b1e4b39ca95b11d45bb1ae079fca",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/postrelease_weather_score.py": "55cd231ad7f361abd67f1ac9a06411fd829f5ac07c9d3e9ee43b8a41022b8bea",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/postrelease_weather_audit.py": "07919c8407a2ee0300e9d336dd4cd04f9b70ff49ed96c5c056cebf6405e411e6",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/postrelease_weather_replay.py": "276c9138198dffa3211e79da92f14412962ab4c04386c53b97a5ac6b03440713",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/postrelease_weather_worker.py": "051a582a794586fca08315a85ef4df14e62b24b2b0ec2776478564b87f0f5f60",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/postrelease_weather_pilot.py": "6593d9730205b6f256bc33ca7be8f6725030dda436452faef76e1a52e4b61700",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/postrelease_weather_data.py": "20cef1223d69d5dbb525799d08248ce64eaa63f6787e69588ff9bcd09a8c2fa5",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tests/test_postrelease_weather_data.py": "1b06e497ddab5601c47d9cfc0028dd01965a2b932a2e543d3f540ddc13814132",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tests/test_postrelease_weather_pilot.py": "a2b6c2849bf1449914d3bddd0f940344f27da28158aa2c0d6c18dacb12fc5dec",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/persistence_protocol.py": "c4a34cb7774ea97d3f4b3314cb555071f925c3f921fe815e47f07dc281748f17",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/persistence_study.py": "3c8ecbd236ef062468c0c224bf9ee4aba8ad88cd00b8904385cb85e7a4901086",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/persistence_singleton.py": "f8e0db77602ca9ec73c011c2797732fc694addeb1456d837e481e5f322084ed3",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/persistence_execution.py": "631d9bbb722d2afe68254a97a390247d03da473123928c78becb5883a623dc47",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/selective_tree.py": "0d96de5655995d55f9dc6c1510d5951db916656642b5d22c2bf4721d664f75f1",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/real_background_poc.py": "c88868ab339608f52afa8041d89cf3b48aa4260e87fb497b64fa7bf058b3eda6",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/homogeneous_normalizer.py": "2670effb2dfc0b631d368a69cab4263a8d2a90eb1208acc93d246a5c0ef55051",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/coherence_study.py": "e9bd4dc10d57cfbc30cb4b01cfafe96789cccb6d34fe85616699ecfef799aec7",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tsfm_lens/extraction/hooks.py": "6f161d02a472c246691caed21bd301a201d7219d3aeef90de2854baa7bdc4281",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/transformers/models/t5/modeling_t5.py": "ee1a043f5c03c684a2bbb0213ea3b3f8be272a03ab884bdca57c31e7315e7b7e",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/chronos/__about__.py": "9de67178c9847e385564ceb17ad46292b05d1d6b794f97a12fbd9961d3ed27e1",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/chronos/__init__.py": "f4602aa57fbe3bd3f328414a591d0594ed62099ef7621736ff9733420295bbf0",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/chronos/base.py": "8938c48de071534c3fecd4e2762a5f99b86d592e8de26aeaa21ce81a08f99c31",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/chronos/boto_utils.py": "f84a7bca1e69838359309f58bd66f41d9c6da6619b803e88fb87af59d8012e0b",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/chronos/chronos.py": "52a8ad41894195b1c244784e35e238c57e572d54fd980816b579c9c5fab78e3b",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/chronos/chronos2/__init__.py": "128856d0b4660e586b74a4971a19dfaaca666e350ebbfb50297b667c1d949995",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/chronos/chronos2/config.py": "d4ffa61c796ee87b340540e7f8131008aedcf7b1c580321053dec51d609d3101",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/chronos/chronos2/dataset.py": "90b34b05af99069972a33aa780019ab2fca7514e907b68921a2d5c9205584e0a",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/chronos/chronos2/layers.py": "73493f306ecfaa21fa57636ff46321ccb5d50ded02a382598cf759dbfc9dd60f",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/chronos/chronos2/model.py": "13ed6b3e1010e1b60fad45cd078da5ff1cda23cdfcaf9055a996276219d9e3c1",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/chronos/chronos2/pipeline.py": "482d28d81b7a50852fd081bd660f5ce39dab79534c237157efaf12bb586c07e1",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/chronos/chronos2/preprocess.py": "a6da6192bc3e51a24d7adee4398c7436ce56f532fbdcf8dcef4c0c366ee02246",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/chronos/chronos2/trainer.py": "3868aaefd2477eb0d6a68b2b0c7309ad0f00d1d3b02fb8deb4f8f211afecbd88",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/chronos/chronos_bolt.py": "572a3ffd23a7887c423d234fd0086a4dfa2bac0c3e34d4b7d42eb9cda2e3d1d4",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/chronos/df_utils.py": "df452a311b406948e0dac1f36b0685e1b7eb6c245eb4b88fd0595037221fec38",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/chronos/utils.py": "0299e91f6ca902ff18c99e1260cfe81655744eae1ca82e541bda24eb395680ad",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/timesfm/__init__.py": "076a60ca3737860230410aace41b8987db59cb772fd68c77f5b872a7f248241b",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/timesfm/configs.py": "0bb2d1fb8f4980bb2f731dd980fc1fd8d0be291b235d3d3e642618052155035e",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/timesfm/flax/__init__.py": "43d16544ed887d213dc846a2018cd690e30124f09a358aa1e2285ca74b74050b",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/timesfm/flax/dense.py": "be4703b9e35f717811d472fad6f08e5b3c0708a1fd4eb7a2400349ccc2b6fcf8",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/timesfm/flax/normalization.py": "2867823407ed6555ed13fe7fa5f05e7013632730cca7a24e0a5d96a0f741bc43",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/timesfm/flax/transformer.py": "2bda8edf59796f051ff7397e9b297c1c396d0240be3b80a849683cba9eef226e",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/timesfm/flax/util.py": "d9214b3bac474fce3086e36e9952306535d73da83e5caaca2b685b8fbe20ae63",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/timesfm/timesfm_2p5/timesfm_2p5_base.py": "35a9f096cf676b2d4c84b0bc6f66a756bea4c91e7e7da27d0b165ba95875bf57",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/timesfm/timesfm_2p5/timesfm_2p5_flax.py": "d3313809ece84522bf678077c34128cbde046af4b91a5d4127f46dd15913c642",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/timesfm/timesfm_2p5/timesfm_2p5_torch.py": "07e135cbf3f5099e60469f7c2bb0781426f7109d62c51634775b6be470608371",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/timesfm/torch/__init__.py": "43d16544ed887d213dc846a2018cd690e30124f09a358aa1e2285ca74b74050b",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/timesfm/torch/dense.py": "28894985384eaa3dda7b1b882d5bb8426d8b274b2d9a01cb14c4651c0584ec1d",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/timesfm/torch/normalization.py": "c37b56afd198aebf5ef71ee04ef244a63318da2e4a0497ec9b319088f6cc5154",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/timesfm/torch/transformer.py": "744a0e1e41c1262150998fbc621bb7e4bb2fb9c79b0fe46e70dea744511962bb",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/timesfm/torch/util.py": "c700a82459e115a1c6c9797058e6e3272aa79e8705a11d48d83489b67766e917",
+      "/common/users/djk255/conda_envs/cudaPy/lib/python3.12/site-packages/timesfm/utils/xreg_lib.py": "4609b3c11aa1744db365c8a1f707f72a49b68948bc5d6b1e0ebd886772a3f4d2",
+      "/common/users/djk255/hf_cache_home/huggingface/hub/models--amazon--chronos-bolt-small/blobs/d8f9b65552d4d211e28d332ad5666484092bbf77": "9ca0ebbe049ccebacb0546361e8aa728f0cf104cd18d1838d78d296aa317bd21",
+      "/common/users/djk255/hf_cache_home/huggingface/hub/models--google--timesfm-2.5-200m-pytorch/blobs/94445b5415c93256bbab9cf759df2ffce2671b16": "cd3315b760d5cc7e278d7afdf41b897031ced888fc6c115bd9b3ac0ea2c47408",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/postrelease_weather_lock_audit.py": "3054ed78c4cdba55582b0d70054c3c989ab0f343a14cd333cb38d8e63793c103",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/postrelease_weather_lock_analysis.py": "0ea3f61e9a6eb15b4d41bafbfe620711b4e18f192bbf37c8e70ee7463275dc28",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/postrelease_weather_lock.py": "ec7a9eeaba63ca69ac345c0ebbecc2ec6b85a30216a5e095de0975d052e78628",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tests/test_postrelease_weather_lock.py": "eb76ae446dc3b06fab6a5a5bb09c6e925f0e63068a8a697334a41231c7bdfbed",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/postrelease_weather_posthoc.py": "093cf6fafd9001d6027bbaebb4b88edb33dd7f58b641db6784756445d0d7bce7",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/natural_gain_location.py": "1ef75cda362e51fca7c994bb0d230c8dec7fe13f556f2651509e41dfae5f6d2d"
+    },
+    "versions": {
+      "numpy": "2.1.0",
+      "scipy": "1.18.0",
+      "torch": "2.12.0",
+      "transformers": "4.57.6",
+      "chronos-forecasting": "2.3.1",
+      "timesfm": "2.0.2",
+      "safetensors": "0.8.0"
+    },
+    "environment": {
+      "CUDA_VISIBLE_DEVICES": "",
+      "HF_HUB_OFFLINE": "1",
+      "HF_DATASETS_OFFLINE": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1",
+      "BLIS_NUM_THREADS": "1",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "expected_calls": {
+      "bolt": 144,
+      "timesfm": 174
+    },
+    "max_cells": 200,
+    "max_seconds": 300,
+    "max_rss_bytes": 3221225472,
+    "estimate": "Previous49-input repeat pilot took18.5145s Bolt/25.2244s TF for98calls incl startup. Current144/174 planned calls estimated<90s/model; hard300s cap, single worker at a time.",
+    "inference_hashes": {
+      "bolt_reference.npz": "70817202c9428c0d0d618d11875eea1bee06f38694301f1730c0265ea6f26a89",
+      "inputs.npz": "a98465a1791177e6dac7bf0b4eeead89f096f4a9317a28a7609c07eea95831fd",
+      "rows.json": "d84e3350b560a26b2dac0cdda4729e7de5fe7287e35c718cb26b2deb535e4c80",
+      "timesfm_reference.npz": "169e579def8c29700276a82946da7bd61acebafffc7e7aadfb650ae642b0ed14",
+      "plans.json": "7ea22b2e5dc35ddbdfac62c1dc635b2f59a87e197fe8ff64d6e54b6422363866"
+    },
+    "target_sha256": "f0603a4a14d04d7c8c11fa60a9f72f6b7cdcaac3ce754153b37339a4675cde79",
+    "forbidden_roots": [
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/postrelease_weather_lock202610/evaluation",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/postrelease_weather_pilot202610",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/postrelease_weather_202610"
+    ],
+    "preflight_manifest_sha256": "5987d57f71dffcdda0747dcef8cabbc9cf9530df24fc319669366325a6358925"
+  },
+  "exact_findings": {
+    "status": "COMPLETE: native branch CLOSED; slot2 released before analysis",
+    "windows": 30,
+    "accepted": 18,
+    "abstentions": 12,
+    "expected_native_calls": {
+      "bolt": 144,
+      "timesfm": 174
+    },
+    "max_input_reconstruction_abs": 3.0710409433254426e-06,
+    "native_launched": true,
+    "tests_passed": 4,
+    "plants_caught": 5,
+    "readiness": {
+      "status": "READY; slot2 granted by user after PlatoBolt causal completion",
+      "protocol_sha256": "63a30de4f342645deb155f99a6a66a0f33a4daf3ae41c8f651175de95918fb43",
+      "full_residual_tone_scale_reference_identity": true,
+      "all30_windows_and8stations_unchanged": true,
+      "targets_identical": true,
+      "tests": 4,
+      "plants_caught": 5,
+      "planned_calls": {
+        "bolt": 144,
+        "timesfm": 174
+      },
+      "native_launched": false
+    },
+    "native_execution": {
+      "bolt": {
+        "valid": true,
+        "returncode": 0,
+        "failure": null,
+        "seconds": 23.470929947914556,
+        "peak_rss_bytes": 1065652224,
+        "pid": 4
+      },
+      "timesfm": {
+        "valid": true,
+        "returncode": 0,
+        "failure": null,
+        "seconds": 37.31432694790419,
+        "peak_rss_bytes": 1631551488,
+        "pid": 4
+      }
+    },
+    "native_sessions": {
+      "slot": 2,
+      "run": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/postrelease_weather_lock202610",
+      "bolt": {
+        "session": 79926,
+        "status": "complete",
+        "execution": {
+          "valid": true,
+          "returncode": 0,
+          "failure": null,
+          "seconds": 23.470929947914556,
+          "peak_rss_bytes": 1065652224,
+          "pid": 4
+        }
+      },
+      "timesfm": {
+        "session": 71584,
+        "status": "complete",
+        "execution": {
+          "valid": true,
+          "returncode": 0,
+          "failure": null,
+          "seconds": 37.31432694790419,
+          "peak_rss_bytes": 1631551488,
+          "pid": 4
+        }
+      },
+      "updated_utc": "2026-11-16T19:22:00.067297+00:00",
+      "status": "slot2 released",
+      "released_utc": "2026-11-16T19:22:50.154275+00:00"
+    },
+    "native_gates": {
+      "bolt": {
+        "valid": true,
+        "gates": {
+          "full_replay": 30,
+          "residual_replay": 30,
+          "ordinary_hybrid_replay": 30,
+          "locked_full_anchor": 30,
+          "locked_residual_repeat": 18,
+          "restored_full": 30,
+          "abstention": 12,
+          "actual_native_calls": 144,
+          "target_roots_denied": 3
+        },
+        "seconds": 21.50521235098131,
+        "peak_rss_bytes": 1065656320,
+        "threads": 1,
+        "interop": 1,
+        "protocol_sha256": "63a30de4f342645deb155f99a6a66a0f33a4daf3ae41c8f651175de95918fb43",
+        "forecast_sha256": "8462164f58fd4102aa0ffb403c56860da53ac4d694a427b56e00accb7e3f3fc2"
+      },
+      "timesfm": {
+        "valid": true,
+        "gates": {
+          "full_replay": 30,
+          "residual_replay": 30,
+          "ordinary_hybrid_replay": 30,
+          "locked_full_anchor": 30,
+          "locked_residual_repeat": 18,
+          "restored_full": 30,
+          "abstention": 12,
+          "actual_native_calls": 174,
+          "target_roots_denied": 3
+        },
+        "seconds": 35.85851821000688,
+        "peak_rss_bytes": 1631555584,
+        "threads": 1,
+        "interop": 1,
+        "protocol_sha256": "63a30de4f342645deb155f99a6a66a0f33a4daf3ae41c8f651175de95918fb43",
+        "forecast_sha256": "454c4c2acc0dccba45910a39530f6d8cb5683de5d89f5023bf6481204b76e98f"
+      }
+    },
+    "results": {
+      "bolt": {
+        "losses": {
+          "native": {
+            "mean_normalized_mse": 0.4729334720068331,
+            "station_losses": [
+              0.27510852909463673,
+              0.163163918727607,
+              0.48429932268069376,
+              0.6319521367160927,
+              0.3983883148908679,
+              1.225957502568305,
+              0.13738591292185212,
+              0.46721213845460996
+            ]
+          },
+          "ordinary_hybrid": {
+            "mean_normalized_mse": 0.6547303222032483,
+            "station_losses": [
+              0.3079900419860647,
+              0.1397632697292565,
+              0.5496040692051661,
+              0.644087231848357,
+              0.4242161986062043,
+              2.311653141785628,
+              0.14038000500183834,
+              0.7201486194634718
+            ]
+          },
+          "locked_hybrid": {
+            "mean_normalized_mse": 0.8431448147928856,
+            "station_losses": [
+              0.3437148597785042,
+              0.17318508712958808,
+              0.6371099645509112,
+              0.6744081508853697,
+              0.45777217127422076,
+              3.232469787584762,
+              0.22216544741082628,
+              1.004333049728903
+            ]
+          }
+        },
+        "contrasts": {
+          "locked_hybrid_vs_ordinary_hybrid": {
+            "mean_gain": -0.18841449258963727,
+            "station_wins": 0,
+            "percentile95": [
+              -0.41767202167980744,
+              -0.045810782449974476
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "locked_hybrid_vs_native": {
+            "mean_gain": -0.3702113427860525,
+            "station_wins": 0,
+            "percentile95": [
+              -0.8815525388640494,
+              -0.0600570709287794
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "ordinary_hybrid_vs_native": {
+            "mean_gain": -0.18179685019641523,
+            "station_wins": 1,
+            "percentile95": [
+              -0.4652814900347783,
+              -0.01292937713999504
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          }
+        }
+      },
+      "timesfm": {
+        "losses": {
+          "native": {
+            "mean_normalized_mse": 0.4503466537272577,
+            "station_losses": [
+              0.308945907593176,
+              0.23160819412779002,
+              0.44574818573490393,
+              0.622928493805565,
+              0.419144351652692,
+              0.9914255525254189,
+              0.20750971043281125,
+              0.3754628339457047
+            ]
+          },
+          "ordinary_hybrid": {
+            "mean_normalized_mse": 0.5064548545682812,
+            "station_losses": [
+              0.3713566293738017,
+              0.16435650735466367,
+              0.40399604253931776,
+              0.5929505767454347,
+              0.434805422102577,
+              1.3222968552450334,
+              0.21177466611264648,
+              0.5501021370727753
+            ]
+          },
+          "locked_hybrid": {
+            "mean_normalized_mse": 0.4763265507043724,
+            "station_losses": [
+              0.4468591737141235,
+              0.2638587171494505,
+              0.3186895140552969,
+              0.7133668838643168,
+              0.4685237615794842,
+              0.5363248087475654,
+              0.4667249604403444,
+              0.5962645860843979
+            ]
+          }
+        },
+        "contrasts": {
+          "locked_hybrid_vs_ordinary_hybrid": {
+            "mean_gain": 0.03012830386390882,
+            "station_wins": 2,
+            "percentile95": [
+              -0.1236936510859864,
+              0.27233875618931475
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "locked_hybrid_vs_native": {
+            "mean_gain": -0.025979896977114728,
+            "station_wins": 2,
+            "percentile95": [
+              -0.15445671212250156,
+              0.14859940122690646
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "ordinary_hybrid_vs_native": {
+            "mean_gain": -0.05610820084102354,
+            "station_wins": 3,
+            "percentile95": [
+              -0.15435815654050505,
+              0.019018129665790105
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          }
+        }
+      }
+    },
+    "partition_summaries": {
+      "bolt": {
+        "locked_hybrid_vs_ordinary_hybrid": {
+          "gain": {
+            "mean_gain": -0.18841449258963727,
+            "station_wins": 0,
+            "percentile95": [
+              -0.4176720216798075,
+              -0.04581078244997447
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "tone_gain": {
+            "mean_gain": -0.004698313124042495,
+            "station_wins": 1,
+            "percentile95": [
+              -0.009173047899684312,
+              -8.54025517031005e-05
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "other_gain": {
+            "mean_gain": -0.18371617946559476,
+            "station_wins": 0,
+            "percentile95": [
+              -0.41679231773774505,
+              -0.03989249425640022
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "update_energy": {
+            "mean_gain": 0.03713311538692078,
+            "station_wins": 8,
+            "percentile95": [
+              0.012801928850279087,
+              0.06698680879639765
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "tone_update": {
+            "mean_gain": 0.0023316074557178652,
+            "station_wins": 8,
+            "percentile95": [
+              0.0006836949202122397,
+              0.004585644672634566
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "other_update": {
+            "mean_gain": 0.03480150793120291,
+            "station_wins": 8,
+            "percentile95": [
+              0.012034553182010015,
+              0.06269979039159979
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          }
+        },
+        "locked_hybrid_vs_native": {
+          "gain": {
+            "mean_gain": -0.37021134278605244,
+            "station_wins": 0,
+            "percentile95": [
+              -0.8815525388640494,
+              -0.06005707092877941
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "tone_gain": {
+            "mean_gain": -0.026574726231001107,
+            "station_wins": 1,
+            "percentile95": [
+              -0.046163868847144185,
+              -0.009403124437142581
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "other_gain": {
+            "mean_gain": -0.34363661655505134,
+            "station_wins": 1,
+            "percentile95": [
+              -0.8458980692155732,
+              -0.04549666604871998
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "update_energy": {
+            "mean_gain": 0.1697766615258023,
+            "station_wins": 8,
+            "percentile95": [
+              0.04114993770485409,
+              0.3677300837971602
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "tone_update": {
+            "mean_gain": 0.02073368698211459,
+            "station_wins": 8,
+            "percentile95": [
+              0.009618733782574619,
+              0.03374046112341235
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "other_update": {
+            "mean_gain": 0.14904297454368773,
+            "station_wins": 8,
+            "percentile95": [
+              0.030941992746329413,
+              0.3327210768608728
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          }
+        },
+        "ordinary_hybrid_vs_native": {
+          "gain": {
+            "mean_gain": -0.18179685019641517,
+            "station_wins": 1,
+            "percentile95": [
+              -0.4652814900347783,
+              -0.012929377139995042
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "tone_gain": {
+            "mean_gain": -0.021876413106958606,
+            "station_wins": 2,
+            "percentile95": [
+              -0.040724456048963305,
+              -0.00594345663811971
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "other_gain": {
+            "mean_gain": -0.15992043708945658,
+            "station_wins": 1,
+            "percentile95": [
+              -0.4266052448595564,
+              -0.00408150969528358
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "update_energy": {
+            "mean_gain": 0.08082973348644201,
+            "station_wins": 8,
+            "percentile95": [
+              0.019299288275709908,
+              0.18462802634481681
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "tone_update": {
+            "mean_gain": 0.01769406644203822,
+            "station_wins": 8,
+            "percentile95": [
+              0.00786352735756029,
+              0.02865666413312322
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "other_update": {
+            "mean_gain": 0.06313566704440378,
+            "station_wins": 8,
+            "percentile95": [
+              0.010125151391389801,
+              0.1562736353084466
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          }
+        }
+      },
+      "timesfm": {
+        "locked_hybrid_vs_ordinary_hybrid": {
+          "gain": {
+            "mean_gain": 0.0301283038639088,
+            "station_wins": 2,
+            "percentile95": [
+              -0.12369365108598641,
+              0.27233875618931475
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "tone_gain": {
+            "mean_gain": -0.015804231611728163,
+            "station_wins": 0,
+            "percentile95": [
+              -0.025144920436432423,
+              -0.0073847495806259825
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "other_gain": {
+            "mean_gain": 0.04593253547563694,
+            "station_wins": 2,
+            "percentile95": [
+              -0.10406576104784032,
+              0.28785796876621583
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "update_energy": {
+            "mean_gain": 0.10704800812042276,
+            "station_wins": 8,
+            "percentile95": [
+              0.06448440151860285,
+              0.1634282157793366
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "tone_update": {
+            "mean_gain": 0.009185030892743556,
+            "station_wins": 8,
+            "percentile95": [
+              0.005368254838136839,
+              0.013259385643182766
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "other_update": {
+            "mean_gain": 0.0978629772276792,
+            "station_wins": 8,
+            "percentile95": [
+              0.0572286006743509,
+              0.15397441111103266
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          }
+        },
+        "locked_hybrid_vs_native": {
+          "gain": {
+            "mean_gain": -0.025979896977114725,
+            "station_wins": 2,
+            "percentile95": [
+              -0.15445671212250156,
+              0.14859940122690646
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "tone_gain": {
+            "mean_gain": -0.039553179064959726,
+            "station_wins": 1,
+            "percentile95": [
+              -0.07265112246514442,
+              -0.012009422039593452
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "other_gain": {
+            "mean_gain": 0.013573282087845015,
+            "station_wins": 2,
+            "percentile95": [
+              -0.11126974563890946,
+              0.19736044549041243
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "update_energy": {
+            "mean_gain": 0.11812814363524515,
+            "station_wins": 8,
+            "percentile95": [
+              0.07931036325737627,
+              0.15948931010844553
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "tone_update": {
+            "mean_gain": 0.0276957685110623,
+            "station_wins": 8,
+            "percentile95": [
+              0.014086055391745025,
+              0.04282451872499904
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "other_update": {
+            "mean_gain": 0.09043237512418287,
+            "station_wins": 8,
+            "percentile95": [
+              0.06277513722775288,
+              0.12020776121502671
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          }
+        },
+        "ordinary_hybrid_vs_native": {
+          "gain": {
+            "mean_gain": -0.056108200841023526,
+            "station_wins": 3,
+            "percentile95": [
+              -0.15435815654050503,
+              0.0190181296657901
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "tone_gain": {
+            "mean_gain": -0.023748947453231563,
+            "station_wins": 2,
+            "percentile95": [
+              -0.053234737884169575,
+              -0.0006085541099169799
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "other_gain": {
+            "mean_gain": -0.03235925338779193,
+            "station_wins": 4,
+            "percentile95": [
+              -0.1071057618665032,
+              0.021807347758686195
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "update_energy": {
+            "mean_gain": 0.049786305785744396,
+            "station_wins": 8,
+            "percentile95": [
+              0.02433519772211884,
+              0.07959634614720636
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "tone_update": {
+            "mean_gain": 0.022048944789847515,
+            "station_wins": 8,
+            "percentile95": [
+              0.008041533077579948,
+              0.036946164500007345
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          },
+          "other_update": {
+            "mean_gain": 0.027737360995896892,
+            "station_wins": 8,
+            "percentile95": [
+              0.014387590390814822,
+              0.04423358057663257
+            ],
+            "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+          }
+        }
+      }
+    },
+    "independent_replay": {
+      "window_losses": 180,
+      "station_losses": 48,
+      "partition_scalars": 1080,
+      "contrasts": 6,
+      "max_abs_partition_error": 6.106226635438361e-16
+    },
+    "completion": {
+      "status": "COMPLETE: native branch CLOSED; slot2 released before analysis",
+      "primary": {
+        "bolt": {
+          "losses": {
+            "native": {
+              "mean_normalized_mse": 0.4729334720068331,
+              "station_losses": [
+                0.27510852909463673,
+                0.163163918727607,
+                0.48429932268069376,
+                0.6319521367160927,
+                0.3983883148908679,
+                1.225957502568305,
+                0.13738591292185212,
+                0.46721213845460996
+              ]
+            },
+            "ordinary_hybrid": {
+              "mean_normalized_mse": 0.6547303222032483,
+              "station_losses": [
+                0.3079900419860647,
+                0.1397632697292565,
+                0.5496040692051661,
+                0.644087231848357,
+                0.4242161986062043,
+                2.311653141785628,
+                0.14038000500183834,
+                0.7201486194634718
+              ]
+            },
+            "locked_hybrid": {
+              "mean_normalized_mse": 0.8431448147928856,
+              "station_losses": [
+                0.3437148597785042,
+                0.17318508712958808,
+                0.6371099645509112,
+                0.6744081508853697,
+                0.45777217127422076,
+                3.232469787584762,
+                0.22216544741082628,
+                1.004333049728903
+              ]
+            }
+          },
+          "contrasts": {
+            "locked_hybrid_vs_ordinary_hybrid": {
+              "mean_gain": -0.18841449258963727,
+              "station_wins": 0,
+              "percentile95": [
+                -0.41767202167980744,
+                -0.045810782449974476
+              ],
+              "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+            },
+            "locked_hybrid_vs_native": {
+              "mean_gain": -0.3702113427860525,
+              "station_wins": 0,
+              "percentile95": [
+                -0.8815525388640494,
+                -0.0600570709287794
+              ],
+              "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+            },
+            "ordinary_hybrid_vs_native": {
+              "mean_gain": -0.18179685019641523,
+              "station_wins": 1,
+              "percentile95": [
+                -0.4652814900347783,
+                -0.01292937713999504
+              ],
+              "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+            }
+          }
+        },
+        "timesfm": {
+          "losses": {
+            "native": {
+              "mean_normalized_mse": 0.4503466537272577,
+              "station_losses": [
+                0.308945907593176,
+                0.23160819412779002,
+                0.44574818573490393,
+                0.622928493805565,
+                0.419144351652692,
+                0.9914255525254189,
+                0.20750971043281125,
+                0.3754628339457047
+              ]
+            },
+            "ordinary_hybrid": {
+              "mean_normalized_mse": 0.5064548545682812,
+              "station_losses": [
+                0.3713566293738017,
+                0.16435650735466367,
+                0.40399604253931776,
+                0.5929505767454347,
+                0.434805422102577,
+                1.3222968552450334,
+                0.21177466611264648,
+                0.5501021370727753
+              ]
+            },
+            "locked_hybrid": {
+              "mean_normalized_mse": 0.4763265507043724,
+              "station_losses": [
+                0.4468591737141235,
+                0.2638587171494505,
+                0.3186895140552969,
+                0.7133668838643168,
+                0.4685237615794842,
+                0.5363248087475654,
+                0.4667249604403444,
+                0.5962645860843979
+              ]
+            }
+          },
+          "contrasts": {
+            "locked_hybrid_vs_ordinary_hybrid": {
+              "mean_gain": 0.03012830386390882,
+              "station_wins": 2,
+              "percentile95": [
+                -0.1236936510859864,
+                0.27233875618931475
+              ],
+              "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+            },
+            "locked_hybrid_vs_native": {
+              "mean_gain": -0.025979896977114728,
+              "station_wins": 2,
+              "percentile95": [
+                -0.15445671212250156,
+                0.14859940122690646
+              ],
+              "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+            },
+            "ordinary_hybrid_vs_native": {
+              "mean_gain": -0.05610820084102354,
+              "station_wins": 3,
+              "percentile95": [
+                -0.15435815654050505,
+                0.019018129665790105
+              ],
+              "interpretation": "Descriptive station bootstrap; cross-station weather dependence prevents calibrated population-mean inference."
+            }
+          }
+        }
+      },
+      "same30_windows": true,
+      "equal_station_counts": [
+        4,
+        4,
+        4,
+        4,
+        4,
+        2,
+        4,
+        4
+      ],
+      "all_exact_gates_passed": true,
+      "tests_passed": 4,
+      "plants_caught": 5,
+      "independent_replay": {
+        "window_losses": 180,
+        "station_losses": 48,
+        "partition_scalars": 1080,
+        "contrasts": 6,
+        "max_abs_partition_error": 6.106226635438361e-16
+      },
+      "station_gains_locked_vs_ordinary": {
+        "bolt": {
+          "KSEA": -0.03572481779243947,
+          "KPHX": -0.033421817400331566,
+          "KDEN": -0.08750589534574504,
+          "KMSP": -0.030320919037012617,
+          "KDFW": -0.033555972668016465,
+          "KJFK": -0.920816645799134,
+          "KATL": -0.08178544240898794,
+          "KMIA": -0.28418443026543116
+        },
+        "timesfm": {
+          "KSEA": -0.07550254434032178,
+          "KPHX": -0.0995022097947868,
+          "KDEN": 0.08530652848402087,
+          "KMSP": -0.12041630711888207,
+          "KDFW": -0.03371833947690722,
+          "KJFK": 0.785972046497468,
+          "KATL": -0.2549502943276979,
+          "KMIA": -0.046162449011622586
+        }
+      },
+      "interpretation": {
+        "bolt": "Locking hurts all8 observed stations and worsens mean loss versus ordinary hybrid and native; most additional harm is off-plane.",
+        "timesfm": "Locked hybrid improves the observed equal-station mean versus ordinary hybrid, but only2/8 station wins (KDEN,KJFK); descriptive interval crosseszero. It still loses in mean versus native. JFK contributes a large positive station gain; do not describe this as broad source-wise improvement.",
+        "mechanism": "Controlled normalizer-mediated response with forward and inverse locked together, not a training-prior diagnosis or a proof that native normalization caused the original hybrid failure.",
+        "partition": "TimesFM locking gain is off-plane positive with tone-plane negative; Bolt locking harm is negative in both, dominated off-plane. Finite-horizon sine/cosine projection is geometric, not true-component identification.",
+        "limitations": "Descriptive8-station bootstrap with shared-weather dependence and reused outcomes. Median native outputs scored under MSE; no new significance or training-objective attribution."
+      },
+      "next_decision": "Completed authorized mechanism followup. No further native weather variants, downloads, tuning or data expansion; coordinator review only."
+    }
+  },
+  "controls": "All finite FP32 native outputs; exact replay of all30 full/residual/ordinary-hybrid references; exact30 locked-full anchor identities;18 locked-residual repeats;30 restored-full identities;12 abstention identities; active-lock plumbing and restoration verified.",
+  "limitations": [
+    "Descriptive8-station cohort with shared-weather dependence; reused outcomes, no new confirmation.",
+    "Chronological observation holdout does not imply unseen geography/distribution.",
+    "Forward and inverse are changed together; this intervention does not distinguish their separate causal contributions.",
+    "Normalizer-mediated response of these frozen median forecasters, not training diagnosis. Locking can change internal input/output scales and relative dynamic range; plane partitions are geometric, not true-component causal labels."
+  ],
+  "evidence_class": "descriptive normalizer intervention on fixed weather cohort; no training diagnosis",
+  "next_decision": "Completed authorized mechanism followup. No further native weather variants, downloads, tuning or data expansion; coordinator review only."
+}

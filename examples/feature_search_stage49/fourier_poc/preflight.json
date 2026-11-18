@@ -1,0 +1,8 @@
+{
+  "input_bank_max_relative_reconstruction_error": 7.196043597709808e-08,
+  "real_sources_disjoint_previous": true,
+  "source_split_disjoint": true,
+  "phase_controls_all_valid": true,
+  "random_grouping_valid": 40,
+  "random_grouping_total": 40
+}

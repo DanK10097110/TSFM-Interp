@@ -1,0 +1,157 @@
+{
+  "question": "Does response-aware reconstruction preserve native forecasts and locked weak responses?",
+  "status": "complete_branch_closed",
+  "slot1": "released",
+  "exact_results": {
+    "summary": "summary.json",
+    "per_source": "results.json",
+    "raw_forecasts": "forecasts.npz",
+    "actual_states": "states.npz",
+    "native_cells": 399,
+    "independent_exact_replays": 9,
+    "identity_gate_receivers": 20,
+    "table": {
+      "lambda0": {
+        "baseline_n_sources": 20,
+        "baseline_mean": 0.027193170003341927,
+        "responses": {
+          "sinusoid": {
+            "n_sources": 15,
+            "valid_sources": 15,
+            "small_response_sources": 0,
+            "mean_source_nmse": 0.14779665980988985,
+            "mean_source_floored_nmse": 0.14779665980988985,
+            "ratio_of_energies": 0.15977552750577015
+          },
+          "noise": {
+            "n_sources": 15,
+            "valid_sources": 15,
+            "small_response_sources": 0,
+            "mean_source_nmse": 0.7082152774328037,
+            "mean_source_floored_nmse": 0.7082152774328037,
+            "ratio_of_energies": 0.536958287827822
+          }
+        }
+      },
+      "lambda1": {
+        "baseline_n_sources": 20,
+        "baseline_mean": 0.02480812127788782,
+        "responses": {
+          "sinusoid": {
+            "n_sources": 15,
+            "valid_sources": 15,
+            "small_response_sources": 0,
+            "mean_source_nmse": 0.19236556912378608,
+            "mean_source_floored_nmse": 0.19236556912378608,
+            "ratio_of_energies": 0.19809028167919582
+          },
+          "noise": {
+            "n_sources": 15,
+            "valid_sources": 15,
+            "small_response_sources": 0,
+            "mean_source_nmse": 0.8738374357450586,
+            "mean_source_floored_nmse": 0.8738374357450586,
+            "ratio_of_energies": 0.27442507632856705
+          }
+        }
+      },
+      "pca": {
+        "baseline_n_sources": 20,
+        "baseline_mean": 0.011367679684409307,
+        "responses": {
+          "sinusoid": {
+            "n_sources": 15,
+            "valid_sources": 15,
+            "small_response_sources": 0,
+            "mean_source_nmse": 0.14294983813373244,
+            "mean_source_floored_nmse": 0.14294983813373244,
+            "ratio_of_energies": 0.18968091963481643
+          },
+          "noise": {
+            "n_sources": 15,
+            "valid_sources": 15,
+            "small_response_sources": 0,
+            "mean_source_nmse": 0.6469003467085652,
+            "mean_source_floored_nmse": 0.6469003467085652,
+            "ratio_of_energies": 0.2844518674336611
+          }
+        }
+      }
+    },
+    "execution": {
+      "returncode": 0,
+      "reason": null,
+      "seconds": 33.840527734020725,
+      "peak_rss": 1109876736,
+      "threads": 1
+    },
+    "independent_arithmetic": "arithmetic_audit.json",
+    "arithmetic_checks": 792,
+    "lambda1_comparisons": {
+      "lambda0": {
+        "baseline": {
+          "n_sources": 20,
+          "lambda1_improved_sources": 3,
+          "relative_mean_improvement": 0.08770763854162622,
+          "mean_paired_gain": 0.0023850487254541072
+        },
+        "sinusoid": {
+          "n_sources": 15,
+          "lambda1_improved_sources": 12,
+          "relative_mean_improvement": -0.30155559246890307,
+          "mean_paired_gain": -0.04456890931389621
+        },
+        "noise": {
+          "n_sources": 15,
+          "lambda1_improved_sources": 11,
+          "relative_mean_improvement": -0.23385849414688642,
+          "mean_paired_gain": -0.16562215831225485
+        }
+      },
+      "pca": {
+        "baseline": {
+          "n_sources": 20,
+          "lambda1_improved_sources": 2,
+          "relative_mean_improvement": -1.1823381698476236,
+          "mean_paired_gain": -0.013440441593478514
+        },
+        "sinusoid": {
+          "n_sources": 15,
+          "lambda1_improved_sources": 11,
+          "relative_mean_improvement": -0.345685812836138,
+          "mean_paired_gain": -0.04941573099005363
+        },
+        "noise": {
+          "n_sources": 15,
+          "lambda1_improved_sources": 10,
+          "relative_mean_improvement": -0.35080687495554974,
+          "mean_paired_gain": -0.22693708903649337
+        }
+      }
+    },
+    "prelaunch_validation": "5 tests passed; plants listed in verification.json",
+    "response_denominator_small_count": 0,
+    "response_denominator_floor": "1e-12 times receiver history variance; none floored"
+  },
+  "controls": [
+    "every baseline exact saved state, original saved forecast, self patch, locked-anchor identity and final true nohook restoration; plus sign of each direction exact native self patch; minus branches lack extra self replay to respect cell cap",
+    "baseline history variance; response actual native plus-minus energy; floor1e-12*history_variance; below-floor raw NMSE=null, retain explicitly floored NMSE and physical errors",
+    "all dictionary/input/checkpoint hashes checked; no fit; same receiver/input for methods"
+  ],
+  "limitations": [
+    "descriptive native forecast preservation, not semantics or future accuracy",
+    "single learned dictionary seed; no training or grid",
+    "paired subset15 sources,3/domain; baseline20 sources,4/domain; all sources previously inspected",
+    "PCA uses input-dependent topk support in a full frozen orthogonal basis, not fixed-rank projection",
+    "residual first-block output, not FFN neurons; no causal feature-removal controls"
+  ],
+  "next_step": "Branch closed regardless of tradeoff; no further fitting or native launch.",
+  "interpretation": {
+    "verdict": "Branch closed: hidden-space response gains did not improve the prespecified source-mean native forecast response metric.",
+    "baseline": "lambda1 mean baseline distortion8.77% lower than lambda0 but improves only3/20 sources; PCA remains substantially lower.",
+    "response": "lambda1 source-mean sine/noise response NMSE30.16%/23.39% worse than lambda0, although12/15 and11/15 sources improve; retain adverse tails.",
+    "aggregation_sensitivity": "Noise ratio-of-total-energies improves .5369583 to .2744251 while source-average NMSE worsens .7082153 to .8738374. Prespecified source-average remains primary; energy weighting cannot replace it posthoc.",
+    "pca": "Frozen adaptive-support PCA has lower source-average baseline, sine and noise error than either learned arm.",
+    "scope": "Native function preservation only, not forecast accuracy or semantic selectivity. One seed and a fixed15-source paired subset cannot establish a general method result."
+  }
+}

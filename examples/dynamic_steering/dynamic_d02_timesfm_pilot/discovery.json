@@ -1,0 +1,552 @@
+{
+  "{\"prediction_length\": 32, \"request\": {\"context_window\": \"recent\", \"delay\": 1.0, \"forecast_window\": \"short\", \"kind\": \"level\", \"lower\": null, \"outside_weight\": 0.2, \"period\": null, \"phase\": null, \"quantile\": 0.9, \"smoothing\": 2.0, \"strength\": 0.1, \"upper\": null, \"value\": null}}": {
+    "selection": "separate calibration/validation",
+    "calibration_indices": [
+      0
+    ],
+    "validation_indices": [
+      0
+    ],
+    "request": {
+      "kind": "level",
+      "strength": 0.1,
+      "forecast_window": "short",
+      "context_window": "recent",
+      "period": null,
+      "phase": null,
+      "value": null,
+      "lower": null,
+      "upper": null,
+      "quantile": 0.9,
+      "smoothing": 2.0,
+      "delay": 1.0,
+      "outside_weight": 0.2
+    },
+    "chosen": {
+      "site": "module_input:output_projection_quantiles.residual_layer:0:['args', 0]:last",
+      "error": 1.0,
+      "errors": [
+        1.0
+      ],
+      "mean_coefficient_norm": 0.0,
+      "details": [
+        {
+          "probe_batch": 16,
+          "batching": "two signed interventions match singleton forecasts",
+          "probe_step": 0.005
+        }
+      ]
+    },
+    "rank": 128,
+    "observed_internal_sites": 338,
+    "searched_candidates": 4,
+    "candidate_scores": [
+      {
+        "site": "module_input:tokenizer.hidden_layer:0:['args', 0]:last",
+        "error": 1.0617964696364135,
+        "errors": [
+          1.0617964696364135
+        ],
+        "mean_coefficient_norm": 0.2,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "two signed interventions match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_projection_quantiles.residual_layer:0:['args', 0]:last",
+        "error": 1.0,
+        "errors": [
+          1.0
+        ],
+        "mean_coefficient_norm": 0.0,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "two signed interventions match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_projection_quantiles.residual_layer:0:['args', 0]:shared",
+        "error": 1.0,
+        "errors": [
+          1.0
+        ],
+        "mean_coefficient_norm": 0.0,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "two signed interventions match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "input:__input__:0:[]:single",
+        "error": 1.8296705373851347,
+        "errors": [
+          1.8296705373851347
+        ],
+        "mean_coefficient_norm": 0.19999999999999998,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "two signed interventions match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      }
+    ],
+    "rejected_candidates": [],
+    "model_calls": 80,
+    "elapsed_seconds": 18.227132764994167,
+    "context_length": 128,
+    "prediction_length": 32,
+    "caveat": "bounded search; best observed validation score, not global optimality or semantic disentanglement"
+  },
+  "{\"prediction_length\": 32, \"request\": {\"context_window\": \"recent\", \"delay\": 1.0, \"forecast_window\": \"long\", \"kind\": \"trend\", \"lower\": null, \"outside_weight\": 0.2, \"period\": null, \"phase\": null, \"quantile\": 0.9, \"smoothing\": 2.0, \"strength\": 0.1, \"upper\": null, \"value\": null}}": {
+    "selection": "separate calibration/validation",
+    "calibration_indices": [
+      0
+    ],
+    "validation_indices": [
+      0
+    ],
+    "request": {
+      "kind": "trend",
+      "strength": 0.1,
+      "forecast_window": "long",
+      "context_window": "recent",
+      "period": null,
+      "phase": null,
+      "value": null,
+      "lower": null,
+      "upper": null,
+      "quantile": 0.9,
+      "smoothing": 2.0,
+      "delay": 1.0,
+      "outside_weight": 0.2
+    },
+    "chosen": {
+      "site": "input:__input__:0:[]:single",
+      "error": 0.9162541438981693,
+      "errors": [
+        0.9162541438981693
+      ],
+      "mean_coefficient_norm": 0.05988647498464521,
+      "details": [
+        {
+          "probe_batch": 16,
+          "batching": "two signed interventions match singleton forecasts",
+          "probe_step": 0.005
+        }
+      ]
+    },
+    "rank": 128,
+    "observed_internal_sites": 338,
+    "searched_candidates": 4,
+    "candidate_scores": [
+      {
+        "site": "module_input:tokenizer.hidden_layer:0:['args', 0]:last",
+        "error": 1.1091422788254288,
+        "errors": [
+          1.1091422788254288
+        ],
+        "mean_coefficient_norm": 0.20000000000000004,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "two signed interventions match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_projection_quantiles.residual_layer:0:['args', 0]:last",
+        "error": 1.0,
+        "errors": [
+          1.0
+        ],
+        "mean_coefficient_norm": 0.0,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "two signed interventions match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_projection_quantiles.residual_layer:0:['args', 0]:shared",
+        "error": 1.0,
+        "errors": [
+          1.0
+        ],
+        "mean_coefficient_norm": 0.0,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "two signed interventions match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "input:__input__:0:[]:single",
+        "error": 0.9162541438981693,
+        "errors": [
+          0.9162541438981693
+        ],
+        "mean_coefficient_norm": 0.05988647498464521,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "two signed interventions match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      }
+    ],
+    "rejected_candidates": [],
+    "model_calls": 84,
+    "elapsed_seconds": 18.661441553966142,
+    "context_length": 128,
+    "prediction_length": 32,
+    "caveat": "bounded search; best observed validation score, not global optimality or semantic disentanglement"
+  },
+  "{\"prediction_length\": 32, \"request\": {\"context_window\": \"recent\", \"delay\": 1.0, \"forecast_window\": \"all\", \"kind\": \"seasonality\", \"lower\": null, \"outside_weight\": 0.2, \"period\": 24, \"phase\": null, \"quantile\": 0.9, \"smoothing\": 2.0, \"strength\": 0.1, \"upper\": null, \"value\": null}}": {
+    "selection": "separate calibration/validation",
+    "calibration_indices": [
+      0
+    ],
+    "validation_indices": [
+      0
+    ],
+    "request": {
+      "kind": "seasonality",
+      "strength": 0.1,
+      "forecast_window": "all",
+      "context_window": "recent",
+      "period": 24,
+      "phase": null,
+      "value": null,
+      "lower": null,
+      "upper": null,
+      "quantile": 0.9,
+      "smoothing": 2.0,
+      "delay": 1.0,
+      "outside_weight": 0.2
+    },
+    "chosen": {
+      "site": "input:__input__:0:[]:single",
+      "error": 0.4731590043414673,
+      "errors": [
+        0.4731590043414673
+      ],
+      "mean_coefficient_norm": 0.0911160278544037,
+      "details": [
+        {
+          "probe_batch": 16,
+          "batching": "two signed interventions match singleton forecasts",
+          "probe_step": 0.005
+        }
+      ]
+    },
+    "rank": 128,
+    "observed_internal_sites": 338,
+    "searched_candidates": 4,
+    "candidate_scores": [
+      {
+        "site": "module_input:tokenizer.hidden_layer:0:['args', 0]:last",
+        "error": 1.3082392059489214,
+        "errors": [
+          1.3082392059489214
+        ],
+        "mean_coefficient_norm": 0.2,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "two signed interventions match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_projection_quantiles.residual_layer:0:['args', 0]:last",
+        "error": 1.0,
+        "errors": [
+          1.0
+        ],
+        "mean_coefficient_norm": 0.0,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "two signed interventions match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_projection_quantiles.residual_layer:0:['args', 0]:shared",
+        "error": 1.0,
+        "errors": [
+          1.0
+        ],
+        "mean_coefficient_norm": 0.0,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "two signed interventions match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "input:__input__:0:[]:single",
+        "error": 0.4731590043414673,
+        "errors": [
+          0.4731590043414673
+        ],
+        "mean_coefficient_norm": 0.0911160278544037,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "two signed interventions match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      }
+    ],
+    "rejected_candidates": [],
+    "model_calls": 88,
+    "elapsed_seconds": 19.09585269296076,
+    "context_length": 128,
+    "prediction_length": 32,
+    "caveat": "bounded search; best observed validation score, not global optimality or semantic disentanglement"
+  },
+  "{\"prediction_length\": 32, \"request\": {\"context_window\": \"recent\", \"delay\": 1.0, \"forecast_window\": \"all\", \"kind\": \"context_ignore\", \"lower\": null, \"outside_weight\": 0.2, \"period\": null, \"phase\": null, \"quantile\": 0.9, \"smoothing\": 2.0, \"strength\": 0.5, \"upper\": null, \"value\": null}}": {
+    "selection": "separate calibration/validation",
+    "calibration_indices": [
+      0
+    ],
+    "validation_indices": [
+      0
+    ],
+    "request": {
+      "kind": "context_ignore",
+      "strength": 0.5,
+      "forecast_window": "all",
+      "context_window": "recent",
+      "period": null,
+      "phase": null,
+      "value": null,
+      "lower": null,
+      "upper": null,
+      "quantile": 0.9,
+      "smoothing": 2.0,
+      "delay": 1.0,
+      "outside_weight": 0.2
+    },
+    "chosen": {
+      "site": "input:__input__:0:[]:single",
+      "error": 0.6113091061205222,
+      "errors": [
+        0.6113091061205222
+      ],
+      "mean_coefficient_norm": 0.20000000000000004,
+      "details": [
+        {
+          "probe_batch": 16,
+          "batching": "two signed interventions match singleton forecasts",
+          "probe_step": 0.005
+        }
+      ]
+    },
+    "rank": 128,
+    "observed_internal_sites": 338,
+    "searched_candidates": 4,
+    "candidate_scores": [
+      {
+        "site": "module_input:tokenizer.hidden_layer:0:['args', 0]:last",
+        "error": 0.8201942805659108,
+        "errors": [
+          0.8201942805659108
+        ],
+        "mean_coefficient_norm": 0.19999999999999996,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "two signed interventions match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_projection_quantiles.residual_layer:0:['args', 0]:last",
+        "error": 1.0,
+        "errors": [
+          1.0
+        ],
+        "mean_coefficient_norm": 0.0,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "two signed interventions match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_projection_quantiles.residual_layer:0:['args', 0]:shared",
+        "error": 1.0,
+        "errors": [
+          1.0
+        ],
+        "mean_coefficient_norm": 0.0,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "two signed interventions match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "input:__input__:0:[]:single",
+        "error": 0.6113091061205222,
+        "errors": [
+          0.6113091061205222
+        ],
+        "mean_coefficient_norm": 0.20000000000000004,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "two signed interventions match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      }
+    ],
+    "rejected_candidates": [],
+    "model_calls": 93,
+    "elapsed_seconds": 19.63720644195564,
+    "context_length": 128,
+    "prediction_length": 32,
+    "caveat": "bounded search; best observed validation score, not global optimality or semantic disentanglement"
+  },
+  "{\"prediction_length\": 32, \"request\": {\"context_window\": \"recent\", \"delay\": 1.0, \"forecast_window\": \"all\", \"kind\": \"uncertainty\", \"lower\": null, \"outside_weight\": 0.2, \"period\": null, \"phase\": null, \"quantile\": 0.9, \"smoothing\": 2.0, \"strength\": 0.2, \"upper\": null, \"value\": null}}": {
+    "selection": "separate calibration/validation",
+    "calibration_indices": [
+      0
+    ],
+    "validation_indices": [
+      0
+    ],
+    "request": {
+      "kind": "uncertainty",
+      "strength": 0.2,
+      "forecast_window": "all",
+      "context_window": "recent",
+      "period": null,
+      "phase": null,
+      "value": null,
+      "lower": null,
+      "upper": null,
+      "quantile": 0.9,
+      "smoothing": 2.0,
+      "delay": 1.0,
+      "outside_weight": 0.2
+    },
+    "chosen": {
+      "site": "module_input:output_projection_quantiles.residual_layer:0:['args', 0]:last",
+      "error": 1.0,
+      "errors": [
+        1.0
+      ],
+      "mean_coefficient_norm": 0.0,
+      "details": [
+        {
+          "probe_batch": 16,
+          "batching": "two signed interventions match singleton forecasts",
+          "probe_step": 0.005
+        }
+      ]
+    },
+    "rank": 128,
+    "observed_internal_sites": 338,
+    "searched_candidates": 4,
+    "candidate_scores": [
+      {
+        "site": "module_input:tokenizer.hidden_layer:0:['args', 0]:last",
+        "error": 1.0410103321438815,
+        "errors": [
+          1.0410103321438815
+        ],
+        "mean_coefficient_norm": 0.20000000000000007,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "two signed interventions match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_projection_quantiles.residual_layer:0:['args', 0]:last",
+        "error": 1.0,
+        "errors": [
+          1.0
+        ],
+        "mean_coefficient_norm": 0.0,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "two signed interventions match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_projection_quantiles.residual_layer:0:['args', 0]:shared",
+        "error": 1.0,
+        "errors": [
+          1.0
+        ],
+        "mean_coefficient_norm": 0.0,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "two signed interventions match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "input:__input__:0:[]:single",
+        "error": 1.8080541945712865,
+        "errors": [
+          1.8080541945712865
+        ],
+        "mean_coefficient_norm": 0.19999999999998677,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "two signed interventions match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      }
+    ],
+    "rejected_candidates": [],
+    "model_calls": 97,
+    "elapsed_seconds": 20.071152133052237,
+    "context_length": 128,
+    "prediction_length": 32,
+    "caveat": "bounded search; best observed validation score, not global optimality or semantic disentanglement"
+  }
+}

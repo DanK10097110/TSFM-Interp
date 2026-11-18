@@ -1,0 +1,14 @@
+{
+  "arguments": {
+    "profiles": "runs/dynamic_d07_bolt_full/profiles",
+    "out": "runs/dynamic_d20_response_transfer"
+  },
+  "seed": 123,
+  "retained_profile": "level .1, all forecast steps",
+  "requests": [
+    "uncertainty .15 long",
+    "seasonality .15 period18",
+    "level -.1 short"
+  ],
+  "selection": "online transfer; not separate validation for new requests"
+}

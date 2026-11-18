@@ -1,0 +1,3698 @@
+{
+  "protocol": {
+    "model": "timesfm",
+    "source": "runs/real_background_poc492306",
+    "selected_indices": [
+      4,
+      5,
+      6,
+      7,
+      12,
+      13,
+      14,
+      15,
+      20,
+      21,
+      22,
+      23
+    ],
+    "corpus_sha256": "da1b2ae642ba6f2c4e995ca5eff897db107453e68a40dfdd2a1d4494d7c064be",
+    "metadata_sha256": "9eecad1c45cd61f788756bf2237a955755443dfb0a5fd7db28f3766f5f3f0bda",
+    "context_slice": [
+      128,
+      256
+    ],
+    "future_used": false,
+    "period": 24.0,
+    "strength": "interval fraction .2; seasonal/upper .2 context SD",
+    "radius": 0.2,
+    "steps": 6,
+    "ridge": 1e-05,
+    "scope": "external validity on reused real sources; pretraining overlap unknown"
+  },
+  "rows": [
+    {
+      "dataset": "monash_electricity_hourly",
+      "source_id": "T000285",
+      "task": "widen",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.5060362427857044,
+          "gain": 0.9781025659932416,
+          "collateral": 0.0668117649455381,
+          "relative_error": 0.07030867337120057,
+          "linear_solve": {
+            "relative_error": 0.0005218999358572146,
+            "unrestricted_minimum_norm": 1.564580144630026,
+            "unreachable_fraction": 1.3950672639167144e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.4574511671757624,
+          "gain": 0.9807563336222189,
+          "collateral": 0.04574021742482351,
+          "relative_error": 0.04962344391242374,
+          "linear_solve": {
+            "relative_error": 0.000490139821994159,
+            "unrestricted_minimum_norm": 1.5085557416205055,
+            "unreachable_fraction": 2.2789491290889045e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.6586090537086737,
+          "gain": 0.9874147889714224,
+          "collateral": 0.019662038379132264,
+          "relative_error": 0.023344877165157648,
+          "linear_solve": {
+            "relative_error": 0.0005490580415472686,
+            "unrestricted_minimum_norm": 1.7168755492089756,
+            "unreachable_fraction": 1.2955714989343278e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 0.25,
+          "hidden_norm": 1.578321820947076,
+          "gain": 0.9889783584539533,
+          "collateral": 0.0179012115213427,
+          "relative_error": 0.021022130156132947,
+          "linear_solve": {
+            "relative_error": 0.0004914101790356521,
+            "unrestricted_minimum_norm": 1.5437330230358643,
+            "unreachable_fraction": 1.6985149289423901e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 0.25,
+          "hidden_norm": 1.5626492087985557,
+          "gain": 0.9907096583147409,
+          "collateral": 0.016499748145054654,
+          "relative_error": 0.018935472993276317,
+          "linear_solve": {
+            "relative_error": 0.0005041740293677192,
+            "unrestricted_minimum_norm": 1.6349080397659808,
+            "unreachable_fraction": 1.446649759761153e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.6853631616799345,
+          "gain": 0.9969418684168119,
+          "collateral": 0.008006145561110487,
+          "relative_error": 0.00857032878749595,
+          "linear_solve": {
+            "relative_error": 0.0005592307090901631,
+            "unrestricted_minimum_norm": 1.7444424003265893,
+            "unreachable_fraction": 1.5201700860056637e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.05632276023227624,
+      "gain": 0.9969418830449951,
+      "collateral": 0.00800613008958801,
+      "relative_error": 0.008570309114722485,
+      "achieved": true,
+      "crossing_fraction": 0.01171875,
+      "baseline_crossing_fraction": 0.01171875,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_electricity_hourly",
+      "source_id": "T000285",
+      "task": "narrow",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.5060362427857052,
+          "gain": 1.0038653279377103,
+          "collateral": 0.03452085560613523,
+          "relative_error": 0.034736583479750595,
+          "linear_solve": {
+            "relative_error": 0.0005218999358572537,
+            "unrestricted_minimum_norm": 1.5645801446300274,
+            "unreachable_fraction": 1.430275512321995e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.4094441489661094,
+          "gain": 1.0019588719328492,
+          "collateral": 0.005029875921823061,
+          "relative_error": 0.005397854299463773,
+          "linear_solve": {
+            "relative_error": 0.000507401190885931,
+            "unrestricted_minimum_norm": 1.4688570129693688,
+            "unreachable_fraction": 1.1502081639610788e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.397349315219206,
+          "gain": 1.0003617087546663,
+          "collateral": 0.0009051942927323892,
+          "relative_error": 0.0009747871207590413,
+          "linear_solve": {
+            "relative_error": 0.0005025499321694349,
+            "unrestricted_minimum_norm": 1.4568534230871293,
+            "unreachable_fraction": 1.581639623611471e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.04669769236167335,
+      "gain": 1.0003616798037445,
+      "collateral": 0.0009051475702046176,
+      "relative_error": 0.0009747329912770245,
+      "achieved": true,
+      "crossing_fraction": 0.01171875,
+      "baseline_crossing_fraction": 0.01171875,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_electricity_hourly",
+      "source_id": "T000285",
+      "task": "season",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.0530386843183503,
+          "gain": 0.9873520486248252,
+          "collateral": 0.015003803567357615,
+          "relative_error": 0.01962357754021003,
+          "linear_solve": {
+            "relative_error": 0.00016989785831698784,
+            "unrestricted_minimum_norm": 2.06156817411317,
+            "unreachable_fraction": 1.1716956422855932e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 0.0625,
+          "hidden_norm": 2.0475018182215923,
+          "gain": 0.9877126536489015,
+          "collateral": 0.014568760136465502,
+          "relative_error": 0.01905853226945132,
+          "linear_solve": {
+            "relative_error": 0.00017989362799648184,
+            "unrestricted_minimum_norm": 2.025679428794402,
+            "unreachable_fraction": 1.929590343471262e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 0.125,
+          "hidden_norm": 2.042690264631493,
+          "gain": 0.9884065332036213,
+          "collateral": 0.013730156820438006,
+          "relative_error": 0.01797013296201653,
+          "linear_solve": {
+            "relative_error": 0.00017142265129637592,
+            "unrestricted_minimum_norm": 2.0458637880166903,
+            "unreachable_fraction": 1.5109955842489016e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.056097608146891,
+          "gain": 0.9921881620036856,
+          "collateral": 0.00911494256780498,
+          "relative_error": 0.012004457126211093,
+          "linear_solve": {
+            "relative_error": 0.000168203476667339,
+            "unrestricted_minimum_norm": 2.064275752340305,
+            "unreachable_fraction": 1.4807203557092107e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 2.0511074528721354,
+          "gain": 0.9943747196873299,
+          "collateral": 0.006539517762080521,
+          "relative_error": 0.00862606927613485,
+          "linear_solve": {
+            "relative_error": 0.00017014110849593368,
+            "unrestricted_minimum_norm": 2.062468677507427,
+            "unreachable_fraction": 2.013954288512756e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.0617106063992283,
+          "gain": 0.9999581968329061,
+          "collateral": 0.00017202891050258263,
+          "relative_error": 0.0001770351683360626,
+          "linear_solve": {
+            "relative_error": 0.0001681208377956603,
+            "unrestricted_minimum_norm": 2.0699841926619817,
+            "unreachable_fraction": 1.3240636749590177e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.06889982811586874,
+      "gain": 0.9999581793761783,
+      "collateral": 0.00017205752832968473,
+      "relative_error": 0.00017706709923579907,
+      "achieved": true,
+      "crossing_fraction": 0.01171875,
+      "baseline_crossing_fraction": 0.01171875,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_electricity_hourly",
+      "source_id": "T000285",
+      "task": "upper",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 4.5717058756169004,
+          "gain": 1.1360656080062532,
+          "collateral": 0.16029422919977668,
+          "relative_error": 0.21025719868023995,
+          "linear_solve": {
+            "relative_error": 0.0029005811687034576,
+            "unrestricted_minimum_norm": 4.818244142996065,
+            "unreachable_fraction": 1.6116770471933182e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.6965053881396384,
+          "gain": 0.9712974577670955,
+          "collateral": 0.055463717060125116,
+          "relative_error": 0.06245045909164547,
+          "linear_solve": {
+            "relative_error": 0.002239669521129334,
+            "unrestricted_minimum_norm": 3.927092762069144,
+            "unreachable_fraction": 1.2895805333956954e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.720094220261842,
+          "gain": 0.9907411829353818,
+          "collateral": 0.020596137953422453,
+          "relative_error": 0.022581554243064718,
+          "linear_solve": {
+            "relative_error": 0.0018241879540595875,
+            "unrestricted_minimum_norm": 3.8918035475055026,
+            "unreachable_fraction": 1.5613608088197357e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.7584012283389026,
+          "gain": 0.9947988829098651,
+          "collateral": 0.013006910138863933,
+          "relative_error": 0.014008259361739958,
+          "linear_solve": {
+            "relative_error": 0.001937999914519397,
+            "unrestricted_minimum_norm": 3.9484734299916653,
+            "unreachable_fraction": 1.4368706914305845e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.74730552699984,
+          "gain": 0.9953518230506065,
+          "collateral": 0.010225046011548628,
+          "relative_error": 0.01123196843350078,
+          "linear_solve": {
+            "relative_error": 0.0017762298709712277,
+            "unrestricted_minimum_norm": 3.9152156060511114,
+            "unreachable_fraction": 1.7258255269013176e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.75547743270167,
+          "gain": 0.9964229021384041,
+          "collateral": 0.009226008975740158,
+          "relative_error": 0.009895194325119231,
+          "linear_solve": {
+            "relative_error": 0.0018481487063332837,
+            "unrestricted_minimum_norm": 3.9361482034702293,
+            "unreachable_fraction": 1.9077398726237188e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.1255034284651997,
+      "gain": 0.9964229341640781,
+      "collateral": 0.00922606665242343,
+      "relative_error": 0.009895236524180704,
+      "achieved": true,
+      "crossing_fraction": 0.01171875,
+      "baseline_crossing_fraction": 0.01171875,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_electricity_hourly",
+      "source_id": "T000046",
+      "task": "widen",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.103559230041772,
+          "gain": 1.0075644226703184,
+          "collateral": 0.01559025236641528,
+          "relative_error": 0.01732848692713088,
+          "linear_solve": {
+            "relative_error": 0.0006293853179625187,
+            "unrestricted_minimum_norm": 1.1676410923517753,
+            "unreachable_fraction": 1.0892945723724759e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.102926042244536,
+          "gain": 0.9998443884097731,
+          "collateral": 0.0006011836888887337,
+          "relative_error": 0.0006209966141605106,
+          "linear_solve": {
+            "relative_error": 0.0005893804787020225,
+            "unrestricted_minimum_norm": 1.1590786151951247,
+            "unreachable_fraction": 1.526299062826743e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.04023524825240848,
+      "gain": 0.9998443036622376,
+      "collateral": 0.0006013986067911292,
+      "relative_error": 0.0006212259120826297,
+      "achieved": true,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_electricity_hourly",
+      "source_id": "T000046",
+      "task": "narrow",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.1035592300417718,
+          "gain": 0.9845969269614,
+          "collateral": 0.015757723674321274,
+          "relative_error": 0.022035437695419362,
+          "linear_solve": {
+            "relative_error": 0.0006293853179625437,
+            "unrestricted_minimum_norm": 1.1676410923517764,
+            "unreachable_fraction": 1.0535845755624113e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.1093025949222286,
+          "gain": 1.0000581356292009,
+          "collateral": 0.0006796631421865953,
+          "relative_error": 0.0006821449539720513,
+          "linear_solve": {
+            "relative_error": 0.0006775483086512947,
+            "unrestricted_minimum_norm": 1.1811038944720835,
+            "unreachable_fraction": 1.6101187669806793e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.04046786782086059,
+      "gain": 1.0000581590775102,
+      "collateral": 0.0006795762495157758,
+      "relative_error": 0.0006820603765084109,
+      "achieved": true,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_electricity_hourly",
+      "source_id": "T000046",
+      "task": "season",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.0775182576420588,
+          "gain": 1.0001474278848053,
+          "collateral": 0.0014903776698460276,
+          "relative_error": 0.0014976516884756274,
+          "linear_solve": {
+            "relative_error": 0.0001725410221692868,
+            "unrestricted_minimum_norm": 2.087790408918638,
+            "unreachable_fraction": 1.6941170651072744e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.07578881959757575,
+      "gain": 1.000147373607758,
+      "collateral": 0.001490395816802073,
+      "relative_error": 0.0014976644053340876,
+      "achieved": true,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_electricity_hourly",
+      "source_id": "T000046",
+      "task": "upper",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 4.479057313857415,
+          "gain": 1.1869901325553653,
+          "collateral": 0.17652298517619555,
+          "relative_error": 0.2571491278783353,
+          "linear_solve": {
+            "relative_error": 0.0034357364946081704,
+            "unrestricted_minimum_norm": 4.841612949997674,
+            "unreachable_fraction": 1.394952820538497e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.152469176997015,
+          "gain": 1.0086455801501868,
+          "collateral": 0.10066163872528114,
+          "relative_error": 0.10103223033761219,
+          "linear_solve": {
+            "relative_error": 0.0021052005797892537,
+            "unrestricted_minimum_norm": 3.4026395131934413,
+            "unreachable_fraction": 1.3758199858213834e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.290823758695491,
+          "gain": 0.9973751101642846,
+          "collateral": 0.03485485989453914,
+          "relative_error": 0.034953559259646154,
+          "linear_solve": {
+            "relative_error": 0.0018086144190510188,
+            "unrestricted_minimum_norm": 3.5279750656992173,
+            "unreachable_fraction": 1.5078277530390406e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.3703548581943212,
+          "gain": 0.9989830665290356,
+          "collateral": 0.01880266062731003,
+          "relative_error": 0.018830140741645105,
+          "linear_solve": {
+            "relative_error": 0.0021619957963801683,
+            "unrestricted_minimum_norm": 3.6849179726818106,
+            "unreachable_fraction": 1.4581488921535463e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 3.254995739519843,
+          "gain": 0.9986117016524076,
+          "collateral": 0.016796210059702284,
+          "relative_error": 0.01685348761151746,
+          "linear_solve": {
+            "relative_error": 0.0017391533575622077,
+            "unrestricted_minimum_norm": 3.5285438513230516,
+            "unreachable_fraction": 1.4671642654603652e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.4542053639431094,
+          "gain": 0.9997243178077042,
+          "collateral": 0.007152280738120862,
+          "relative_error": 0.007157591803675578,
+          "linear_solve": {
+            "relative_error": 0.0020348628381990867,
+            "unrestricted_minimum_norm": 3.7523343480636124,
+            "unreachable_fraction": 1.2720762220222223e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.12601099712018385,
+      "gain": 0.99972437213051,
+      "collateral": 0.007152478056523727,
+      "relative_error": 0.007157786883631906,
+      "achieved": true,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_electricity_hourly",
+      "source_id": "T000287",
+      "task": "widen",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.499507120297398,
+          "gain": 0.9792761018059662,
+          "collateral": 0.17081772411117158,
+          "relative_error": 0.17207026130879502,
+          "linear_solve": {
+            "relative_error": 0.0004866191691767378,
+            "unrestricted_minimum_norm": 1.551903297309857,
+            "unreachable_fraction": 1.6676008908562367e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.3652953029164154,
+          "gain": 0.9787269190768303,
+          "collateral": 0.0960786635886288,
+          "relative_error": 0.0984055565958581,
+          "linear_solve": {
+            "relative_error": 0.00046746286175356865,
+            "unrestricted_minimum_norm": 1.4185468034661743,
+            "unreachable_fraction": 2.1443967010065373e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.4704198406537343,
+          "gain": 0.9907094416929432,
+          "collateral": 0.0762251324769169,
+          "relative_error": 0.07678922642389588,
+          "linear_solve": {
+            "relative_error": 0.000511013940372957,
+            "unrestricted_minimum_norm": 1.5306406078499508,
+            "unreachable_fraction": 1.4062658577051664e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 1.4079209637514782,
+          "gain": 0.991954503629391,
+          "collateral": 0.06160565309083431,
+          "relative_error": 0.06212878965984857,
+          "linear_solve": {
+            "relative_error": 0.0004690424174285495,
+            "unrestricted_minimum_norm": 1.455609894323253,
+            "unreachable_fraction": 1.3703776663817173e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.5852693406998604,
+          "gain": 1.0007228012176617,
+          "collateral": 0.003969019877656819,
+          "relative_error": 0.004034298004546529,
+          "linear_solve": {
+            "relative_error": 0.0005798346984620946,
+            "unrestricted_minimum_norm": 1.656298295327502,
+            "unreachable_fraction": 2.385744533432949e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.05301124411810431,
+      "gain": 1.000722922801947,
+      "collateral": 0.003969079020808813,
+      "relative_error": 0.004034377975723088,
+      "achieved": true,
+      "crossing_fraction": 0.00390625,
+      "baseline_crossing_fraction": 0.00390625,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_electricity_hourly",
+      "source_id": "T000287",
+      "task": "narrow",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.4995071202973982,
+          "gain": 1.0032853889660305,
+          "collateral": 0.07534252127651153,
+          "relative_error": 0.07541411865797881,
+          "linear_solve": {
+            "relative_error": 0.0004866191691767427,
+            "unrestricted_minimum_norm": 1.5519032973098577,
+            "unreachable_fraction": 1.5987917446399325e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.3746179143699848,
+          "gain": 0.9988694629424602,
+          "collateral": 0.002384996629127702,
+          "relative_error": 0.002639379275401908,
+          "linear_solve": {
+            "relative_error": 0.0004312113720750988,
+            "unrestricted_minimum_norm": 1.419271977769651,
+            "unreachable_fraction": 1.713804989206905e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.04596708203264445,
+      "gain": 0.9988694011570485,
+      "collateral": 0.002385038760530954,
+      "relative_error": 0.00263944381128265,
+      "achieved": true,
+      "crossing_fraction": 0.00390625,
+      "baseline_crossing_fraction": 0.00390625,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_electricity_hourly",
+      "source_id": "T000287",
+      "task": "season",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.0598230086365055,
+          "gain": 1.0055651688532292,
+          "collateral": 0.008333825669016044,
+          "relative_error": 0.010021165333757506,
+          "linear_solve": {
+            "relative_error": 0.00017050094523022541,
+            "unrestricted_minimum_norm": 2.068134395065252,
+            "unreachable_fraction": 1.3947752516335044e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.0483841780670002,
+          "gain": 0.9998432041850455,
+          "collateral": 0.0002809582563389961,
+          "relative_error": 0.0003217490783083292,
+          "linear_solve": {
+            "relative_error": 0.00017114384905889788,
+            "unrestricted_minimum_norm": 2.0568117740770875,
+            "unreachable_fraction": 1.4744959351652203e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.06849775676809174,
+      "gain": 0.9998432032302752,
+      "collateral": 0.0002809509936319334,
+      "relative_error": 0.0003217432016670002,
+      "achieved": true,
+      "crossing_fraction": 0.00390625,
+      "baseline_crossing_fraction": 0.00390625,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_electricity_hourly",
+      "source_id": "T000287",
+      "task": "upper",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.949045358991666,
+          "gain": 1.1809398024342952,
+          "collateral": 0.1571054456993846,
+          "relative_error": 0.2396274883509071,
+          "linear_solve": {
+            "relative_error": 0.0026245115999897635,
+            "unrestricted_minimum_norm": 4.1844259629894,
+            "unreachable_fraction": 1.406984980505016e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.185447065815701,
+          "gain": 0.9884761809371411,
+          "collateral": 0.06354866454231989,
+          "relative_error": 0.06458506925680126,
+          "linear_solve": {
+            "relative_error": 0.0018921200162156956,
+            "unrestricted_minimum_norm": 3.3800198915837614,
+            "unreachable_fraction": 2.4646233496619214e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.196219421393021,
+          "gain": 0.9868320450186728,
+          "collateral": 0.03106774879787476,
+          "relative_error": 0.03374314824906097,
+          "linear_solve": {
+            "relative_error": 0.0017063106201158642,
+            "unrestricted_minimum_norm": 3.369971807508779,
+            "unreachable_fraction": 1.6080926059218224e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 3.1629869038444562,
+          "gain": 0.9905887069180606,
+          "collateral": 0.023719941487062753,
+          "relative_error": 0.02551877860760265,
+          "linear_solve": {
+            "relative_error": 0.0018013708811365629,
+            "unrestricted_minimum_norm": 3.436268962390045,
+            "unreachable_fraction": 2.0808724509981695e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.317929275028805,
+          "gain": 1.000765678472817,
+          "collateral": 0.025018562349938583,
+          "relative_error": 0.02503027617869007,
+          "linear_solve": {
+            "relative_error": 0.0018608743045463484,
+            "unrestricted_minimum_norm": 3.5184669111376157,
+            "unreachable_fraction": 1.2500921405804192e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.289906728735935,
+          "gain": 1.0009613074362278,
+          "collateral": 0.018255412511736128,
+          "relative_error": 0.018280705619876894,
+          "linear_solve": {
+            "relative_error": 0.0019054299205506667,
+            "unrestricted_minimum_norm": 3.5005948793849297,
+            "unreachable_fraction": 1.871312935207468e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.1100141434930042,
+      "gain": 1.000961452217175,
+      "collateral": 0.01825524553320294,
+      "relative_error": 0.018280546486454843,
+      "achieved": true,
+      "crossing_fraction": 0.00390625,
+      "baseline_crossing_fraction": 0.00390625,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_electricity_hourly",
+      "source_id": "T000185",
+      "task": "widen",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.9940457374778604,
+          "gain": 1.0047925815855838,
+          "collateral": 0.0367562569662767,
+          "relative_error": 0.037067388152194396,
+          "linear_solve": {
+            "relative_error": 0.0005007903951545691,
+            "unrestricted_minimum_norm": 1.0436748973573307,
+            "unreachable_fraction": 1.2055844294800643e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.01443872972163,
+          "gain": 0.9995784409001233,
+          "collateral": 0.003601654598892769,
+          "relative_error": 0.0036262415700576774,
+          "linear_solve": {
+            "relative_error": 0.0004895941810459884,
+            "unrestricted_minimum_norm": 1.060633274568428,
+            "unreachable_fraction": 1.2530574425064217e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.036727915951302766,
+      "gain": 0.9995784638813254,
+      "collateral": 0.00360164710892255,
+      "relative_error": 0.003626231459319339,
+      "achieved": true,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_electricity_hourly",
+      "source_id": "T000185",
+      "task": "narrow",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.99404573747786,
+          "gain": 0.9830931342035869,
+          "collateral": 0.02043725909166328,
+          "relative_error": 0.02652402062730493,
+          "linear_solve": {
+            "relative_error": 0.0005007903951546,
+            "unrestricted_minimum_norm": 1.0436748973573295,
+            "unreachable_fraction": 1.1306805068026722e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.0114649161074414,
+          "gain": 1.0000400196068049,
+          "collateral": 0.0005295901442806325,
+          "relative_error": 0.00053110007517227,
+          "linear_solve": {
+            "relative_error": 0.0005260449743284188,
+            "unrestricted_minimum_norm": 1.0630790197626077,
+            "unreachable_fraction": 1.7274176400819092e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.03662024855525734,
+      "gain": 1.0000399310838621,
+      "collateral": 0.0005296204504349536,
+      "relative_error": 0.0005311236324786754,
+      "achieved": true,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_electricity_hourly",
+      "source_id": "T000185",
+      "task": "season",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.039622893725988,
+          "gain": 1.0006433859976855,
+          "collateral": 0.0033463238138861846,
+          "relative_error": 0.0034076133303823576,
+          "linear_solve": {
+            "relative_error": 0.00017843915040157535,
+            "unrestricted_minimum_norm": 2.048442388885984,
+            "unreachable_fraction": 1.6445503285447826e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.07384487206405972,
+      "gain": 1.0006434078758073,
+      "collateral": 0.003346330114938333,
+      "relative_error": 0.003407623648936887,
+      "achieved": true,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_electricity_hourly",
+      "source_id": "T000185",
+      "task": "upper",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 4.380440889287886,
+          "gain": 1.2237493829241868,
+          "collateral": 0.25271658714432943,
+          "relative_error": 0.3375343831031616,
+          "linear_solve": {
+            "relative_error": 0.0030701250206733306,
+            "unrestricted_minimum_norm": 4.672128532157072,
+            "unreachable_fraction": 1.6150028218075112e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.1570502972398953,
+          "gain": 0.9479746015859949,
+          "collateral": 0.08494305967639423,
+          "relative_error": 0.09960906317862564,
+          "linear_solve": {
+            "relative_error": 0.001884433876857547,
+            "unrestricted_minimum_norm": 3.386151371106772,
+            "unreachable_fraction": 1.7534286388346466e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.1879974671449776,
+          "gain": 0.9865399183322319,
+          "collateral": 0.0353502288804161,
+          "relative_error": 0.03782608201229405,
+          "linear_solve": {
+            "relative_error": 0.0014527154207417546,
+            "unrestricted_minimum_norm": 3.341162632013951,
+            "unreachable_fraction": 1.6798491162752467e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.252074624354255,
+          "gain": 0.995653830863995,
+          "collateral": 0.019224670242609605,
+          "relative_error": 0.019709823238574276,
+          "linear_solve": {
+            "relative_error": 0.001677380140203594,
+            "unrestricted_minimum_norm": 3.4355035770026907,
+            "unreachable_fraction": 1.6015163307846534e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.258249056776576,
+          "gain": 0.9984267690593459,
+          "collateral": 0.015541233872243043,
+          "relative_error": 0.015620659584805826,
+          "linear_solve": {
+            "relative_error": 0.0015026019610407798,
+            "unrestricted_minimum_norm": 3.422602956230042,
+            "unreachable_fraction": 1.560134585338644e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.2741308913677605,
+          "gain": 0.9990542545689999,
+          "collateral": 0.012069831460126423,
+          "relative_error": 0.01210682724317627,
+          "linear_solve": {
+            "relative_error": 0.0016034691880894827,
+            "unrestricted_minimum_norm": 3.4501475419236636,
+            "unreachable_fraction": 1.5493071051590094e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.11854043094817292,
+      "gain": 0.9990542568075224,
+      "collateral": 0.012069817528859838,
+      "relative_error": 0.012106813179614602,
+      "achieved": true,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "m4_hourly",
+      "source_id": "T000216",
+      "task": "widen",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.5683398964571635,
+          "gain": 1.070890320642549,
+          "collateral": 0.03268911599905885,
+          "relative_error": 0.07806417786413516,
+          "linear_solve": {
+            "relative_error": 0.010805970406101524,
+            "unrestricted_minimum_norm": 0.727594150484368,
+            "unreachable_fraction": 1.8872508146451095e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.5616059126288839,
+          "gain": 0.99974961603623,
+          "collateral": 0.0107963715920381,
+          "relative_error": 0.010799274590576929,
+          "linear_solve": {
+            "relative_error": 0.010051647986804498,
+            "unrestricted_minimum_norm": 0.7211950824272544,
+            "unreachable_fraction": 1.7513636619275032e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.5620346515705533,
+          "gain": 0.9994265519062328,
+          "collateral": 0.010715241786177833,
+          "relative_error": 0.010730575439019887,
+          "linear_solve": {
+            "relative_error": 0.010002821020609374,
+            "unrestricted_minimum_norm": 0.7203436675606353,
+            "unreachable_fraction": 1.793530530010056e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.5620749852503455,
+          "gain": 0.9994270855881995,
+          "collateral": 0.010705685357163743,
+          "relative_error": 0.010721004145593772,
+          "linear_solve": {
+            "relative_error": 0.009998648665551255,
+            "unrestricted_minimum_norm": 0.7203523743964403,
+            "unreachable_fraction": 1.6697737184432854e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 0.5620606807328125,
+          "gain": 0.9994314555383275,
+          "collateral": 0.010704609694491378,
+          "relative_error": 0.01071969736122701,
+          "linear_solve": {
+            "relative_error": 0.009992274245849182,
+            "unrestricted_minimum_norm": 0.7202211131221554,
+            "unreachable_fraction": 1.8464211853201114e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": false,
+          "step_fraction": 0.0,
+          "hidden_norm": 0.5620606807328125,
+          "gain": 0.9994314555383275,
+          "collateral": 0.010704609694491378,
+          "relative_error": 0.01071969736122701,
+          "linear_solve": {
+            "relative_error": 0.009990433161141345,
+            "unrestricted_minimum_norm": 0.7201564548880177,
+            "unreachable_fraction": 1.776224868331437e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.01882067862634636,
+      "gain": 0.9994274815621494,
+      "collateral": 0.010708550421692645,
+      "relative_error": 0.010723843970126221,
+      "achieved": true,
+      "crossing_fraction": 0.05859375,
+      "baseline_crossing_fraction": 0.05859375,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "m4_hourly",
+      "source_id": "T000216",
+      "task": "narrow",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.5683398964571635,
+          "gain": 0.9260728004261184,
+          "collateral": 0.030917666835512992,
+          "relative_error": 0.08013197214213763,
+          "linear_solve": {
+            "relative_error": 0.010805970406101524,
+            "unrestricted_minimum_norm": 0.7275941504843679,
+            "unreachable_fraction": 1.9332019801522134e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.5737781152346105,
+          "gain": 0.9981287602746947,
+          "collateral": 0.010664354398361303,
+          "relative_error": 0.010827280029786307,
+          "linear_solve": {
+            "relative_error": 0.011527088171241139,
+            "unrestricted_minimum_norm": 0.7280381325296096,
+            "unreachable_fraction": 1.7741415442611397e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.5741615495560175,
+          "gain": 0.9992397081353931,
+          "collateral": 0.010620125427316168,
+          "relative_error": 0.010647305190108671,
+          "linear_solve": {
+            "relative_error": 0.011389759189813423,
+            "unrestricted_minimum_norm": 0.726931519614658,
+            "unreachable_fraction": 1.7105955466744e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.5743515778471193,
+          "gain": 0.9993633187752062,
+          "collateral": 0.010613830554948791,
+          "relative_error": 0.01063290938695377,
+          "linear_solve": {
+            "relative_error": 0.011429105807421588,
+            "unrestricted_minimum_norm": 0.72676049748507,
+            "unreachable_fraction": 1.6097304976426832e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.5743834115410233,
+          "gain": 0.9993861464352358,
+          "collateral": 0.0106095582390276,
+          "relative_error": 0.010627301737802124,
+          "linear_solve": {
+            "relative_error": 0.01140609916436585,
+            "unrestricted_minimum_norm": 0.7268321449626193,
+            "unreachable_fraction": 1.4130606860037273e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.5743992416664172,
+          "gain": 0.9994042330054991,
+          "collateral": 0.01060792431510172,
+          "relative_error": 0.01062464100977831,
+          "linear_solve": {
+            "relative_error": 0.011411601582106082,
+            "unrestricted_minimum_norm": 0.7267319511058078,
+            "unreachable_fraction": 1.8032084739640788e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.019233837023657125,
+      "gain": 0.9994102984604755,
+      "collateral": 0.010603384578560346,
+      "relative_error": 0.010619769885763472,
+      "achieved": true,
+      "crossing_fraction": 0.0625,
+      "baseline_crossing_fraction": 0.05859375,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "m4_hourly",
+      "source_id": "T000216",
+      "task": "season",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.0196646961648237,
+          "gain": 1.0001422375326825,
+          "collateral": 0.00039576588997176134,
+          "relative_error": 0.0004205498250727845,
+          "linear_solve": {
+            "relative_error": 0.0002394010440437219,
+            "unrestricted_minimum_norm": 2.037913850401208,
+            "unreachable_fraction": 1.4287907056754844e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.06762874807384929,
+      "gain": 1.000142105094126,
+      "collateral": 0.00039579995511226647,
+      "relative_error": 0.0004205371116124946,
+      "achieved": true,
+      "crossing_fraction": 0.0625,
+      "baseline_crossing_fraction": 0.05859375,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "m4_hourly",
+      "source_id": "T000216",
+      "task": "upper",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 2.9863996505737305,
+          "gain": 1.0116632492281494,
+          "collateral": 0.34469758259791816,
+          "relative_error": 0.34489484604935244,
+          "linear_solve": {
+            "relative_error": 0.283375744855362,
+            "unrestricted_minimum_norm": 22.044666039102257,
+            "unreachable_fraction": 1.952364872742538e-15,
+            "rank": 288,
+            "norm_constraint_active": true,
+            "penalty": 0.002876671834563284
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 3.8698048598602575,
+          "gain": 1.088333202060312,
+          "collateral": 0.15019456512473459,
+          "relative_error": 0.17424454648348695,
+          "linear_solve": {
+            "relative_error": 0.01764052593334335,
+            "unrestricted_minimum_norm": 8.524621160593378,
+            "unreachable_fraction": 1.1916458229190221e-15,
+            "rank": 288,
+            "norm_constraint_active": true,
+            "penalty": 7.853025953971937e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 4.485069420280786,
+          "gain": 1.0696921311318872,
+          "collateral": 0.08455029498958301,
+          "relative_error": 0.1095707329743198,
+          "linear_solve": {
+            "relative_error": 0.003003047637925544,
+            "unrestricted_minimum_norm": 6.583429051801643,
+            "unreachable_fraction": 1.3309792632636684e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 5.239257917863036,
+          "gain": 1.0469565074890852,
+          "collateral": 0.07913271670208849,
+          "relative_error": 0.09201576195536015,
+          "linear_solve": {
+            "relative_error": 0.0022839477010615445,
+            "unrestricted_minimum_norm": 5.790398141440222,
+            "unreachable_fraction": 1.5525439857441777e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 4.846747034872682,
+          "gain": 1.0025666025467215,
+          "collateral": 0.011009718410277456,
+          "relative_error": 0.011304925833743464,
+          "linear_solve": {
+            "relative_error": 0.0014616481892533114,
+            "unrestricted_minimum_norm": 5.23694878539599,
+            "unreachable_fraction": 1.8785586572279863e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 4.809242682637895,
+          "gain": 1.0008062212727964,
+          "collateral": 0.00603325834030672,
+          "relative_error": 0.006086887459251234,
+          "linear_solve": {
+            "relative_error": 0.0013852387228554433,
+            "unrestricted_minimum_norm": 5.147790279655878,
+            "unreachable_fraction": 1.3857045365891309e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.16103814778152584,
+      "gain": 1.0008064497652818,
+      "collateral": 0.006033421492486778,
+      "relative_error": 0.00608707944172939,
+      "achieved": true,
+      "crossing_fraction": 0.046875,
+      "baseline_crossing_fraction": 0.05859375,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "m4_hourly",
+      "source_id": "T000099",
+      "task": "widen",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.8462371702000651,
+          "gain": 1.026095816122644,
+          "collateral": 0.02207443584020263,
+          "relative_error": 0.03417999907504497,
+          "linear_solve": {
+            "relative_error": 0.0008731444794847374,
+            "unrestricted_minimum_norm": 0.9091018950687855,
+            "unreachable_fraction": 1.2007636741525288e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.8334264543159898,
+          "gain": 0.9999421696405497,
+          "collateral": 0.0008458003578398577,
+          "relative_error": 0.0008477750856189292,
+          "linear_solve": {
+            "relative_error": 0.0008106267449136921,
+            "unrestricted_minimum_norm": 0.8906273176257726,
+            "unreachable_fraction": 1.4576425020971288e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.03137794963063398,
+      "gain": 0.9999421548378257,
+      "collateral": 0.0008459093342944094,
+      "relative_error": 0.0008478848180226942,
+      "achieved": true,
+      "crossing_fraction": 0.02734375,
+      "baseline_crossing_fraction": 0.02734375,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "m4_hourly",
+      "source_id": "T000099",
+      "task": "narrow",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.8462371702000636,
+          "gain": 0.9648376253198951,
+          "collateral": 0.019087855556496554,
+          "relative_error": 0.04000923422023656,
+          "linear_solve": {
+            "relative_error": 0.0008731444794847098,
+            "unrestricted_minimum_norm": 0.9091018950687836,
+            "unreachable_fraction": 1.156444701467922e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.8669202836282739,
+          "gain": 0.9999533792800553,
+          "collateral": 0.0009270198715900129,
+          "relative_error": 0.0009281914316836409,
+          "linear_solve": {
+            "relative_error": 0.0009601451887695339,
+            "unrestricted_minimum_norm": 0.9356374153857937,
+            "unreachable_fraction": 1.2958605247423642e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.03263896994461052,
+      "gain": 0.9999534133113642,
+      "collateral": 0.0009269379143500257,
+      "relative_error": 0.0009281078690635131,
+      "achieved": true,
+      "crossing_fraction": 0.02734375,
+      "baseline_crossing_fraction": 0.02734375,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "m4_hourly",
+      "source_id": "T000099",
+      "task": "season",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.0722957063576937,
+          "gain": 1.0001443187087484,
+          "collateral": 0.0019363647376387462,
+          "relative_error": 0.0019417353802373852,
+          "linear_solve": {
+            "relative_error": 0.00016371869685656579,
+            "unrestricted_minimum_norm": 2.0801405258531056,
+            "unreachable_fraction": 1.4290499820373012e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.07802054993231242,
+      "gain": 1.000144361679238,
+      "collateral": 0.0019363253626882616,
+      "relative_error": 0.0019416993084981594,
+      "achieved": true,
+      "crossing_fraction": 0.02734375,
+      "baseline_crossing_fraction": 0.02734375,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "m4_hourly",
+      "source_id": "T000099",
+      "task": "upper",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 4.562855043295839,
+          "gain": 1.0916480814038452,
+          "collateral": 0.1594036217739681,
+          "relative_error": 0.18387192678509706,
+          "linear_solve": {
+            "relative_error": 0.002977521673183033,
+            "unrestricted_minimum_norm": 4.825408329373864,
+            "unreachable_fraction": 1.4071665873218777e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.8887881631407017,
+          "gain": 0.9660998091362353,
+          "collateral": 0.0772340850809126,
+          "relative_error": 0.08434646903626337,
+          "linear_solve": {
+            "relative_error": 0.0027530248772369833,
+            "unrestricted_minimum_norm": 4.192352664622494,
+            "unreachable_fraction": 1.5496725359296348e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.868833152733944,
+          "gain": 0.9958017062245798,
+          "collateral": 0.016023653875902717,
+          "relative_error": 0.016564514908667425,
+          "linear_solve": {
+            "relative_error": 0.0021388448522548773,
+            "unrestricted_minimum_norm": 4.070875537734705,
+            "unreachable_fraction": 1.3976970103536824e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.9009249675948543,
+          "gain": 0.9969774961951297,
+          "collateral": 0.009442695848067222,
+          "relative_error": 0.009914637367526952,
+          "linear_solve": {
+            "relative_error": 0.002252355525678235,
+            "unrestricted_minimum_norm": 4.129508256032092,
+            "unreachable_fraction": 1.6241546015934408e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 3.873466410422656,
+          "gain": 0.9983802354834777,
+          "collateral": 0.006957323470127028,
+          "relative_error": 0.007143387638716325,
+          "linear_solve": {
+            "relative_error": 0.0020692064429627247,
+            "unrestricted_minimum_norm": 4.083457837943024,
+            "unreachable_fraction": 1.4749028678319237e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.921052460348138,
+          "gain": 1.0000131860465995,
+          "collateral": 0.0024992437337690086,
+          "relative_error": 0.0024992785184145797,
+          "linear_solve": {
+            "relative_error": 0.0021157929739591963,
+            "unrestricted_minimum_norm": 4.126944565155116,
+            "unreachable_fraction": 1.4040840320729255e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.14762500753693295,
+      "gain": 1.0000130349698422,
+      "collateral": 0.0024990058220453314,
+      "relative_error": 0.0024990398174209324,
+      "achieved": true,
+      "crossing_fraction": 0.02734375,
+      "baseline_crossing_fraction": 0.02734375,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "m4_hourly",
+      "source_id": "T000013",
+      "task": "widen",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.2976276103293753,
+          "gain": 1.0006500026717497,
+          "collateral": 0.014713205434629997,
+          "relative_error": 0.014727556404064722,
+          "linear_solve": {
+            "relative_error": 0.0006149256782363511,
+            "unrestricted_minimum_norm": 1.376359978812833,
+            "unreachable_fraction": 1.2147706901737136e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.2981799484335372,
+          "gain": 0.9999878803882941,
+          "collateral": 0.0006672312473658268,
+          "relative_error": 0.0006673413088137535,
+          "linear_solve": {
+            "relative_error": 0.000609954278351228,
+            "unrestricted_minimum_norm": 1.3755767217666024,
+            "unreachable_fraction": 1.1231443914584312e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.03687983959339975,
+      "gain": 0.999987980752753,
+      "collateral": 0.0006668607442816639,
+      "relative_error": 0.0006669690506824733,
+      "achieved": true,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "m4_hourly",
+      "source_id": "T000013",
+      "task": "narrow",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.2976276103293756,
+          "gain": 0.9972740204106257,
+          "collateral": 0.017349922438717854,
+          "relative_error": 0.017562766677013324,
+          "linear_solve": {
+            "relative_error": 0.0006149256782363702,
+            "unrestricted_minimum_norm": 1.3763599788128331,
+            "unreachable_fraction": 1.1900099180614704e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.2958579971401534,
+          "gain": 0.9999731666046824,
+          "collateral": 0.0006628856208333293,
+          "relative_error": 0.0006634285021099535,
+          "linear_solve": {
+            "relative_error": 0.0006197284902439258,
+            "unrestricted_minimum_norm": 1.3751526934103557,
+            "unreachable_fraction": 1.5162185497284389e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.03681387555555815,
+      "gain": 0.9999731369841364,
+      "collateral": 0.0006629314766641385,
+      "relative_error": 0.0006634755190460186,
+      "achieved": true,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "m4_hourly",
+      "source_id": "T000013",
+      "task": "season",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.0148587539487117,
+          "gain": 0.9983563703947965,
+          "collateral": 0.0023634750319650455,
+          "relative_error": 0.002878807479812409,
+          "linear_solve": {
+            "relative_error": 0.00016551618287133886,
+            "unrestricted_minimum_norm": 2.024802278422172,
+            "unreachable_fraction": 1.5921625053683854e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.05723988245131188,
+      "gain": 0.9983564393707678,
+      "collateral": 0.0023634391063189295,
+      "relative_error": 0.002878738604187647,
+      "achieved": true,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "m4_hourly",
+      "source_id": "T000013",
+      "task": "upper",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 7.0400520324707045,
+          "gain": 1.2373476255999318,
+          "collateral": 0.35850339746028326,
+          "relative_error": 0.4299518361031748,
+          "linear_solve": {
+            "relative_error": 0.013250884993993213,
+            "unrestricted_minimum_norm": 8.483127798821231,
+            "unreachable_fraction": 1.345478521488195e-15,
+            "rank": 288,
+            "norm_constraint_active": true,
+            "penalty": 2.6153282988259157e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 4.9095668752318185,
+          "gain": 0.8173324275660343,
+          "collateral": 0.20369410647087483,
+          "relative_error": 0.27360323651208185,
+          "linear_solve": {
+            "relative_error": 0.004874541900700782,
+            "unrestricted_minimum_norm": 5.506274727999227,
+            "unreachable_fraction": 1.8308162984720572e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 5.097855990931375,
+          "gain": 1.0606209246682026,
+          "collateral": 0.18338119454111615,
+          "relative_error": 0.19314129288931092,
+          "linear_solve": {
+            "relative_error": 0.0025816887664939212,
+            "unrestricted_minimum_norm": 5.461176747040189,
+            "unreachable_fraction": 1.693979798552399e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 4.889924881153696,
+          "gain": 1.0171172300978295,
+          "collateral": 0.08213388368597337,
+          "relative_error": 0.08389859602855722,
+          "linear_solve": {
+            "relative_error": 0.002993576273124937,
+            "unrestricted_minimum_norm": 5.322135119064026,
+            "unreachable_fraction": 1.7402556521450587e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 0.25,
+          "hidden_norm": 4.75272867697803,
+          "gain": 1.0205781665420066,
+          "collateral": 0.0739658340040278,
+          "relative_error": 0.07677503199701029,
+          "linear_solve": {
+            "relative_error": 0.0020218682120432363,
+            "unrestricted_minimum_norm": 5.068865038578277,
+            "unreachable_fraction": 1.6060997922034558e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 4.892973189967193,
+          "gain": 1.0250751759866152,
+          "collateral": 0.06391404669379433,
+          "relative_error": 0.06865689925663877,
+          "linear_solve": {
+            "relative_error": 0.002227689448274435,
+            "unrestricted_minimum_norm": 5.266382739536512,
+            "unreachable_fraction": 1.6962779398623862e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.13900389279509362,
+      "gain": 1.0250749799761076,
+      "collateral": 0.06391375602751767,
+      "relative_error": 0.06865655708195144,
+      "achieved": true,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "m4_hourly",
+      "source_id": "T000297",
+      "task": "widen",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.5696280803435042,
+          "gain": 1.0815233785867402,
+          "collateral": 0.017256716923607626,
+          "relative_error": 0.08332979980282283,
+          "linear_solve": {
+            "relative_error": 0.00597527711406633,
+            "unrestricted_minimum_norm": 0.7315281228611755,
+            "unreachable_fraction": 1.8121124063724453e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.557893804459007,
+          "gain": 0.9999244207401533,
+          "collateral": 0.005810417453046833,
+          "relative_error": 0.00581090898252504,
+          "linear_solve": {
+            "relative_error": 0.005379139256196732,
+            "unrestricted_minimum_norm": 0.7136841650547062,
+            "unreachable_fraction": 1.295401739933117e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.5584561657536653,
+          "gain": 0.9998350271348225,
+          "collateral": 0.005771655151057194,
+          "relative_error": 0.005774012402910981,
+          "linear_solve": {
+            "relative_error": 0.005386187487378916,
+            "unrestricted_minimum_norm": 0.7121760512794821,
+            "unreachable_fraction": 1.114903316870022e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.558458450461835,
+          "gain": 0.9998355883350623,
+          "collateral": 0.0057708962138493265,
+          "relative_error": 0.005773237766330787,
+          "linear_solve": {
+            "relative_error": 0.005386110307123312,
+            "unrestricted_minimum_norm": 0.7120840476149669,
+            "unreachable_fraction": 1.640684155259717e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.5585108409266006,
+          "gain": 0.9998342073018616,
+          "collateral": 0.005766803565966967,
+          "relative_error": 0.005769186302001806,
+          "linear_solve": {
+            "relative_error": 0.005383800896414043,
+            "unrestricted_minimum_norm": 0.7119613693169682,
+            "unreachable_fraction": 1.2124202305898128e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 0.558489000809846,
+          "gain": 0.9998300549618258,
+          "collateral": 0.005761443886592263,
+          "relative_error": 0.005763949772018437,
+          "linear_solve": {
+            "relative_error": 0.005383965346992356,
+            "unrestricted_minimum_norm": 0.711938055896438,
+            "unreachable_fraction": 1.6191604376663978e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.018304626629492123,
+      "gain": 0.9998294109448562,
+      "collateral": 0.00576336970506293,
+      "relative_error": 0.005765893771391567,
+      "achieved": true,
+      "crossing_fraction": 0.0078125,
+      "baseline_crossing_fraction": 0.0078125,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "m4_hourly",
+      "source_id": "T000297",
+      "task": "narrow",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.5696280803435045,
+          "gain": 0.9141533430747651,
+          "collateral": 0.016527449659011186,
+          "relative_error": 0.08742313822707402,
+          "linear_solve": {
+            "relative_error": 0.005975277114066341,
+            "unrestricted_minimum_norm": 0.7315281228611767,
+            "unreachable_fraction": 1.866383443887419e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.5818477506255,
+          "gain": 0.9996248302615213,
+          "collateral": 0.0060828868514598506,
+          "relative_error": 0.006094445403835633,
+          "linear_solve": {
+            "relative_error": 0.006646219607309826,
+            "unrestricted_minimum_norm": 0.7457002542788158,
+            "unreachable_fraction": 1.4506086169860597e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.5827158179838001,
+          "gain": 0.9998131829612217,
+          "collateral": 0.006031783886339814,
+          "relative_error": 0.0060346762512571,
+          "linear_solve": {
+            "relative_error": 0.006666388612340716,
+            "unrestricted_minimum_norm": 0.7441571184996981,
+            "unreachable_fraction": 1.7768082971494697e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.5827608306621413,
+          "gain": 0.999809744314806,
+          "collateral": 0.00602695218133222,
+          "relative_error": 0.0060299543797456565,
+          "linear_solve": {
+            "relative_error": 0.0066652853227126005,
+            "unrestricted_minimum_norm": 0.7441940547851393,
+            "unreachable_fraction": 1.8568598364629137e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.5827913626097169,
+          "gain": 0.999810737623854,
+          "collateral": 0.006026431808362757,
+          "relative_error": 0.00602940300426757,
+          "linear_solve": {
+            "relative_error": 0.006660585584137445,
+            "unrestricted_minimum_norm": 0.7440093593945689,
+            "unreachable_fraction": 1.7683666727447354e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 0.5827969939617285,
+          "gain": 0.9998101456088674,
+          "collateral": 0.006024999739848421,
+          "relative_error": 0.006027990258370185,
+          "linear_solve": {
+            "relative_error": 0.006660909700098101,
+            "unrestricted_minimum_norm": 0.7440388775311035,
+            "unreachable_fraction": 1.940601603524849e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.019101327617537106,
+      "gain": 0.9998123854281967,
+      "collateral": 0.006022620787342665,
+      "relative_error": 0.006025542330420133,
+      "achieved": true,
+      "crossing_fraction": 0.0078125,
+      "baseline_crossing_fraction": 0.0078125,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "m4_hourly",
+      "source_id": "T000297",
+      "task": "season",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.0323696007314003,
+          "gain": 1.0000347736098427,
+          "collateral": 0.000499925951665766,
+          "relative_error": 0.0005011338754169524,
+          "linear_solve": {
+            "relative_error": 0.00023493191759122844,
+            "unrestricted_minimum_norm": 2.0502363632715372,
+            "unreachable_fraction": 1.602608091343115e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.0666114581676152,
+      "gain": 1.0000347733556616,
+      "collateral": 0.0004999627617073735,
+      "relative_error": 0.000501170579102619,
+      "achieved": true,
+      "crossing_fraction": 0.0078125,
+      "baseline_crossing_fraction": 0.0078125,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "m4_hourly",
+      "source_id": "T000297",
+      "task": "upper",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 3.0510810852056482,
+          "gain": 0.8967203729816818,
+          "collateral": 0.27105200315856726,
+          "relative_error": 0.29006183784378614,
+          "linear_solve": {
+            "relative_error": 0.2004110144441702,
+            "unrestricted_minimum_norm": 18.78081522280352,
+            "unreachable_fraction": 1.6194904240377237e-15,
+            "rank": 288,
+            "norm_constraint_active": true,
+            "penalty": 0.0015967326846773077
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 3.9333333708041147,
+          "gain": 1.0163335079270153,
+          "collateral": 0.11917906488863245,
+          "relative_error": 0.12029311280755327,
+          "linear_solve": {
+            "relative_error": 0.012883316322848998,
+            "unrestricted_minimum_norm": 8.17780577957057,
+            "unreachable_fraction": 1.599162600851876e-15,
+            "rank": 288,
+            "norm_constraint_active": true,
+            "penalty": 3.939615886475308e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 4.490440133026276,
+          "gain": 1.0315549589099056,
+          "collateral": 0.06523713468845731,
+          "relative_error": 0.07246791824087238,
+          "linear_solve": {
+            "relative_error": 0.0032094234138451924,
+            "unrestricted_minimum_norm": 6.433270517549074,
+            "unreachable_fraction": 1.1928841340462252e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 5.248721633151069,
+          "gain": 1.0198243729145362,
+          "collateral": 0.06455054130783655,
+          "relative_error": 0.06752612934701141,
+          "linear_solve": {
+            "relative_error": 0.002534718350949076,
+            "unrestricted_minimum_norm": 5.875463631863255,
+            "unreachable_fraction": 1.8690422034738595e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 4.8785252185916566,
+          "gain": 1.0038714331952165,
+          "collateral": 0.010799925925798506,
+          "relative_error": 0.011472854700891143,
+          "linear_solve": {
+            "relative_error": 0.0017808545214939183,
+            "unrestricted_minimum_norm": 5.351498614989423,
+            "unreachable_fraction": 1.3537304731322832e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 4.855740968950758,
+          "gain": 0.9975113145122435,
+          "collateral": 0.005097970438112531,
+          "relative_error": 0.005672993746236472,
+          "linear_solve": {
+            "relative_error": 0.0016305665626052477,
+            "unrestricted_minimum_norm": 5.267374473355963,
+            "unreachable_fraction": 1.0730732441833597e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.159148211186409,
+      "gain": 0.9975113016413119,
+      "collateral": 0.005097742752608482,
+      "relative_error": 0.005672794786726307,
+      "achieved": true,
+      "crossing_fraction": 0.0078125,
+      "baseline_crossing_fraction": 0.0078125,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_pedestrian_counts",
+      "source_id": "T000046",
+      "task": "widen",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.9049387335865531,
+          "gain": 1.0074938114934697,
+          "collateral": 0.014453624596518921,
+          "relative_error": 0.016280800799615313,
+          "linear_solve": {
+            "relative_error": 0.0005642134130906413,
+            "unrestricted_minimum_norm": 0.9499654347459421,
+            "unreachable_fraction": 1.1975921794618736e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.9030614901097545,
+          "gain": 0.9999300195898885,
+          "collateral": 0.0005503676217932101,
+          "relative_error": 0.0005547988616766242,
+          "linear_solve": {
+            "relative_error": 0.0005406292260673959,
+            "unrestricted_minimum_norm": 0.9447571381946884,
+            "unreachable_fraction": 1.0353877357426588e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.03281385824541106,
+      "gain": 0.9999300517493636,
+      "collateral": 0.0005503700847908608,
+      "relative_error": 0.0005547972494522537,
+      "achieved": true,
+      "crossing_fraction": 0.00390625,
+      "baseline_crossing_fraction": 0.00390625,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_pedestrian_counts",
+      "source_id": "T000046",
+      "task": "narrow",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.9049387335865524,
+          "gain": 0.9872990249935868,
+          "collateral": 0.01505665936182873,
+          "relative_error": 0.019698166342369886,
+          "linear_solve": {
+            "relative_error": 0.0005642134130906266,
+            "unrestricted_minimum_norm": 0.9499654347459412,
+            "unreachable_fraction": 1.2575682069700472e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.9085570243558466,
+          "gain": 0.9999945426063162,
+          "collateral": 0.0005920870425348212,
+          "relative_error": 0.000592112192986642,
+          "linear_solve": {
+            "relative_error": 0.00059451914249669,
+            "unrestricted_minimum_norm": 0.9570189579196188,
+            "unreachable_fraction": 9.12757576746344e-16,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.03301354529187359,
+      "gain": 0.9999945900675998,
+      "collateral": 0.0005920598801225002,
+      "relative_error": 0.0005920845961678476,
+      "achieved": true,
+      "crossing_fraction": 0.00390625,
+      "baseline_crossing_fraction": 0.00390625,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_pedestrian_counts",
+      "source_id": "T000046",
+      "task": "season",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.0383154620390482,
+          "gain": 0.9972961486161598,
+          "collateral": 0.0046527835816478885,
+          "relative_error": 0.005381375973071119,
+          "linear_solve": {
+            "relative_error": 0.00023054207210207025,
+            "unrestricted_minimum_norm": 2.0537150302549336,
+            "unreachable_fraction": 2.0138840064162242e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.0389414263485253,
+          "gain": 0.9995969885834739,
+          "collateral": 0.0004517889330899778,
+          "relative_error": 0.0006054184023574751,
+          "linear_solve": {
+            "relative_error": 0.00022338134911689165,
+            "unrestricted_minimum_norm": 2.053343541559482,
+            "unreachable_fraction": 1.357796639620922e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.0740874632210984,
+      "gain": 0.9995969881160428,
+      "collateral": 0.00045180529399497084,
+      "relative_error": 0.0006054309228084502,
+      "achieved": true,
+      "crossing_fraction": 0.00390625,
+      "baseline_crossing_fraction": 0.00390625,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_pedestrian_counts",
+      "source_id": "T000046",
+      "task": "upper",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 4.283152410957418,
+          "gain": 1.4479280263185499,
+          "collateral": 0.22337544611904936,
+          "relative_error": 0.5005358195878852,
+          "linear_solve": {
+            "relative_error": 0.0032353738039040316,
+            "unrestricted_minimum_norm": 4.615409911934804,
+            "unreachable_fraction": 1.6465419019961784e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.0936946363495403,
+          "gain": 0.9585169539786874,
+          "collateral": 0.13174765329488528,
+          "relative_error": 0.13812417332210764,
+          "linear_solve": {
+            "relative_error": 0.0016838709768566644,
+            "unrestricted_minimum_norm": 3.3711857894952275,
+            "unreachable_fraction": 1.5719709931991905e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.1314409407869146,
+          "gain": 0.9917257423512637,
+          "collateral": 0.055231006172055876,
+          "relative_error": 0.055847357882135705,
+          "linear_solve": {
+            "relative_error": 0.0017181222676384885,
+            "unrestricted_minimum_norm": 3.352571540493148,
+            "unreachable_fraction": 1.117438132488787e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.2090296140252486,
+          "gain": 0.9977424493990839,
+          "collateral": 0.030013357274409333,
+          "relative_error": 0.030098141962537104,
+          "linear_solve": {
+            "relative_error": 0.0018684559082711727,
+            "unrestricted_minimum_norm": 3.4594914509172434,
+            "unreachable_fraction": 1.2819751574953549e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.206903432898971,
+          "gain": 0.9983386332169173,
+          "collateral": 0.022017711915516838,
+          "relative_error": 0.02208030293231101,
+          "linear_solve": {
+            "relative_error": 0.0017027361834283884,
+            "unrestricted_minimum_norm": 3.431355951354395,
+            "unreachable_fraction": 1.3333272522429588e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.204964529612897,
+          "gain": 0.9985204343684018,
+          "collateral": 0.01841770239497554,
+          "relative_error": 0.018477036449823184,
+          "linear_solve": {
+            "relative_error": 0.0017654871624981098,
+            "unrestricted_minimum_norm": 3.4418956514159675,
+            "unreachable_fraction": 1.1744508705394409e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.1164563575216861,
+      "gain": 0.9985203630184186,
+      "collateral": 0.018417757362070016,
+      "relative_error": 0.018477096953941303,
+      "achieved": true,
+      "crossing_fraction": 0.00390625,
+      "baseline_crossing_fraction": 0.00390625,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_pedestrian_counts",
+      "source_id": "T000057",
+      "task": "widen",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.248517039983848,
+          "gain": 0.9965072946833813,
+          "collateral": 0.02764223798005129,
+          "relative_error": 0.027862022736594824,
+          "linear_solve": {
+            "relative_error": 0.0009867079299169142,
+            "unrestricted_minimum_norm": 1.3409856347393372,
+            "unreachable_fraction": 9.841431264283178e-16,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 0.25,
+          "hidden_norm": 1.2157462415234985,
+          "gain": 0.9946234508522401,
+          "collateral": 0.022385424420539177,
+          "relative_error": 0.023022043941100245,
+          "linear_solve": {
+            "relative_error": 0.0009224650524229143,
+            "unrestricted_minimum_norm": 1.2849836013912734,
+            "unreachable_fraction": 1.2554733991641047e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.2657110327126164,
+          "gain": 0.9995955128058974,
+          "collateral": 0.0011472469207446992,
+          "relative_error": 0.0012164642976064783,
+          "linear_solve": {
+            "relative_error": 0.0009890988562190905,
+            "unrestricted_minimum_norm": 1.356780150650074,
+            "unreachable_fraction": 1.2451722815408515e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.03790091448742115,
+      "gain": 0.9995956204368096,
+      "collateral": 0.0011473202863377578,
+      "relative_error": 0.0012164977067665767,
+      "achieved": true,
+      "crossing_fraction": 0.03515625,
+      "baseline_crossing_fraction": 0.03515625,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_pedestrian_counts",
+      "source_id": "T000057",
+      "task": "narrow",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.2485170399838483,
+          "gain": 0.9906617114624601,
+          "collateral": 0.023580375649996405,
+          "relative_error": 0.025362132177821576,
+          "linear_solve": {
+            "relative_error": 0.000986707929916954,
+            "unrestricted_minimum_norm": 1.3409856347393372,
+            "unreachable_fraction": 1.024559871799892e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.2195610279016182,
+          "gain": 0.9998767130308311,
+          "collateral": 0.0010596623863058509,
+          "relative_error": 0.001066810221978725,
+          "linear_solve": {
+            "relative_error": 0.0009788967018296904,
+            "unrestricted_minimum_norm": 1.3103925399519512,
+            "unreachable_fraction": 1.0366588025771417e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.036518981849773945,
+      "gain": 0.9998765045768752,
+      "collateral": 0.0010595483543356136,
+      "relative_error": 0.001066721066965562,
+      "achieved": true,
+      "crossing_fraction": 0.03515625,
+      "baseline_crossing_fraction": 0.03515625,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_pedestrian_counts",
+      "source_id": "T000057",
+      "task": "season",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.0198415944738213,
+          "gain": 0.9997692096969484,
+          "collateral": 0.0015509135522776098,
+          "relative_error": 0.0015679913936693193,
+          "linear_solve": {
+            "relative_error": 0.00023781558813550525,
+            "unrestricted_minimum_norm": 2.036593006023924,
+            "unreachable_fraction": 1.7511049053715532e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.06048287608445811,
+      "gain": 0.9997691564117359,
+      "collateral": 0.0015509332933571608,
+      "relative_error": 0.001568018763499427,
+      "achieved": true,
+      "crossing_fraction": 0.03515625,
+      "baseline_crossing_fraction": 0.03515625,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_pedestrian_counts",
+      "source_id": "T000057",
+      "task": "upper",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 6.020070290629399,
+          "gain": 1.711813127622008,
+          "collateral": 0.48668498760687773,
+          "relative_error": 0.8622877743636006,
+          "linear_solve": {
+            "relative_error": 0.005646309086005121,
+            "unrestricted_minimum_norm": 6.762740637763098,
+            "unreachable_fraction": 1.6251224435950953e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.871165826326569,
+          "gain": 0.9634953434579072,
+          "collateral": 0.10939871325436833,
+          "relative_error": 0.11532852383936794,
+          "linear_solve": {
+            "relative_error": 0.0018808765949194055,
+            "unrestricted_minimum_norm": 4.245550085891419,
+            "unreachable_fraction": 1.157839995848188e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.9396542562374646,
+          "gain": 0.9950224426575003,
+          "collateral": 0.018643422090327544,
+          "relative_error": 0.019296457300136356,
+          "linear_solve": {
+            "relative_error": 0.0021845884513186256,
+            "unrestricted_minimum_norm": 4.260679255289545,
+            "unreachable_fraction": 1.7329509104914599e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 3.8891066835310775,
+          "gain": 0.9945721691474316,
+          "collateral": 0.014932628229056734,
+          "relative_error": 0.015888509482997918,
+          "linear_solve": {
+            "relative_error": 0.0022471875044126387,
+            "unrestricted_minimum_norm": 4.252314023865804,
+            "unreachable_fraction": 1.6050410048648904e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.943382705207019,
+          "gain": 0.996693531051278,
+          "collateral": 0.008585459704327534,
+          "relative_error": 0.009200155174968253,
+          "linear_solve": {
+            "relative_error": 0.002189716949001454,
+            "unrestricted_minimum_norm": 4.277416149464261,
+            "unreachable_fraction": 1.4952802138357475e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.9351660974305753,
+          "gain": 0.9999538003467022,
+          "collateral": 0.00303340237745674,
+          "relative_error": 0.0030337541745377207,
+          "linear_solve": {
+            "relative_error": 0.0021014980204390804,
+            "unrestricted_minimum_norm": 4.258406479671066,
+            "unreachable_fraction": 1.4547661586355618e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.11783605412119307,
+      "gain": 0.9999539346119253,
+      "collateral": 0.003033271155243941,
+      "relative_error": 0.0030336209257607275,
+      "achieved": true,
+      "crossing_fraction": 0.03125,
+      "baseline_crossing_fraction": 0.03515625,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_pedestrian_counts",
+      "source_id": "T000021",
+      "task": "widen",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.8186412930489434,
+          "gain": 1.0175586908824548,
+          "collateral": 0.013365864368289794,
+          "relative_error": 0.02206703323551024,
+          "linear_solve": {
+            "relative_error": 0.0007814396669875339,
+            "unrestricted_minimum_norm": 0.8810777575062709,
+            "unreachable_fraction": 1.3435832315045846e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.805927536518483,
+          "gain": 0.9999461936730752,
+          "collateral": 0.0007546014980532521,
+          "relative_error": 0.000756517376985724,
+          "linear_solve": {
+            "relative_error": 0.0007371950171884875,
+            "unrestricted_minimum_norm": 0.8635038268256978,
+            "unreachable_fraction": 1.0957538259817804e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.027124649675278396,
+      "gain": 0.9999462024277292,
+      "collateral": 0.0007545347305298346,
+      "relative_error": 0.0007564501558978906,
+      "achieved": true,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_pedestrian_counts",
+      "source_id": "T000021",
+      "task": "narrow",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.818641293048944,
+          "gain": 0.973652577250698,
+          "collateral": 0.013393608394176396,
+          "relative_error": 0.02955630950147536,
+          "linear_solve": {
+            "relative_error": 0.0007814396669875694,
+            "unrestricted_minimum_norm": 0.881077757506271,
+            "unreachable_fraction": 1.2621779349491975e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 0.8349525380416053,
+          "gain": 0.9999462222953586,
+          "collateral": 0.000816809220292644,
+          "relative_error": 0.0008185776346026033,
+          "linear_solve": {
+            "relative_error": 0.000834277758565177,
+            "unrestricted_minimum_norm": 0.9010097813576765,
+            "unreachable_fraction": 1.2448043439617084e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.028101527821842453,
+      "gain": 0.9999462439692036,
+      "collateral": 0.0008169192688376054,
+      "relative_error": 0.0008186860220164552,
+      "achieved": true,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_pedestrian_counts",
+      "source_id": "T000021",
+      "task": "season",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.0394908973168278,
+          "gain": 0.9971435817582559,
+          "collateral": 0.0041587699240340364,
+          "relative_error": 0.005045244538455755,
+          "linear_solve": {
+            "relative_error": 0.00022835462119534435,
+            "unrestricted_minimum_norm": 2.0548848926786882,
+            "unreachable_fraction": 1.682399521058731e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.041317910274093,
+          "gain": 0.9996181894794661,
+          "collateral": 0.00046070633850203864,
+          "relative_error": 0.0005983557503078053,
+          "linear_solve": {
+            "relative_error": 0.00022811646989962542,
+            "unrestricted_minimum_norm": 2.056613450915242,
+            "unreachable_fraction": 1.3737867980489697e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.068703488444195,
+      "gain": 0.9996181981406016,
+      "collateral": 0.0004607128000769526,
+      "relative_error": 0.0005983551988535193,
+      "achieved": true,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_pedestrian_counts",
+      "source_id": "T000021",
+      "task": "upper",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 5.662421344589129,
+          "gain": 1.5069122709462957,
+          "collateral": 0.2195252847017013,
+          "relative_error": 0.5524051059315924,
+          "linear_solve": {
+            "relative_error": 0.004647129568571601,
+            "unrestricted_minimum_norm": 6.189749436984598,
+            "unreachable_fraction": 1.5659860704463156e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.7858874407708387,
+          "gain": 0.9457296982151114,
+          "collateral": 0.15069052661503754,
+          "relative_error": 0.16016522864635827,
+          "linear_solve": {
+            "relative_error": 0.0021129645628910954,
+            "unrestricted_minimum_norm": 4.142584363521343,
+            "unreachable_fraction": 1.6791273556090338e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.570292304466396,
+          "gain": 0.9765483658036478,
+          "collateral": 0.07593756374951233,
+          "relative_error": 0.07947636588754402,
+          "linear_solve": {
+            "relative_error": 0.0019684604371044707,
+            "unrestricted_minimum_norm": 3.856259368602709,
+            "unreachable_fraction": 1.5449337407253223e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.6929590450404115,
+          "gain": 0.996051120427529,
+          "collateral": 0.049491915445277194,
+          "relative_error": 0.04964920285684703,
+          "linear_solve": {
+            "relative_error": 0.002099704713057561,
+            "unrestricted_minimum_norm": 4.000582345646367,
+            "unreachable_fraction": 1.467711129306472e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.7299800039120017,
+          "gain": 0.9953506122392959,
+          "collateral": 0.03464374049316547,
+          "relative_error": 0.03495433538071032,
+          "linear_solve": {
+            "relative_error": 0.0019442485348815772,
+            "unrestricted_minimum_norm": 4.044907742739434,
+            "unreachable_fraction": 1.3594256659559135e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 3.608749816008402,
+          "gain": 0.998388663068491,
+          "collateral": 0.025444173174105963,
+          "relative_error": 0.025495143757600956,
+          "linear_solve": {
+            "relative_error": 0.002002764683167911,
+            "unrestricted_minimum_norm": 3.977176902947262,
+            "unreachable_fraction": 1.4044802107947033e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.12145766224567804,
+      "gain": 0.9983886074130647,
+      "collateral": 0.025444158538248853,
+      "relative_error": 0.02549513266858543,
+      "achieved": true,
+      "crossing_fraction": 0.0,
+      "baseline_crossing_fraction": 0.0,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_pedestrian_counts",
+      "source_id": "T000012",
+      "task": "widen",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.236454103169877,
+          "gain": 1.0113796957329668,
+          "collateral": 0.034079249410729526,
+          "relative_error": 0.035928995468473925,
+          "linear_solve": {
+            "relative_error": 0.0007556424556910536,
+            "unrestricted_minimum_norm": 1.3014101965569638,
+            "unreachable_fraction": 1.2568912126834474e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.2533537372969779,
+          "gain": 0.9983016156894179,
+          "collateral": 0.021598930064761816,
+          "relative_error": 0.02166560151966484,
+          "linear_solve": {
+            "relative_error": 0.0007518731774575351,
+            "unrestricted_minimum_norm": 1.317984179194964,
+            "unreachable_fraction": 1.2559473521965155e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.2613748346120512,
+          "gain": 0.9983775224647722,
+          "collateral": 0.01657298776763279,
+          "relative_error": 0.016652217777173847,
+          "linear_solve": {
+            "relative_error": 0.0007273131311539619,
+            "unrestricted_minimum_norm": 1.3213196869718749,
+            "unreachable_fraction": 1.2000044545003323e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 1.2468667575428796,
+          "gain": 0.998740352778108,
+          "collateral": 0.012935456960243574,
+          "relative_error": 0.012996644101226059,
+          "linear_solve": {
+            "relative_error": 0.0007495136718290959,
+            "unrestricted_minimum_norm": 1.318017404856921,
+            "unreachable_fraction": 1.4065931831057877e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.2806377894717864,
+          "gain": 0.9999661233082119,
+          "collateral": 0.0007572590185629799,
+          "relative_error": 0.0007580163925941678,
+          "linear_solve": {
+            "relative_error": 0.0007448595750629629,
+            "unrestricted_minimum_norm": 1.3426831974454982,
+            "unreachable_fraction": 1.2161849194861594e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.05556461489320473,
+      "gain": 0.9999661918963227,
+      "collateral": 0.0007572707741640009,
+      "relative_error": 0.0007580250743063804,
+      "achieved": true,
+      "crossing_fraction": 0.0078125,
+      "baseline_crossing_fraction": 0.0078125,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_pedestrian_counts",
+      "source_id": "T000012",
+      "task": "narrow",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.2364541031698766,
+          "gain": 0.9785405957306987,
+          "collateral": 0.020616241502437873,
+          "relative_error": 0.029757947598585233,
+          "linear_solve": {
+            "relative_error": 0.0007556424556910743,
+            "unrestricted_minimum_norm": 1.3014101965569633,
+            "unreachable_fraction": 1.2443471489678295e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 1.2256815001427626,
+          "gain": 1.0001767281487288,
+          "collateral": 0.0023048724098433124,
+          "relative_error": 0.0023116378748000337,
+          "linear_solve": {
+            "relative_error": 0.000795308565826323,
+            "unrestricted_minimum_norm": 1.2945049298157265,
+            "unreachable_fraction": 1.1409900743004656e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.05318015843125209,
+      "gain": 1.0001767745496635,
+      "collateral": 0.002304850589804473,
+      "relative_error": 0.0023116196665391893,
+      "achieved": true,
+      "crossing_fraction": 0.0078125,
+      "baseline_crossing_fraction": 0.0078125,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_pedestrian_counts",
+      "source_id": "T000012",
+      "task": "season",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 2.0500304589295175,
+          "gain": 0.9999689387476621,
+          "collateral": 0.001790395263910554,
+          "relative_error": 0.0017906646817397568,
+          "linear_solve": {
+            "relative_error": 0.0002030104919607043,
+            "unrestricted_minimum_norm": 2.061686061424824,
+            "unreachable_fraction": 1.564961226306542e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.08894720576435708,
+      "gain": 0.9999689535183237,
+      "collateral": 0.001790383536805524,
+      "relative_error": 0.0017906527002433332,
+      "achieved": true,
+      "crossing_fraction": 0.0078125,
+      "baseline_crossing_fraction": 0.0078125,
+      "full_model_replay_max_abs": 0.0
+    },
+    {
+      "dataset": "monash_pedestrian_counts",
+      "source_id": "T000012",
+      "task": "upper",
+      "history": [
+        {
+          "step": 0,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.4036505599509046,
+          "gain": 1.0455269273370502,
+          "collateral": 0.14463759285887406,
+          "relative_error": 0.15163355295172137,
+          "linear_solve": {
+            "relative_error": 0.0029443397151547694,
+            "unrestricted_minimum_norm": 3.7520531416492133,
+            "unreachable_fraction": 1.384746759737195e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 1,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.1311601385897005,
+          "gain": 0.9946067002601922,
+          "collateral": 0.11021910295832381,
+          "relative_error": 0.11035097797038773,
+          "linear_solve": {
+            "relative_error": 0.0027104517524517728,
+            "unrestricted_minimum_norm": 3.4919719638987927,
+            "unreachable_fraction": 1.6130198032950288e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 2,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 3.0208901510608785,
+          "gain": 0.9925960493274032,
+          "collateral": 0.08141091882127167,
+          "relative_error": 0.08174690323728435,
+          "linear_solve": {
+            "relative_error": 0.0021586992512847556,
+            "unrestricted_minimum_norm": 3.339955643679795,
+            "unreachable_fraction": 1.2373172030729342e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 3,
+          "accepted": true,
+          "step_fraction": 0.5,
+          "hidden_norm": 3.104030683423233,
+          "gain": 0.9910179534927008,
+          "collateral": 0.06547872670793801,
+          "relative_error": 0.06609191184064898,
+          "linear_solve": {
+            "relative_error": 0.002331840649895397,
+            "unrestricted_minimum_norm": 3.5235044116902636,
+            "unreachable_fraction": 1.3007169574536843e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 4,
+          "accepted": true,
+          "step_fraction": 0.25,
+          "hidden_norm": 3.0938266806398316,
+          "gain": 0.9909081063233316,
+          "collateral": 0.0607633140528408,
+          "relative_error": 0.06143974987995967,
+          "linear_solve": {
+            "relative_error": 0.0022643557147989666,
+            "unrestricted_minimum_norm": 3.428123484530495,
+            "unreachable_fraction": 1.3722020789251379e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        },
+        {
+          "step": 5,
+          "accepted": true,
+          "step_fraction": 1.0,
+          "hidden_norm": 3.261728787667311,
+          "gain": 0.9978408995084462,
+          "collateral": 0.013114607299473174,
+          "relative_error": 0.013291148917682852,
+          "linear_solve": {
+            "relative_error": 0.002367912995952689,
+            "unrestricted_minimum_norm": 3.5726616704939094,
+            "unreachable_fraction": 1.4481552380966807e-15,
+            "rank": 288,
+            "norm_constraint_active": false,
+            "penalty": 1e-05
+          }
+        }
+      ],
+      "relative_hidden_norm": 0.1415206590518985,
+      "gain": 0.997840902371606,
+      "collateral": 0.013114627934699667,
+      "relative_error": 0.013291168813710159,
+      "achieved": true,
+      "crossing_fraction": 0.0078125,
+      "baseline_crossing_fraction": 0.0078125,
+      "full_model_replay_max_abs": 0.0
+    }
+  ],
+  "summary": {
+    "m4_hourly/widen": {
+      "n": 4,
+      "error": 0.004501147902555739,
+      "successes": 4,
+      "crossing_fraction": 0.0234375,
+      "baseline_crossing_fraction": 0.0234375
+    },
+    "m4_hourly/narrow": {
+      "n": 4,
+      "error": 0.004559223901073284,
+      "successes": 4,
+      "crossing_fraction": 0.0244140625,
+      "baseline_crossing_fraction": 0.0234375
+    },
+    "m4_hourly/season": {
+      "n": 4,
+      "error": 0.00143553640085023,
+      "successes": 4,
+      "crossing_fraction": 0.0244140625,
+      "baseline_crossing_fraction": 0.0234375
+    },
+    "m4_hourly/upper": {
+      "n": 4,
+      "error": 0.020728867781957018,
+      "successes": 4,
+      "crossing_fraction": 0.0205078125,
+      "baseline_crossing_fraction": 0.0234375
+    },
+    "monash_electricity_hourly/widen": {
+      "n": 4,
+      "error": 0.004213036115461886,
+      "successes": 4,
+      "crossing_fraction": 0.00390625,
+      "baseline_crossing_fraction": 0.00390625
+    },
+    "monash_electricity_hourly/narrow": {
+      "n": 4,
+      "error": 0.0012068402028866903,
+      "successes": 4,
+      "crossing_fraction": 0.00390625,
+      "baseline_crossing_fraction": 0.00390625
+    },
+    "monash_electricity_hourly/season": {
+      "n": 4,
+      "error": 0.0013510245887934434,
+      "successes": 4,
+      "crossing_fraction": 0.00390625,
+      "baseline_crossing_fraction": 0.00390625
+    },
+    "monash_electricity_hourly/upper": {
+      "n": 4,
+      "error": 0.011860095768470514,
+      "successes": 4,
+      "crossing_fraction": 0.00390625,
+      "baseline_crossing_fraction": 0.00390625
+    },
+    "monash_pedestrian_counts/widen": {
+      "n": 4,
+      "error": 0.0008214425466057753,
+      "successes": 4,
+      "crossing_fraction": 0.01171875,
+      "baseline_crossing_fraction": 0.01171875
+    },
+    "monash_pedestrian_counts/narrow": {
+      "n": 4,
+      "error": 0.0011972778379222635,
+      "successes": 4,
+      "crossing_fraction": 0.01171875,
+      "baseline_crossing_fraction": 0.01171875
+    },
+    "monash_pedestrian_counts/season": {
+      "n": 4,
+      "error": 0.0011406143963511822,
+      "successes": 4,
+      "crossing_fraction": 0.01171875,
+      "baseline_crossing_fraction": 0.01171875
+    },
+    "monash_pedestrian_counts/upper": {
+      "n": 4,
+      "error": 0.015074254840499405,
+      "successes": 4,
+      "crossing_fraction": 0.0107421875,
+      "baseline_crossing_fraction": 0.01171875
+    }
+  },
+  "seconds": 31.17385745048523
+}

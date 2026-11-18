@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "purpose": "Bounded empirical calibration of the actual production paired_seed_effect and Holm machinery;no model or GPU work",
+  "master_seed": 1992000,
+  "n_seeds_per_family": 64,
+  "hypotheses_per_family": 4,
+  "planned_main_replicates_per_scenario": 128,
+  "pilot_replicates_per_scenario": 4,
+  "resampling": {"n_boot": 199, "n_permutations": 999, "ci": 0.95, "alpha": 0.05, "plus_one_floor": 0.001, "smallest_possible_Holm4_p": 0.004},
+  "symmetric_null": "64iid rows of4-variate centered Gaussian,equicorrelation.5,marginalvariance1;all means0 and sign-flip symmetry holds",
+  "skew_mean_zero_stress": "Generate same equicorrelated latent Gaussian Z,then exp(1.5*Z-1.5²/2)-1. Each marginal populationmean is exactly0 and finitevariance,but sign-flip symmetry is VIOLATED. Correlation after transformation is (exp(1.5²*.5)-1)/(exp(1.5²)-1). This is an assumption-violation stress test,not a required nominal5%pass.",
+  "replicate_randomization": "Independent SeedSequence([master_seed,scenario_code,replicate_index,pilot_or_main]) per replicate,spawning independent data and permutation seeds;all4hypotheses within a family share the production-style resampling seed",
+  "known_answer": "Four correlated Gaussian contrasts shifted+1.5;all four effects should be clearly detected and CIs positive",
+  "all_zero_decoy": "64×4 zeros;all means and CIs0,p=1,Holm=1,no rejection",
+  "omitted_Holm_guard": "One fixed moderate contrast formed from32values-1 and32values+1,shifted+.28;three zero contrasts;seed113. Rawp<.05 but Holm4p>.05 must not reject.",
+  "family_rejection": "Any of all4 Holm-adjusted p<.05;also retain raw unadjusted family rejection and per-hypothesis rejection/CI-exclusion counts",
+  "uncertainty": "Exact95%Clopper-Pearson binomial intervals for family/per-hypothesis replicate counts. About128replicates can expose gross failure,not certify precise5%calibration.",
+  "runtime": {"cpu_threads": 1, "gpu": false, "models": false, "cap_seconds": 300, "main_budget_seconds": 240, "prospective_reduction": "After independent runtime-only pilot,use128unless2*128*max(pilot_family_seconds) exceeds remaining240sbudget;then reduce both scenarios equally to largest multiple16 that fits,min32. If<32fit,pause. Pilot outcomes do not select count or hypotheses."},
+  "source_provenance": "Import actual production functions once;record module,function source and compiled-code hashes and source snapshot;do not edit production",
+  "interpretation": "Sign-flip mean test needs symmetry/exchangeability,not merely mean0. Exact sign sensitivity concerns P(diff>0|nonzero),not mean. Complete-case phase selection is outside this valid1-D finite-array calibration. Fixed prediction percentile bootstrap is approximate."
+}

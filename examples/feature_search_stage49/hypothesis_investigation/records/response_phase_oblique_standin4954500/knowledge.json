@@ -1,0 +1,130 @@
+{
+  "status": "standin_complete_audited",
+  "question": "Does old frozen phase-response prediction transfer from cardinal to previously unseen oblique phases on the same16 backgrounds?",
+  "design": {
+    "question": "Does old frozen phase-response prediction transfer from cardinal to previously unseen oblique phases on the same16 backgrounds?",
+    "stage": "prepared_capture_held",
+    "source_count": 16,
+    "nodes": 144,
+    "perturbed_inputs": 128,
+    "backgrounds": 16,
+    "period": 19.2,
+    "angles": [
+      0.39269908169872414,
+      1.1780972450961724,
+      1.9634954084936207,
+      2.748893571891069,
+      3.5342917352885173,
+      4.319689898685965,
+      5.105088062083414,
+      5.890486225480862
+    ],
+    "cardinal_angles": [
+      0.0,
+      1.5707963267948966,
+      3.141592653589793,
+      4.71238898038469
+    ],
+    "context": 128,
+    "horizon": 32,
+    "source_role": "Reuse exact16 fresh-transfer backgrounds4954300..4954315. NO new independent sources claimed. Eight new oblique input phases per source; phases never inflate n.",
+    "coefficients": "Byte-identical old-only frozen_predictors.json copied from transfer4954300. Only center19.2 zero, bounded scalar, complexlinear and fullH. Same finite-horizon19.2 basis. NO fits, frequency shifts, per-source oracle, or new predictor selection.",
+    "primary": "Native: for each model (1) oblique scalar NMSE minus fullH NMSE; (2) oblique fullH NMSE minus cardinal fullH NMSE. Four paired-source contrasts,16384 common type-stratified source bootstrap draws seed4954500; nominal95 and family4 Bonferroni98.75 percentile intervals. No equivalence claim from nonsignificance, no automatic threshold.",
+    "descriptive": "Locked policy; each baseline zero/scalar/complex/fullH; each of8 angles per source retained. Cardinal4 and oblique8 scores each pool actual waveform error over all angles before dividing by total ideal signal energy. No per-angle ratio averaging for primary.",
+    "odd_even": "Opposite pairs i,i+4 for oblique and i,i+2 for cardinal. Save raw odd differences and even sums relative to background; each frozen predictor error splits into odd residual plus even energy. No new fit. Input antipodal FP32 closure is measured.",
+    "controls": "Previous frozen capture repeat, normalizer endpoint-state parity, self-patch and same-batch replay; after capture require exact new-vs-saved cardinal background forecast parity, all four model/policy settings. Checkpoint/code/input/old-predictor hashes; finite checks.",
+    "limitations": "A finite eight-angle holdout can expose cardinal aliasing but cannot establish a globally linear phase law; higher harmonics can alias even this grid. Conditional on same16 synthetic sources, fixed amplitude.1 and32-step horizon. Output-frequency distortion may contribute shared error; no forecasting repair, absent-information or patch-causality claim.",
+    "native_capture": "Reuse frozen response_phase_transfer.run/worker/capture_bank, forecasts only with transient endpoint-state identity checks.",
+    "cpu_threads": 1,
+    "worker_cap": 3221225472,
+    "seconds_per_model": 300,
+    "budget": {
+      "bolt": {
+        "seconds": 32.62290444730269,
+        "formula": "1.1*(20s allowance + actual400-node elapsed *144/400); estimate only"
+      },
+      "timesfm": {
+        "seconds": 64.0188549988228,
+        "formula": "1.1*(20s allowance + actual400-node elapsed *144/400); estimate only"
+      }
+    },
+    "capture_hold": true,
+    "grant_contract": "No grant created by prepare. Native entry points require explicit external coordinator slot grant bound to this exact protocol; queue behind Plato32freshcausal and Popper64electricity.",
+    "checkpoints": {
+      "bolt": {
+        "repo": "amazon/chronos-bolt-small",
+        "path": "/common/home/djk255/.cache/huggingface/hub/models--amazon--chronos-bolt-small/snapshots/772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "revision": "772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "weights": {
+          "model.safetensors": "06a6a19bbe74bc10a9cd193bd4bf2bf638ae07f7e0d51653ae7ab8ea968a21dd"
+        }
+      },
+      "timesfm": {
+        "repo": "google/timesfm-2.5-200m-pytorch",
+        "path": "/common/home/djk255/.cache/huggingface/hub/models--google--timesfm-2.5-200m-pytorch/snapshots/1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+        "revision": "1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+        "weights": {
+          "model.safetensors": "2f776efe6245e42b24bc4153ffdf61810140210e4bd3b01fb21f7aa779ab6ce8"
+        }
+      }
+    },
+    "prior": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300",
+    "prior_hashes": {
+      "inputs.npy": "d60f13fd2278e782be817f7a580fba6a9cebc8387a3c6fbb62363f3f588f6d0c",
+      "groups.json": "ea5909cd07e132407b9cc9187c3961e7fc415386b5fdd0ad134cf533026911f2",
+      "sources.json": "759549340b1747c32439c94d8a5eeec7684159553c169cb091bb6ec31d49ac28",
+      "frozen_predictors.json": "7c1920909020b49c9da55a5c3444ca9e82b855fb31d95ee283b7aaca5aa8b947",
+      "protocol.json": "fc5b74295f9d30e0afb23809699b339f647976685d2b9637951511fea2231572",
+      "execution.json": "9963b7325032deeb500c19d8f0c50191d8fe1bcac54900b9e15e762b24fd0990",
+      "audit.json": "258c234bab95bf4cdc7903a71106d345e45502953d2948c63a6be5b129d12048",
+      "bolt_native_forecast.npy": "3d736b5a1d63faaaafc2cb7d75dc2f8b1c1c284e2a4a8a21bf074ca0cb6b63cf",
+      "bolt_locked_forecast.npy": "3c647571be1a4e7ae0522872236ab1950da8d6c263693bfdd1f6d9d131367f3e",
+      "timesfm_native_forecast.npy": "c47081c79692db23823970d2b2b90846c1e71e29b955c88793f36d1e8097eea8",
+      "timesfm_locked_forecast.npy": "5ef0eeee5e54a4151bd35f75653bfeacd5aee321b6c0c272e2cc4d51d45d8e3b"
+    },
+    "source_hashes": {
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_transfer.py": "a3e17fcd057a2ca92698d5a71d070e4b3b77a9037bbc05f10b4d538eacabad2c",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tests/test_response_phase_transfer.py": "b14de4d33859f8d696cae13c95a4462096196152d74b65757a95cd91e03f03c3",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_transfer_plants.py": "8daed827a1e205ba25ff6563d409e586367f2c31a9ac9bc56bb9d943d0a5150d",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_transfer_audit.py": "29b0f96aa022005a3a0bbd1650ed80c493dfd225b50a3edcb90e483bfa4499ec",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_study.py": "baa8f5a94890b89411df99e108e9ab01e906e8419c1696002cc9a6d6f8a48187",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_surface_focused.py": "758b73564af323796355c51c16b8332f7710fef57fe748ecdfd2c9bc1b907b1e",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_surface_crossed.py": "4882c7aeda3269bb48bc6675196fbd984f6db12b98617d2a8f2fba2b6979d41d",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/selective_study.py": "d87ed477e46d72604fa6824fcc5b146880142a730fc52f0f70bf933b652604eb",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/coherence_study.py": "e9bd4dc10d57cfbc30cb4b01cfafe96789cccb6d34fe85616699ecfef799aec7",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/real_background_poc.py": "c88868ab339608f52afa8041d89cf3b48aa4260e87fb497b64fa7bf058b3eda6",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/homogeneous_normalizer.py": "2670effb2dfc0b631d368a69cab4263a8d2a90eb1208acc93d246a5c0ef55051",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tsfm_lens/extraction/hooks.py": "6f161d02a472c246691caed21bd301a201d7219d3aeef90de2854baa7bdc4281",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_oblique.py": "3b6ea53c6489236f51efd7d2a8fa404b4baf04ea719cb6449293e8b4b5f602d0",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_oblique_audit.py": "b30dd655f9610973182356266fe932486ebf6d383a2fe68dcfc461f4c2045de2",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_oblique_plants.py": "5ff6e56ed1d58c55d655db0b67200d5c1d209e9b82aeccd38707eb39e8aaca77",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tests/test_response_phase_oblique.py": "42b05d06d38178eddb9f1682e870ae31ce82f481eb761d01912f911519650515"
+    },
+    "hashes": {
+      "inputs.npy": "db7699b1e216c8388a98ba3092a04824a25610c7563257d584089f693221b195",
+      "nodes.json": "84d3850fdba635aadfad8120c7ccd1b45254a700c1e85f78519244134a4a2ab6",
+      "groups.json": "998ac923b4a258925899963605e44000c5bbe716155aa002b555962c921f0d54",
+      "sources.json": "759549340b1747c32439c94d8a5eeec7684159553c169cb091bb6ec31d49ac28",
+      "frozen_predictors.json": "7c1920909020b49c9da55a5c3444ca9e82b855fb31d95ee283b7aaca5aa8b947",
+      "bootstrap_source_indices.npy": "c579d99de8c994c7815dced2d3bc053197cdf3a64fad71311d66bba043085144"
+    }
+  },
+  "exact_findings": {
+    "synthetic_receiver_only": true,
+    "audit": {
+      "passed": true,
+      "checks": 5164,
+      "maximum_absolute_discrepancy": 1.7763568394002505e-15,
+      "results_checked": true,
+      "existing_sources": 16,
+      "new_sources": 0,
+      "predictors_byte_identical": true,
+      "native_loaded": false
+    }
+  },
+  "controls": "Previous frozen capture repeat, normalizer endpoint-state parity, self-patch and same-batch replay; after capture require exact new-vs-saved cardinal background forecast parity, all four model/policy settings. Checkpoint/code/input/old-predictor hashes; finite checks.",
+  "limitations": "A finite eight-angle holdout can expose cardinal aliasing but cannot establish a globally linear phase law; higher harmonics can alias even this grid. Conditional on same16 synthetic sources, fixed amplitude.1 and32-step horizon. Output-frequency distortion may contribute shared error; no forecasting repair, absent-information or patch-causality claim.",
+  "evidence_class": "Synthetic instrumentation ONLY; no new native outcomes",
+  "failed_instrumentation_runs": [],
+  "next_decision": "Hold real capture for coordinator slot grant."
+}

@@ -1,0 +1,1497 @@
+{
+  "{\"prediction_length\": 32, \"request\": {\"context_window\": \"recent\", \"delay\": 1.0, \"forecast_window\": \"all\", \"kind\": \"context_ignore\", \"lower\": null, \"outside_weight\": 0.2, \"period\": null, \"phase\": null, \"quantile\": 0.9, \"smoothing\": 2.0, \"strength\": 0.5, \"upper\": null, \"value\": null}}": {
+    "request": {
+      "kind": "context_ignore",
+      "strength": 0.5,
+      "forecast_window": "all",
+      "context_window": "recent",
+      "period": null,
+      "phase": null,
+      "value": null,
+      "lower": null,
+      "upper": null,
+      "quantile": 0.9,
+      "smoothing": 2.0,
+      "delay": 1.0,
+      "outside_weight": 0.2
+    },
+    "selection": "explicit input relevance policy; no learned internal intervention",
+    "caveat": "full-horizon context policy executes directly; no calibration or optimized site is needed"
+  },
+  "{\"prediction_length\": 32, \"request\": {\"context_window\": \"recent\", \"delay\": 1.0, \"forecast_window\": \"short\", \"kind\": \"level\", \"lower\": null, \"outside_weight\": 0.2, \"period\": null, \"phase\": null, \"quantile\": 0.9, \"smoothing\": 2.0, \"strength\": 0.1, \"upper\": null, \"value\": null}}": {
+    "selection": "separate calibration/validation",
+    "calibration_indices": [
+      0
+    ],
+    "validation_indices": [
+      0
+    ],
+    "validation_source": "provided validation_contexts",
+    "request": {
+      "kind": "level",
+      "strength": 0.1,
+      "forecast_window": "short",
+      "context_window": "recent",
+      "period": null,
+      "phase": null,
+      "value": null,
+      "lower": null,
+      "upper": null,
+      "quantile": 0.9,
+      "smoothing": 2.0,
+      "delay": 1.0,
+      "outside_weight": 0.2
+    },
+    "chosen": {
+      "site": "module_input:output_patch_embedding.residual_layer:0:['args', 0]:shared",
+      "error": 0.6991001615189745,
+      "errors": [
+        0.6991001615189745
+      ],
+      "mean_coefficient_norm": 0.2,
+      "details": [
+        {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        }
+      ]
+    },
+    "rank": 128,
+    "observed_internal_sites": 332,
+    "searched_candidates": 4,
+    "candidate_scores": [
+      {
+        "site": "module_input:input_patch_embedding.hidden_layer:0:['args', 0]:last",
+        "error": 0.7391552102767659,
+        "errors": [
+          0.7391552102767659
+        ],
+        "mean_coefficient_norm": 0.2,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_patch_embedding.residual_layer:0:['args', 0]:last",
+        "error": 1.0,
+        "errors": [
+          1.0
+        ],
+        "mean_coefficient_norm": 9.579307653480182e-15,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_patch_embedding.residual_layer:0:['args', 0]:shared",
+        "error": 0.6991001615189745,
+        "errors": [
+          0.6991001615189745
+        ],
+        "mean_coefficient_norm": 0.2,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "input:__input__:0:[]:single",
+        "error": 2.0287028640813665,
+        "errors": [
+          2.0287028640813665
+        ],
+        "mean_coefficient_norm": 0.19999999999999996,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      }
+    ],
+    "screening": [
+      {
+        "site": "module_input:input_patch_embedding.hidden_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.012099866062184134
+      },
+      {
+        "site": "module_input:input_patch_embedding.output_layer:1:['args', 0]:shared",
+        "normalized_signed_effect": 0.001311278967083108
+      },
+      {
+        "site": "module_input:encoder.block.0.layer.0.self_attention.v:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002210014498727962
+      },
+      {
+        "site": "module_input:encoder.block.0.layer.1.self_attention.v:0:['args', 0]:last",
+        "normalized_signed_effect": 0.001977978681799932
+      },
+      {
+        "site": "module_input:encoder.block.1.layer.0.layer_norm:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0005899463128630178
+      },
+      {
+        "site": "module_input:encoder.block.1.layer.1.layer_norm:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0010662283898097704
+      },
+      {
+        "site": "module_input:encoder.block.1.layer.1.self_attention.o:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0003339521661102357
+      },
+      {
+        "site": "module_input:encoder.block.2.layer.0.self_attention.q:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0004723845456481874
+      },
+      {
+        "site": "module_input:encoder.block.2.layer.1.self_attention.q:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.2.layer.2.mlp.wi:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00042067245200655304
+      },
+      {
+        "site": "module_input:encoder.block.3.layer.0.self_attention.v:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00017860550101228692
+      },
+      {
+        "site": "module_input:encoder.block.3.layer.1.self_attention.v:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0005067721901605776
+      },
+      {
+        "site": "module_input:encoder.block.3.layer.2.mlp.wo:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.015096954976843498
+      },
+      {
+        "site": "module_input:encoder.block.4.layer.0.self_attention.o:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.003154782254817325
+      },
+      {
+        "site": "module_input:encoder.block.4.layer.1.self_attention.o:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.00019028292880743573
+      },
+      {
+        "site": "module_input:encoder.block.5.layer.0.self_attention.q:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00017552090313035753
+      },
+      {
+        "site": "module_input:encoder.block.5.layer.1.self_attention.q:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.5.layer.2.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.04130941451826125
+      },
+      {
+        "site": "module_input:encoder.block.6.layer.0.self_attention.k:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0004953277388262641
+      },
+      {
+        "site": "module_input:encoder.block.6.layer.1.self_attention.k:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.6.layer.2.mlp.wo:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00034866818219144867
+      },
+      {
+        "site": "module_input:encoder.block.7.layer.0.self_attention.o:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0006821303927762957
+      },
+      {
+        "site": "module_input:encoder.block.7.layer.1.self_attention.o:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00025488332666530225
+      },
+      {
+        "site": "module_input:encoder.block.8.layer.0.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.05283826000401706
+      },
+      {
+        "site": "module_input:encoder.block.8.layer.1.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0015467340111360106
+      },
+      {
+        "site": "module_input:encoder.block.8.layer.2.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.03955572669886536
+      },
+      {
+        "site": "module_input:encoder.block.9.layer.0.self_attention.k:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00014507641249698823
+      },
+      {
+        "site": "module_input:encoder.block.9.layer.1.self_attention.k:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.9.layer.2.mlp.wo:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0007978472868044825
+      },
+      {
+        "site": "module_input:encoder.block.10.layer.0.self_attention.v:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.005627774198328305
+      },
+      {
+        "site": "module_input:encoder.block.10.layer.1.self_attention.v:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0013128763344958064
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.07334357780835699
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.q:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0018319191441773738
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.q:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002302664280363875
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.k:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0002883313748089842
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.k:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0005107892757773545
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.v:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0008816006735592549
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.v:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.008942986263532612
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.o:0:['args', 0]:last",
+        "normalized_signed_effect": 0.008311890094032284
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.o:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.009956313073586728
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.layer_norm:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00453109241183331
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.00522713688254964
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.q:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.q:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.k:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.k:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.v:0:['args', 0]:last",
+        "normalized_signed_effect": 0.003478346284141883
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.v:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0017347389174070368
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.o:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0015694097412913125
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.o:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0011440902184057372
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.2.layer_norm:0:['args', 0]:last",
+        "normalized_signed_effect": 0.005830882544470665
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.2.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.03336230503808891
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.2.mlp.wi:0:['args', 0]:last",
+        "normalized_signed_effect": 0.006481274113906329
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.2.mlp.wi:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.00604491939227941
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.2.mlp.wo:0:['args', 0]:last",
+        "normalized_signed_effect": 0.003165872994065748
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.2.mlp.wo:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0075546899282604146
+      },
+      {
+        "site": "module_input:encoder.final_layer_norm:0:['args', 0]:last",
+        "normalized_signed_effect": 0.028359934030603048
+      },
+      {
+        "site": "module_input:encoder.final_layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.08694871269511154
+      },
+      {
+        "site": "module_input:output_patch_embedding.hidden_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.013068815625414383
+      },
+      {
+        "site": "module_input:output_patch_embedding.hidden_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.012099458007460491
+      },
+      {
+        "site": "module_input:output_patch_embedding.output_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.020680307458848052
+      },
+      {
+        "site": "module_input:output_patch_embedding.output_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0932601089880238
+      },
+      {
+        "site": "module_input:output_patch_embedding.residual_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.01728970921640158
+      },
+      {
+        "site": "module_input:output_patch_embedding.residual_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.02038081954582928
+      }
+    ],
+    "rejected_candidates": [],
+    "model_calls": 215,
+    "elapsed_seconds": 30.877943181083538,
+    "context_length": 128,
+    "prediction_length": 32,
+    "caveat": "bounded search; best observed validation score, not global optimality or semantic disentanglement"
+  },
+  "{\"prediction_length\": 32, \"request\": {\"context_window\": \"recent\", \"delay\": 1.0, \"forecast_window\": \"long\", \"kind\": \"trend\", \"lower\": null, \"outside_weight\": 0.2, \"period\": null, \"phase\": null, \"quantile\": 0.9, \"smoothing\": 2.0, \"strength\": 0.1, \"upper\": null, \"value\": null}}": {
+    "selection": "separate calibration/validation",
+    "calibration_indices": [
+      0
+    ],
+    "validation_indices": [
+      0
+    ],
+    "validation_source": "provided validation_contexts",
+    "request": {
+      "kind": "trend",
+      "strength": 0.1,
+      "forecast_window": "long",
+      "context_window": "recent",
+      "period": null,
+      "phase": null,
+      "value": null,
+      "lower": null,
+      "upper": null,
+      "quantile": 0.9,
+      "smoothing": 2.0,
+      "delay": 1.0,
+      "outside_weight": 0.2
+    },
+    "chosen": {
+      "site": "module_input:output_patch_embedding.residual_layer:0:['args', 0]:last",
+      "error": 0.21549992961520018,
+      "errors": [
+        0.21549992961520018
+      ],
+      "mean_coefficient_norm": 0.045472086232559876,
+      "details": [
+        {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        }
+      ]
+    },
+    "rank": 128,
+    "observed_internal_sites": 332,
+    "searched_candidates": 4,
+    "candidate_scores": [
+      {
+        "site": "module_input:input_patch_embedding.hidden_layer:0:['args', 0]:last",
+        "error": 0.8212282146960151,
+        "errors": [
+          0.8212282146960151
+        ],
+        "mean_coefficient_norm": 0.2,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_patch_embedding.residual_layer:0:['args', 0]:last",
+        "error": 0.21549992961520018,
+        "errors": [
+          0.21549992961520018
+        ],
+        "mean_coefficient_norm": 0.045472086232559876,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_patch_embedding.residual_layer:0:['args', 0]:shared",
+        "error": 0.7564558433095617,
+        "errors": [
+          0.7564558433095617
+        ],
+        "mean_coefficient_norm": 0.19999999999999998,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "input:__input__:0:[]:single",
+        "error": 5.136367017823434,
+        "errors": [
+          5.136367017823434
+        ],
+        "mean_coefficient_norm": 0.1797391949854509,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      }
+    ],
+    "screening": [
+      {
+        "site": "module_input:input_patch_embedding.hidden_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.012099866062184134
+      },
+      {
+        "site": "module_input:input_patch_embedding.output_layer:1:['args', 0]:shared",
+        "normalized_signed_effect": 0.001311278967083108
+      },
+      {
+        "site": "module_input:encoder.block.0.layer.0.self_attention.v:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002210014498727962
+      },
+      {
+        "site": "module_input:encoder.block.0.layer.1.self_attention.v:0:['args', 0]:last",
+        "normalized_signed_effect": 0.001977978681799932
+      },
+      {
+        "site": "module_input:encoder.block.1.layer.0.layer_norm:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0005899463128630178
+      },
+      {
+        "site": "module_input:encoder.block.1.layer.1.layer_norm:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0010662283898097704
+      },
+      {
+        "site": "module_input:encoder.block.1.layer.1.self_attention.o:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0003339521661102357
+      },
+      {
+        "site": "module_input:encoder.block.2.layer.0.self_attention.q:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0004723845456481874
+      },
+      {
+        "site": "module_input:encoder.block.2.layer.1.self_attention.q:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.2.layer.2.mlp.wi:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00042067245200655304
+      },
+      {
+        "site": "module_input:encoder.block.3.layer.0.self_attention.v:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00017860550101228692
+      },
+      {
+        "site": "module_input:encoder.block.3.layer.1.self_attention.v:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0005067721901605776
+      },
+      {
+        "site": "module_input:encoder.block.3.layer.2.mlp.wo:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.015096954976843498
+      },
+      {
+        "site": "module_input:encoder.block.4.layer.0.self_attention.o:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.003154782254817325
+      },
+      {
+        "site": "module_input:encoder.block.4.layer.1.self_attention.o:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.00019028292880743573
+      },
+      {
+        "site": "module_input:encoder.block.5.layer.0.self_attention.q:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00017552090313035753
+      },
+      {
+        "site": "module_input:encoder.block.5.layer.1.self_attention.q:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.5.layer.2.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.04130941451826125
+      },
+      {
+        "site": "module_input:encoder.block.6.layer.0.self_attention.k:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0004953277388262641
+      },
+      {
+        "site": "module_input:encoder.block.6.layer.1.self_attention.k:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.6.layer.2.mlp.wo:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00034866818219144867
+      },
+      {
+        "site": "module_input:encoder.block.7.layer.0.self_attention.o:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0006821303927762957
+      },
+      {
+        "site": "module_input:encoder.block.7.layer.1.self_attention.o:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00025488332666530225
+      },
+      {
+        "site": "module_input:encoder.block.8.layer.0.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.05283826000401706
+      },
+      {
+        "site": "module_input:encoder.block.8.layer.1.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0015467340111360106
+      },
+      {
+        "site": "module_input:encoder.block.8.layer.2.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.03955572669886536
+      },
+      {
+        "site": "module_input:encoder.block.9.layer.0.self_attention.k:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00014507641249698823
+      },
+      {
+        "site": "module_input:encoder.block.9.layer.1.self_attention.k:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.9.layer.2.mlp.wo:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0007978472868044825
+      },
+      {
+        "site": "module_input:encoder.block.10.layer.0.self_attention.v:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.005627774198328305
+      },
+      {
+        "site": "module_input:encoder.block.10.layer.1.self_attention.v:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0013128763344958064
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.07334357780835699
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.q:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0018319191441773738
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.q:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002302664280363875
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.k:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0002883313748089842
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.k:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0005107892757773545
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.v:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0008816006735592549
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.v:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.008942986263532612
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.o:0:['args', 0]:last",
+        "normalized_signed_effect": 0.008311890094032284
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.o:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.009956313073586728
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.layer_norm:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00453109241183331
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.00522713688254964
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.q:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.q:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.k:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.k:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.v:0:['args', 0]:last",
+        "normalized_signed_effect": 0.003478346284141883
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.v:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0017347389174070368
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.o:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0015694097412913125
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.o:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0011440902184057372
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.2.layer_norm:0:['args', 0]:last",
+        "normalized_signed_effect": 0.005830882544470665
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.2.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.03336230503808891
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.2.mlp.wi:0:['args', 0]:last",
+        "normalized_signed_effect": 0.006481274113906329
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.2.mlp.wi:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.00604491939227941
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.2.mlp.wo:0:['args', 0]:last",
+        "normalized_signed_effect": 0.003165872994065748
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.2.mlp.wo:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0075546899282604146
+      },
+      {
+        "site": "module_input:encoder.final_layer_norm:0:['args', 0]:last",
+        "normalized_signed_effect": 0.028359934030603048
+      },
+      {
+        "site": "module_input:encoder.final_layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.08694871269511154
+      },
+      {
+        "site": "module_input:output_patch_embedding.hidden_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.013068815625414383
+      },
+      {
+        "site": "module_input:output_patch_embedding.hidden_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.012099458007460491
+      },
+      {
+        "site": "module_input:output_patch_embedding.output_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.020680307458848052
+      },
+      {
+        "site": "module_input:output_patch_embedding.output_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0932601089880238
+      },
+      {
+        "site": "module_input:output_patch_embedding.residual_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.01728970921640158
+      },
+      {
+        "site": "module_input:output_patch_embedding.residual_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.02038081954582928
+      }
+    ],
+    "rejected_candidates": [],
+    "model_calls": 219,
+    "elapsed_seconds": 31.191833154065534,
+    "context_length": 128,
+    "prediction_length": 32,
+    "caveat": "bounded search; best observed validation score, not global optimality or semantic disentanglement"
+  },
+  "{\"prediction_length\": 32, \"request\": {\"context_window\": \"recent\", \"delay\": 1.0, \"forecast_window\": \"all\", \"kind\": \"seasonality\", \"lower\": null, \"outside_weight\": 0.2, \"period\": 24.0, \"phase\": null, \"quantile\": 0.9, \"smoothing\": 2.0, \"strength\": 0.1, \"upper\": null, \"value\": null}}": {
+    "selection": "separate calibration/validation",
+    "calibration_indices": [
+      0
+    ],
+    "validation_indices": [
+      0
+    ],
+    "validation_source": "provided validation_contexts",
+    "request": {
+      "kind": "seasonality",
+      "strength": 0.1,
+      "forecast_window": "all",
+      "context_window": "recent",
+      "period": 24.0,
+      "phase": null,
+      "value": null,
+      "lower": null,
+      "upper": null,
+      "quantile": 0.9,
+      "smoothing": 2.0,
+      "delay": 1.0,
+      "outside_weight": 0.2
+    },
+    "chosen": {
+      "site": "module_input:input_patch_embedding.hidden_layer:0:['args', 0]:last",
+      "error": 0.4701073662504604,
+      "errors": [
+        0.4701073662504604
+      ],
+      "mean_coefficient_norm": 0.20000000000000004,
+      "details": [
+        {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        }
+      ]
+    },
+    "rank": 48,
+    "observed_internal_sites": 332,
+    "searched_candidates": 4,
+    "candidate_scores": [
+      {
+        "site": "module_input:input_patch_embedding.hidden_layer:0:['args', 0]:last",
+        "error": 0.4701073662504604,
+        "errors": [
+          0.4701073662504604
+        ],
+        "mean_coefficient_norm": 0.20000000000000004,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_patch_embedding.residual_layer:0:['args', 0]:last",
+        "error": 0.7456961945313005,
+        "errors": [
+          0.7456961945313005
+        ],
+        "mean_coefficient_norm": 0.1212731743976189,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_patch_embedding.residual_layer:0:['args', 0]:shared",
+        "error": 0.767282798960626,
+        "errors": [
+          0.767282798960626
+        ],
+        "mean_coefficient_norm": 0.20000000000000023,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "input:__input__:0:[]:single",
+        "error": 1.6508229023910337,
+        "errors": [
+          1.6508229023910337
+        ],
+        "mean_coefficient_norm": 0.19999999999948484,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      }
+    ],
+    "screening": [
+      {
+        "site": "module_input:input_patch_embedding.hidden_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.012099866062184134
+      },
+      {
+        "site": "module_input:input_patch_embedding.output_layer:1:['args', 0]:shared",
+        "normalized_signed_effect": 0.001311278967083108
+      },
+      {
+        "site": "module_input:encoder.block.0.layer.0.self_attention.v:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002210014498727962
+      },
+      {
+        "site": "module_input:encoder.block.0.layer.1.self_attention.v:0:['args', 0]:last",
+        "normalized_signed_effect": 0.001977978681799932
+      },
+      {
+        "site": "module_input:encoder.block.1.layer.0.layer_norm:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0005899463128630178
+      },
+      {
+        "site": "module_input:encoder.block.1.layer.1.layer_norm:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0010662283898097704
+      },
+      {
+        "site": "module_input:encoder.block.1.layer.1.self_attention.o:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0003339521661102357
+      },
+      {
+        "site": "module_input:encoder.block.2.layer.0.self_attention.q:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0004723845456481874
+      },
+      {
+        "site": "module_input:encoder.block.2.layer.1.self_attention.q:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.2.layer.2.mlp.wi:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00042067245200655304
+      },
+      {
+        "site": "module_input:encoder.block.3.layer.0.self_attention.v:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00017860550101228692
+      },
+      {
+        "site": "module_input:encoder.block.3.layer.1.self_attention.v:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0005067721901605776
+      },
+      {
+        "site": "module_input:encoder.block.3.layer.2.mlp.wo:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.015096954976843498
+      },
+      {
+        "site": "module_input:encoder.block.4.layer.0.self_attention.o:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.003154782254817325
+      },
+      {
+        "site": "module_input:encoder.block.4.layer.1.self_attention.o:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.00019028292880743573
+      },
+      {
+        "site": "module_input:encoder.block.5.layer.0.self_attention.q:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00017552090313035753
+      },
+      {
+        "site": "module_input:encoder.block.5.layer.1.self_attention.q:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.5.layer.2.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.04130941451826125
+      },
+      {
+        "site": "module_input:encoder.block.6.layer.0.self_attention.k:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0004953277388262641
+      },
+      {
+        "site": "module_input:encoder.block.6.layer.1.self_attention.k:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.6.layer.2.mlp.wo:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00034866818219144867
+      },
+      {
+        "site": "module_input:encoder.block.7.layer.0.self_attention.o:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0006821303927762957
+      },
+      {
+        "site": "module_input:encoder.block.7.layer.1.self_attention.o:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00025488332666530225
+      },
+      {
+        "site": "module_input:encoder.block.8.layer.0.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.05283826000401706
+      },
+      {
+        "site": "module_input:encoder.block.8.layer.1.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0015467340111360106
+      },
+      {
+        "site": "module_input:encoder.block.8.layer.2.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.03955572669886536
+      },
+      {
+        "site": "module_input:encoder.block.9.layer.0.self_attention.k:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00014507641249698823
+      },
+      {
+        "site": "module_input:encoder.block.9.layer.1.self_attention.k:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.9.layer.2.mlp.wo:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0007978472868044825
+      },
+      {
+        "site": "module_input:encoder.block.10.layer.0.self_attention.v:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.005627774198328305
+      },
+      {
+        "site": "module_input:encoder.block.10.layer.1.self_attention.v:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0013128763344958064
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.07334357780835699
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.q:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0018319191441773738
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.q:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002302664280363875
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.k:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0002883313748089842
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.k:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0005107892757773545
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.v:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0008816006735592549
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.v:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.008942986263532612
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.o:0:['args', 0]:last",
+        "normalized_signed_effect": 0.008311890094032284
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.o:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.009956313073586728
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.layer_norm:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00453109241183331
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.00522713688254964
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.q:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.q:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.k:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.k:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.v:0:['args', 0]:last",
+        "normalized_signed_effect": 0.003478346284141883
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.v:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0017347389174070368
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.o:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0015694097412913125
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.o:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0011440902184057372
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.2.layer_norm:0:['args', 0]:last",
+        "normalized_signed_effect": 0.005830882544470665
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.2.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.03336230503808891
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.2.mlp.wi:0:['args', 0]:last",
+        "normalized_signed_effect": 0.006481274113906329
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.2.mlp.wi:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.00604491939227941
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.2.mlp.wo:0:['args', 0]:last",
+        "normalized_signed_effect": 0.003165872994065748
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.2.mlp.wo:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0075546899282604146
+      },
+      {
+        "site": "module_input:encoder.final_layer_norm:0:['args', 0]:last",
+        "normalized_signed_effect": 0.028359934030603048
+      },
+      {
+        "site": "module_input:encoder.final_layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.08694871269511154
+      },
+      {
+        "site": "module_input:output_patch_embedding.hidden_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.013068815625414383
+      },
+      {
+        "site": "module_input:output_patch_embedding.hidden_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.012099458007460491
+      },
+      {
+        "site": "module_input:output_patch_embedding.output_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.020680307458848052
+      },
+      {
+        "site": "module_input:output_patch_embedding.output_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0932601089880238
+      },
+      {
+        "site": "module_input:output_patch_embedding.residual_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.01728970921640158
+      },
+      {
+        "site": "module_input:output_patch_embedding.residual_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.02038081954582928
+      }
+    ],
+    "rejected_candidates": [],
+    "model_calls": 223,
+    "elapsed_seconds": 31.50571465701796,
+    "context_length": 128,
+    "prediction_length": 32,
+    "caveat": "bounded search; best observed validation score, not global optimality or semantic disentanglement"
+  },
+  "{\"prediction_length\": 32, \"request\": {\"context_window\": \"recent\", \"delay\": 1.0, \"forecast_window\": \"all\", \"kind\": \"uncertainty\", \"lower\": null, \"outside_weight\": 0.2, \"period\": null, \"phase\": null, \"quantile\": 0.9, \"smoothing\": 2.0, \"strength\": 0.2, \"upper\": null, \"value\": null}}": {
+    "selection": "separate calibration/validation",
+    "calibration_indices": [
+      0
+    ],
+    "validation_indices": [
+      0
+    ],
+    "validation_source": "provided validation_contexts",
+    "request": {
+      "kind": "uncertainty",
+      "strength": 0.2,
+      "forecast_window": "all",
+      "context_window": "recent",
+      "period": null,
+      "phase": null,
+      "value": null,
+      "lower": null,
+      "upper": null,
+      "quantile": 0.9,
+      "smoothing": 2.0,
+      "delay": 1.0,
+      "outside_weight": 0.2
+    },
+    "chosen": {
+      "site": "module_input:output_patch_embedding.residual_layer:0:['args', 0]:shared",
+      "error": 0.24074059220531965,
+      "errors": [
+        0.24074059220531965
+      ],
+      "mean_coefficient_norm": 0.20000000000687101,
+      "details": [
+        {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        }
+      ]
+    },
+    "rank": 128,
+    "observed_internal_sites": 332,
+    "searched_candidates": 4,
+    "candidate_scores": [
+      {
+        "site": "module_input:input_patch_embedding.hidden_layer:0:['args', 0]:last",
+        "error": 1.144562827707296,
+        "errors": [
+          1.144562827707296
+        ],
+        "mean_coefficient_norm": 0.20000000000000004,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_patch_embedding.residual_layer:0:['args', 0]:last",
+        "error": 0.7252190611731691,
+        "errors": [
+          0.7252190611731691
+        ],
+        "mean_coefficient_norm": 0.059052194194455676,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_patch_embedding.residual_layer:0:['args', 0]:shared",
+        "error": 0.24074059220531965,
+        "errors": [
+          0.24074059220531965
+        ],
+        "mean_coefficient_norm": 0.20000000000687101,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "input:__input__:0:[]:single",
+        "error": 3.7555240803952663,
+        "errors": [
+          3.7555240803952663
+        ],
+        "mean_coefficient_norm": 0.19999999999999996,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      }
+    ],
+    "screening": [
+      {
+        "site": "module_input:input_patch_embedding.hidden_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.012099866062184134
+      },
+      {
+        "site": "module_input:input_patch_embedding.output_layer:1:['args', 0]:shared",
+        "normalized_signed_effect": 0.001311278967083108
+      },
+      {
+        "site": "module_input:encoder.block.0.layer.0.self_attention.v:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002210014498727962
+      },
+      {
+        "site": "module_input:encoder.block.0.layer.1.self_attention.v:0:['args', 0]:last",
+        "normalized_signed_effect": 0.001977978681799932
+      },
+      {
+        "site": "module_input:encoder.block.1.layer.0.layer_norm:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0005899463128630178
+      },
+      {
+        "site": "module_input:encoder.block.1.layer.1.layer_norm:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0010662283898097704
+      },
+      {
+        "site": "module_input:encoder.block.1.layer.1.self_attention.o:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0003339521661102357
+      },
+      {
+        "site": "module_input:encoder.block.2.layer.0.self_attention.q:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0004723845456481874
+      },
+      {
+        "site": "module_input:encoder.block.2.layer.1.self_attention.q:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.2.layer.2.mlp.wi:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00042067245200655304
+      },
+      {
+        "site": "module_input:encoder.block.3.layer.0.self_attention.v:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00017860550101228692
+      },
+      {
+        "site": "module_input:encoder.block.3.layer.1.self_attention.v:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0005067721901605776
+      },
+      {
+        "site": "module_input:encoder.block.3.layer.2.mlp.wo:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.015096954976843498
+      },
+      {
+        "site": "module_input:encoder.block.4.layer.0.self_attention.o:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.003154782254817325
+      },
+      {
+        "site": "module_input:encoder.block.4.layer.1.self_attention.o:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.00019028292880743573
+      },
+      {
+        "site": "module_input:encoder.block.5.layer.0.self_attention.q:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00017552090313035753
+      },
+      {
+        "site": "module_input:encoder.block.5.layer.1.self_attention.q:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.5.layer.2.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.04130941451826125
+      },
+      {
+        "site": "module_input:encoder.block.6.layer.0.self_attention.k:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0004953277388262641
+      },
+      {
+        "site": "module_input:encoder.block.6.layer.1.self_attention.k:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.6.layer.2.mlp.wo:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00034866818219144867
+      },
+      {
+        "site": "module_input:encoder.block.7.layer.0.self_attention.o:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0006821303927762957
+      },
+      {
+        "site": "module_input:encoder.block.7.layer.1.self_attention.o:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00025488332666530225
+      },
+      {
+        "site": "module_input:encoder.block.8.layer.0.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.05283826000401706
+      },
+      {
+        "site": "module_input:encoder.block.8.layer.1.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0015467340111360106
+      },
+      {
+        "site": "module_input:encoder.block.8.layer.2.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.03955572669886536
+      },
+      {
+        "site": "module_input:encoder.block.9.layer.0.self_attention.k:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00014507641249698823
+      },
+      {
+        "site": "module_input:encoder.block.9.layer.1.self_attention.k:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.9.layer.2.mlp.wo:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0007978472868044825
+      },
+      {
+        "site": "module_input:encoder.block.10.layer.0.self_attention.v:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.005627774198328305
+      },
+      {
+        "site": "module_input:encoder.block.10.layer.1.self_attention.v:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0013128763344958064
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.07334357780835699
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.q:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0018319191441773738
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.q:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002302664280363875
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.k:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0002883313748089842
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.k:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0005107892757773545
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.v:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0008816006735592549
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.v:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.008942986263532612
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.o:0:['args', 0]:last",
+        "normalized_signed_effect": 0.008311890094032284
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.0.self_attention.o:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.009956313073586728
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.layer_norm:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00453109241183331
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.00522713688254964
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.q:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.q:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.k:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.k:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.v:0:['args', 0]:last",
+        "normalized_signed_effect": 0.003478346284141883
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.v:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0017347389174070368
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.o:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0015694097412913125
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.1.self_attention.o:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0011440902184057372
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.2.layer_norm:0:['args', 0]:last",
+        "normalized_signed_effect": 0.005830882544470665
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.2.layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.03336230503808891
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.2.mlp.wi:0:['args', 0]:last",
+        "normalized_signed_effect": 0.006481274113906329
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.2.mlp.wi:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.00604491939227941
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.2.mlp.wo:0:['args', 0]:last",
+        "normalized_signed_effect": 0.003165872994065748
+      },
+      {
+        "site": "module_input:encoder.block.11.layer.2.mlp.wo:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0075546899282604146
+      },
+      {
+        "site": "module_input:encoder.final_layer_norm:0:['args', 0]:last",
+        "normalized_signed_effect": 0.028359934030603048
+      },
+      {
+        "site": "module_input:encoder.final_layer_norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.08694871269511154
+      },
+      {
+        "site": "module_input:output_patch_embedding.hidden_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.013068815625414383
+      },
+      {
+        "site": "module_input:output_patch_embedding.hidden_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.012099458007460491
+      },
+      {
+        "site": "module_input:output_patch_embedding.output_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.020680307458848052
+      },
+      {
+        "site": "module_input:output_patch_embedding.output_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0932601089880238
+      },
+      {
+        "site": "module_input:output_patch_embedding.residual_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.01728970921640158
+      },
+      {
+        "site": "module_input:output_patch_embedding.residual_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.02038081954582928
+      }
+    ],
+    "rejected_candidates": [],
+    "model_calls": 227,
+    "elapsed_seconds": 31.819862468051724,
+    "context_length": 128,
+    "prediction_length": 32,
+    "caveat": "bounded search; best observed validation score, not global optimality or semantic disentanglement"
+  }
+}

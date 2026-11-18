@@ -1,0 +1,242 @@
+[
+  {
+    "dataset": "monash_electricity_hourly",
+    "id": "T000081",
+    "row_rank": 0,
+    "split": "fit",
+    "center": 70.0078125,
+    "scale": 61.67030485950952,
+    "sampling_hours": 1,
+    "window_sha256": "fd9f3449012394bd0a8a3b53707f8803e0281764889eb857ed54f5fe2151c909"
+  },
+  {
+    "dataset": "monash_electricity_hourly",
+    "id": "T000013",
+    "row_rank": 1,
+    "split": "fit",
+    "center": 160.7578125,
+    "scale": 48.12333537604022,
+    "sampling_hours": 1,
+    "window_sha256": "9eb163ef88292bd893fed5d3cb185c1f67670f40dc2467b6bc02aa43c0d0cec8"
+  },
+  {
+    "dataset": "monash_electricity_hourly",
+    "id": "T000244",
+    "row_rank": 2,
+    "split": "fit",
+    "center": 479.59375,
+    "scale": 161.11251103169332,
+    "sampling_hours": 1,
+    "window_sha256": "72d86454902a4edf59b72718074a7131497895cdd51ed9693c86b64e38c06da5"
+  },
+  {
+    "dataset": "monash_electricity_hourly",
+    "id": "T000234",
+    "row_rank": 3,
+    "split": "fit",
+    "center": 299.25,
+    "scale": 99.77850469915853,
+    "sampling_hours": 1,
+    "window_sha256": "697d770f70e30a856bfb7fef8e309fd32129148db3ba07cc3a15c7e15bb969cf"
+  },
+  {
+    "dataset": "monash_electricity_hourly",
+    "id": "T000285",
+    "row_rank": 4,
+    "split": "evaluation",
+    "center": 338.59375,
+    "scale": 202.59220267803374,
+    "sampling_hours": 1,
+    "window_sha256": "87ec04b4ef2c8a825ae7024747041208306150cbaa5e5477eb42068c28f69437"
+  },
+  {
+    "dataset": "monash_electricity_hourly",
+    "id": "T000046",
+    "row_rank": 5,
+    "split": "evaluation",
+    "center": 87.8203125,
+    "scale": 25.018878370189654,
+    "sampling_hours": 1,
+    "window_sha256": "e99383a45b46181e27217e1328a6d9c7ca722be1f1453be50d6f0d4f3af0912e"
+  },
+  {
+    "dataset": "monash_electricity_hourly",
+    "id": "T000287",
+    "row_rank": 6,
+    "split": "evaluation",
+    "center": 218.0859375,
+    "scale": 138.05258437365848,
+    "sampling_hours": 1,
+    "window_sha256": "cb52ae3bc2d9ee6d3e64c0ffd8daf373ae35a69959abf9a2fd762b3d5d83c395"
+  },
+  {
+    "dataset": "monash_electricity_hourly",
+    "id": "T000185",
+    "row_rank": 7,
+    "split": "evaluation",
+    "center": 828.25,
+    "scale": 319.6220913047157,
+    "sampling_hours": 1,
+    "window_sha256": "a5c86826f26c36b7499565b6662b3e71178d3fe524313b8cda4e01af096f1158"
+  },
+  {
+    "dataset": "m4_hourly",
+    "id": "T000318",
+    "row_rank": 0,
+    "split": "fit",
+    "center": 21.20703125,
+    "scale": 4.248661252267993,
+    "sampling_hours": 1,
+    "window_sha256": "ba2e285afe0b882630ef8509109139ab28a82b9bd365f20e5cd9c0d997512f77"
+  },
+  {
+    "dataset": "m4_hourly",
+    "id": "T000354",
+    "row_rank": 1,
+    "split": "fit",
+    "center": 93.296875,
+    "scale": 53.152398725122225,
+    "sampling_hours": 1,
+    "window_sha256": "46d362d81ade9ad2d4536b3cb6798ee2df52949cc290243f303735278b775bab"
+  },
+  {
+    "dataset": "m4_hourly",
+    "id": "T000332",
+    "row_rank": 2,
+    "split": "fit",
+    "center": 567.2265625,
+    "scale": 461.90269224906405,
+    "sampling_hours": 1,
+    "window_sha256": "3465f5c5b0562f327b3034cccccfd05ffe9549a26ac8b47aac470798ae047980"
+  },
+  {
+    "dataset": "m4_hourly",
+    "id": "T000060",
+    "row_rank": 3,
+    "split": "fit",
+    "center": 3134.5859375,
+    "scale": 983.9816398768556,
+    "sampling_hours": 1,
+    "window_sha256": "0c1cee9a1315eb185599869dbd58f455fbadfcdac185259e9423ca3de7251067"
+  },
+  {
+    "dataset": "m4_hourly",
+    "id": "T000216",
+    "row_rank": 4,
+    "split": "evaluation",
+    "center": 20.33359375,
+    "scale": 3.121955450508693,
+    "sampling_hours": 1,
+    "window_sha256": "79821b737e1a7d5c72cb7aceb036370fa1fba95fe83c7f9516394e23b2b37504"
+  },
+  {
+    "dataset": "m4_hourly",
+    "id": "T000099",
+    "row_rank": 5,
+    "split": "evaluation",
+    "center": 1030.3203125,
+    "scale": 291.0414471555595,
+    "sampling_hours": 1,
+    "window_sha256": "515ac3931ad952658fc7c6dea51d489330f1a6f833cf9da5491926c23da90f07"
+  },
+  {
+    "dataset": "m4_hourly",
+    "id": "T000013",
+    "row_rank": 6,
+    "split": "evaluation",
+    "center": 162.6484375,
+    "scale": 24.468279798722953,
+    "sampling_hours": 1,
+    "window_sha256": "ead949966af306fef81cd402d2be706cdb9aa62dc8750408542c27e74e897fbc"
+  },
+  {
+    "dataset": "m4_hourly",
+    "id": "T000297",
+    "row_rank": 7,
+    "split": "evaluation",
+    "center": 22.180468750000003,
+    "scale": 3.7385671259552686,
+    "sampling_hours": 1,
+    "window_sha256": "9ab67cc4018f984fa18f5796a7372b6efd7e04afbe8008d79531f9c95ebe329a"
+  },
+  {
+    "dataset": "monash_pedestrian_counts",
+    "id": "T000022",
+    "row_rank": 0,
+    "split": "fit",
+    "center": 62.4140625,
+    "scale": 52.583939941260525,
+    "sampling_hours": 1,
+    "window_sha256": "83abb18bc51baec5376f123010f5233a31d1902bbbd78e0fdffcbc9a824a8573"
+  },
+  {
+    "dataset": "monash_pedestrian_counts",
+    "id": "T000010",
+    "row_rank": 1,
+    "split": "fit",
+    "center": 43.2421875,
+    "scale": 39.56378277812732,
+    "sampling_hours": 1,
+    "window_sha256": "02f8c166cc20b51a126dc372c882c03d959d9737830bd085645934ca3dc97f58"
+  },
+  {
+    "dataset": "monash_pedestrian_counts",
+    "id": "T000033",
+    "row_rank": 2,
+    "split": "fit",
+    "center": 32.21875,
+    "scale": 28.695039178183745,
+    "sampling_hours": 1,
+    "window_sha256": "e0e54fbd9c660da9fbbaef6a787df8e9bf60c8317d575e66e66d0da516c4af73"
+  },
+  {
+    "dataset": "monash_pedestrian_counts",
+    "id": "T000001",
+    "row_rank": 3,
+    "split": "fit",
+    "center": 149.75,
+    "scale": 160.0333949524286,
+    "sampling_hours": 1,
+    "window_sha256": "03584fc6e98d8fb6a3fc066ee2913b98bcbf8890467a9e9cce74033a9159cbee"
+  },
+  {
+    "dataset": "monash_pedestrian_counts",
+    "id": "T000046",
+    "row_rank": 4,
+    "split": "evaluation",
+    "center": 199.8984375,
+    "scale": 171.50723562741774,
+    "sampling_hours": 1,
+    "window_sha256": "8dedbed7ea35e32e207dfc10eba0f79b4bc353b743b7d9e658f8a020a7f269cb"
+  },
+  {
+    "dataset": "monash_pedestrian_counts",
+    "id": "T000057",
+    "row_rank": 5,
+    "split": "evaluation",
+    "center": 127.6328125,
+    "scale": 99.72970275118564,
+    "sampling_hours": 1,
+    "window_sha256": "44142d26dbfbfb05af15cf56ea5dfffd8a918b1cc162576cfc5271fff3bf1a7c"
+  },
+  {
+    "dataset": "monash_pedestrian_counts",
+    "id": "T000021",
+    "row_rank": 6,
+    "split": "evaluation",
+    "center": 469.796875,
+    "scale": 381.04772009583576,
+    "sampling_hours": 1,
+    "window_sha256": "e17ad29fce184a177b4451be376795881f32223df8490376d447b5ccf0678a2a"
+  },
+  {
+    "dataset": "monash_pedestrian_counts",
+    "id": "T000012",
+    "row_rank": 7,
+    "split": "evaluation",
+    "center": 752.7578125,
+    "scale": 1163.3142830003915,
+    "sampling_hours": 1,
+    "window_sha256": "40dedef8444deaba9564e55b7ed95768e4f0f94fe8a0c1f3779dd2011a6fc2ce"
+  }
+]

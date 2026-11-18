@@ -1,0 +1,1231 @@
+{
+  "question": "How much held-out state variation does a fixed position-conditioned FIT mean explain, compared with global FIT mean and existing PCAk8/16?",
+  "design": {
+    "question": "How much held-out state variation does a fixed position-conditioned FIT mean explain, compared with global FIT mean and existing PCAk8/16?",
+    "evidence_class": "Post-hoc descriptive saved-only compression diagnostic; no new confirmatory claim",
+    "source_cohort": "Frozen32FIT/32TEST sources,112rows each; same block-output cut0 and full tokens as dictionary pilot.",
+    "fitting": "Single pooled FIT global vector and token-position matrix; equal weight per source then case then token. No domain-specific fitting.",
+    "scoring": "Per-model/domain and ALL source-weighted state MSE, normalized by domain TEST variance about its own global feature mean and separately by globalFITmean error. TEST means are denominators only.",
+    "interpretation": "Position-conditioned mean, not causal positional-embedding attribution; shared structure may include common content. Fixed means have identically zero response to input perturbations at fixed shape.",
+    "parameters": "Global mean D; position mean T*D; PCA stored D*D basis+D center+1 scale (k is fixed metadata), dynamic up-to-T*k coefficients and indices per input. PCA is full-basis token-adaptive TopK, not fixed rank-k projection.",
+    "resource_limits": {
+      "threads": 1,
+      "address_space_bytes": 3221225472,
+      "native_calls": 0,
+      "dictionary_training": 0
+    },
+    "checks": "Known-answer, TEST poison, unequal-source weighting, overlap, PCA selection tests; isolated mutation subprocesses before real scoring; independent saved reconstruction/source arithmetic replay.",
+    "files": {
+      "runs/selective_replication4942000/rows.json": "5d0e1ac6d82a3826a0054e7d7bb17f1df8f547a183eb9e9f01cc0e17625a43d2",
+      "runs/dictionary_pilot4951000/recovery_exit_monitor/protocol.json": "e2f6fa7f6c72d7e8fc18c6d581ea3b5b8953bc5f294da2ebfa93f42bf9938249",
+      "experiments/feature_search/comparability_position_mean.py": "7562549b0250b4969ed5dee64fc0b10f21beefadc0ab98dcdae442cc64b1bedc",
+      "tests/test_comparability_position_mean.py": "ad5dda4abdc31f6f33c9061f5c434d9a5827255738d1d40ff5c66c761c730581",
+      "runs/selective_replication4942000/bolt_states.npz": "9af5a6bb3695d3abc05282a45a2be4c75c27a89236616162c42d3158e145f29a",
+      "runs/selective_replication4942000/bolt_worker.json": "e6a33b26119a71b8d5e5b5b5d3d5c8d00df24fa307667cbb8a4025dfa642a5d2",
+      "runs/dictionary_pilot4951000/recovery_exit_monitor/fit_bolt_cut0_pca_k8_s4951000/dictionary.npz": "b90cb2180ab8f5c9fefd59cf4c8ffdcdf1db90d645bd476ff54177412b6168b8",
+      "runs/dictionary_pilot4951000/recovery_exit_monitor/fit_bolt_cut0_pca_k8_s4951000/results.json": "4ec35ebfb6b6e8114cf1d644835c80683a5cdad63c319f4cf305a252007fa45a",
+      "runs/dictionary_pilot4951000/recovery_exit_monitor/fit_bolt_cut0_pca_k16_s4951000/dictionary.npz": "3261de9f2ed4dcdae6465e32bff22de3a2eb51e213c4b02ffcf2754bbce1a956",
+      "runs/dictionary_pilot4951000/recovery_exit_monitor/fit_bolt_cut0_pca_k16_s4951000/results.json": "7521a6960bf1abd9754619bd96fc2d503a6942f259aa4f802f186454e4e41249",
+      "runs/selective_replication4942000/timesfm_states.npz": "a46cf7d38aea5fcd21820ebdb379e35a49bcf54b53867adcbfdf2a23627d478a",
+      "runs/selective_replication4942000/timesfm_worker.json": "ed5501d8ab5f76e695f347ac4f3de52d0369cfd4f8f8715494cb9efbd2692986",
+      "runs/dictionary_pilot4951000/recovery_exit_monitor/fit_timesfm_cut0_pca_k8_s4951000/dictionary.npz": "04b3a0b7c70c26ddecd8ade1c0100ff8971109d4640a11456df7b29dc51b2ff2",
+      "runs/dictionary_pilot4951000/recovery_exit_monitor/fit_timesfm_cut0_pca_k8_s4951000/results.json": "213aa9cae79187ff032ea987b5cb692130aafcd7a33cd907f9134b449329f104",
+      "runs/dictionary_pilot4951000/recovery_exit_monitor/fit_timesfm_cut0_pca_k16_s4951000/dictionary.npz": "07e3d15cecbfade860edd9421d9cc62271ffed2bcef9f263cb86f96556ce2fd1",
+      "runs/dictionary_pilot4951000/recovery_exit_monitor/fit_timesfm_cut0_pca_k16_s4951000/results.json": "1281fd3ce58f2649b389688e8901c02053919e7404aecb404c703fb9c8122834"
+    }
+  },
+  "status": "complete_saved_only",
+  "exact_findings": {
+    "results": {
+      "bolt": {
+        "ALL": {
+          "n_sources": 32,
+          "rows": 112,
+          "test_variance_about_domain_test_global_mean": 0.1323571157815939,
+          "mse": {
+            "global_fit_mean": 0.13238216101434874,
+            "position_conditioned_fit_mean": 0.026073105440673428,
+            "pca_k8": 0.0028920330825337186,
+            "pca_k16": 0.0012144691864975636
+          },
+          "mse_over_test_variance": {
+            "global_fit_mean": 1.0001892246790582,
+            "position_conditioned_fit_mean": 0.19699058329207908,
+            "pca_k8": 0.021850227435493093,
+            "pca_k16": 0.009175699994109818
+          },
+          "mse_over_global_fit_mean_error": {
+            "global_fit_mean": 1.0,
+            "position_conditioned_fit_mean": 0.19695331486428444,
+            "pca_k8": 0.021846093615440033,
+            "pca_k16": 0.009173964053706064
+          },
+          "reduction_over_global_fit_mean": {
+            "global_fit_mean": 0.0,
+            "position_conditioned_fit_mean": 0.8030466851357155,
+            "pca_k8": 0.97815390638456,
+            "pca_k16": 0.9908260359462939
+          },
+          "per_source_mse": {
+            "global_fit_mean": {
+              "m4_hourly:T000066": 0.1744117789013556,
+              "m4_hourly:T000212": 0.11009066277328605,
+              "m4_hourly:T000235": 0.14317093005100312,
+              "m4_hourly:T000262": 0.12678823311996557,
+              "monash_electricity_hourly:T000068": 0.13648495550200404,
+              "monash_electricity_hourly:T000129": 0.1464587643659555,
+              "monash_electricity_hourly:T000140": 0.13187748462758822,
+              "monash_electricity_hourly:T000241": 0.1366603040621869,
+              "monash_pedestrian_counts:T000013": 0.12615519705867023,
+              "monash_pedestrian_counts:T000019": 0.1371698812218276,
+              "monash_pedestrian_counts:T000034": 0.13007386262246223,
+              "monash_pedestrian_counts:T000050": 0.12103647485410085,
+              "monash_traffic:T000026": 0.1225404882268522,
+              "monash_traffic:T000600": 0.11076042521392807,
+              "monash_traffic:T000772": 0.12424283693067051,
+              "monash_traffic:T000784": 0.12027140079015722,
+              "syn:4942016": 0.1515538762750018,
+              "syn:4942017": 0.1434848884235292,
+              "syn:4942018": 0.13203483982478395,
+              "syn:4942019": 0.13091558561543887,
+              "syn:4942020": 0.13756520768391206,
+              "syn:4942021": 0.14288117574556786,
+              "syn:4942022": 0.13965822823931456,
+              "syn:4942023": 0.1211722110831807,
+              "syn:4942024": 0.1334278952414675,
+              "syn:4942025": 0.12146405628833046,
+              "syn:4942026": 0.12949384557004928,
+              "syn:4942027": 0.1245492530082635,
+              "syn:4942028": 0.11611010567130106,
+              "syn:4942029": 0.15419634089947173,
+              "syn:4942030": 0.14110543395166739,
+              "syn:4942031": 0.11842252861586641
+            },
+            "position_conditioned_fit_mean": {
+              "m4_hourly:T000066": 0.031019383926473396,
+              "m4_hourly:T000212": 0.02456710821548265,
+              "m4_hourly:T000235": 0.024678675628964204,
+              "m4_hourly:T000262": 0.023399330899254188,
+              "monash_electricity_hourly:T000068": 0.02385661878109199,
+              "monash_electricity_hourly:T000129": 0.030867757887620383,
+              "monash_electricity_hourly:T000140": 0.01787874173324541,
+              "monash_electricity_hourly:T000241": 0.017919658787841547,
+              "monash_pedestrian_counts:T000013": 0.026773892411844927,
+              "monash_pedestrian_counts:T000019": 0.019785566004382506,
+              "monash_pedestrian_counts:T000034": 0.023254281058140036,
+              "monash_pedestrian_counts:T000050": 0.018644497733382892,
+              "monash_traffic:T000026": 0.020599499191395518,
+              "monash_traffic:T000600": 0.020996462026150804,
+              "monash_traffic:T000772": 0.01929541566409338,
+              "monash_traffic:T000784": 0.019564359446283163,
+              "syn:4942016": 0.02801168579428087,
+              "syn:4942017": 0.027079439982492248,
+              "syn:4942018": 0.030074943378581114,
+              "syn:4942019": 0.030120373300076574,
+              "syn:4942020": 0.030508583575889404,
+              "syn:4942021": 0.026378916933547953,
+              "syn:4942022": 0.031026164171268876,
+              "syn:4942023": 0.028674808271240138,
+              "syn:4942024": 0.030312839523473818,
+              "syn:4942025": 0.030131339387861944,
+              "syn:4942026": 0.028826402359064567,
+              "syn:4942027": 0.028080351656818114,
+              "syn:4942028": 0.03163957499522897,
+              "syn:4942029": 0.03144610053068184,
+              "syn:4942030": 0.027358444213451877,
+              "syn:4942031": 0.0315681566319444
+            },
+            "pca_k8": {
+              "m4_hourly:T000066": 0.0031015836650452196,
+              "m4_hourly:T000212": 0.002456273720501081,
+              "m4_hourly:T000235": 0.002543739799672114,
+              "m4_hourly:T000262": 0.002851361274674514,
+              "monash_electricity_hourly:T000068": 0.0043716474089188035,
+              "monash_electricity_hourly:T000129": 0.00522994176546185,
+              "monash_electricity_hourly:T000140": 0.003067956807460008,
+              "monash_electricity_hourly:T000241": 0.0037786408385493573,
+              "monash_pedestrian_counts:T000013": 0.005774202584855795,
+              "monash_pedestrian_counts:T000019": 0.0033046888485828907,
+              "monash_pedestrian_counts:T000034": 0.0032229856987272872,
+              "monash_pedestrian_counts:T000050": 0.0034008510099336944,
+              "monash_traffic:T000026": 0.005264205332823644,
+              "monash_traffic:T000600": 0.0024614989430736434,
+              "monash_traffic:T000772": 0.002490886587333552,
+              "monash_traffic:T000784": 0.003387275986723986,
+              "syn:4942016": 0.0022080293464213996,
+              "syn:4942017": 0.002058040156994878,
+              "syn:4942018": 0.0022517465944487227,
+              "syn:4942019": 0.002544252321320198,
+              "syn:4942020": 0.0022244592656050595,
+              "syn:4942021": 0.0020204030681498244,
+              "syn:4942022": 0.0021246774076149927,
+              "syn:4942023": 0.0021349733070290936,
+              "syn:4942024": 0.002261545214096937,
+              "syn:4942025": 0.0025279717138407378,
+              "syn:4942026": 0.0020616240702000382,
+              "syn:4942027": 0.002167347575272335,
+              "syn:4942028": 0.0024927500253706823,
+              "syn:4942029": 0.0021967109652638204,
+              "syn:4942030": 0.001993303394439257,
+              "syn:4942031": 0.0025694839426735716
+            },
+            "pca_k16": {
+              "m4_hourly:T000066": 0.0011132491450017924,
+              "m4_hourly:T000212": 0.0009129782968244064,
+              "m4_hourly:T000235": 0.0009447951712373485,
+              "m4_hourly:T000262": 0.0010409097339682911,
+              "monash_electricity_hourly:T000068": 0.0021289670715311224,
+              "monash_electricity_hourly:T000129": 0.0026552053837899936,
+              "monash_electricity_hourly:T000140": 0.0013278530909238556,
+              "monash_electricity_hourly:T000241": 0.0017760475517810937,
+              "monash_pedestrian_counts:T000013": 0.0029575694589732433,
+              "monash_pedestrian_counts:T000019": 0.0014441438985692782,
+              "monash_pedestrian_counts:T000034": 0.0011711913498317283,
+              "monash_pedestrian_counts:T000050": 0.0014349525654528824,
+              "monash_traffic:T000026": 0.002602340844535025,
+              "monash_traffic:T000600": 0.000914703599315264,
+              "monash_traffic:T000772": 0.000991456282828008,
+              "monash_traffic:T000784": 0.0013974964379038176,
+              "syn:4942016": 0.0008752248387529262,
+              "syn:4942017": 0.000845856811954465,
+              "syn:4942018": 0.00088998297262398,
+              "syn:4942019": 0.0009422905681297208,
+              "syn:4942020": 0.0008948613883772277,
+              "syn:4942021": 0.000836940524191342,
+              "syn:4942022": 0.0008035605571939027,
+              "syn:4942023": 0.0008437840366384414,
+              "syn:4942024": 0.0008993389839188255,
+              "syn:4942025": 0.0009664623230246474,
+              "syn:4942026": 0.0007852005378841485,
+              "syn:4942027": 0.0008503598928135302,
+              "syn:4942028": 0.0009572162666335058,
+              "syn:4942029": 0.0008973300862839886,
+              "syn:4942030": 0.0007573755570161591,
+              "syn:4942031": 0.0010033687400180745
+            }
+          }
+        },
+        "m4_hourly": {
+          "n_sources": 4,
+          "rows": 8,
+          "test_variance_about_domain_test_global_mean": 0.13560174666074265,
+          "mse": {
+            "global_fit_mean": 0.1386154012114026,
+            "position_conditioned_fit_mean": 0.02591612466754361,
+            "pca_k8": 0.0027382396149732324,
+            "pca_k16": 0.0010029830867579596
+          },
+          "mse_over_test_variance": {
+            "global_fit_mean": 1.022224304810761,
+            "position_conditioned_fit_mean": 0.19111940152498383,
+            "pca_k8": 0.020193247376259393,
+            "pca_k16": 0.0073965351587047656
+          },
+          "mse_over_global_fit_mean_error": {
+            "global_fit_mean": 1.0,
+            "position_conditioned_fit_mean": 0.18696425102156494,
+            "pca_k8": 0.019754223492071697,
+            "pca_k16": 0.007235726174671661
+          },
+          "reduction_over_global_fit_mean": {
+            "global_fit_mean": 0.0,
+            "position_conditioned_fit_mean": 0.813035748978435,
+            "pca_k8": 0.9802457765079283,
+            "pca_k16": 0.9927642738253284
+          },
+          "per_source_mse": {
+            "global_fit_mean": {
+              "m4_hourly:T000066": 0.1744117789013556,
+              "m4_hourly:T000212": 0.11009066277328605,
+              "m4_hourly:T000235": 0.14317093005100312,
+              "m4_hourly:T000262": 0.12678823311996557
+            },
+            "position_conditioned_fit_mean": {
+              "m4_hourly:T000066": 0.031019383926473396,
+              "m4_hourly:T000212": 0.02456710821548265,
+              "m4_hourly:T000235": 0.024678675628964204,
+              "m4_hourly:T000262": 0.023399330899254188
+            },
+            "pca_k8": {
+              "m4_hourly:T000066": 0.0031015836650452196,
+              "m4_hourly:T000212": 0.002456273720501081,
+              "m4_hourly:T000235": 0.002543739799672114,
+              "m4_hourly:T000262": 0.002851361274674514
+            },
+            "pca_k16": {
+              "m4_hourly:T000066": 0.0011132491450017924,
+              "m4_hourly:T000212": 0.0009129782968244064,
+              "m4_hourly:T000235": 0.0009447951712373485,
+              "m4_hourly:T000262": 0.0010409097339682911
+            }
+          }
+        },
+        "monash_electricity_hourly": {
+          "n_sources": 4,
+          "rows": 8,
+          "test_variance_about_domain_test_global_mean": 0.13668046907878825,
+          "mse": {
+            "global_fit_mean": 0.13787037713943365,
+            "position_conditioned_fit_mean": 0.022630694297449832,
+            "pca_k8": 0.004112046705097505,
+            "pca_k16": 0.0019720182745065163
+          },
+          "mse_over_test_variance": {
+            "global_fit_mean": 1.0087057651225904,
+            "position_conditioned_fit_mean": 0.16557372424881397,
+            "pca_k8": 0.030085108229524378,
+            "pca_k16": 0.01442794488340367
+          },
+          "mse_over_global_fit_mean_error": {
+            "global_fit_mean": 1.0,
+            "position_conditioned_fit_mean": 0.16414471888012996,
+            "pca_k8": 0.029825454825142265,
+            "pca_k16": 0.014303422645403645
+          },
+          "reduction_over_global_fit_mean": {
+            "global_fit_mean": 0.0,
+            "position_conditioned_fit_mean": 0.8358552811198701,
+            "pca_k8": 0.9701745451748577,
+            "pca_k16": 0.9856965773545964
+          },
+          "per_source_mse": {
+            "global_fit_mean": {
+              "monash_electricity_hourly:T000068": 0.13648495550200404,
+              "monash_electricity_hourly:T000129": 0.1464587643659555,
+              "monash_electricity_hourly:T000140": 0.13187748462758822,
+              "monash_electricity_hourly:T000241": 0.1366603040621869
+            },
+            "position_conditioned_fit_mean": {
+              "monash_electricity_hourly:T000068": 0.02385661878109199,
+              "monash_electricity_hourly:T000129": 0.030867757887620383,
+              "monash_electricity_hourly:T000140": 0.01787874173324541,
+              "monash_electricity_hourly:T000241": 0.017919658787841547
+            },
+            "pca_k8": {
+              "monash_electricity_hourly:T000068": 0.0043716474089188035,
+              "monash_electricity_hourly:T000129": 0.00522994176546185,
+              "monash_electricity_hourly:T000140": 0.003067956807460008,
+              "monash_electricity_hourly:T000241": 0.0037786408385493573
+            },
+            "pca_k16": {
+              "monash_electricity_hourly:T000068": 0.0021289670715311224,
+              "monash_electricity_hourly:T000129": 0.0026552053837899936,
+              "monash_electricity_hourly:T000140": 0.0013278530909238556,
+              "monash_electricity_hourly:T000241": 0.0017760475517810937
+            }
+          }
+        },
+        "monash_pedestrian_counts": {
+          "n_sources": 4,
+          "rows": 8,
+          "test_variance_about_domain_test_global_mean": 0.12730413783100752,
+          "mse": {
+            "global_fit_mean": 0.12860885393926524,
+            "position_conditioned_fit_mean": 0.022114559301937592,
+            "pca_k8": 0.003925682035524917,
+            "pca_k16": 0.001751964318206783
+          },
+          "mse_over_test_variance": {
+            "global_fit_mean": 1.0102488114721746,
+            "position_conditioned_fit_mean": 0.17371437942805923,
+            "pca_k8": 0.03083703406982846,
+            "pca_k16": 0.013762037495846865
+          },
+          "mse_over_global_fit_mean_error": {
+            "global_fit_mean": 1.0,
+            "position_conditioned_fit_mean": 0.17195207502883947,
+            "pca_k8": 0.030524197326093867,
+            "pca_k16": 0.013622423842095176
+          },
+          "reduction_over_global_fit_mean": {
+            "global_fit_mean": 0.0,
+            "position_conditioned_fit_mean": 0.8280479249711605,
+            "pca_k8": 0.9694758026739061,
+            "pca_k16": 0.9863775761579048
+          },
+          "per_source_mse": {
+            "global_fit_mean": {
+              "monash_pedestrian_counts:T000013": 0.12615519705867023,
+              "monash_pedestrian_counts:T000019": 0.1371698812218276,
+              "monash_pedestrian_counts:T000034": 0.13007386262246223,
+              "monash_pedestrian_counts:T000050": 0.12103647485410085
+            },
+            "position_conditioned_fit_mean": {
+              "monash_pedestrian_counts:T000013": 0.026773892411844927,
+              "monash_pedestrian_counts:T000019": 0.019785566004382506,
+              "monash_pedestrian_counts:T000034": 0.023254281058140036,
+              "monash_pedestrian_counts:T000050": 0.018644497733382892
+            },
+            "pca_k8": {
+              "monash_pedestrian_counts:T000013": 0.005774202584855795,
+              "monash_pedestrian_counts:T000019": 0.0033046888485828907,
+              "monash_pedestrian_counts:T000034": 0.0032229856987272872,
+              "monash_pedestrian_counts:T000050": 0.0034008510099336944
+            },
+            "pca_k16": {
+              "monash_pedestrian_counts:T000013": 0.0029575694589732433,
+              "monash_pedestrian_counts:T000019": 0.0014441438985692782,
+              "monash_pedestrian_counts:T000034": 0.0011711913498317283,
+              "monash_pedestrian_counts:T000050": 0.0014349525654528824
+            }
+          }
+        },
+        "monash_traffic": {
+          "n_sources": 4,
+          "rows": 8,
+          "test_variance_about_domain_test_global_mean": 0.11811343207861628,
+          "mse": {
+            "global_fit_mean": 0.119453787790402,
+            "position_conditioned_fit_mean": 0.020113934081980717,
+            "pca_k8": 0.003400966712488706,
+            "pca_k16": 0.0014764992911455287
+          },
+          "mse_over_test_variance": {
+            "global_fit_mean": 1.0113480379682267,
+            "position_conditioned_fit_mean": 0.1702933673842691,
+            "pca_k8": 0.02879407238141233,
+            "pca_k16": 0.012500689084733148
+          },
+          "mse_over_global_fit_mean_error": {
+            "global_fit_mean": 1.0,
+            "position_conditioned_fit_mean": 0.16838255574844863,
+            "pca_k8": 0.028470982589988415,
+            "pca_k16": 0.0123604225404409
+          },
+          "reduction_over_global_fit_mean": {
+            "global_fit_mean": 0.0,
+            "position_conditioned_fit_mean": 0.8316174442515514,
+            "pca_k8": 0.9715290174100116,
+            "pca_k16": 0.9876395774595591
+          },
+          "per_source_mse": {
+            "global_fit_mean": {
+              "monash_traffic:T000026": 0.1225404882268522,
+              "monash_traffic:T000600": 0.11076042521392807,
+              "monash_traffic:T000772": 0.12424283693067051,
+              "monash_traffic:T000784": 0.12027140079015722
+            },
+            "position_conditioned_fit_mean": {
+              "monash_traffic:T000026": 0.020599499191395518,
+              "monash_traffic:T000600": 0.020996462026150804,
+              "monash_traffic:T000772": 0.01929541566409338,
+              "monash_traffic:T000784": 0.019564359446283163
+            },
+            "pca_k8": {
+              "monash_traffic:T000026": 0.005264205332823644,
+              "monash_traffic:T000600": 0.0024614989430736434,
+              "monash_traffic:T000772": 0.002490886587333552,
+              "monash_traffic:T000784": 0.003387275986723986
+            },
+            "pca_k16": {
+              "monash_traffic:T000026": 0.002602340844535025,
+              "monash_traffic:T000600": 0.000914703599315264,
+              "monash_traffic:T000772": 0.000991456282828008,
+              "monash_traffic:T000784": 0.0013974964379038176
+            }
+          }
+        },
+        "synthetic": {
+          "n_sources": 16,
+          "rows": 80,
+          "test_variance_about_domain_test_global_mean": 0.1327383983779224,
+          "mse": {
+            "global_fit_mean": 0.13362721700857164,
+            "position_conditioned_fit_mean": 0.029452382794118923,
+            "pca_k8": 0.0022398323980463465,
+            "pca_k16": 0.0008780721303409304
+          },
+          "mse_over_test_variance": {
+            "global_fit_mean": 1.0066960174411528,
+            "position_conditioned_fit_mean": 0.22188291522295153,
+            "pca_k8": 0.016874035135404232,
+            "pca_k16": 0.0066150574443496896
+          },
+          "mse_over_global_fit_mean_error": {
+            "global_fit_mean": 1.0,
+            "position_conditioned_fit_mean": 0.2204070656670914,
+            "pca_k8": 0.016761797844691104,
+            "pca_k16": 0.006571057528531823
+          },
+          "reduction_over_global_fit_mean": {
+            "global_fit_mean": 0.0,
+            "position_conditioned_fit_mean": 0.7795929343329087,
+            "pca_k8": 0.9832382021553089,
+            "pca_k16": 0.9934289424714682
+          },
+          "per_source_mse": {
+            "global_fit_mean": {
+              "syn:4942016": 0.1515538762750018,
+              "syn:4942017": 0.1434848884235292,
+              "syn:4942018": 0.13203483982478395,
+              "syn:4942019": 0.13091558561543887,
+              "syn:4942020": 0.13756520768391206,
+              "syn:4942021": 0.14288117574556786,
+              "syn:4942022": 0.13965822823931456,
+              "syn:4942023": 0.1211722110831807,
+              "syn:4942024": 0.1334278952414675,
+              "syn:4942025": 0.12146405628833046,
+              "syn:4942026": 0.12949384557004928,
+              "syn:4942027": 0.1245492530082635,
+              "syn:4942028": 0.11611010567130106,
+              "syn:4942029": 0.15419634089947173,
+              "syn:4942030": 0.14110543395166739,
+              "syn:4942031": 0.11842252861586641
+            },
+            "position_conditioned_fit_mean": {
+              "syn:4942016": 0.02801168579428087,
+              "syn:4942017": 0.027079439982492248,
+              "syn:4942018": 0.030074943378581114,
+              "syn:4942019": 0.030120373300076574,
+              "syn:4942020": 0.030508583575889404,
+              "syn:4942021": 0.026378916933547953,
+              "syn:4942022": 0.031026164171268876,
+              "syn:4942023": 0.028674808271240138,
+              "syn:4942024": 0.030312839523473818,
+              "syn:4942025": 0.030131339387861944,
+              "syn:4942026": 0.028826402359064567,
+              "syn:4942027": 0.028080351656818114,
+              "syn:4942028": 0.03163957499522897,
+              "syn:4942029": 0.03144610053068184,
+              "syn:4942030": 0.027358444213451877,
+              "syn:4942031": 0.0315681566319444
+            },
+            "pca_k8": {
+              "syn:4942016": 0.0022080293464213996,
+              "syn:4942017": 0.002058040156994878,
+              "syn:4942018": 0.0022517465944487227,
+              "syn:4942019": 0.002544252321320198,
+              "syn:4942020": 0.0022244592656050595,
+              "syn:4942021": 0.0020204030681498244,
+              "syn:4942022": 0.0021246774076149927,
+              "syn:4942023": 0.0021349733070290936,
+              "syn:4942024": 0.002261545214096937,
+              "syn:4942025": 0.0025279717138407378,
+              "syn:4942026": 0.0020616240702000382,
+              "syn:4942027": 0.002167347575272335,
+              "syn:4942028": 0.0024927500253706823,
+              "syn:4942029": 0.0021967109652638204,
+              "syn:4942030": 0.001993303394439257,
+              "syn:4942031": 0.0025694839426735716
+            },
+            "pca_k16": {
+              "syn:4942016": 0.0008752248387529262,
+              "syn:4942017": 0.000845856811954465,
+              "syn:4942018": 0.00088998297262398,
+              "syn:4942019": 0.0009422905681297208,
+              "syn:4942020": 0.0008948613883772277,
+              "syn:4942021": 0.000836940524191342,
+              "syn:4942022": 0.0008035605571939027,
+              "syn:4942023": 0.0008437840366384414,
+              "syn:4942024": 0.0008993389839188255,
+              "syn:4942025": 0.0009664623230246474,
+              "syn:4942026": 0.0007852005378841485,
+              "syn:4942027": 0.0008503598928135302,
+              "syn:4942028": 0.0009572162666335058,
+              "syn:4942029": 0.0008973300862839886,
+              "syn:4942030": 0.0007573755570161591,
+              "syn:4942031": 0.0010033687400180745
+            }
+          }
+        }
+      },
+      "timesfm": {
+        "ALL": {
+          "n_sources": 32,
+          "rows": 112,
+          "test_variance_about_domain_test_global_mean": 1.7711811385601628,
+          "mse": {
+            "global_fit_mean": 1.775596362069641,
+            "position_conditioned_fit_mean": 1.5961365596425245,
+            "pca_k8": 0.15288755863176537,
+            "pca_k16": 0.07563915587459949
+          },
+          "mse_over_test_variance": {
+            "global_fit_mean": 1.0024928130801278,
+            "position_conditioned_fit_mean": 0.9011707074410603,
+            "pca_k8": 0.08631954987734991,
+            "pca_k16": 0.042705488573624065
+          },
+          "mse_over_global_fit_mean_error": {
+            "global_fit_mean": 1.0,
+            "position_conditioned_fit_mean": 0.8989298433693919,
+            "pca_k8": 0.08610490644031232,
+            "pca_k16": 0.04259929649012923
+          },
+          "reduction_over_global_fit_mean": {
+            "global_fit_mean": 0.0,
+            "position_conditioned_fit_mean": 0.10107015663060814,
+            "pca_k8": 0.9138950935596877,
+            "pca_k16": 0.9574007035098707
+          },
+          "per_source_mse": {
+            "global_fit_mean": {
+              "m4_hourly:T000066": 1.2871848530754222,
+              "m4_hourly:T000212": 1.4063363304380871,
+              "m4_hourly:T000235": 1.363408282217852,
+              "m4_hourly:T000262": 1.346786900110919,
+              "monash_electricity_hourly:T000068": 1.5129916282855906,
+              "monash_electricity_hourly:T000129": 1.233093247921239,
+              "monash_electricity_hourly:T000140": 1.3421901498104638,
+              "monash_electricity_hourly:T000241": 1.4177748291894923,
+              "monash_pedestrian_counts:T000013": 1.7121675351030723,
+              "monash_pedestrian_counts:T000019": 1.531702226343648,
+              "monash_pedestrian_counts:T000034": 1.3518643350072237,
+              "monash_pedestrian_counts:T000050": 1.4169655091948177,
+              "monash_traffic:T000026": 1.789025104727743,
+              "monash_traffic:T000600": 1.4336142046609486,
+              "monash_traffic:T000772": 1.445714596703975,
+              "monash_traffic:T000784": 1.5209981473211762,
+              "syn:4942016": 2.0701982270484036,
+              "syn:4942017": 2.107269738836228,
+              "syn:4942018": 2.182840040840349,
+              "syn:4942019": 2.170163244128509,
+              "syn:4942020": 2.0501948042496125,
+              "syn:4942021": 2.1146675957671,
+              "syn:4942022": 2.1478799788361322,
+              "syn:4942023": 2.108320663104264,
+              "syn:4942024": 2.0525466294824635,
+              "syn:4942025": 2.1014396720485466,
+              "syn:4942026": 2.088387909308694,
+              "syn:4942027": 2.0277009162670994,
+              "syn:4942028": 2.117417162802302,
+              "syn:4942029": 2.1654684022257062,
+              "syn:4942030": 2.069386896576742,
+              "syn:4942031": 2.1333838245946977
+            },
+            "position_conditioned_fit_mean": {
+              "m4_hourly:T000066": 0.8266086267521231,
+              "m4_hourly:T000212": 0.8965027651902201,
+              "m4_hourly:T000235": 0.8313113469075097,
+              "m4_hourly:T000262": 0.8106220189688615,
+              "monash_electricity_hourly:T000068": 1.2820109190819764,
+              "monash_electricity_hourly:T000129": 1.1532370225728075,
+              "monash_electricity_hourly:T000140": 0.8819554740103912,
+              "monash_electricity_hourly:T000241": 1.004244865940352,
+              "monash_pedestrian_counts:T000013": 1.322602607223671,
+              "monash_pedestrian_counts:T000019": 0.992801071349917,
+              "monash_pedestrian_counts:T000034": 0.8701516794683191,
+              "monash_pedestrian_counts:T000050": 0.8999982529179704,
+              "monash_traffic:T000026": 1.3622924037563813,
+              "monash_traffic:T000600": 0.8638588032800716,
+              "monash_traffic:T000772": 0.8648739270473976,
+              "monash_traffic:T000784": 0.9704908573932103,
+              "syn:4942016": 2.005346193017652,
+              "syn:4942017": 2.029751077579859,
+              "syn:4942018": 2.315624765917999,
+              "syn:4942019": 2.3157895604651912,
+              "syn:4942020": 2.210302652819857,
+              "syn:4942021": 2.028057643377179,
+              "syn:4942022": 2.257849253431675,
+              "syn:4942023": 2.1853895733568924,
+              "syn:4942024": 2.228962138463618,
+              "syn:4942025": 2.292246205275334,
+              "syn:4942026": 2.2063821239687593,
+              "syn:4942027": 2.1204716578061658,
+              "syn:4942028": 2.3961397655372956,
+              "syn:4942029": 2.1809335225610775,
+              "syn:4942030": 2.0503216618530216,
+              "syn:4942031": 2.419239471268032
+            },
+            "pca_k8": {
+              "m4_hourly:T000066": 0.11703841945152585,
+              "m4_hourly:T000212": 0.10527654325489962,
+              "m4_hourly:T000235": 0.10553000401048201,
+              "m4_hourly:T000262": 0.10861296482313144,
+              "monash_electricity_hourly:T000068": 0.4128927843072099,
+              "monash_electricity_hourly:T000129": 0.3387593971885269,
+              "monash_electricity_hourly:T000140": 0.1924461643861953,
+              "monash_electricity_hourly:T000241": 0.2972763808463763,
+              "monash_pedestrian_counts:T000013": 0.41364801195030554,
+              "monash_pedestrian_counts:T000019": 0.22316645750291336,
+              "monash_pedestrian_counts:T000034": 0.13160917912187642,
+              "monash_pedestrian_counts:T000050": 0.1948787996513697,
+              "monash_traffic:T000026": 0.3148766472539229,
+              "monash_traffic:T000600": 0.10840708836360356,
+              "monash_traffic:T000772": 0.12332801704905966,
+              "monash_traffic:T000784": 0.16231460809473394,
+              "syn:4942016": 0.08356031895927443,
+              "syn:4942017": 0.09307180163114696,
+              "syn:4942018": 0.10399788407102868,
+              "syn:4942019": 0.10234573435053532,
+              "syn:4942020": 0.10180822945040875,
+              "syn:4942021": 0.09336012634470718,
+              "syn:4942022": 0.08716883533486537,
+              "syn:4942023": 0.09392093808664223,
+              "syn:4942024": 0.0991960708466985,
+              "syn:4942025": 0.10660951305232529,
+              "syn:4942026": 0.09095530499711452,
+              "syn:4942027": 0.09870444632664578,
+              "syn:4942028": 0.10294010721107287,
+              "syn:4942029": 0.09240789117135063,
+              "syn:4942030": 0.08536079615025834,
+              "syn:4942031": 0.10693241097628421
+            },
+            "pca_k16": {
+              "m4_hourly:T000066": 0.05152918612844246,
+              "m4_hourly:T000212": 0.046945407807047666,
+              "m4_hourly:T000235": 0.041341516301853204,
+              "m4_hourly:T000262": 0.04025805695029383,
+              "monash_electricity_hourly:T000068": 0.2411912903374443,
+              "monash_electricity_hourly:T000129": 0.20554027783765494,
+              "monash_electricity_hourly:T000140": 0.08918366056635682,
+              "monash_electricity_hourly:T000241": 0.1416379131946178,
+              "monash_pedestrian_counts:T000013": 0.2746459578286624,
+              "monash_pedestrian_counts:T000019": 0.1302084772751065,
+              "monash_pedestrian_counts:T000034": 0.059439414013177545,
+              "monash_pedestrian_counts:T000050": 0.1113863722454751,
+              "monash_traffic:T000026": 0.16663538245968107,
+              "monash_traffic:T000600": 0.04516070135929158,
+              "monash_traffic:T000772": 0.0525829283510065,
+              "monash_traffic:T000784": 0.07084337470467589,
+              "syn:4942016": 0.035703746372706444,
+              "syn:4942017": 0.03938003739079203,
+              "syn:4942018": 0.04416618881552312,
+              "syn:4942019": 0.04300262701222933,
+              "syn:4942020": 0.04206253510441569,
+              "syn:4942021": 0.04071185857816976,
+              "syn:4942022": 0.03638814277939804,
+              "syn:4942023": 0.03857096038032254,
+              "syn:4942024": 0.041909583869175905,
+              "syn:4942025": 0.046197182296524565,
+              "syn:4942026": 0.03634589785027673,
+              "syn:4942027": 0.0413954371164294,
+              "syn:4942028": 0.04607639142232067,
+              "syn:4942029": 0.0391281499165398,
+              "syn:4942030": 0.034084420149268824,
+              "syn:4942031": 0.046799911572302746
+            }
+          }
+        },
+        "m4_hourly": {
+          "n_sources": 4,
+          "rows": 8,
+          "test_variance_about_domain_test_global_mean": 1.2273462912833701,
+          "mse": {
+            "global_fit_mean": 1.35092909146057,
+            "position_conditioned_fit_mean": 0.8412611894546786,
+            "pca_k8": 0.10911448288500973,
+            "pca_k16": 0.04501854179690929
+          },
+          "mse_over_test_variance": {
+            "global_fit_mean": 1.1006910609131968,
+            "position_conditioned_fit_mean": 0.6854309948458124,
+            "pca_k8": 0.08890276824066871,
+            "pca_k16": 0.03667957618532893
+          },
+          "mse_over_global_fit_mean_error": {
+            "global_fit_mean": 1.0,
+            "position_conditioned_fit_mean": 0.6227278654167858,
+            "pca_k8": 0.08076995571028792,
+            "pca_k16": 0.03332413379908568
+          },
+          "reduction_over_global_fit_mean": {
+            "global_fit_mean": 0.0,
+            "position_conditioned_fit_mean": 0.3772721345832142,
+            "pca_k8": 0.9192300442897121,
+            "pca_k16": 0.9666758662009143
+          },
+          "per_source_mse": {
+            "global_fit_mean": {
+              "m4_hourly:T000066": 1.2871848530754222,
+              "m4_hourly:T000212": 1.4063363304380871,
+              "m4_hourly:T000235": 1.363408282217852,
+              "m4_hourly:T000262": 1.346786900110919
+            },
+            "position_conditioned_fit_mean": {
+              "m4_hourly:T000066": 0.8266086267521231,
+              "m4_hourly:T000212": 0.8965027651902201,
+              "m4_hourly:T000235": 0.8313113469075097,
+              "m4_hourly:T000262": 0.8106220189688615
+            },
+            "pca_k8": {
+              "m4_hourly:T000066": 0.11703841945152585,
+              "m4_hourly:T000212": 0.10527654325489962,
+              "m4_hourly:T000235": 0.10553000401048201,
+              "m4_hourly:T000262": 0.10861296482313144
+            },
+            "pca_k16": {
+              "m4_hourly:T000066": 0.05152918612844246,
+              "m4_hourly:T000212": 0.046945407807047666,
+              "m4_hourly:T000235": 0.041341516301853204,
+              "m4_hourly:T000262": 0.04025805695029383
+            }
+          }
+        },
+        "monash_electricity_hourly": {
+          "n_sources": 4,
+          "rows": 8,
+          "test_variance_about_domain_test_global_mean": 1.2814713843892265,
+          "mse": {
+            "global_fit_mean": 1.3765124638016966,
+            "position_conditioned_fit_mean": 1.0803620704013819,
+            "pca_k8": 0.3103436816820771,
+            "pca_k16": 0.16938828548401846
+          },
+          "mse_over_test_variance": {
+            "global_fit_mean": 1.0741655885338153,
+            "position_conditioned_fit_mean": 0.843063749657042,
+            "pca_k8": 0.24217761353289427,
+            "pca_k16": 0.13218265155780448
+          },
+          "mse_over_global_fit_mean_error": {
+            "global_fit_mean": 1.0,
+            "position_conditioned_fit_mean": 0.7848545500398907,
+            "pca_k8": 0.2254564995546498,
+            "pca_k16": 0.12305612185755037
+          },
+          "reduction_over_global_fit_mean": {
+            "global_fit_mean": 0.0,
+            "position_conditioned_fit_mean": 0.21514544996010931,
+            "pca_k8": 0.7745435004453503,
+            "pca_k16": 0.8769438781424497
+          },
+          "per_source_mse": {
+            "global_fit_mean": {
+              "monash_electricity_hourly:T000068": 1.5129916282855906,
+              "monash_electricity_hourly:T000129": 1.233093247921239,
+              "monash_electricity_hourly:T000140": 1.3421901498104638,
+              "monash_electricity_hourly:T000241": 1.4177748291894923
+            },
+            "position_conditioned_fit_mean": {
+              "monash_electricity_hourly:T000068": 1.2820109190819764,
+              "monash_electricity_hourly:T000129": 1.1532370225728075,
+              "monash_electricity_hourly:T000140": 0.8819554740103912,
+              "monash_electricity_hourly:T000241": 1.004244865940352
+            },
+            "pca_k8": {
+              "monash_electricity_hourly:T000068": 0.4128927843072099,
+              "monash_electricity_hourly:T000129": 0.3387593971885269,
+              "monash_electricity_hourly:T000140": 0.1924461643861953,
+              "monash_electricity_hourly:T000241": 0.2972763808463763
+            },
+            "pca_k16": {
+              "monash_electricity_hourly:T000068": 0.2411912903374443,
+              "monash_electricity_hourly:T000129": 0.20554027783765494,
+              "monash_electricity_hourly:T000140": 0.08918366056635682,
+              "monash_electricity_hourly:T000241": 0.1416379131946178
+            }
+          }
+        },
+        "monash_pedestrian_counts": {
+          "n_sources": 4,
+          "rows": 8,
+          "test_variance_about_domain_test_global_mean": 1.3807223544176686,
+          "mse": {
+            "global_fit_mean": 1.5031749014121902,
+            "position_conditioned_fit_mean": 1.0213884027399693,
+            "pca_k8": 0.24082561205661626,
+            "pca_k16": 0.1439200553406054
+          },
+          "mse_over_test_variance": {
+            "global_fit_mean": 1.0886873067584737,
+            "position_conditioned_fit_mean": 0.7397493054791227,
+            "pca_k8": 0.17442001376025126,
+            "pca_k16": 0.104235333686116
+          },
+          "mse_over_global_fit_mean_error": {
+            "global_fit_mean": 1.0,
+            "position_conditioned_fit_mean": 0.6794873981599905,
+            "pca_k8": 0.16021130463951164,
+            "pca_k16": 0.09574405161062534
+          },
+          "reduction_over_global_fit_mean": {
+            "global_fit_mean": 0.0,
+            "position_conditioned_fit_mean": 0.3205126018400095,
+            "pca_k8": 0.8397886953604884,
+            "pca_k16": 0.9042559483893746
+          },
+          "per_source_mse": {
+            "global_fit_mean": {
+              "monash_pedestrian_counts:T000013": 1.7121675351030723,
+              "monash_pedestrian_counts:T000019": 1.531702226343648,
+              "monash_pedestrian_counts:T000034": 1.3518643350072237,
+              "monash_pedestrian_counts:T000050": 1.4169655091948177
+            },
+            "position_conditioned_fit_mean": {
+              "monash_pedestrian_counts:T000013": 1.322602607223671,
+              "monash_pedestrian_counts:T000019": 0.992801071349917,
+              "monash_pedestrian_counts:T000034": 0.8701516794683191,
+              "monash_pedestrian_counts:T000050": 0.8999982529179704
+            },
+            "pca_k8": {
+              "monash_pedestrian_counts:T000013": 0.41364801195030554,
+              "monash_pedestrian_counts:T000019": 0.22316645750291336,
+              "monash_pedestrian_counts:T000034": 0.13160917912187642,
+              "monash_pedestrian_counts:T000050": 0.1948787996513697
+            },
+            "pca_k16": {
+              "monash_pedestrian_counts:T000013": 0.2746459578286624,
+              "monash_pedestrian_counts:T000019": 0.1302084772751065,
+              "monash_pedestrian_counts:T000034": 0.059439414013177545,
+              "monash_pedestrian_counts:T000050": 0.1113863722454751
+            }
+          }
+        },
+        "monash_traffic": {
+          "n_sources": 4,
+          "rows": 8,
+          "test_variance_about_domain_test_global_mean": 1.4275801938722832,
+          "mse": {
+            "global_fit_mean": 1.5473380133534607,
+            "position_conditioned_fit_mean": 1.015378997869265,
+            "pca_k8": 0.17723159019033002,
+            "pca_k16": 0.08380559671866376
+          },
+          "mse_over_test_variance": {
+            "global_fit_mean": 1.0838886809968529,
+            "position_conditioned_fit_mean": 0.7112588156011534,
+            "pca_k8": 0.12414825517408785,
+            "pca_k16": 0.05870465076385147
+          },
+          "mse_over_global_fit_mean_error": {
+            "global_fit_mean": 1.0,
+            "position_conditioned_fit_mean": 0.656210206888597,
+            "pca_k8": 0.11453967307778197,
+            "pca_k16": 0.05416114384538159
+          },
+          "reduction_over_global_fit_mean": {
+            "global_fit_mean": 0.0,
+            "position_conditioned_fit_mean": 0.343789793111403,
+            "pca_k8": 0.885460326922218,
+            "pca_k16": 0.9458388561546184
+          },
+          "per_source_mse": {
+            "global_fit_mean": {
+              "monash_traffic:T000026": 1.789025104727743,
+              "monash_traffic:T000600": 1.4336142046609486,
+              "monash_traffic:T000772": 1.445714596703975,
+              "monash_traffic:T000784": 1.5209981473211762
+            },
+            "position_conditioned_fit_mean": {
+              "monash_traffic:T000026": 1.3622924037563813,
+              "monash_traffic:T000600": 0.8638588032800716,
+              "monash_traffic:T000772": 0.8648739270473976,
+              "monash_traffic:T000784": 0.9704908573932103
+            },
+            "pca_k8": {
+              "monash_traffic:T000026": 0.3148766472539229,
+              "monash_traffic:T000600": 0.10840708836360356,
+              "monash_traffic:T000772": 0.12332801704905966,
+              "monash_traffic:T000784": 0.16231460809473394
+            },
+            "pca_k16": {
+              "monash_traffic:T000026": 0.16663538245968107,
+              "monash_traffic:T000600": 0.04516070135929158,
+              "monash_traffic:T000772": 0.0525829283510065,
+              "monash_traffic:T000784": 0.07084337470467589
+            }
+          }
+        },
+        "synthetic": {
+          "n_sources": 16,
+          "rows": 80,
+          "test_variance_about_domain_test_global_mean": 2.055445703403135,
+          "mse": {
+            "global_fit_mean": 2.106704106632303,
+            "position_conditioned_fit_mean": 2.2026754541687255,
+            "pca_k8": 0.09639627556002243,
+            "pca_k16": 0.04074519191414973
+          },
+          "mse_over_test_variance": {
+            "global_fit_mean": 1.024937853208334,
+            "position_conditioned_fit_mean": 1.0716291121297083,
+            "pca_k8": 0.04689799171071376,
+            "pca_k16": 0.01982304463050969
+          },
+          "mse_over_global_fit_mean_error": {
+            "global_fit_mean": 1.0,
+            "position_conditioned_fit_mean": 1.0455552097868355,
+            "pca_k8": 0.04575691254246324,
+            "pca_k16": 0.019340728385099815
+          },
+          "reduction_over_global_fit_mean": {
+            "global_fit_mean": 0.0,
+            "position_conditioned_fit_mean": -0.04555520978683547,
+            "pca_k8": 0.9542430874575367,
+            "pca_k16": 0.9806592716149002
+          },
+          "per_source_mse": {
+            "global_fit_mean": {
+              "syn:4942016": 2.0701982270484036,
+              "syn:4942017": 2.107269738836228,
+              "syn:4942018": 2.182840040840349,
+              "syn:4942019": 2.170163244128509,
+              "syn:4942020": 2.0501948042496125,
+              "syn:4942021": 2.1146675957671,
+              "syn:4942022": 2.1478799788361322,
+              "syn:4942023": 2.108320663104264,
+              "syn:4942024": 2.0525466294824635,
+              "syn:4942025": 2.1014396720485466,
+              "syn:4942026": 2.088387909308694,
+              "syn:4942027": 2.0277009162670994,
+              "syn:4942028": 2.117417162802302,
+              "syn:4942029": 2.1654684022257062,
+              "syn:4942030": 2.069386896576742,
+              "syn:4942031": 2.1333838245946977
+            },
+            "position_conditioned_fit_mean": {
+              "syn:4942016": 2.005346193017652,
+              "syn:4942017": 2.029751077579859,
+              "syn:4942018": 2.315624765917999,
+              "syn:4942019": 2.3157895604651912,
+              "syn:4942020": 2.210302652819857,
+              "syn:4942021": 2.028057643377179,
+              "syn:4942022": 2.257849253431675,
+              "syn:4942023": 2.1853895733568924,
+              "syn:4942024": 2.228962138463618,
+              "syn:4942025": 2.292246205275334,
+              "syn:4942026": 2.2063821239687593,
+              "syn:4942027": 2.1204716578061658,
+              "syn:4942028": 2.3961397655372956,
+              "syn:4942029": 2.1809335225610775,
+              "syn:4942030": 2.0503216618530216,
+              "syn:4942031": 2.419239471268032
+            },
+            "pca_k8": {
+              "syn:4942016": 0.08356031895927443,
+              "syn:4942017": 0.09307180163114696,
+              "syn:4942018": 0.10399788407102868,
+              "syn:4942019": 0.10234573435053532,
+              "syn:4942020": 0.10180822945040875,
+              "syn:4942021": 0.09336012634470718,
+              "syn:4942022": 0.08716883533486537,
+              "syn:4942023": 0.09392093808664223,
+              "syn:4942024": 0.0991960708466985,
+              "syn:4942025": 0.10660951305232529,
+              "syn:4942026": 0.09095530499711452,
+              "syn:4942027": 0.09870444632664578,
+              "syn:4942028": 0.10294010721107287,
+              "syn:4942029": 0.09240789117135063,
+              "syn:4942030": 0.08536079615025834,
+              "syn:4942031": 0.10693241097628421
+            },
+            "pca_k16": {
+              "syn:4942016": 0.035703746372706444,
+              "syn:4942017": 0.03938003739079203,
+              "syn:4942018": 0.04416618881552312,
+              "syn:4942019": 0.04300262701222933,
+              "syn:4942020": 0.04206253510441569,
+              "syn:4942021": 0.04071185857816976,
+              "syn:4942022": 0.03638814277939804,
+              "syn:4942023": 0.03857096038032254,
+              "syn:4942024": 0.041909583869175905,
+              "syn:4942025": 0.046197182296524565,
+              "syn:4942026": 0.03634589785027673,
+              "syn:4942027": 0.0413954371164294,
+              "syn:4942028": 0.04607639142232067,
+              "syn:4942029": 0.0391281499165398,
+              "syn:4942030": 0.034084420149268824,
+              "syn:4942031": 0.046799911572302746
+            }
+          }
+        }
+      }
+    },
+    "parameter_counts": {
+      "bolt": {
+        "tokens": 9,
+        "hidden_width": 512,
+        "global_mean_parameters": 512,
+        "position_mean_parameters": 4608,
+        "pca_numeric_parameters": 262657,
+        "pca_dynamic_coefficients_per_row": {
+          "8": 72,
+          "16": 144
+        },
+        "pca_dynamic_indices_per_row": {
+          "8": 72,
+          "16": 144
+        },
+        "trainable_optimizer_parameters": 0
+      },
+      "timesfm": {
+        "tokens": 4,
+        "hidden_width": 1280,
+        "global_mean_parameters": 1280,
+        "position_mean_parameters": 5120,
+        "pca_numeric_parameters": 1639681,
+        "pca_dynamic_coefficients_per_row": {
+          "8": 32,
+          "16": 64
+        },
+        "pca_dynamic_indices_per_row": {
+          "8": 32,
+          "16": 64
+        },
+        "trainable_optimizer_parameters": 0
+      }
+    },
+    "gates": {
+      "bolt": {
+        "pca_k8": {
+          "replayed_native_scaled_nmse": 0.021846093794411405,
+          "recorded_nmse": 0.02184609373392233,
+          "absolute_difference": 6.04890755540044e-11
+        },
+        "pca_k16": {
+          "replayed_native_scaled_nmse": 0.00917396417412791,
+          "recorded_nmse": 0.009173964124244276,
+          "absolute_difference": 4.98836336820796e-11
+        }
+      },
+      "timesfm": {
+        "pca_k8": {
+          "replayed_native_scaled_nmse": 0.08610490762445716,
+          "recorded_nmse": 0.0861049062680943,
+          "absolute_difference": 1.3563628553647789e-09
+        },
+        "pca_k16": {
+          "replayed_native_scaled_nmse": 0.042599296843118604,
+          "recorded_nmse": 0.042599296711000684,
+          "absolute_difference": 1.321179207702805e-10
+        }
+      }
+    }
+  },
+  "controls": {
+    "validation": {
+      "passed": true,
+      "clean_tests": 5,
+      "plants_detected": 5,
+      "isolated_shadow_sources": true,
+      "records": [
+        {
+          "name": "clean",
+          "test": "",
+          "returncode": 0,
+          "counts": {
+            "tests": 5,
+            "failures": 0,
+            "errors": 0
+          },
+          "expected_outcome_observed": true,
+          "source_changed": false
+        },
+        {
+          "name": "position_equals_global",
+          "test": "test_known_position_structure",
+          "returncode": 1,
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0
+          },
+          "expected_outcome_observed": true,
+          "source_changed": true
+        },
+        {
+          "name": "test_leakage",
+          "test": "test_test_poison_cannot_change_means",
+          "returncode": 1,
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0
+          },
+          "expected_outcome_observed": true,
+          "source_changed": true
+        },
+        {
+          "name": "uniform_row_weights",
+          "test": "test_source_weighting_with_duplicate_cases",
+          "returncode": 1,
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0
+          },
+          "expected_outcome_observed": true,
+          "source_changed": true
+        },
+        {
+          "name": "source_overlap_allowed",
+          "test": "test_source_overlap_rejected",
+          "returncode": 1,
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0
+          },
+          "expected_outcome_observed": true,
+          "source_changed": true
+        },
+        {
+          "name": "first_k_instead_of_adaptive",
+          "test": "test_pca_is_adaptive_signed_topk",
+          "returncode": 1,
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0
+          },
+          "expected_outcome_observed": true,
+          "source_changed": true
+        }
+      ]
+    },
+    "independent_replay": {
+      "passed": true,
+      "models": {
+        "bolt": {
+          "fit_position_mean_max_error": 2.220446049250313e-15,
+          "pca": {
+            "k8": {
+              "max_absolute_reconstruction_error_in_fit_scale": 6.562037330182083e-06
+            },
+            "k16": {
+              "max_absolute_reconstruction_error_in_fit_scale": 6.600077998123709e-06
+            }
+          }
+        },
+        "timesfm": {
+          "fit_position_mean_max_error": 7.105427357601002e-15,
+          "pca": {
+            "k8": {
+              "max_absolute_reconstruction_error_in_fit_scale": 2.708306017451244e-06
+            },
+            "k16": {
+              "max_absolute_reconstruction_error_in_fit_scale": 2.791103209002009e-06
+            }
+          }
+        }
+      },
+      "metric_comparisons": 204,
+      "max_metric_relative_error": 4.395839963453344e-16,
+      "method": "No production fit/weight/scoring/PCA functions imported. Source-first FIT means; float64 coefficient projection with independent argpartition selection; compensated scalar arithmetic from saved reconstructions.",
+      "pca_reconstruction_tolerance_in_fit_scale": 0.0001,
+      "metric_relative_tolerance": 2e-12
+    }
+  },
+  "limitations": [
+    "Position-conditioned means may encode shared content, normalization or token roles; no causal position-embedding attribution.",
+    "Static means respond identically zero to fixed-shape input perturbations; global compression is distinct from input-information or weak-response preservation.",
+    "Four independent TEST sources per real domain; sixteen synthetic. Source-weighted global score gives synthetic half the mass.",
+    "TEST variance is a scoring denominator only; negative reductions on individual domains are possible.",
+    "Raw hidden-state MSE units are not comparable between models. PCA controls use input-dependent sparse coefficients and far more stored parameters.",
+    "Post-hoc descriptive analysis on reused cohort, without confidence intervals, tuning or new model inference."
+  ],
+  "evidence_class": "Post-hoc descriptive saved-only compression diagnostic; no new confirmatory claim",
+  "next_decision": "Use this baseline to qualify global compression claims; it neither proves nor disproves interpretability. No native or dictionary-training expansion.",
+  "provenance": {
+    "protocol_sha256": "c3bf6cd768eb09e7177d86afae5a637dbe7886b993dfefa620085673acd0b7e9",
+    "results_sha256": "e12c6c95b8d84142c093e64dbb0723add720e0949b481eafca82abb57fa1512f",
+    "replay_code_sha256": "567339e8cc536d6d32f8dc99df61557c024676203035e304908a072c5ea2a3c8"
+  },
+  "interpretation": [
+    "Pooled position-conditioned FIT mean removes80.30466851357155% of Bolt and10.107015663060814% of TimesFM error relative to the pooled globalFIT mean.",
+    "PCA remains substantially better: error/globalFITmean ratios Bolt0.021846093615440033(k8)/0.009173964053706064(k16); TimesFM0.08610490644031232/0.04259929649012923.",
+    "TimesFM synthetic positionmean ratio1.04555521 is worse than globalFIT mean; pooled averages mask domain differences.",
+    "Static shared structure qualifies global compression; fixed position means cannot carry input perturbation responses, and this does not disprove interpretability or identify causal positional embeddings."
+  ],
+  "audit_events": [
+    {
+      "stage": "final_manifest_validation",
+      "finding": "Initial completion manifest captured replay.log before the final buffered print flushed; scientific artifact hashes unchanged.",
+      "failed_instrumentation_preserved": "completion_manifest.json",
+      "resolution": "Final manifest generated after process return0; binds settled log and amended knowledge.",
+      "scientific_result_changed": false
+    }
+  ],
+  "final_manifest": "final_manifest.json"
+}

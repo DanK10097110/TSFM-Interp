@@ -1,0 +1,38 @@
+{
+  "protocol_sha256": "b06682af0804545953b62febaa4d4fdfe9e196ddc032cde553bc3e810c4c1deb",
+  "analysis_code_sha256": "98929fbfd653d522979dac4a33689d554385f1712676ff95db698820bebd4ea3",
+  "runner_code_sha256": "1af7c4349be2d39fc4f3a7f4c78bd74135e1a7db65d41ea2b6dceaddce86070a",
+  "corpus": {
+    "path": "runs/feature_interference_native1992000_prepared/corpus.npz",
+    "sha256": "8aef6b8436eca9bba493da71f79531f12ff03029811b82a5f210241c477fd412"
+  },
+  "metadata": {
+    "path": "runs/feature_interference_native1992000_prepared/metadata.json",
+    "sha256": "f23284f138f8d93de3206fbb828d3bcb382640b1e023f0d20ecdef536294e2e8"
+  },
+  "forecasts": {
+    "bolt": {
+      "path": "runs/feature_interference_native1992000/bolt_predictions.npz",
+      "sha256": "95c57837992410aab47dfe194db0db7a8aa751999fbfdd86977f4912871ba5fc"
+    },
+    "timesfm": {
+      "path": "runs/feature_interference_native1992000/timesfm_predictions.npz",
+      "sha256": "af714d15cbafbcdf85b740e30298e94764e9356ab443091b6b6de00345a68e72"
+    }
+  },
+  "prepared_source": "runs/feature_interference_native1992000_prepared",
+  "row_identity": "ordered IDs checked against metadata; EVERY forecast corpus_sha256 also matches exact supplied corpus bytes",
+  "procedure_timing": "prepared input hashes verified before this inference",
+  "forecast_model_declarations": {
+    "bolt": {
+      "model_name": "bolt",
+      "model_config_sha256": "bd3012bf0ac8b4b8f6547e7cd66e045328094c2b453fd2e6119ce916f50615b0",
+      "checkpoint_identifier_sha256": "86deab4bb6e53afc7fa57d2ac88de879437b1153679a8b9bacd1215c9814ba76"
+    },
+    "timesfm": {
+      "model_name": "timesfm",
+      "model_config_sha256": "009fd441577f263ecac16a052fb1b005ebeda83f77399fbed40adbb34a7b8ef6",
+      "checkpoint_identifier_sha256": "63be2e9043364b292399295f1201c39e16fdf2eae2a4d0b21a519a0b31ad5384"
+    }
+  }
+}

@@ -1,0 +1,711 @@
+{
+  "question": "Does trained TimesFM hidden improve Bolt fusion-response prediction beyond both random families under matched local FIT?",
+  "evidence_class": "Prepared prospective synthetic predictive study; native capture held.",
+  "events": [
+    {
+      "unix_time": 1794854263.5255756,
+      "experiment": "prepare",
+      "status": "complete; native held",
+      "design": {
+        "version": 1,
+        "status": "PREPARED; HOLD NATIVE until a NEW slot grant for this protocol",
+        "namespace": "4962000..4962051;4954000 namespace belongs to Carson and is not used",
+        "fit_seeds": [
+          4962000,
+          4962001,
+          4962002,
+          4962003,
+          4962004,
+          4962005,
+          4962006,
+          4962007,
+          4962008,
+          4962009,
+          4962010,
+          4962011,
+          4962012,
+          4962013,
+          4962014,
+          4962015,
+          4962016,
+          4962017,
+          4962018,
+          4962019
+        ],
+        "test_seeds": [
+          4962020,
+          4962021,
+          4962022,
+          4962023,
+          4962024,
+          4962025,
+          4962026,
+          4962027,
+          4962028,
+          4962029,
+          4962030,
+          4962031,
+          4962032,
+          4962033,
+          4962034,
+          4962035,
+          4962036,
+          4962037,
+          4962038,
+          4962039,
+          4962040,
+          4962041,
+          4962042,
+          4962043,
+          4962044,
+          4962045,
+          4962046,
+          4962047,
+          4962048,
+          4962049,
+          4962050,
+          4962051
+        ],
+        "rows": 260,
+        "fit_rows": 96,
+        "test_rows": 160,
+        "conditions": [
+          {
+            "name": "anchor",
+            "frequencies": [
+              5.35,
+              17.35
+            ],
+            "amplitudes": [
+              0.5,
+              8.0
+            ]
+          },
+          {
+            "name": "weaker",
+            "frequencies": [
+              5.35,
+              17.35
+            ],
+            "amplitudes": [
+              0.5,
+              2.0
+            ]
+          },
+          {
+            "name": "shifted_frequency",
+            "frequencies": [
+              7.35,
+              23.35
+            ],
+            "amplitudes": [
+              0.5,
+              8.0
+            ]
+          },
+          {
+            "name": "shifted_weaker",
+            "frequencies": [
+              7.35,
+              23.35
+            ],
+            "amplitudes": [
+              0.5,
+              2.0
+            ]
+          },
+          {
+            "name": "shifted_balanced",
+            "frequencies": [
+              7.35,
+              23.35
+            ],
+            "amplitudes": [
+              0.5,
+              0.5
+            ]
+          }
+        ],
+        "omitted_fit": "First4 FIT sources omit shifted_balanced from fitting only; capture all260 rows. The omitted4 FIT rows are not TEST or used for selection.",
+        "primary": {
+          "axis": "local_FIT",
+          "A": "timesfm",
+          "B": "bolt",
+          "endpoint": "fusion_response",
+          "aggregate": "Within each of32 TEST seeds average all5 conditions equally, then average sources equally.",
+          "trained_arm": "input+Aforecast+Ahidden",
+          "random_arms": "input+Aforecast+random: RFF and ReLU-MLP, each average squared loss over all3 frozen initialization seeds; no best seed/family selection and no prediction ensemble.",
+          "family_size": 2,
+          "paired_source_CI_coverage": 0.975,
+          "bootstrap_draws": 4000,
+          "bootstrap_seed": 4951000,
+          "required": "BOTH random-minus-trained paired-source intervals must have lower>0 AND trained mean loss must be>=5% lower than EACH random-family mean loss.",
+          "minimum_relative_reduction": 0.05,
+          "relative_denominator": "Each random-family mean loss; zero denominator is not scorable and cannot pass.",
+          "no_rescue": "A pass in one family, a descriptive condition, a frozen-extrapolation arm, or a forecast control cannot rescue failure of this primary."
+        },
+        "axes": {
+          "local_FIT": "Recompute preprocessing and fit readouts on exactly20 newFIT sources/96 rows; four whole-source folds choose only added rank/alpha. NewTEST labels never enter fitting.",
+          "frozen_extrapolation": "Apply original oldFIT frozen trained/random coefficients and preprocessing support without updates; summarize ALL and each condition on the same32 new TEST sources. Descriptive axis, no success claim or tuning.",
+          "controls": "Forecast targets Bolt->TimesFM and TimesFM->Bolt are descriptive controls. Local input-only and fixed input+Aforecast baseline are retained."
+        },
+        "local_fixed_base": "Source model Aforecast values are native outputs, not a trainable model. Input+Aforecast kernel recipe is fixed to prior selected choices (rbf2.0+pca16 for forecast, rbf0.5+pca16 for fusion response). Refit centers/PCA/support on localFIT only. Baseline ridge alpha remains0.001. All learned/random additions use equal block weight1/3.",
+        "base_specs": [
+          {
+            "key": "bolt_to_timesfm__forecast__input",
+            "A": "bolt",
+            "B": "timesfm",
+            "endpoint": "forecast",
+            "arm": "input",
+            "kernel": "rbf0.5",
+            "alpha": 0.001,
+            "cv_loss": 0.031718762251994895
+          },
+          {
+            "key": "bolt_to_timesfm__forecast__input+A_forecast",
+            "A": "bolt",
+            "B": "timesfm",
+            "endpoint": "forecast",
+            "arm": "input+A_forecast",
+            "kernel": "rbf2.0+pca16",
+            "alpha": 0.001,
+            "cv_loss": 0.018963286521288425
+          },
+          {
+            "key": "timesfm_to_bolt__forecast__input",
+            "A": "timesfm",
+            "B": "bolt",
+            "endpoint": "forecast",
+            "arm": "input",
+            "kernel": "rbf0.5",
+            "alpha": 0.001,
+            "cv_loss": 0.02537509280177499
+          },
+          {
+            "key": "timesfm_to_bolt__forecast__input+A_forecast",
+            "A": "timesfm",
+            "B": "bolt",
+            "endpoint": "forecast",
+            "arm": "input+A_forecast",
+            "kernel": "rbf2.0+pca16",
+            "alpha": 0.001,
+            "cv_loss": 0.013092730977671182
+          },
+          {
+            "key": "timesfm_to_bolt__fusion_response__input",
+            "A": "timesfm",
+            "B": "bolt",
+            "endpoint": "fusion_response",
+            "arm": "input",
+            "kernel": "rbf0.5",
+            "alpha": 0.001,
+            "cv_loss": 0.002453045729696738
+          },
+          {
+            "key": "timesfm_to_bolt__fusion_response__input+A_forecast",
+            "A": "timesfm",
+            "B": "bolt",
+            "endpoint": "fusion_response",
+            "arm": "input+A_forecast",
+            "kernel": "rbf0.5+pca16",
+            "alpha": 0.001,
+            "cv_loss": 0.0025257951404711364
+          }
+        ],
+        "budget": {
+          "widths": {
+            "bolt": 4608,
+            "timesfm": 5120
+          },
+          "ranks": [
+            8,
+            16
+          ],
+          "alphas": [
+            0.001,
+            0.01,
+            0.1,
+            1.0
+          ],
+          "initialization_seeds": [
+            4953000,
+            4953001,
+            4953002
+          ],
+          "random_families": [
+            "rff",
+            "mlp_relu"
+          ],
+          "candidates_per_added_arm": 8,
+          "fit_sources": 20,
+          "fit_rows": 96
+        },
+        "maps": "Identical frozen random_features implementation from4953000: full normalized128 history plus2 normalizer values, FIT standardization; RFF gamma1/median distance or untrained affine/ReLU; same widths. Readout budget matched, not pretraining FLOPs/parameters.",
+        "normalization": "Identical history mean/SD targets and inverse for all arms. No physical-scale disadvantage to hidden baselines.",
+        "behavior": "Report source means/CIs by ALL and condition for normalized response energy, exact-zero response fraction, tree eligibility, native/fused true-future MSE, gain, and correction dot. Verify gain=2*dot-energy. Emulating a response does not establish its correctness or semantic equivalence.",
+        "alignment_null": "Omitted from this bounded primary; optional future reuse-only alignment audit cannot change the frozen primary decision.",
+        "resources": {
+          "cpu_threads": 1,
+          "model_seconds": 900,
+          "resident_bytes": 3221225472,
+          "serial_workers": true,
+          "gpu": false
+        },
+        "capture": {
+          "bolt": {
+            "first": "0",
+            "half": "3",
+            "shape": [
+              9,
+              512
+            ]
+          },
+          "timesfm": {
+            "first": "0",
+            "half": "10",
+            "shape": [
+              4,
+              1280
+            ]
+          },
+          "batch": 1,
+          "normalization": "Original native baseline; fusion leaves/zero use original full-context native normalizer and matching inverse.",
+          "fusion": "First block; depth1; equal leaf weights; affine zero correction; pure blend1. No random edits, deeper trees, stability sweeps, or other native endpoints. Tree abstention yields exact native forecast."
+        },
+        "checkpoints": {
+          "bolt": {
+            "repo": "amazon/chronos-bolt-small",
+            "path": "/common/home/djk255/.cache/huggingface/hub/models--amazon--chronos-bolt-small/snapshots/772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+            "revision": "772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+            "weights": {
+              "model.safetensors": "06a6a19bbe74bc10a9cd193bd4bf2bf638ae07f7e0d51653ae7ab8ea968a21dd"
+            }
+          },
+          "timesfm": {
+            "repo": "google/timesfm-2.5-200m-pytorch",
+            "path": "/common/home/djk255/.cache/huggingface/hub/models--google--timesfm-2.5-200m-pytorch/snapshots/1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+            "revision": "1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+            "weights": {
+              "model.safetensors": "2f776efe6245e42b24bc4153ffdf61810140210e4bd3b01fb21f7aa779ab6ce8"
+            }
+          }
+        },
+        "gates": "Exact repeat, full-context locked-normalizer identity, first-block self patch and half-depth self patch on every row; input leaf closure <=2e-6 relative max(1,maxabs(history)). Native cuts/shapes/checkpoint hashes must match.",
+        "natural_leg": "NONE; no natural-context expansion authorized or prepared.",
+        "evidence": "Prospectively frozen synthetic predictive feature-efficiency comparison; no causal or equivalent-semantics claim, no information beyond deterministic full input.",
+        "code_hashes": {
+          "experiments/feature_search/comparability_conditions.py": "27070b2a910093b0ee29e11954b99cdec93aa6d84c105dcf33a47ef0abf1d141",
+          "experiments/feature_search/comparability_conditions_audit.py": "ad78e4d154d94c89fa744343808957e857faa57359c5ee11eeefa8b50bb32df2",
+          "experiments/feature_search/comparability_core.py": "afd96282dd04520d53d6872b9b258800c3602a176e1cfbddf439d1a85d89e186",
+          "experiments/feature_search/comparability_pilot.py": "cda64ef12f4fd1100d4c04ad83c96c3923ac5218a2997d9c81f6c18537816b02",
+          "experiments/feature_search/comparability_random_features.py": "45ccd621e286a7aef45176f09ec87b351a7f292d3f9beedb59c44ca60ef8763c",
+          "experiments/feature_search/comparability_replication.py": "cc999b25ae114082bef3a7caf822d4c47667e2281b431faaf8ac6edaa2970387",
+          "experiments/feature_search/selective_study.py": "d87ed477e46d72604fa6824fcc5b146880142a730fc52f0f70bf933b652604eb",
+          "experiments/feature_search/selective_tree.py": "0d96de5655995d55f9dc6c1510d5951db916656642b5d22c2bf4721d664f75f1",
+          "experiments/feature_search/coherence_study.py": "e9bd4dc10d57cfbc30cb4b01cfafe96789cccb6d34fe85616699ecfef799aec7",
+          "experiments/feature_search/real_background_poc.py": "c88868ab339608f52afa8041d89cf3b48aa4260e87fb497b64fa7bf058b3eda6",
+          "experiments/feature_search/homogeneous_normalizer.py": "2670effb2dfc0b631d368a69cab4263a8d2a90eb1208acc93d246a5c0ef55051",
+          "tests/test_comparability_conditions.py": "6b8427f3e9a3c02058958586c5a9816d74968619077931dce54e2fb89e8bbe26",
+          "tsfm_lens/extraction/hooks.py": "6f161d02a472c246691caed21bd301a201d7219d3aeef90de2854baa7bdc4281"
+        },
+        "upstream_hashes": {
+          "runs/comparability_replication4952000/protocol.json": "9c275b040420c3e6a1a0c590d72fc1e97ac16e2e086cf5cf333f5a5f1efa9c45",
+          "runs/comparability_replication4952000/fit_support.npz": "933a0a4f49d0ac4837e0b21a8f7da371ce2e914c27c64cbcc878bde5dea2407c",
+          "runs/comparability_replication4952000/fit_rows.json": "d5a12d42e35290a783e8dc9cc96db31b6073c12921696772aed9678ea0c61f78",
+          "runs/comparability_replication4952000/frozen_probes.npz": "94dcbb08c293a43a18f839210253e814628c2aa2f34444ee36ff3dff62acc3bd",
+          "runs/comparability_replication4952000/probe_specs.json": "6a434209c74e0c122f43928b1399288eb84c72bf43aeaaa0e174f16a589cf8d2",
+          "runs/comparability_random4953000/protocol.json": "c493a1febacc468e605ee85cd7bdc27adcccba47f91540489eb6e180c11d8afd",
+          "runs/comparability_random4953000/frozen_random_probes.npz": "b240b47b0be1e0832f1f6de57fc6379b61a5335973e808ed73fb6e832c181624",
+          "runs/comparability_random4953000/probe_specs.json": "08fbacc99f054d2e8ee4d1d277d24acf9609c0ab0cac7fadaefda08b1a859e3d",
+          "runs/comparability_random4953000/plant_audit.json": "604412678815f76edf4fc5dfa3262f7b3725273341649ed55ae0effb1daa94e7",
+          "runs/comparability_random4953000/arithmetic_replay.json": "4b08407bee1f49a9022e0523c026acac78c8edc280541a9853d7fea340fd024c"
+        },
+        "artifact_hashes": {
+          "inputs.npz": "1a0f1bd8aa4e98fa68c33532992792a1102ec7acbf2693cc026e1ca8e3650e60",
+          "targets.npz": "4f00eb79d4fad3947765554e2dfc7c46b090c038483fc67a4fb651d51be1decf",
+          "rows.json": "fbb17dba6b55afd703b0cb67d1489040dd454e17529f29b538ac6cc0efbc48eb",
+          "plans.json": "234762a54ad53c54963c79befbe9d71817e6dbee86677e0ca385484b279d3ce2"
+        }
+      },
+      "exact_findings": {
+        "rows": 260,
+        "fit_rows": 96,
+        "test_rows": 160,
+        "fit_sources": 20,
+        "test_sources": 32
+      },
+      "controls": [
+        "Source disjointness",
+        "Frozen thresholds/bases/maps",
+        "No natural leg"
+      ],
+      "limitations": [
+        "No native outcomes captured yet",
+        "Local and extrapolation estimands remain separate"
+      ],
+      "next_decision": "Run tests and isolated plants, then request a native slot."
+    },
+    {
+      "unix_time": 1794854273.3737032,
+      "experiment": "validation",
+      "status": "passed",
+      "artifact": "validation.log",
+      "next_decision": "Isolated plants before requesting slot."
+    },
+    {
+      "unix_time": 1794854379.535901,
+      "experiment": "isolated_plants",
+      "status": "failed",
+      "exact_findings": {
+        "planted": 25,
+        "detected": 24
+      },
+      "controls": "Separate subprocesses/shadow copies; no original source edits; collection errors excluded",
+      "next_decision": "Request slot only if all passed; no launch yet."
+    },
+    {
+      "unix_time": 1794854443.921516,
+      "experiment": "preflight_diagnosis",
+      "status": "failed instrumentation fixture; no native launch",
+      "exact_findings": "24/25 plants detected. Disabling source-overlap guard survived because test modified one row and also violated TEST unique-source count. Correct fixture replaces a complete TEST source bundle to preserve counts and isolate overlap guard.",
+      "next_decision": "Preserve this preflight, correct test fixture only, refreeze and revalidate identical science/input design."
+    }
+  ],
+  "status": "prepared_native_hold",
+  "design": {
+    "version": 1,
+    "status": "PREPARED; HOLD NATIVE until a NEW slot grant for this protocol",
+    "namespace": "4962000..4962051;4954000 namespace belongs to Carson and is not used",
+    "fit_seeds": [
+      4962000,
+      4962001,
+      4962002,
+      4962003,
+      4962004,
+      4962005,
+      4962006,
+      4962007,
+      4962008,
+      4962009,
+      4962010,
+      4962011,
+      4962012,
+      4962013,
+      4962014,
+      4962015,
+      4962016,
+      4962017,
+      4962018,
+      4962019
+    ],
+    "test_seeds": [
+      4962020,
+      4962021,
+      4962022,
+      4962023,
+      4962024,
+      4962025,
+      4962026,
+      4962027,
+      4962028,
+      4962029,
+      4962030,
+      4962031,
+      4962032,
+      4962033,
+      4962034,
+      4962035,
+      4962036,
+      4962037,
+      4962038,
+      4962039,
+      4962040,
+      4962041,
+      4962042,
+      4962043,
+      4962044,
+      4962045,
+      4962046,
+      4962047,
+      4962048,
+      4962049,
+      4962050,
+      4962051
+    ],
+    "rows": 260,
+    "fit_rows": 96,
+    "test_rows": 160,
+    "conditions": [
+      {
+        "name": "anchor",
+        "frequencies": [
+          5.35,
+          17.35
+        ],
+        "amplitudes": [
+          0.5,
+          8.0
+        ]
+      },
+      {
+        "name": "weaker",
+        "frequencies": [
+          5.35,
+          17.35
+        ],
+        "amplitudes": [
+          0.5,
+          2.0
+        ]
+      },
+      {
+        "name": "shifted_frequency",
+        "frequencies": [
+          7.35,
+          23.35
+        ],
+        "amplitudes": [
+          0.5,
+          8.0
+        ]
+      },
+      {
+        "name": "shifted_weaker",
+        "frequencies": [
+          7.35,
+          23.35
+        ],
+        "amplitudes": [
+          0.5,
+          2.0
+        ]
+      },
+      {
+        "name": "shifted_balanced",
+        "frequencies": [
+          7.35,
+          23.35
+        ],
+        "amplitudes": [
+          0.5,
+          0.5
+        ]
+      }
+    ],
+    "omitted_fit": "First4 FIT sources omit shifted_balanced from fitting only; capture all260 rows. The omitted4 FIT rows are not TEST or used for selection.",
+    "primary": {
+      "axis": "local_FIT",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "fusion_response",
+      "aggregate": "Within each of32 TEST seeds average all5 conditions equally, then average sources equally.",
+      "trained_arm": "input+Aforecast+Ahidden",
+      "random_arms": "input+Aforecast+random: RFF and ReLU-MLP, each average squared loss over all3 frozen initialization seeds; no best seed/family selection and no prediction ensemble.",
+      "family_size": 2,
+      "paired_source_CI_coverage": 0.975,
+      "bootstrap_draws": 4000,
+      "bootstrap_seed": 4951000,
+      "required": "BOTH random-minus-trained paired-source intervals must have lower>0 AND trained mean loss must be>=5% lower than EACH random-family mean loss.",
+      "minimum_relative_reduction": 0.05,
+      "relative_denominator": "Each random-family mean loss; zero denominator is not scorable and cannot pass.",
+      "no_rescue": "A pass in one family, a descriptive condition, a frozen-extrapolation arm, or a forecast control cannot rescue failure of this primary."
+    },
+    "axes": {
+      "local_FIT": "Recompute preprocessing and fit readouts on exactly20 newFIT sources/96 rows; four whole-source folds choose only added rank/alpha. NewTEST labels never enter fitting.",
+      "frozen_extrapolation": "Apply original oldFIT frozen trained/random coefficients and preprocessing support without updates; summarize ALL and each condition on the same32 new TEST sources. Descriptive axis, no success claim or tuning.",
+      "controls": "Forecast targets Bolt->TimesFM and TimesFM->Bolt are descriptive controls. Local input-only and fixed input+Aforecast baseline are retained."
+    },
+    "local_fixed_base": "Source model Aforecast values are native outputs, not a trainable model. Input+Aforecast kernel recipe is fixed to prior selected choices (rbf2.0+pca16 for forecast, rbf0.5+pca16 for fusion response). Refit centers/PCA/support on localFIT only. Baseline ridge alpha remains0.001. All learned/random additions use equal block weight1/3.",
+    "base_specs": [
+      {
+        "key": "bolt_to_timesfm__forecast__input",
+        "A": "bolt",
+        "B": "timesfm",
+        "endpoint": "forecast",
+        "arm": "input",
+        "kernel": "rbf0.5",
+        "alpha": 0.001,
+        "cv_loss": 0.031718762251994895
+      },
+      {
+        "key": "bolt_to_timesfm__forecast__input+A_forecast",
+        "A": "bolt",
+        "B": "timesfm",
+        "endpoint": "forecast",
+        "arm": "input+A_forecast",
+        "kernel": "rbf2.0+pca16",
+        "alpha": 0.001,
+        "cv_loss": 0.018963286521288425
+      },
+      {
+        "key": "timesfm_to_bolt__forecast__input",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "forecast",
+        "arm": "input",
+        "kernel": "rbf0.5",
+        "alpha": 0.001,
+        "cv_loss": 0.02537509280177499
+      },
+      {
+        "key": "timesfm_to_bolt__forecast__input+A_forecast",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "forecast",
+        "arm": "input+A_forecast",
+        "kernel": "rbf2.0+pca16",
+        "alpha": 0.001,
+        "cv_loss": 0.013092730977671182
+      },
+      {
+        "key": "timesfm_to_bolt__fusion_response__input",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "fusion_response",
+        "arm": "input",
+        "kernel": "rbf0.5",
+        "alpha": 0.001,
+        "cv_loss": 0.002453045729696738
+      },
+      {
+        "key": "timesfm_to_bolt__fusion_response__input+A_forecast",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "fusion_response",
+        "arm": "input+A_forecast",
+        "kernel": "rbf0.5+pca16",
+        "alpha": 0.001,
+        "cv_loss": 0.0025257951404711364
+      }
+    ],
+    "budget": {
+      "widths": {
+        "bolt": 4608,
+        "timesfm": 5120
+      },
+      "ranks": [
+        8,
+        16
+      ],
+      "alphas": [
+        0.001,
+        0.01,
+        0.1,
+        1.0
+      ],
+      "initialization_seeds": [
+        4953000,
+        4953001,
+        4953002
+      ],
+      "random_families": [
+        "rff",
+        "mlp_relu"
+      ],
+      "candidates_per_added_arm": 8,
+      "fit_sources": 20,
+      "fit_rows": 96
+    },
+    "maps": "Identical frozen random_features implementation from4953000: full normalized128 history plus2 normalizer values, FIT standardization; RFF gamma1/median distance or untrained affine/ReLU; same widths. Readout budget matched, not pretraining FLOPs/parameters.",
+    "normalization": "Identical history mean/SD targets and inverse for all arms. No physical-scale disadvantage to hidden baselines.",
+    "behavior": "Report source means/CIs by ALL and condition for normalized response energy, exact-zero response fraction, tree eligibility, native/fused true-future MSE, gain, and correction dot. Verify gain=2*dot-energy. Emulating a response does not establish its correctness or semantic equivalence.",
+    "alignment_null": "Omitted from this bounded primary; optional future reuse-only alignment audit cannot change the frozen primary decision.",
+    "resources": {
+      "cpu_threads": 1,
+      "model_seconds": 900,
+      "resident_bytes": 3221225472,
+      "serial_workers": true,
+      "gpu": false
+    },
+    "capture": {
+      "bolt": {
+        "first": "0",
+        "half": "3",
+        "shape": [
+          9,
+          512
+        ]
+      },
+      "timesfm": {
+        "first": "0",
+        "half": "10",
+        "shape": [
+          4,
+          1280
+        ]
+      },
+      "batch": 1,
+      "normalization": "Original native baseline; fusion leaves/zero use original full-context native normalizer and matching inverse.",
+      "fusion": "First block; depth1; equal leaf weights; affine zero correction; pure blend1. No random edits, deeper trees, stability sweeps, or other native endpoints. Tree abstention yields exact native forecast."
+    },
+    "checkpoints": {
+      "bolt": {
+        "repo": "amazon/chronos-bolt-small",
+        "path": "/common/home/djk255/.cache/huggingface/hub/models--amazon--chronos-bolt-small/snapshots/772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "revision": "772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "weights": {
+          "model.safetensors": "06a6a19bbe74bc10a9cd193bd4bf2bf638ae07f7e0d51653ae7ab8ea968a21dd"
+        }
+      },
+      "timesfm": {
+        "repo": "google/timesfm-2.5-200m-pytorch",
+        "path": "/common/home/djk255/.cache/huggingface/hub/models--google--timesfm-2.5-200m-pytorch/snapshots/1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+        "revision": "1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+        "weights": {
+          "model.safetensors": "2f776efe6245e42b24bc4153ffdf61810140210e4bd3b01fb21f7aa779ab6ce8"
+        }
+      }
+    },
+    "gates": "Exact repeat, full-context locked-normalizer identity, first-block self patch and half-depth self patch on every row; input leaf closure <=2e-6 relative max(1,maxabs(history)). Native cuts/shapes/checkpoint hashes must match.",
+    "natural_leg": "NONE; no natural-context expansion authorized or prepared.",
+    "evidence": "Prospectively frozen synthetic predictive feature-efficiency comparison; no causal or equivalent-semantics claim, no information beyond deterministic full input.",
+    "code_hashes": {
+      "experiments/feature_search/comparability_conditions.py": "27070b2a910093b0ee29e11954b99cdec93aa6d84c105dcf33a47ef0abf1d141",
+      "experiments/feature_search/comparability_conditions_audit.py": "ad78e4d154d94c89fa744343808957e857faa57359c5ee11eeefa8b50bb32df2",
+      "experiments/feature_search/comparability_core.py": "afd96282dd04520d53d6872b9b258800c3602a176e1cfbddf439d1a85d89e186",
+      "experiments/feature_search/comparability_pilot.py": "cda64ef12f4fd1100d4c04ad83c96c3923ac5218a2997d9c81f6c18537816b02",
+      "experiments/feature_search/comparability_random_features.py": "45ccd621e286a7aef45176f09ec87b351a7f292d3f9beedb59c44ca60ef8763c",
+      "experiments/feature_search/comparability_replication.py": "cc999b25ae114082bef3a7caf822d4c47667e2281b431faaf8ac6edaa2970387",
+      "experiments/feature_search/selective_study.py": "d87ed477e46d72604fa6824fcc5b146880142a730fc52f0f70bf933b652604eb",
+      "experiments/feature_search/selective_tree.py": "0d96de5655995d55f9dc6c1510d5951db916656642b5d22c2bf4721d664f75f1",
+      "experiments/feature_search/coherence_study.py": "e9bd4dc10d57cfbc30cb4b01cfafe96789cccb6d34fe85616699ecfef799aec7",
+      "experiments/feature_search/real_background_poc.py": "c88868ab339608f52afa8041d89cf3b48aa4260e87fb497b64fa7bf058b3eda6",
+      "experiments/feature_search/homogeneous_normalizer.py": "2670effb2dfc0b631d368a69cab4263a8d2a90eb1208acc93d246a5c0ef55051",
+      "tests/test_comparability_conditions.py": "6b8427f3e9a3c02058958586c5a9816d74968619077931dce54e2fb89e8bbe26",
+      "tsfm_lens/extraction/hooks.py": "6f161d02a472c246691caed21bd301a201d7219d3aeef90de2854baa7bdc4281"
+    },
+    "upstream_hashes": {
+      "runs/comparability_replication4952000/protocol.json": "9c275b040420c3e6a1a0c590d72fc1e97ac16e2e086cf5cf333f5a5f1efa9c45",
+      "runs/comparability_replication4952000/fit_support.npz": "933a0a4f49d0ac4837e0b21a8f7da371ce2e914c27c64cbcc878bde5dea2407c",
+      "runs/comparability_replication4952000/fit_rows.json": "d5a12d42e35290a783e8dc9cc96db31b6073c12921696772aed9678ea0c61f78",
+      "runs/comparability_replication4952000/frozen_probes.npz": "94dcbb08c293a43a18f839210253e814628c2aa2f34444ee36ff3dff62acc3bd",
+      "runs/comparability_replication4952000/probe_specs.json": "6a434209c74e0c122f43928b1399288eb84c72bf43aeaaa0e174f16a589cf8d2",
+      "runs/comparability_random4953000/protocol.json": "c493a1febacc468e605ee85cd7bdc27adcccba47f91540489eb6e180c11d8afd",
+      "runs/comparability_random4953000/frozen_random_probes.npz": "b240b47b0be1e0832f1f6de57fc6379b61a5335973e808ed73fb6e832c181624",
+      "runs/comparability_random4953000/probe_specs.json": "08fbacc99f054d2e8ee4d1d277d24acf9609c0ab0cac7fadaefda08b1a859e3d",
+      "runs/comparability_random4953000/plant_audit.json": "604412678815f76edf4fc5dfa3262f7b3725273341649ed55ae0effb1daa94e7",
+      "runs/comparability_random4953000/arithmetic_replay.json": "4b08407bee1f49a9022e0523c026acac78c8edc280541a9853d7fea340fd024c"
+    },
+    "artifact_hashes": {
+      "inputs.npz": "1a0f1bd8aa4e98fa68c33532992792a1102ec7acbf2693cc026e1ca8e3650e60",
+      "targets.npz": "4f00eb79d4fad3947765554e2dfc7c46b090c038483fc67a4fb651d51be1decf",
+      "rows.json": "fbb17dba6b55afd703b0cb67d1489040dd454e17529f29b538ac6cc0efbc48eb",
+      "plans.json": "234762a54ad53c54963c79befbe9d71817e6dbee86677e0ca385484b279d3ce2"
+    }
+  },
+  "exact_findings": {
+    "native_rows_captured": 0,
+    "fit_sources": 20,
+    "fit_rows": 96,
+    "test_sources": 32,
+    "test_rows": 160
+  },
+  "controls": [
+    "Pending tests/plants"
+  ],
+  "limitations": [
+    "Synthetic conditions only",
+    "Matched readout budget is not matched pretraining compute"
+  ],
+  "next_decision": "Validate and request slot; never infer grant from prior slot2 authorization."
+}

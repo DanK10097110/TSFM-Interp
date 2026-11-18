@@ -1,0 +1,182 @@
+{
+  "status": "standin_complete_audited",
+  "question": "Does a frozen old-source full phase map predict fresh weak-tone responses beyond attenuation and identity?",
+  "design": {
+    "question": "Does a frozen old-source full phase map predict fresh weak-tone responses beyond attenuation and identity?",
+    "stage": "prepared_capture_held",
+    "nodes": 400,
+    "source_count": 16,
+    "phases": 4,
+    "context": 128,
+    "horizon": 32,
+    "seeds": [
+      4954300,
+      4954301,
+      4954302,
+      4954303,
+      4954304,
+      4954305,
+      4954306,
+      4954307,
+      4954308,
+      4954309,
+      4954310,
+      4954311,
+      4954312,
+      4954313,
+      4954314,
+      4954315
+    ],
+    "offsets": [
+      -0.12,
+      0.0,
+      0.12
+    ],
+    "amplitude_peak_background_sd": 0.1,
+    "policies": [
+      "native",
+      "locked"
+    ],
+    "training_sources": [
+      "syn:4954000",
+      "syn:4954001",
+      "syn:4954002",
+      "syn:4954003",
+      "syn:4954004",
+      "syn:4954005",
+      "syn:4954006",
+      "syn:4954007",
+      "syn:4954008",
+      "syn:4954009",
+      "syn:4954010",
+      "syn:4954011",
+      "syn:4954012",
+      "syn:4954013",
+      "syn:4954014",
+      "syn:4954015"
+    ],
+    "predictors": [
+      "zero",
+      "identity",
+      "scalar_bounded",
+      "scalar_unconstrained",
+      "complex_linear",
+      "full_H"
+    ],
+    "fit_objective": "Equal-source mean of phase-pooled waveform NMSE on all16 OLD sources, separately model/policy/center. Scalar is waveform least-squares, bounded[0,1] primary, unconstrained diagnostic. Complex qI+rJ also waveform-fitted. FullH equals frozen old meanH. Zero is explicitly scored.",
+    "primary_family": [
+      {
+        "model": "bolt",
+        "policy": "native",
+        "period": 19.2,
+        "baseline": "scalar_bounded"
+      },
+      {
+        "model": "bolt",
+        "policy": "native",
+        "period": 19.2,
+        "baseline": "identity"
+      },
+      {
+        "model": "timesfm",
+        "policy": "native",
+        "period": 19.2,
+        "baseline": "scalar_bounded"
+      },
+      {
+        "model": "timesfm",
+        "policy": "native",
+        "period": 19.2,
+        "baseline": "identity"
+      }
+    ],
+    "inference": "Native19.2 fullH vs bounded scalar and vs identity, two models = family4. Paired source differences (baseline NMSE minus fullH NMSE),16384 common type-stratified source bootstrap draws seed4954300. Report ordinary95% and Bonferroni98.75% percentile CIs; approximate family coverage, no p-values or automatic threshold claims. Fresh synthetic generalization, not sealed confirmation.",
+    "descriptive": "Locked normalization,24h,unconstrained scalar,zero,complexlinear,all nearby metrics and all horizon decompositions are descriptive. Source-specific fullH is same-data oracle only, never predictive.",
+    "nearby": "All fixed center maps evaluated at exact nearby frequency. Compare fullH constant versus principal-delay transported fullH ONLY at offsets+/-0.12, equally pool the two offsets within source. No fresh fitting/selection/interpolation.",
+    "horizon_analysis": "After primary scoring, reuse each phase delta on windows[0:16],[16:32],[0:32], preserving absolute forecast timestamps; H and joint-DC H, odd/even/offband. Apply also to old arrays after primary. No causal patch or LTI claim.",
+    "normalization": "Frozen native normalization and background-locked normalization/inverse on identical inputs, batches<=4.",
+    "controls": "Exact background repeat and native/locked identity in forecasts and transient endpoint hidden state, self-patch, same-batch forecast replay; finite checks, input phase/closure gates, hashes. Save forecasts only; endpoint hidden used for identity gates and discarded.",
+    "cpu_threads": 1,
+    "worker_cap": 3221225472,
+    "seconds_per_model": 600,
+    "checkpoints": {
+      "bolt": {
+        "repo": "amazon/chronos-bolt-small",
+        "path": "/common/home/djk255/.cache/huggingface/hub/models--amazon--chronos-bolt-small/snapshots/772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "revision": "772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "weights": {
+          "model.safetensors": "06a6a19bbe74bc10a9cd193bd4bf2bf638ae07f7e0d51653ae7ab8ea968a21dd"
+        }
+      },
+      "timesfm": {
+        "repo": "google/timesfm-2.5-200m-pytorch",
+        "path": "/common/home/djk255/.cache/huggingface/hub/models--google--timesfm-2.5-200m-pytorch/snapshots/1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+        "revision": "1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+        "weights": {
+          "model.safetensors": "2f776efe6245e42b24bc4153ffdf61810140210e4bd3b01fb21f7aa779ab6ce8"
+        }
+      }
+    },
+    "budget": {
+      "bolt": {
+        "nodes": 400,
+        "conservative_seconds": 36.48049443267519,
+        "formula": "1.1*(20s startup allowance + focused whole-runtime * nodes/2640)"
+      },
+      "timesfm": {
+        "nodes": 400,
+        "conservative_seconds": 104.6712803701715,
+        "formula": "1.1*(20s startup allowance + focused whole-runtime * nodes/2640)"
+      }
+    },
+    "execution": "One native worker at a time. Both run and worker require external protocol-bound coordinator slot grant. Parent monitors RSS/wall time. Failure retained, no in-place retry or rescue claims.",
+    "capture_hold": true,
+    "old": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase4954200",
+    "proposal": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer_proposal4954300",
+    "old_hashes": {
+      "protocol.json": "b5ffa828d1d87aca572d8b84b7d88931e635e39b02cda15955038f2e6960ff95",
+      "audit.json": "f428f4e70da8e02040442e28b9e50d915b69617b9299ba5d2f8eb07e22b39c2c",
+      "raw_arithmetic.npz": "99980ef4e69c7ce71708f1038e67955d934020b32a3d84a57deb272a81ec6ff9",
+      "matrix_rows.json": "1e7218397bd59727e11582d58516cdedb7f9a47a66b65913acc8fd9d544d694d",
+      "groups.json": "9657f70716e4a0de241e3b75c39e6f6eea5f901c836ba781c0c2247c65224a25"
+    },
+    "source_hashes": {
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_transfer.py": "a3e17fcd057a2ca92698d5a71d070e4b3b77a9037bbc05f10b4d538eacabad2c",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tests/test_response_phase_transfer.py": "b14de4d33859f8d696cae13c95a4462096196152d74b65757a95cd91e03f03c3",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_transfer_plants.py": "8daed827a1e205ba25ff6563d409e586367f2c31a9ac9bc56bb9d943d0a5150d",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_transfer_audit.py": "29b0f96aa022005a3a0bbd1650ed80c493dfd225b50a3edcb90e483bfa4499ec",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_study.py": "baa8f5a94890b89411df99e108e9ab01e906e8419c1696002cc9a6d6f8a48187",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_surface_focused.py": "758b73564af323796355c51c16b8332f7710fef57fe748ecdfd2c9bc1b907b1e",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_surface_crossed.py": "4882c7aeda3269bb48bc6675196fbd984f6db12b98617d2a8f2fba2b6979d41d",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/selective_study.py": "d87ed477e46d72604fa6824fcc5b146880142a730fc52f0f70bf933b652604eb",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/coherence_study.py": "e9bd4dc10d57cfbc30cb4b01cfafe96789cccb6d34fe85616699ecfef799aec7",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/real_background_poc.py": "c88868ab339608f52afa8041d89cf3b48aa4260e87fb497b64fa7bf058b3eda6",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/homogeneous_normalizer.py": "2670effb2dfc0b631d368a69cab4263a8d2a90eb1208acc93d246a5c0ef55051",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tsfm_lens/extraction/hooks.py": "6f161d02a472c246691caed21bd301a201d7219d3aeef90de2854baa7bdc4281"
+    },
+    "hashes": {
+      "inputs.npy": "d60f13fd2278e782be817f7a580fba6a9cebc8387a3c6fbb62363f3f588f6d0c",
+      "nodes.json": "7ada0a56374df284806b0388c2b30028c7b72e271979e709e8c03b2c40949a0b",
+      "sources.json": "759549340b1747c32439c94d8a5eeec7684159553c169cb091bb6ec31d49ac28",
+      "groups.json": "ea5909cd07e132407b9cc9187c3961e7fc415386b5fdd0ad134cf533026911f2",
+      "frozen_predictors.json": "7c1920909020b49c9da55a5c3444ca9e82b855fb31d95ee283b7aaca5aa8b947",
+      "bootstrap_source_indices.npy": "2a3f8fc1ca6868e6b774a37934e432bf594dda5cd3d3fee00218e69ba79d1a3e"
+    }
+  },
+  "exact_findings": {
+    "audit": {
+      "passed": true,
+      "checks": 10860,
+      "maximum_absolute_discrepancy": 2.4424906541753444e-15,
+      "results_checked": true,
+      "native_loaded": false,
+      "source_hashes_verified": true
+    },
+    "synthetic_receiver": true
+  },
+  "controls": "Exact background repeat and native/locked identity in forecasts and transient endpoint hidden state, self-patch, same-batch forecast replay; finite checks, input phase/closure gates, hashes. Save forecasts only; endpoint hidden used for identity gates and discarded.",
+  "limitations": "Preparation only. No new native evidence; four phases and finite windows cannot establish time invariance or patch causality.",
+  "evidence_class": "Synthetic receiver instrumentation ONLY; no model findings",
+  "failed_instrumentation_runs": [],
+  "next_decision": "Native remains subject to coordinator slot grant."
+}

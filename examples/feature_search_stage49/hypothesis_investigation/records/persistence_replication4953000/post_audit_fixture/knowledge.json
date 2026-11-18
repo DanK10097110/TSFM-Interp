@@ -1,0 +1,25 @@
+{
+  "question": "Does independent raw-array replay reproduce scores/statistics and reject a planted scoring error?",
+  "design": "Model-free zero/classical fixture; mock state arrays; no native model loaded",
+  "exact_findings": {
+    "pristine": {
+      "passed": true,
+      "counts": {
+        "scores": 1120,
+        "cues": 1120,
+        "risks": 280,
+        "primary_means": 6,
+        "finite_arrays": 16
+      },
+      "largest_arithmetic_difference": 7.771561172376096e-16,
+      "source_sha256": "505c548d5128220406df4102873cc6beb8cf6fe63bf5b52b80ca2c37a5e6d130"
+    },
+    "score_plant_caught": true,
+    "original_loss": 1.1011682835027214,
+    "planted_loss": 2.1011682835027212
+  },
+  "controls": "Fresh fixture; frozen native/source artifacts untouched",
+  "limitations": "Engineering test only; no scientific model findings",
+  "evidence_class": "model-free regression audit",
+  "next_decision": "Run this audit on completed native replication artifacts"
+}

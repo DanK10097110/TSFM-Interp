@@ -1,0 +1,44 @@
+{
+  "design": {
+    "context": 128,
+    "horizon": 32,
+    "periods": [
+      32,
+      16
+    ],
+    "phase_shift": 1.5707963267948966,
+    "n_bundles": 64,
+    "seed_base": 1992000,
+    "amplitudes": [
+      0.5,
+      2.0
+    ],
+    "offset": [
+      -2.0,
+      2.0
+    ],
+    "phase_floor": 1e-06,
+    "native_background": true
+  },
+  "models": [
+    {
+      "name": "bolt",
+      "adapter": "chronos_bolt",
+      "checkpoint": "amazon/chronos-bolt-small",
+      "batch_size": 8
+    },
+    {
+      "name": "timesfm",
+      "adapter": "timesfm",
+      "checkpoint": "google/timesfm-2.5-200m-pytorch",
+      "batch_size": 8
+    }
+  ],
+  "inference": {
+    "n_boot": 2000,
+    "n_permutations": 1999,
+    "seed": 113,
+    "ci": 0.95,
+    "primary_estimand": "mean"
+  }
+}

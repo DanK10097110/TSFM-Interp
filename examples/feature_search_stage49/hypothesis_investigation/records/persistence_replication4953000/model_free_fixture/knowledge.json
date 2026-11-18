@@ -1,0 +1,15 @@
+{
+  "question": "Do selector freezing, TEST scoring and six-endpoint reporting run end to end?",
+  "design": "Two-source schema fixture with zero/classical stand-ins; native provenance validator bypassed ONLY in fixture subprocess memory. Production selection TEST audit guard retained.",
+  "exact_findings": {
+    "status": "PASS",
+    "primary_endpoints": 6,
+    "score_rows": 1120,
+    "native_zero_loss_checks": 80,
+    "max_abs_loss_error": 0.0
+  },
+  "controls": "Separate select/analyze subprocesses; TEST access denied during selection",
+  "limitations": "No native forecasts; no scientific conclusions; this is engineering validation only",
+  "evidence_class": "model-free pipeline test",
+  "next_decision": "Production native still HOLD pending coordinator slot grant"
+}

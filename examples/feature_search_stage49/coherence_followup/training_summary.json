@@ -1,0 +1,74 @@
+[
+  {
+    "architecture": "mlp",
+    "arm": "withheld",
+    "steps": 400,
+    "mean": 0.013664067257195711,
+    "minimum": 0.011203678324818611,
+    "maximum": 0.015372191555798054,
+    "n_corpora": 6
+  },
+  {
+    "architecture": "mlp",
+    "arm": "withheld",
+    "steps": 800,
+    "mean": 0.010820749215781689,
+    "minimum": 0.00851173885166645,
+    "maximum": 0.012485174462199211,
+    "n_corpora": 6
+  },
+  {
+    "architecture": "mlp",
+    "arm": "covered",
+    "steps": 400,
+    "mean": 0.0021285591647028923,
+    "minimum": 0.0020287714432924986,
+    "maximum": 0.002183088567107916,
+    "n_corpora": 6
+  },
+  {
+    "architecture": "mlp",
+    "arm": "covered",
+    "steps": 800,
+    "mean": 0.0018902896748234828,
+    "minimum": 0.0018389561446383595,
+    "maximum": 0.0019402951002120972,
+    "n_corpora": 6
+  },
+  {
+    "architecture": "transformer",
+    "arm": "withheld",
+    "steps": 400,
+    "mean": 0.6374173760414124,
+    "minimum": 0.6190354228019714,
+    "maximum": 0.6589365005493164,
+    "n_corpora": 6
+  },
+  {
+    "architecture": "transformer",
+    "arm": "withheld",
+    "steps": 800,
+    "mean": 0.6398251255353292,
+    "minimum": 0.6008007526397705,
+    "maximum": 0.6600252389907837,
+    "n_corpora": 6
+  },
+  {
+    "architecture": "transformer",
+    "arm": "covered",
+    "steps": 400,
+    "mean": 0.015170028277983269,
+    "minimum": 0.011250492185354233,
+    "maximum": 0.022519517689943314,
+    "n_corpora": 6
+  },
+  {
+    "architecture": "transformer",
+    "arm": "covered",
+    "steps": 800,
+    "mean": 0.006212268335123857,
+    "minimum": 0.005098368041217327,
+    "maximum": 0.009699677117168903,
+    "n_corpora": 6
+  }
+]

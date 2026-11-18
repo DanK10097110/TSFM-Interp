@@ -1,0 +1,1131 @@
+{
+  "events": [
+    {
+      "timestamp_utc": "2026-11-16T20:10:10.790812+00:00",
+      "phase": "prepare",
+      "status": "complete",
+      "question": "Does freezing actual-midpoint support remove dictionary roughness, and what changes in state/hidden-response fidelity?",
+      "design": "Same frozen weights, locked normalization, k16, seed4951000;16 synthetic sources,768 matched-radius paths; hard versus frozen TopK with live ReLU versus frozen TopK and central ReLU gate.",
+      "exact_findings": {
+        "protocol_sha256": "8b6fb344d0c6184e4fb1549434ceb129607e24b8cc5d5e2545c11762f669c68f"
+      },
+      "controls": [
+        "Same central selected indices, weights and coefficients across gate contrasts",
+        "Affine isolated-chord null",
+        "Independent dense replay and exact repeat in FP64/FP32 on16 prescribed paths",
+        "Hard baseline matches parent saved metrics",
+        "Equal-source aggregation and paired fidelity changes"
+      ],
+      "limitations": [
+        "Off-manifold activation interpolation is not a newly evaluated native path.",
+        "Response means hidden-state endpoint-minus-midpoint perturbation response, not forecast accuracy.",
+        "FP64 dictionary arithmetic on saved FP32 native states; FP32 replay sampled one path/source.",
+        "Fixed gates are path-local diagnostics chosen at each actual midpoint, not a deployable global encoder.",
+        "One seed,k16,first-block residuals,16 synthetic sources; descriptive geometry, no general monosemanticity or superiority claim."
+      ],
+      "evidence_class": "L1 saved-array controlled methodology",
+      "native_calls": 0,
+      "fit_calls": 0,
+      "parent_wording_correction": {
+        "source": "Parent dictionary_smoothness_distill.py qualification about unswitched learned maps",
+        "correction": "Parent support measured NONZERO active coordinates. Unchanged active support at the sampled chord points implies an affine map on those points. Observed active-support changes may combine TopK membership changes and ReLU zero crossings; the parent audit did not separate them. The fixed-index/live-ReLU and fixed-index/fixed-ReLU controls now separate these mechanisms.",
+        "numeric_results_unchanged": true,
+        "parent_files_unchanged": true
+      },
+      "next_decision": "Close this branch after audited result. No broader grid, fit or native launch."
+    },
+    {
+      "timestamp_utc": "2026-11-16T20:10:32.698992+00:00",
+      "phase": "preflight",
+      "status": "complete",
+      "question": "Does freezing actual-midpoint support remove dictionary roughness, and what changes in state/hidden-response fidelity?",
+      "design": "Same frozen weights, locked normalization, k16, seed4951000;16 synthetic sources,768 matched-radius paths; hard versus frozen TopK with live ReLU versus frozen TopK and central ReLU gate.",
+      "exact_findings": {
+        "tests": "tests.json",
+        "plants": "plants.json",
+        "plant_runner_returncode": 0
+      },
+      "controls": [
+        "Same central selected indices, weights and coefficients across gate contrasts",
+        "Affine isolated-chord null",
+        "Independent dense replay and exact repeat in FP64/FP32 on16 prescribed paths",
+        "Hard baseline matches parent saved metrics",
+        "Equal-source aggregation and paired fidelity changes"
+      ],
+      "limitations": [
+        "Off-manifold activation interpolation is not a newly evaluated native path.",
+        "Response means hidden-state endpoint-minus-midpoint perturbation response, not forecast accuracy.",
+        "FP64 dictionary arithmetic on saved FP32 native states; FP32 replay sampled one path/source.",
+        "Fixed gates are path-local diagnostics chosen at each actual midpoint, not a deployable global encoder.",
+        "One seed,k16,first-block residuals,16 synthetic sources; descriptive geometry, no general monosemanticity or superiority claim."
+      ],
+      "evidence_class": "L1 saved-array controlled methodology",
+      "native_calls": 0,
+      "fit_calls": 0,
+      "parent_wording_correction": {
+        "source": "Parent dictionary_smoothness_distill.py qualification about unswitched learned maps",
+        "correction": "Parent support measured NONZERO active coordinates. Unchanged active support at the sampled chord points implies an affine map on those points. Observed active-support changes may combine TopK membership changes and ReLU zero crossings; the parent audit did not separate them. The fixed-index/live-ReLU and fixed-index/fixed-ReLU controls now separate these mechanisms.",
+        "numeric_results_unchanged": true,
+        "parent_files_unchanged": true
+      },
+      "next_decision": "Close this branch after audited result. No broader grid, fit or native launch."
+    },
+    {
+      "timestamp_utc": "2026-11-16T20:11:49.912409+00:00",
+      "phase": "compute",
+      "status": "complete",
+      "question": "Does freezing actual-midpoint support remove dictionary roughness, and what changes in state/hidden-response fidelity?",
+      "design": "Same frozen weights, locked normalization, k16, seed4951000;16 synthetic sources,768 matched-radius paths; hard versus frozen TopK with live ReLU versus frozen TopK and central ReLU gate.",
+      "exact_findings": {
+        "execution": {
+          "valid": true,
+          "returncode": 0,
+          "seconds": 50.886826761998236,
+          "monitored_worker_peak": 1067810816,
+          "reason": null
+        },
+        "worker": {
+          "valid": true,
+          "seconds": 50.63075368700083,
+          "peak_rss": 1082769408,
+          "protocol_sha256": "8b6fb344d0c6184e4fb1549434ceb129607e24b8cc5d5e2545c11762f669c68f",
+          "results_sha256": "fb286af4da19f2ae5a61b235cb962ed3e607b68398e178552ae8febc6bb89d46",
+          "replay_sha256": "d3f8e87a79f6bac1def1e803f13474f9b91b91b182c68b9a410e6cb57506a526",
+          "native_calls": 0,
+          "fit_calls": 0
+        }
+      },
+      "controls": [
+        "Same central selected indices, weights and coefficients across gate contrasts",
+        "Affine isolated-chord null",
+        "Independent dense replay and exact repeat in FP64/FP32 on16 prescribed paths",
+        "Hard baseline matches parent saved metrics",
+        "Equal-source aggregation and paired fidelity changes"
+      ],
+      "limitations": [
+        "Off-manifold activation interpolation is not a newly evaluated native path.",
+        "Response means hidden-state endpoint-minus-midpoint perturbation response, not forecast accuracy.",
+        "FP64 dictionary arithmetic on saved FP32 native states; FP32 replay sampled one path/source.",
+        "Fixed gates are path-local diagnostics chosen at each actual midpoint, not a deployable global encoder.",
+        "One seed,k16,first-block residuals,16 synthetic sources; descriptive geometry, no general monosemanticity or superiority claim."
+      ],
+      "evidence_class": "L1 saved-array controlled methodology",
+      "native_calls": 0,
+      "fit_calls": 0,
+      "parent_wording_correction": {
+        "source": "Parent dictionary_smoothness_distill.py qualification about unswitched learned maps",
+        "correction": "Parent support measured NONZERO active coordinates. Unchanged active support at the sampled chord points implies an affine map on those points. Observed active-support changes may combine TopK membership changes and ReLU zero crossings; the parent audit did not separate them. The fixed-index/live-ReLU and fixed-index/fixed-ReLU controls now separate these mechanisms.",
+        "numeric_results_unchanged": true,
+        "parent_files_unchanged": true
+      },
+      "next_decision": "Close this branch after audited result. No broader grid, fit or native launch."
+    },
+    {
+      "timestamp_utc": "2026-11-16T20:12:21.246728+00:00",
+      "phase": "audit",
+      "status": "complete",
+      "question": "Does freezing actual-midpoint support remove dictionary roughness, and what changes in state/hidden-response fidelity?",
+      "design": "Same frozen weights, locked normalization, k16, seed4951000;16 synthetic sources,768 matched-radius paths; hard versus frozen TopK with live ReLU versus frozen TopK and central ReLU gate.",
+      "exact_findings": {
+        "status": "COMPLETE_AUDITED_BRANCH_CLOSED",
+        "table_design": "Locked k16 seed4951000; equal16-source means over the same768 paths, balanced axes/radii. Response is hidden-state perturbation response, not forecast accuracy.",
+        "table": [
+          {
+            "model": "bolt",
+            "method": "pca_adaptive",
+            "mode": "hard",
+            "decoded_actual_chord_RMS": 0.004035691880830172,
+            "isolated_dictionary_chord_RMS": 0.004031853097560956,
+            "state_reconstruction_RMS": 0.03379387585365659,
+            "state_reconstruction_relative_RMS": 0.07438692949164352,
+            "response_reconstruction_RMS": 0.0029509436782580553,
+            "response_reconstruction_relative_RMS": 3.169977429323393,
+            "state_reconstruction_RMS_change_from_hard": 0.0,
+            "response_reconstruction_RMS_change_from_hard": 0.0,
+            "state_change_from_hard_RMS": 0.0,
+            "response_change_from_hard_RMS": 0.0
+          },
+          {
+            "model": "bolt",
+            "method": "pca_adaptive",
+            "mode": "fixed_support",
+            "decoded_actual_chord_RMS": 2.1976939315420537e-05,
+            "isolated_dictionary_chord_RMS": 2.551212590414022e-16,
+            "state_reconstruction_RMS": 0.033796002150741175,
+            "state_reconstruction_relative_RMS": 0.07439164747278756,
+            "response_reconstruction_RMS": 0.000520341008305246,
+            "response_reconstruction_relative_RMS": 0.48750694552868656,
+            "state_reconstruction_RMS_change_from_hard": 2.1262970845874896e-06,
+            "response_reconstruction_RMS_change_from_hard": -0.002430602669952809,
+            "state_change_from_hard_RMS": 0.0023046643115580464,
+            "response_change_from_hard_RMS": 0.002822625795859948
+          },
+          {
+            "model": "bolt",
+            "method": "pca_adaptive",
+            "mode": "fixed_affine",
+            "decoded_actual_chord_RMS": 2.1976939315420537e-05,
+            "isolated_dictionary_chord_RMS": 2.551212590414022e-16,
+            "state_reconstruction_RMS": 0.033796002150741175,
+            "state_reconstruction_relative_RMS": 0.07439164747278756,
+            "response_reconstruction_RMS": 0.000520341008305246,
+            "response_reconstruction_relative_RMS": 0.48750694552868656,
+            "state_reconstruction_RMS_change_from_hard": 2.1262970845874896e-06,
+            "response_reconstruction_RMS_change_from_hard": -0.002430602669952809,
+            "state_change_from_hard_RMS": 0.0023046643115580464,
+            "response_change_from_hard_RMS": 0.002822625795859948
+          },
+          {
+            "model": "bolt",
+            "method": "topk",
+            "mode": "hard",
+            "decoded_actual_chord_RMS": 0.0029201790834190704,
+            "isolated_dictionary_chord_RMS": 0.002911262168156287,
+            "state_reconstruction_RMS": 0.05091786862231681,
+            "state_reconstruction_relative_RMS": 0.11128161380852276,
+            "response_reconstruction_RMS": 0.0022291355999993416,
+            "response_reconstruction_relative_RMS": 2.3562320765036957,
+            "state_reconstruction_RMS_change_from_hard": 0.0,
+            "response_reconstruction_RMS_change_from_hard": 0.0,
+            "state_change_from_hard_RMS": 0.0,
+            "response_change_from_hard_RMS": 0.0
+          },
+          {
+            "model": "bolt",
+            "method": "topk",
+            "mode": "fixed_support",
+            "decoded_actual_chord_RMS": 1.9053082612213764e-05,
+            "isolated_dictionary_chord_RMS": 2.0710608986852279e-16,
+            "state_reconstruction_RMS": 0.05091987012538982,
+            "state_reconstruction_relative_RMS": 0.11128566219363714,
+            "response_reconstruction_RMS": 0.0006208187505060151,
+            "response_reconstruction_relative_RMS": 0.5909311799877068,
+            "state_reconstruction_RMS_change_from_hard": 2.0015030730157326e-06,
+            "response_reconstruction_RMS_change_from_hard": -0.0016083168494933264,
+            "state_change_from_hard_RMS": 0.0016670938988570738,
+            "response_change_from_hard_RMS": 0.0020417647027534147
+          },
+          {
+            "model": "bolt",
+            "method": "topk",
+            "mode": "fixed_affine",
+            "decoded_actual_chord_RMS": 1.9053082612213764e-05,
+            "isolated_dictionary_chord_RMS": 2.0710608986852279e-16,
+            "state_reconstruction_RMS": 0.05091987012538982,
+            "state_reconstruction_relative_RMS": 0.11128566219363714,
+            "response_reconstruction_RMS": 0.0006208187505060151,
+            "response_reconstruction_relative_RMS": 0.5909311799877068,
+            "state_reconstruction_RMS_change_from_hard": 2.0015030730157326e-06,
+            "response_reconstruction_RMS_change_from_hard": -0.0016083168494933264,
+            "state_change_from_hard_RMS": 0.0016670938988570738,
+            "response_change_from_hard_RMS": 0.0020417647027534147
+          },
+          {
+            "model": "bolt",
+            "method": "nested",
+            "mode": "hard",
+            "decoded_actual_chord_RMS": 0.0028449628457669802,
+            "isolated_dictionary_chord_RMS": 0.0028452195676777776,
+            "state_reconstruction_RMS": 0.038453143050541955,
+            "state_reconstruction_relative_RMS": 0.08463124067776004,
+            "response_reconstruction_RMS": 0.00218816469564723,
+            "response_reconstruction_relative_RMS": 2.3199108661283168,
+            "state_reconstruction_RMS_change_from_hard": 0.0,
+            "response_reconstruction_RMS_change_from_hard": 0.0,
+            "state_change_from_hard_RMS": 0.0,
+            "response_change_from_hard_RMS": 0.0
+          },
+          {
+            "model": "bolt",
+            "method": "nested",
+            "mode": "fixed_support",
+            "decoded_actual_chord_RMS": 1.983851308949363e-05,
+            "isolated_dictionary_chord_RMS": 2.240983459946439e-16,
+            "state_reconstruction_RMS": 0.03845594416070386,
+            "state_reconstruction_relative_RMS": 0.0846370695969027,
+            "response_reconstruction_RMS": 0.0005901650035086601,
+            "response_reconstruction_relative_RMS": 0.5637306429826521,
+            "state_reconstruction_RMS_change_from_hard": 2.8011101619088453e-06,
+            "response_reconstruction_RMS_change_from_hard": -0.00159799969213857,
+            "state_change_from_hard_RMS": 0.0016286864839313874,
+            "response_change_from_hard_RMS": 0.0019947254182997717
+          },
+          {
+            "model": "bolt",
+            "method": "nested",
+            "mode": "fixed_affine",
+            "decoded_actual_chord_RMS": 1.983851308949363e-05,
+            "isolated_dictionary_chord_RMS": 2.240983459946439e-16,
+            "state_reconstruction_RMS": 0.03845594416070386,
+            "state_reconstruction_relative_RMS": 0.0846370695969027,
+            "response_reconstruction_RMS": 0.0005901650035086601,
+            "response_reconstruction_relative_RMS": 0.5637306429826521,
+            "state_reconstruction_RMS_change_from_hard": 2.8011101619088453e-06,
+            "response_reconstruction_RMS_change_from_hard": -0.00159799969213857,
+            "state_change_from_hard_RMS": 0.0016286864839313874,
+            "response_change_from_hard_RMS": 0.0019947254182997717
+          },
+          {
+            "model": "timesfm",
+            "method": "pca_adaptive",
+            "mode": "hard",
+            "decoded_actual_chord_RMS": 0.02385570196176097,
+            "isolated_dictionary_chord_RMS": 0.023857790545033997,
+            "state_reconstruction_RMS": 0.22862094212868186,
+            "state_reconstruction_relative_RMS": 0.14820154773499217,
+            "response_reconstruction_RMS": 0.018322554663709256,
+            "response_reconstruction_relative_RMS": 2.8107118417958574,
+            "state_reconstruction_RMS_change_from_hard": 0.0,
+            "response_reconstruction_RMS_change_from_hard": 0.0,
+            "state_change_from_hard_RMS": 0.0,
+            "response_change_from_hard_RMS": 0.0
+          },
+          {
+            "model": "timesfm",
+            "method": "pca_adaptive",
+            "mode": "fixed_support",
+            "decoded_actual_chord_RMS": 4.964430163250722e-05,
+            "isolated_dictionary_chord_RMS": 9.227816416043854e-16,
+            "state_reconstruction_RMS": 0.22863538529268917,
+            "state_reconstruction_relative_RMS": 0.14821056786579417,
+            "response_reconstruction_RMS": 0.0037962280868588452,
+            "response_reconstruction_relative_RMS": 0.5290865854560219,
+            "state_reconstruction_RMS_change_from_hard": 1.4443164007299617e-05,
+            "response_reconstruction_RMS_change_from_hard": -0.01452632657685041,
+            "state_change_from_hard_RMS": 0.013663805812309193,
+            "response_change_from_hard_RMS": 0.01673467609231629
+          },
+          {
+            "model": "timesfm",
+            "method": "pca_adaptive",
+            "mode": "fixed_affine",
+            "decoded_actual_chord_RMS": 4.964430163250722e-05,
+            "isolated_dictionary_chord_RMS": 9.227816416043854e-16,
+            "state_reconstruction_RMS": 0.22863538529268917,
+            "state_reconstruction_relative_RMS": 0.14821056786579417,
+            "response_reconstruction_RMS": 0.0037962280868588452,
+            "response_reconstruction_relative_RMS": 0.5290865854560219,
+            "state_reconstruction_RMS_change_from_hard": 1.4443164007299617e-05,
+            "response_reconstruction_RMS_change_from_hard": -0.01452632657685041,
+            "state_change_from_hard_RMS": 0.013663805812309193,
+            "response_change_from_hard_RMS": 0.01673467609231629
+          },
+          {
+            "model": "timesfm",
+            "method": "topk",
+            "mode": "hard",
+            "decoded_actual_chord_RMS": 0.014078404083148328,
+            "isolated_dictionary_chord_RMS": 0.014060694313094695,
+            "state_reconstruction_RMS": 0.22118538046328579,
+            "state_reconstruction_relative_RMS": 0.144066017327189,
+            "response_reconstruction_RMS": 0.012195510106337428,
+            "response_reconstruction_relative_RMS": 1.8394253282803184,
+            "state_reconstruction_RMS_change_from_hard": 0.0,
+            "response_reconstruction_RMS_change_from_hard": 0.0,
+            "state_change_from_hard_RMS": 0.0,
+            "response_change_from_hard_RMS": 0.0
+          },
+          {
+            "model": "timesfm",
+            "method": "topk",
+            "mode": "fixed_support",
+            "decoded_actual_chord_RMS": 3.902177700076962e-05,
+            "isolated_dictionary_chord_RMS": 7.166953186251167e-16,
+            "state_reconstruction_RMS": 0.22114295583347948,
+            "state_reconstruction_relative_RMS": 0.14404070654794587,
+            "response_reconstruction_RMS": 0.004685300956684806,
+            "response_reconstruction_relative_RMS": 0.6459545694364142,
+            "state_reconstruction_RMS_change_from_hard": -4.24246298062918e-05,
+            "response_reconstruction_RMS_change_from_hard": -0.007510209149652623,
+            "state_change_from_hard_RMS": 0.008046490721064139,
+            "response_change_from_hard_RMS": 0.00985489824332334
+          },
+          {
+            "model": "timesfm",
+            "method": "topk",
+            "mode": "fixed_affine",
+            "decoded_actual_chord_RMS": 3.902177700076962e-05,
+            "isolated_dictionary_chord_RMS": 7.166953186251167e-16,
+            "state_reconstruction_RMS": 0.22114295583347948,
+            "state_reconstruction_relative_RMS": 0.14404070654794587,
+            "response_reconstruction_RMS": 0.004685300956684806,
+            "response_reconstruction_relative_RMS": 0.6459545694364142,
+            "state_reconstruction_RMS_change_from_hard": -4.24246298062918e-05,
+            "response_reconstruction_RMS_change_from_hard": -0.007510209149652623,
+            "state_change_from_hard_RMS": 0.008046490721064139,
+            "response_change_from_hard_RMS": 0.00985489824332334
+          },
+          {
+            "model": "timesfm",
+            "method": "nested",
+            "mode": "hard",
+            "decoded_actual_chord_RMS": 0.01487693224885223,
+            "isolated_dictionary_chord_RMS": 0.01486033732940212,
+            "state_reconstruction_RMS": 0.2294541520519871,
+            "state_reconstruction_relative_RMS": 0.14911825790598676,
+            "response_reconstruction_RMS": 0.012811240214256187,
+            "response_reconstruction_relative_RMS": 1.8847360775227775,
+            "state_reconstruction_RMS_change_from_hard": 0.0,
+            "response_reconstruction_RMS_change_from_hard": 0.0,
+            "state_change_from_hard_RMS": 0.0,
+            "response_change_from_hard_RMS": 0.0
+          },
+          {
+            "model": "timesfm",
+            "method": "nested",
+            "mode": "fixed_support",
+            "decoded_actual_chord_RMS": 3.89145863146499e-05,
+            "isolated_dictionary_chord_RMS": 7.487067510617995e-16,
+            "state_reconstruction_RMS": 0.22947875591799094,
+            "state_reconstruction_relative_RMS": 0.14913655647312926,
+            "response_reconstruction_RMS": 0.0045883993580317015,
+            "response_reconstruction_relative_RMS": 0.6322899050860094,
+            "state_reconstruction_RMS_change_from_hard": 2.4603866003842684e-05,
+            "response_reconstruction_RMS_change_from_hard": -0.008222840856224486,
+            "state_change_from_hard_RMS": 0.008491053097327336,
+            "response_change_from_hard_RMS": 0.01039937373366535
+          },
+          {
+            "model": "timesfm",
+            "method": "nested",
+            "mode": "fixed_affine",
+            "decoded_actual_chord_RMS": 3.89145863146499e-05,
+            "isolated_dictionary_chord_RMS": 7.487067510617995e-16,
+            "state_reconstruction_RMS": 0.22947875591799094,
+            "state_reconstruction_relative_RMS": 0.14913655647312926,
+            "response_reconstruction_RMS": 0.0045883993580317015,
+            "response_reconstruction_relative_RMS": 0.6322899050860094,
+            "state_reconstruction_RMS_change_from_hard": 2.4603866003842684e-05,
+            "response_reconstruction_RMS_change_from_hard": -0.008222840856224486,
+            "state_change_from_hard_RMS": 0.008491053097327336,
+            "response_change_from_hard_RMS": 0.01039937373366535
+          }
+        ],
+        "paired_source_changes": [
+          {
+            "model": "bolt",
+            "method": "pca_adaptive",
+            "mode": "fixed_support",
+            "decoded_actual_chord_RMS_change_from_hard": {
+              "mean": -0.004013714941514751,
+              "sources_negative": 16,
+              "n_sources": 16
+            },
+            "state_reconstruction_RMS_change_from_hard": {
+              "mean": 2.1262970845874896e-06,
+              "sources_negative": 0,
+              "n_sources": 16
+            },
+            "response_reconstruction_RMS_change_from_hard": {
+              "mean": -0.002430602669952809,
+              "sources_negative": 16,
+              "n_sources": 16
+            }
+          },
+          {
+            "model": "bolt",
+            "method": "pca_adaptive",
+            "mode": "fixed_affine",
+            "decoded_actual_chord_RMS_change_from_hard": {
+              "mean": -0.004013714941514751,
+              "sources_negative": 16,
+              "n_sources": 16
+            },
+            "state_reconstruction_RMS_change_from_hard": {
+              "mean": 2.1262970845874896e-06,
+              "sources_negative": 0,
+              "n_sources": 16
+            },
+            "response_reconstruction_RMS_change_from_hard": {
+              "mean": -0.002430602669952809,
+              "sources_negative": 16,
+              "n_sources": 16
+            }
+          },
+          {
+            "model": "bolt",
+            "method": "topk",
+            "mode": "fixed_support",
+            "decoded_actual_chord_RMS_change_from_hard": {
+              "mean": -0.0029011260008068567,
+              "sources_negative": 16,
+              "n_sources": 16
+            },
+            "state_reconstruction_RMS_change_from_hard": {
+              "mean": 2.0015030730157326e-06,
+              "sources_negative": 8,
+              "n_sources": 16
+            },
+            "response_reconstruction_RMS_change_from_hard": {
+              "mean": -0.0016083168494933264,
+              "sources_negative": 16,
+              "n_sources": 16
+            }
+          },
+          {
+            "model": "bolt",
+            "method": "topk",
+            "mode": "fixed_affine",
+            "decoded_actual_chord_RMS_change_from_hard": {
+              "mean": -0.0029011260008068567,
+              "sources_negative": 16,
+              "n_sources": 16
+            },
+            "state_reconstruction_RMS_change_from_hard": {
+              "mean": 2.0015030730157326e-06,
+              "sources_negative": 8,
+              "n_sources": 16
+            },
+            "response_reconstruction_RMS_change_from_hard": {
+              "mean": -0.0016083168494933264,
+              "sources_negative": 16,
+              "n_sources": 16
+            }
+          },
+          {
+            "model": "bolt",
+            "method": "nested",
+            "mode": "fixed_support",
+            "decoded_actual_chord_RMS_change_from_hard": {
+              "mean": -0.0028251243326774867,
+              "sources_negative": 16,
+              "n_sources": 16
+            },
+            "state_reconstruction_RMS_change_from_hard": {
+              "mean": 2.8011101619088453e-06,
+              "sources_negative": 5,
+              "n_sources": 16
+            },
+            "response_reconstruction_RMS_change_from_hard": {
+              "mean": -0.00159799969213857,
+              "sources_negative": 16,
+              "n_sources": 16
+            }
+          },
+          {
+            "model": "bolt",
+            "method": "nested",
+            "mode": "fixed_affine",
+            "decoded_actual_chord_RMS_change_from_hard": {
+              "mean": -0.0028251243326774867,
+              "sources_negative": 16,
+              "n_sources": 16
+            },
+            "state_reconstruction_RMS_change_from_hard": {
+              "mean": 2.8011101619088453e-06,
+              "sources_negative": 5,
+              "n_sources": 16
+            },
+            "response_reconstruction_RMS_change_from_hard": {
+              "mean": -0.00159799969213857,
+              "sources_negative": 16,
+              "n_sources": 16
+            }
+          },
+          {
+            "model": "timesfm",
+            "method": "pca_adaptive",
+            "mode": "fixed_support",
+            "decoded_actual_chord_RMS_change_from_hard": {
+              "mean": -0.023806057660128464,
+              "sources_negative": 16,
+              "n_sources": 16
+            },
+            "state_reconstruction_RMS_change_from_hard": {
+              "mean": 1.4443164007299617e-05,
+              "sources_negative": 0,
+              "n_sources": 16
+            },
+            "response_reconstruction_RMS_change_from_hard": {
+              "mean": -0.01452632657685041,
+              "sources_negative": 16,
+              "n_sources": 16
+            }
+          },
+          {
+            "model": "timesfm",
+            "method": "pca_adaptive",
+            "mode": "fixed_affine",
+            "decoded_actual_chord_RMS_change_from_hard": {
+              "mean": -0.023806057660128464,
+              "sources_negative": 16,
+              "n_sources": 16
+            },
+            "state_reconstruction_RMS_change_from_hard": {
+              "mean": 1.4443164007299617e-05,
+              "sources_negative": 0,
+              "n_sources": 16
+            },
+            "response_reconstruction_RMS_change_from_hard": {
+              "mean": -0.01452632657685041,
+              "sources_negative": 16,
+              "n_sources": 16
+            }
+          },
+          {
+            "model": "timesfm",
+            "method": "topk",
+            "mode": "fixed_support",
+            "decoded_actual_chord_RMS_change_from_hard": {
+              "mean": -0.014039382306147558,
+              "sources_negative": 16,
+              "n_sources": 16
+            },
+            "state_reconstruction_RMS_change_from_hard": {
+              "mean": -4.24246298062918e-05,
+              "sources_negative": 10,
+              "n_sources": 16
+            },
+            "response_reconstruction_RMS_change_from_hard": {
+              "mean": -0.007510209149652623,
+              "sources_negative": 16,
+              "n_sources": 16
+            }
+          },
+          {
+            "model": "timesfm",
+            "method": "topk",
+            "mode": "fixed_affine",
+            "decoded_actual_chord_RMS_change_from_hard": {
+              "mean": -0.014039382306147558,
+              "sources_negative": 16,
+              "n_sources": 16
+            },
+            "state_reconstruction_RMS_change_from_hard": {
+              "mean": -4.24246298062918e-05,
+              "sources_negative": 10,
+              "n_sources": 16
+            },
+            "response_reconstruction_RMS_change_from_hard": {
+              "mean": -0.007510209149652623,
+              "sources_negative": 16,
+              "n_sources": 16
+            }
+          },
+          {
+            "model": "timesfm",
+            "method": "nested",
+            "mode": "fixed_support",
+            "decoded_actual_chord_RMS_change_from_hard": {
+              "mean": -0.014838017662537579,
+              "sources_negative": 16,
+              "n_sources": 16
+            },
+            "state_reconstruction_RMS_change_from_hard": {
+              "mean": 2.4603866003842684e-05,
+              "sources_negative": 6,
+              "n_sources": 16
+            },
+            "response_reconstruction_RMS_change_from_hard": {
+              "mean": -0.008222840856224486,
+              "sources_negative": 16,
+              "n_sources": 16
+            }
+          },
+          {
+            "model": "timesfm",
+            "method": "nested",
+            "mode": "fixed_affine",
+            "decoded_actual_chord_RMS_change_from_hard": {
+              "mean": -0.014838017662537579,
+              "sources_negative": 16,
+              "n_sources": 16
+            },
+            "state_reconstruction_RMS_change_from_hard": {
+              "mean": 2.4603866003842684e-05,
+              "sources_negative": 6,
+              "n_sources": 16
+            },
+            "response_reconstruction_RMS_change_from_hard": {
+              "mean": -0.008222840856224486,
+              "sources_negative": 16,
+              "n_sources": 16
+            }
+          }
+        ],
+        "audit": {
+          "valid": true,
+          "independent_source_summaries": 2898,
+          "maximum_summary_error": 9.094947017729282e-13,
+          "maximum_sample_metric_error": 3.552713678800501e-15,
+          "maximum_affine_isolated_RMS": 1.5923352663426e-15,
+          "maximum_live_relu_isolated_RMS": 1.5923352663426e-15,
+          "maximum_sample_live_vs_fixed_relu_output_difference": 0.0,
+          "independent_replay": "18 arms,first registered path per16 sources,both precisions,exact reference repeats; all-path hard baseline agrees with parent",
+          "maximum_reference_errors": {
+            "FP32": 3.814697265625e-06,
+            "FP64": 7.105427357601002e-15
+          },
+          "FP32_central_index_disagreements": 0,
+          "FP32_central_gate_disagreements": 0,
+          "frozen_files_unchanged": true,
+          "reporter_sha256": "393c3a3bc124fb41d7682adaa1f8d76a0cae3eb3e86d2c7025e417f488692beb",
+          "seconds": 1.7975436749402434
+        },
+        "execution": {
+          "valid": true,
+          "returncode": 0,
+          "seconds": 50.886826761998236,
+          "monitored_worker_peak": 1067810816,
+          "reason": null
+        },
+        "worker_peak_rss": 1082769408,
+        "tests_passed": 4,
+        "plants_detected": 4,
+        "native_calls": 0,
+        "fit_calls": 0,
+        "parent_wording_correction": {
+          "source": "Parent dictionary_smoothness_distill.py qualification about unswitched learned maps",
+          "correction": "Parent support measured NONZERO active coordinates. Unchanged active support at the sampled chord points implies an affine map on those points. Observed active-support changes may combine TopK membership changes and ReLU zero crossings; the parent audit did not separate them. The fixed-index/live-ReLU and fixed-index/fixed-ReLU controls now separate these mechanisms.",
+          "numeric_results_unchanged": true,
+          "parent_files_unchanged": true
+        },
+        "interpretation": "Read paired state and hidden-response fidelity changes alongside curvature. Fixed gates are path-local diagnostics and cannot establish a better general encoder.",
+        "branch_closed": true,
+        "next_decision": "No broader grid, fitting or native follow-up."
+      },
+      "controls": [
+        "Same central selected indices, weights and coefficients across gate contrasts",
+        "Affine isolated-chord null",
+        "Independent dense replay and exact repeat in FP64/FP32 on16 prescribed paths",
+        "Hard baseline matches parent saved metrics",
+        "Equal-source aggregation and paired fidelity changes"
+      ],
+      "limitations": [
+        "Off-manifold activation interpolation is not a newly evaluated native path.",
+        "Response means hidden-state endpoint-minus-midpoint perturbation response, not forecast accuracy.",
+        "FP64 dictionary arithmetic on saved FP32 native states; FP32 replay sampled one path/source.",
+        "Fixed gates are path-local diagnostics chosen at each actual midpoint, not a deployable global encoder.",
+        "One seed,k16,first-block residuals,16 synthetic sources; descriptive geometry, no general monosemanticity or superiority claim."
+      ],
+      "evidence_class": "L1 saved-array controlled methodology",
+      "native_calls": 0,
+      "fit_calls": 0,
+      "parent_wording_correction": {
+        "source": "Parent dictionary_smoothness_distill.py qualification about unswitched learned maps",
+        "correction": "Parent support measured NONZERO active coordinates. Unchanged active support at the sampled chord points implies an affine map on those points. Observed active-support changes may combine TopK membership changes and ReLU zero crossings; the parent audit did not separate them. The fixed-index/live-ReLU and fixed-index/fixed-ReLU controls now separate these mechanisms.",
+        "numeric_results_unchanged": true,
+        "parent_files_unchanged": true
+      },
+      "next_decision": "Close this branch after audited result. No broader grid, fit or native launch."
+    },
+    {
+      "timestamp_utc": "2026-11-16T20:13:18.897370+00:00",
+      "phase": "branch_closed",
+      "status": "complete",
+      "question": "Does freezing actual-midpoint support remove dictionary roughness, and what changes in state/hidden-response fidelity?",
+      "design": "Same frozen weights, locked normalization, k16, seed4951000;16 synthetic sources,768 matched-radius paths; hard versus frozen TopK with live ReLU versus frozen TopK and central ReLU gate.",
+      "exact_findings": {
+        "status": "COMPLETE_AUDITED_BRANCH_CLOSED",
+        "question": "Locked k16 seed4951000; equal16-source means over the same768 paths, balanced axes/radii. Response is hidden-state perturbation response, not forecast accuracy.",
+        "conclusion": "With the same weights and path-local central choices, freezing TopK membership removes the large excess chord roughness. Keeping versus freezing ReLU gives identical saved path metrics here, isolating TopK membership switching as the measured source of excess roughness in this fixed design.",
+        "fidelity_conclusion": "Hidden-state perturbation-response reconstruction improves in every model/method mean. Mean state-reconstruction error worsens slightly in five of six comparisons and improves for TimesFM TopK. No better-encoder or forecast-accuracy claim.",
+        "exact_table": [
+          {
+            "model": "bolt",
+            "method": "pca_adaptive",
+            "actual_chord_hard": 0.004035691880830172,
+            "actual_chord_fixed": 2.1976939315420537e-05,
+            "actual_chord_fraction_removed": 0.9945543564859813,
+            "isolated_chord_fixed": 2.551212590414022e-16,
+            "state_reconstruction_RMS_hard": 0.03379387585365659,
+            "state_reconstruction_RMS_fixed": 0.033796002150741175,
+            "state_reconstruction_RMS_change": 2.1262970845874896e-06,
+            "response_reconstruction_RMS_hard": 0.0029509436782580553,
+            "response_reconstruction_RMS_fixed": 0.000520341008305246,
+            "response_error_fraction_removed": 0.8236696240124773,
+            "source_counts_decreased": {
+              "decoded_actual_chord_RMS": 16,
+              "state_reconstruction_RMS": 0,
+              "response_reconstruction_RMS": 16
+            },
+            "controls_identical_all_saved_path_metrics": true
+          },
+          {
+            "model": "bolt",
+            "method": "topk",
+            "actual_chord_hard": 0.0029201790834190704,
+            "actual_chord_fixed": 1.9053082612213764e-05,
+            "actual_chord_fraction_removed": 0.9934753718631854,
+            "isolated_chord_fixed": 2.0710608986852279e-16,
+            "state_reconstruction_RMS_hard": 0.05091786862231681,
+            "state_reconstruction_RMS_fixed": 0.05091987012538982,
+            "state_reconstruction_RMS_change": 2.0015030730157326e-06,
+            "response_reconstruction_RMS_hard": 0.0022291355999993416,
+            "response_reconstruction_RMS_fixed": 0.0006208187505060151,
+            "response_error_fraction_removed": 0.7214979876028186,
+            "source_counts_decreased": {
+              "decoded_actual_chord_RMS": 16,
+              "state_reconstruction_RMS": 8,
+              "response_reconstruction_RMS": 16
+            },
+            "controls_identical_all_saved_path_metrics": true
+          },
+          {
+            "model": "bolt",
+            "method": "nested",
+            "actual_chord_hard": 0.0028449628457669802,
+            "actual_chord_fixed": 1.983851308949363e-05,
+            "actual_chord_fraction_removed": 0.9930267936120813,
+            "isolated_chord_fixed": 2.240983459946439e-16,
+            "state_reconstruction_RMS_hard": 0.038453143050541955,
+            "state_reconstruction_RMS_fixed": 0.03845594416070386,
+            "state_reconstruction_RMS_change": 2.8011101619088453e-06,
+            "response_reconstruction_RMS_hard": 0.00218816469564723,
+            "response_reconstruction_RMS_fixed": 0.0005901650035086601,
+            "response_error_fraction_removed": 0.7302922377448846,
+            "source_counts_decreased": {
+              "decoded_actual_chord_RMS": 16,
+              "state_reconstruction_RMS": 5,
+              "response_reconstruction_RMS": 16
+            },
+            "controls_identical_all_saved_path_metrics": true
+          },
+          {
+            "model": "timesfm",
+            "method": "pca_adaptive",
+            "actual_chord_hard": 0.02385570196176097,
+            "actual_chord_fixed": 4.964430163250722e-05,
+            "actual_chord_fraction_removed": 0.9979189754419264,
+            "isolated_chord_fixed": 9.227816416043854e-16,
+            "state_reconstruction_RMS_hard": 0.22862094212868186,
+            "state_reconstruction_RMS_fixed": 0.22863538529268917,
+            "state_reconstruction_RMS_change": 1.4443164007299617e-05,
+            "response_reconstruction_RMS_hard": 0.018322554663709256,
+            "response_reconstruction_RMS_fixed": 0.0037962280868588452,
+            "response_error_fraction_removed": 0.7928112014653785,
+            "source_counts_decreased": {
+              "decoded_actual_chord_RMS": 16,
+              "state_reconstruction_RMS": 0,
+              "response_reconstruction_RMS": 16
+            },
+            "controls_identical_all_saved_path_metrics": true
+          },
+          {
+            "model": "timesfm",
+            "method": "topk",
+            "actual_chord_hard": 0.014078404083148328,
+            "actual_chord_fixed": 3.902177700076962e-05,
+            "actual_chord_fraction_removed": 0.9972282528069017,
+            "isolated_chord_fixed": 7.166953186251167e-16,
+            "state_reconstruction_RMS_hard": 0.22118538046328579,
+            "state_reconstruction_RMS_fixed": 0.22114295583347948,
+            "state_reconstruction_RMS_change": -4.24246298062918e-05,
+            "response_reconstruction_RMS_hard": 0.012195510106337428,
+            "response_reconstruction_RMS_fixed": 0.004685300956684806,
+            "response_error_fraction_removed": 0.6158175495873619,
+            "source_counts_decreased": {
+              "decoded_actual_chord_RMS": 16,
+              "state_reconstruction_RMS": 10,
+              "response_reconstruction_RMS": 16
+            },
+            "controls_identical_all_saved_path_metrics": true
+          },
+          {
+            "model": "timesfm",
+            "method": "nested",
+            "actual_chord_hard": 0.01487693224885223,
+            "actual_chord_fixed": 3.89145863146499e-05,
+            "actual_chord_fraction_removed": 0.9973842331427132,
+            "isolated_chord_fixed": 7.487067510617995e-16,
+            "state_reconstruction_RMS_hard": 0.2294541520519871,
+            "state_reconstruction_RMS_fixed": 0.22947875591799094,
+            "state_reconstruction_RMS_change": 2.4603866003842684e-05,
+            "response_reconstruction_RMS_hard": 0.012811240214256187,
+            "response_reconstruction_RMS_fixed": 0.0045883993580317015,
+            "response_error_fraction_removed": 0.6418458102966653,
+            "source_counts_decreased": {
+              "decoded_actual_chord_RMS": 16,
+              "state_reconstruction_RMS": 6,
+              "response_reconstruction_RMS": 16
+            },
+            "controls_identical_all_saved_path_metrics": true
+          }
+        ],
+        "controls_live_and_fixed_relu_identical_all_saved_path_metrics": true,
+        "audit": {
+          "valid": true,
+          "independent_source_summaries": 2898,
+          "maximum_summary_error": 9.094947017729282e-13,
+          "maximum_sample_metric_error": 3.552713678800501e-15,
+          "maximum_affine_isolated_RMS": 1.5923352663426e-15,
+          "maximum_live_relu_isolated_RMS": 1.5923352663426e-15,
+          "maximum_sample_live_vs_fixed_relu_output_difference": 0.0,
+          "independent_replay": "18 arms,first registered path per16 sources,both precisions,exact reference repeats; all-path hard baseline agrees with parent",
+          "maximum_reference_errors": {
+            "FP32": 3.814697265625e-06,
+            "FP64": 7.105427357601002e-15
+          },
+          "FP32_central_index_disagreements": 0,
+          "FP32_central_gate_disagreements": 0,
+          "frozen_files_unchanged": true,
+          "reporter_sha256": "393c3a3bc124fb41d7682adaa1f8d76a0cae3eb3e86d2c7025e417f488692beb",
+          "seconds": 1.7975436749402434
+        },
+        "execution": {
+          "valid": true,
+          "returncode": 0,
+          "seconds": 50.886826761998236,
+          "monitored_worker_peak": 1067810816,
+          "reason": null
+        },
+        "worker_peak_rss": 1082769408,
+        "tests_passed": 4,
+        "plants_detected": 4,
+        "audit_and_worker_elapsed_seconds": 52.68437043693848,
+        "evidence_class": "L1 saved-array controlled methodology",
+        "limitations": [
+          "16 synthetic sources, one seed,k16,locked first-block residuals; no broader claim.",
+          "Central support is chosen separately per path/token from actual input midpoint, not a deployable global mapping.",
+          "Isolated chord uses off-manifold activation interpolation; actual-path metrics use saved native outputs.",
+          "Response means hidden-state response, not native forecast response; native_calls=fit_calls=0.",
+          "Mean fidelity change is distinct from RMS change of reconstructed states, both preserved in compact_summary.json.",
+          "Native captures are FP32; dictionary main arithmetic FP64; FP32 replay samples one prescribed path/source."
+        ],
+        "parent_wording_correction": {
+          "source": "Parent dictionary_smoothness_distill.py qualification about unswitched learned maps",
+          "correction": "Parent support measured NONZERO active coordinates. Unchanged active support at the sampled chord points implies an affine map on those points. Observed active-support changes may combine TopK membership changes and ReLU zero crossings; the parent audit did not separate them. The fixed-index/live-ReLU and fixed-index/fixed-ReLU controls now separate these mechanisms.",
+          "numeric_results_unchanged": true,
+          "parent_files_unchanged": true
+        },
+        "protocol_sha256": "8b6fb344d0c6184e4fb1549434ceb129607e24b8cc5d5e2545c11762f669c68f",
+        "compact_summary_sha256": "95e96c03150c4140308bf441d8edecf4e44ddb375ee2e827c9ecf7d002474c07",
+        "next_decision": "Branch closed. No broader grid, fitting, native capture or automatic expansion.",
+        "native_calls": 0,
+        "fit_calls": 0
+      },
+      "controls": [
+        "Same central selected indices, weights and coefficients across gate contrasts",
+        "Affine isolated-chord null",
+        "Independent dense replay and exact repeat in FP64/FP32 on16 prescribed paths",
+        "Hard baseline matches parent saved metrics",
+        "Equal-source aggregation and paired fidelity changes"
+      ],
+      "limitations": [
+        "Off-manifold activation interpolation is not a newly evaluated native path.",
+        "Response means hidden-state endpoint-minus-midpoint perturbation response, not forecast accuracy.",
+        "FP64 dictionary arithmetic on saved FP32 native states; FP32 replay sampled one path/source.",
+        "Fixed gates are path-local diagnostics chosen at each actual midpoint, not a deployable global encoder.",
+        "One seed,k16,first-block residuals,16 synthetic sources; descriptive geometry, no general monosemanticity or superiority claim."
+      ],
+      "evidence_class": "L1 saved-array controlled methodology",
+      "native_calls": 0,
+      "fit_calls": 0,
+      "parent_wording_correction": {
+        "source": "Parent dictionary_smoothness_distill.py qualification about unswitched learned maps",
+        "correction": "Parent support measured NONZERO active coordinates. Unchanged active support at the sampled chord points implies an affine map on those points. Observed active-support changes may combine TopK membership changes and ReLU zero crossings; the parent audit did not separate them. The fixed-index/live-ReLU and fixed-index/fixed-ReLU controls now separate these mechanisms.",
+        "numeric_results_unchanged": true,
+        "parent_files_unchanged": true
+      },
+      "next_decision": "Close this branch after audited result. No broader grid, fit or native launch."
+    }
+  ],
+  "timestamp_utc": "2026-11-16T20:13:18.897370+00:00",
+  "phase": "branch_closed",
+  "status": "complete",
+  "question": "Does freezing actual-midpoint support remove dictionary roughness, and what changes in state/hidden-response fidelity?",
+  "design": "Same frozen weights, locked normalization, k16, seed4951000;16 synthetic sources,768 matched-radius paths; hard versus frozen TopK with live ReLU versus frozen TopK and central ReLU gate.",
+  "exact_findings": {
+    "status": "COMPLETE_AUDITED_BRANCH_CLOSED",
+    "question": "Locked k16 seed4951000; equal16-source means over the same768 paths, balanced axes/radii. Response is hidden-state perturbation response, not forecast accuracy.",
+    "conclusion": "With the same weights and path-local central choices, freezing TopK membership removes the large excess chord roughness. Keeping versus freezing ReLU gives identical saved path metrics here, isolating TopK membership switching as the measured source of excess roughness in this fixed design.",
+    "fidelity_conclusion": "Hidden-state perturbation-response reconstruction improves in every model/method mean. Mean state-reconstruction error worsens slightly in five of six comparisons and improves for TimesFM TopK. No better-encoder or forecast-accuracy claim.",
+    "exact_table": [
+      {
+        "model": "bolt",
+        "method": "pca_adaptive",
+        "actual_chord_hard": 0.004035691880830172,
+        "actual_chord_fixed": 2.1976939315420537e-05,
+        "actual_chord_fraction_removed": 0.9945543564859813,
+        "isolated_chord_fixed": 2.551212590414022e-16,
+        "state_reconstruction_RMS_hard": 0.03379387585365659,
+        "state_reconstruction_RMS_fixed": 0.033796002150741175,
+        "state_reconstruction_RMS_change": 2.1262970845874896e-06,
+        "response_reconstruction_RMS_hard": 0.0029509436782580553,
+        "response_reconstruction_RMS_fixed": 0.000520341008305246,
+        "response_error_fraction_removed": 0.8236696240124773,
+        "source_counts_decreased": {
+          "decoded_actual_chord_RMS": 16,
+          "state_reconstruction_RMS": 0,
+          "response_reconstruction_RMS": 16
+        },
+        "controls_identical_all_saved_path_metrics": true
+      },
+      {
+        "model": "bolt",
+        "method": "topk",
+        "actual_chord_hard": 0.0029201790834190704,
+        "actual_chord_fixed": 1.9053082612213764e-05,
+        "actual_chord_fraction_removed": 0.9934753718631854,
+        "isolated_chord_fixed": 2.0710608986852279e-16,
+        "state_reconstruction_RMS_hard": 0.05091786862231681,
+        "state_reconstruction_RMS_fixed": 0.05091987012538982,
+        "state_reconstruction_RMS_change": 2.0015030730157326e-06,
+        "response_reconstruction_RMS_hard": 0.0022291355999993416,
+        "response_reconstruction_RMS_fixed": 0.0006208187505060151,
+        "response_error_fraction_removed": 0.7214979876028186,
+        "source_counts_decreased": {
+          "decoded_actual_chord_RMS": 16,
+          "state_reconstruction_RMS": 8,
+          "response_reconstruction_RMS": 16
+        },
+        "controls_identical_all_saved_path_metrics": true
+      },
+      {
+        "model": "bolt",
+        "method": "nested",
+        "actual_chord_hard": 0.0028449628457669802,
+        "actual_chord_fixed": 1.983851308949363e-05,
+        "actual_chord_fraction_removed": 0.9930267936120813,
+        "isolated_chord_fixed": 2.240983459946439e-16,
+        "state_reconstruction_RMS_hard": 0.038453143050541955,
+        "state_reconstruction_RMS_fixed": 0.03845594416070386,
+        "state_reconstruction_RMS_change": 2.8011101619088453e-06,
+        "response_reconstruction_RMS_hard": 0.00218816469564723,
+        "response_reconstruction_RMS_fixed": 0.0005901650035086601,
+        "response_error_fraction_removed": 0.7302922377448846,
+        "source_counts_decreased": {
+          "decoded_actual_chord_RMS": 16,
+          "state_reconstruction_RMS": 5,
+          "response_reconstruction_RMS": 16
+        },
+        "controls_identical_all_saved_path_metrics": true
+      },
+      {
+        "model": "timesfm",
+        "method": "pca_adaptive",
+        "actual_chord_hard": 0.02385570196176097,
+        "actual_chord_fixed": 4.964430163250722e-05,
+        "actual_chord_fraction_removed": 0.9979189754419264,
+        "isolated_chord_fixed": 9.227816416043854e-16,
+        "state_reconstruction_RMS_hard": 0.22862094212868186,
+        "state_reconstruction_RMS_fixed": 0.22863538529268917,
+        "state_reconstruction_RMS_change": 1.4443164007299617e-05,
+        "response_reconstruction_RMS_hard": 0.018322554663709256,
+        "response_reconstruction_RMS_fixed": 0.0037962280868588452,
+        "response_error_fraction_removed": 0.7928112014653785,
+        "source_counts_decreased": {
+          "decoded_actual_chord_RMS": 16,
+          "state_reconstruction_RMS": 0,
+          "response_reconstruction_RMS": 16
+        },
+        "controls_identical_all_saved_path_metrics": true
+      },
+      {
+        "model": "timesfm",
+        "method": "topk",
+        "actual_chord_hard": 0.014078404083148328,
+        "actual_chord_fixed": 3.902177700076962e-05,
+        "actual_chord_fraction_removed": 0.9972282528069017,
+        "isolated_chord_fixed": 7.166953186251167e-16,
+        "state_reconstruction_RMS_hard": 0.22118538046328579,
+        "state_reconstruction_RMS_fixed": 0.22114295583347948,
+        "state_reconstruction_RMS_change": -4.24246298062918e-05,
+        "response_reconstruction_RMS_hard": 0.012195510106337428,
+        "response_reconstruction_RMS_fixed": 0.004685300956684806,
+        "response_error_fraction_removed": 0.6158175495873619,
+        "source_counts_decreased": {
+          "decoded_actual_chord_RMS": 16,
+          "state_reconstruction_RMS": 10,
+          "response_reconstruction_RMS": 16
+        },
+        "controls_identical_all_saved_path_metrics": true
+      },
+      {
+        "model": "timesfm",
+        "method": "nested",
+        "actual_chord_hard": 0.01487693224885223,
+        "actual_chord_fixed": 3.89145863146499e-05,
+        "actual_chord_fraction_removed": 0.9973842331427132,
+        "isolated_chord_fixed": 7.487067510617995e-16,
+        "state_reconstruction_RMS_hard": 0.2294541520519871,
+        "state_reconstruction_RMS_fixed": 0.22947875591799094,
+        "state_reconstruction_RMS_change": 2.4603866003842684e-05,
+        "response_reconstruction_RMS_hard": 0.012811240214256187,
+        "response_reconstruction_RMS_fixed": 0.0045883993580317015,
+        "response_error_fraction_removed": 0.6418458102966653,
+        "source_counts_decreased": {
+          "decoded_actual_chord_RMS": 16,
+          "state_reconstruction_RMS": 6,
+          "response_reconstruction_RMS": 16
+        },
+        "controls_identical_all_saved_path_metrics": true
+      }
+    ],
+    "controls_live_and_fixed_relu_identical_all_saved_path_metrics": true,
+    "audit": {
+      "valid": true,
+      "independent_source_summaries": 2898,
+      "maximum_summary_error": 9.094947017729282e-13,
+      "maximum_sample_metric_error": 3.552713678800501e-15,
+      "maximum_affine_isolated_RMS": 1.5923352663426e-15,
+      "maximum_live_relu_isolated_RMS": 1.5923352663426e-15,
+      "maximum_sample_live_vs_fixed_relu_output_difference": 0.0,
+      "independent_replay": "18 arms,first registered path per16 sources,both precisions,exact reference repeats; all-path hard baseline agrees with parent",
+      "maximum_reference_errors": {
+        "FP32": 3.814697265625e-06,
+        "FP64": 7.105427357601002e-15
+      },
+      "FP32_central_index_disagreements": 0,
+      "FP32_central_gate_disagreements": 0,
+      "frozen_files_unchanged": true,
+      "reporter_sha256": "393c3a3bc124fb41d7682adaa1f8d76a0cae3eb3e86d2c7025e417f488692beb",
+      "seconds": 1.7975436749402434
+    },
+    "execution": {
+      "valid": true,
+      "returncode": 0,
+      "seconds": 50.886826761998236,
+      "monitored_worker_peak": 1067810816,
+      "reason": null
+    },
+    "worker_peak_rss": 1082769408,
+    "tests_passed": 4,
+    "plants_detected": 4,
+    "audit_and_worker_elapsed_seconds": 52.68437043693848,
+    "evidence_class": "L1 saved-array controlled methodology",
+    "limitations": [
+      "16 synthetic sources, one seed,k16,locked first-block residuals; no broader claim.",
+      "Central support is chosen separately per path/token from actual input midpoint, not a deployable global mapping.",
+      "Isolated chord uses off-manifold activation interpolation; actual-path metrics use saved native outputs.",
+      "Response means hidden-state response, not native forecast response; native_calls=fit_calls=0.",
+      "Mean fidelity change is distinct from RMS change of reconstructed states, both preserved in compact_summary.json.",
+      "Native captures are FP32; dictionary main arithmetic FP64; FP32 replay samples one prescribed path/source."
+    ],
+    "parent_wording_correction": {
+      "source": "Parent dictionary_smoothness_distill.py qualification about unswitched learned maps",
+      "correction": "Parent support measured NONZERO active coordinates. Unchanged active support at the sampled chord points implies an affine map on those points. Observed active-support changes may combine TopK membership changes and ReLU zero crossings; the parent audit did not separate them. The fixed-index/live-ReLU and fixed-index/fixed-ReLU controls now separate these mechanisms.",
+      "numeric_results_unchanged": true,
+      "parent_files_unchanged": true
+    },
+    "protocol_sha256": "8b6fb344d0c6184e4fb1549434ceb129607e24b8cc5d5e2545c11762f669c68f",
+    "compact_summary_sha256": "95e96c03150c4140308bf441d8edecf4e44ddb375ee2e827c9ecf7d002474c07",
+    "next_decision": "Branch closed. No broader grid, fitting, native capture or automatic expansion.",
+    "native_calls": 0,
+    "fit_calls": 0
+  },
+  "controls": [
+    "Same central selected indices, weights and coefficients across gate contrasts",
+    "Affine isolated-chord null",
+    "Independent dense replay and exact repeat in FP64/FP32 on16 prescribed paths",
+    "Hard baseline matches parent saved metrics",
+    "Equal-source aggregation and paired fidelity changes"
+  ],
+  "limitations": [
+    "Off-manifold activation interpolation is not a newly evaluated native path.",
+    "Response means hidden-state endpoint-minus-midpoint perturbation response, not forecast accuracy.",
+    "FP64 dictionary arithmetic on saved FP32 native states; FP32 replay sampled one path/source.",
+    "Fixed gates are path-local diagnostics chosen at each actual midpoint, not a deployable global encoder.",
+    "One seed,k16,first-block residuals,16 synthetic sources; descriptive geometry, no general monosemanticity or superiority claim."
+  ],
+  "evidence_class": "L1 saved-array controlled methodology",
+  "native_calls": 0,
+  "fit_calls": 0,
+  "parent_wording_correction": {
+    "source": "Parent dictionary_smoothness_distill.py qualification about unswitched learned maps",
+    "correction": "Parent support measured NONZERO active coordinates. Unchanged active support at the sampled chord points implies an affine map on those points. Observed active-support changes may combine TopK membership changes and ReLU zero crossings; the parent audit did not separate them. The fixed-index/live-ReLU and fixed-index/fixed-ReLU controls now separate these mechanisms.",
+    "numeric_results_unchanged": true,
+    "parent_files_unchanged": true
+  },
+  "next_decision": "Close this branch after audited result. No broader grid, fit or native launch."
+}

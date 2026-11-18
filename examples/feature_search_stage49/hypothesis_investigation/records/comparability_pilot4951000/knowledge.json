@@ -1,0 +1,5541 @@
+{
+  "schema_version": 1,
+  "run": "comparability_pilot4951000",
+  "recorded_unix_time": 1794850980.0143912,
+  "question": "Does model-A hidden state predict model-B observable forecast, a fixed fusion response, or failure beyond strong input-only controls despite different hidden coordinates?",
+  "evidence_class": "Exploratory source-held-out predictive/behavioral evidence on previously studied cached data; no cross-model causality, semantic identity or neuron correspondence.",
+  "design": {
+    "seed": 4951000,
+    "evidence": "Exploratory source-held-out predictive comparison on previously studied data; not sealed confirmation or causality.",
+    "resources": {
+      "cpu_threads": 1,
+      "address_space_limit_bytes": 3221225472,
+      "native_inference": false
+    },
+    "source_paths": [
+      "selective_pilot4941000",
+      "selective_replication4942000"
+    ],
+    "source_hashes": {
+      "runs/selective_pilot4941000/rows.json": "91459f59b614a482e6000de3fac17c21be83b639c2b5615ab996fe5f70c658a6",
+      "runs/selective_pilot4941000/plans.json": "994f8aaf5224c07f0b56c6b23985503822bdcc7b5590af84eabaa8ec993406df",
+      "runs/selective_pilot4941000/inputs.npz": "98fad6cdef10780353b594dda7c1328c36de6363e1a68c2c8d9edef2ae8edab1",
+      "runs/selective_pilot4941000/targets.npz": "0133ce3a560816e72db446aa62aff9ed21fda3fec2717936513e01bff5c43eb5",
+      "runs/selective_pilot4941000/protocol.json": "d10c3bf14e38cb981a77bc9bd83df3f035024f36f033b1836032a6b8ae2271dc",
+      "runs/selective_pilot4941000/bolt_states.npz": "95d193adb0f18d05c386e1675b1e3c9120b3fd9983d43cc93112486b32293848",
+      "runs/selective_pilot4941000/bolt_forecasts.json": "f10d153133bdf43d3f86176b04884148b381907afcdf2b30bd8e1ecaf6c14977",
+      "runs/selective_pilot4941000/bolt_worker.json": "11ebf8f1ee4312d5d4e83a45ff04d15b62f59256ea604d896020e3edcde95fb2",
+      "runs/selective_pilot4941000/timesfm_states.npz": "ab9d87a5fcf5d95fd1cad39b0f0d277580bd54e5347ba7740bfbbbb64c9b6f1f",
+      "runs/selective_pilot4941000/timesfm_forecasts.json": "d9b7d77b9c9f6937912dccc30585f1ba25b0f10af6ad063884e918cd5453e83b",
+      "runs/selective_pilot4941000/timesfm_worker.json": "c477383a7eda04c8c3ad1315806468e4bf1edccbee755615f74b75e9939501b0",
+      "runs/selective_replication4942000/rows.json": "5d0e1ac6d82a3826a0054e7d7bb17f1df8f547a183eb9e9f01cc0e17625a43d2",
+      "runs/selective_replication4942000/plans.json": "8ba08e6e5d89b7a3e8e6d5b9fd513dd21f38ab0dba15eb06a864291b71ae96b0",
+      "runs/selective_replication4942000/inputs.npz": "bdf0c62ba740b96ecf912fbd0082dd9899c1fcf5c0fe3db72025d3e2a854684d",
+      "runs/selective_replication4942000/targets.npz": "88ed126c43c0fe2a956316ac67afb7da946e3ac36f378cac525e2e7ed57fa6b1",
+      "runs/selective_replication4942000/protocol.json": "7dc8966b1c2045b31fa86f8c30b06524c08572da84f56c024098188dfb54239e",
+      "runs/selective_replication4942000/bolt_states.npz": "9af5a6bb3695d3abc05282a45a2be4c75c27a89236616162c42d3158e145f29a",
+      "runs/selective_replication4942000/bolt_forecasts.json": "ae6de26d95f23fb73e2dc862664f607b274dde5a4326d819444e204d2d09a63f",
+      "runs/selective_replication4942000/bolt_worker.json": "e6a33b26119a71b8d5e5b5b5d3d5c8d00df24fa307667cbb8a4025dfa642a5d2",
+      "runs/selective_replication4942000/timesfm_states.npz": "a46cf7d38aea5fcd21820ebdb379e35a49bcf54b53867adcbfdf2a23627d478a",
+      "runs/selective_replication4942000/timesfm_forecasts.json": "d01a653112c92d473d3ed4ec8f669020a6dd4d6c2a0cf59bf37dbc3846b0f1c0",
+      "runs/selective_replication4942000/timesfm_worker.json": "ed5501d8ab5f76e695f347ac4f3de52d0369cfd4f8f8715494cb9efbd2692986"
+    },
+    "code_hashes": {
+      "experiments/feature_search/comparability_core.py": "7a8530ae989c35fec550afb226848de53d040db4068ec91b35ecdf8a08f03130",
+      "experiments/feature_search/comparability_pilot.py": "2fd710e825bc1f68411d150f15d9bdd320d39992f89864dbec6024850de99138",
+      "tests/test_comparability_pilot.py": "7896890420f6b39ee9da0694a47091d1ede606311230c03793e8209d0491ae32"
+    },
+    "split": "Use only original FIT sources from both runs. Replication TEST primary; pilot TEST separate sensitivity only. No TEST used to choose settings. Source IDs must be globally disjoint across FIT/TEST.",
+    "cohorts": "Synthetic separately; pooled four-domain natural real separately; injected real separately (artificial contexts, not natural-real evidence). Each real domain TEST has four sources. No domain extrapolation claim.",
+    "features": "Full original token flattening at last saved cut: Bolt block3 9x512, TimesFM block10 4x1280. Same 128-step context; no token/window pseudo-replication. Fixed role-depth, not homologous layers or actual head-input ceiling.",
+    "input": "128 z-scored past values, 65 FFT magnitudes, ACF lags1..32, 9 quantiles, context mean/SD and log SD, saved past-only decomposition tone descriptors. FIT standardized. Untruncated full-history ridge and full-descriptor ridge, PCA8/16, or RBF gamma .5/2 divided by FIT median squared distance.",
+    "normalization": "Both input and hidden probes predict identical normalized targets. Forecast inverse is history_mean + history_SD * predicted_normalized_forecast for every arm; response inverse is history_SD * predicted_normalized_response. Log failure uses normalized MSE, flag compares native/persistence on the same row. No hidden-only arm is asked to recover physical scale/offset omitted by native normalization.",
+    "fitting": "Weighted FIT-only dual PCA rank8/16 capped at training source count minus1, preserving orthogonal geometry with one scalar normalization. Four domain-stratified source folds choose kernel and ridge alpha .001/.01/.1/1 independently per endpoint/arm; then refit all FIT. Each source equal total weight.",
+    "arms": [
+      "input",
+      "A_hidden",
+      "input+A_hidden",
+      "B_hidden",
+      "input+B_hidden",
+      "input+A_forecast"
+    ],
+    "endpoint_definitions": {
+      "forecast": "32-step B native forecast centered by past mean and scaled by past SD",
+      "fusion_response": "B saved depth1, first-cut, equal-weight, blend1 fusion minus B native, divided by past SD. If tree abstains, response exactly0; no TEST selection.",
+      "log_failure": "log1p(mean squared B-native error / past variance)",
+      "failure_flag": "B native MSE exceeds last-value persistence MSE; ridge probability clipped[0,1], Brier loss"
+    },
+    "same_model": "B hidden is a same-capacity empirical comparator, not a guaranteed upper bound; sampled layer does not include whole decoder.",
+    "controls": "19 uniform FIT source-block hidden permutations within cohort/domain/case signature, TEST unchanged; refit PCA and reselect ridge for every permutation. Orthogonal Householder rotations of actual full-token hidden features must preserve Gram/probe predictions. General nonorthogonal transforms need not preserve PCA/ridge regularization.",
+    "uncertainty": "Mean row loss within source then equal source mean. Paired 4000 source-bootstrap draws, frozen predictions; 95% exploratory intervals and 98.75% Bonferroni intervals for four synthetic primary contrasts. No training-set or new-domain uncertainty.",
+    "primary": "Synthetic replication TEST: both directions x forecast/log_failure, input+A_hidden vs input. All other endpoints/cohorts descriptive. 19 null draws give coarse minimum tail rank .05; no formal permutation p-value claim.",
+    "promotion": "Recommend targeted new-data expansion only if a synthetic primary contrast has >=5% lower loss, 98.75% gain interval lower>0, exceeds all19 shuffled alignment gains, passes actual-state rotation, and same-model input+B_hidden improves over input. Otherwise no broad expansion; negative result is recipe/power bounded.",
+    "limitations": [
+      "Prior data/results inspected historically; frozen protocol does not restore unseen-data status.",
+      "Real4/domain and unknown pretraining overlap; synthetic generator families narrow and related.",
+      "Failure prediction is supervised target-risk estimation; future labels only enter FIT fitting and TEST scoring.",
+      "Hidden states are deterministic input transforms; incremental value depends on baseline and probe class, not information-theoretic independence.",
+      "No raw cross-model L2, neuron matching, causal mediation, or mechanistic identity claim.",
+      "No layer/PCA/hyperparameter changes after inspecting TEST."
+    ]
+  },
+  "exact_findings": [
+    {
+      "cohort": "synthetic",
+      "leg": "replication",
+      "domain": "ALL",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "forecast",
+      "losses": {
+        "input": {
+          "mean": 0.026855664954461247,
+          "low": 0.02380425418476766,
+          "high": 0.030274940144663465,
+          "n_sources": 16
+        },
+        "A_hidden": {
+          "mean": 0.026496255066674114,
+          "low": 0.022321991993381,
+          "high": 0.031149409115770802,
+          "n_sources": 16
+        },
+        "input+A_hidden": {
+          "mean": 0.01769764292154032,
+          "low": 0.014974846823528315,
+          "high": 0.020538836248553183,
+          "n_sources": 16
+        },
+        "B_hidden": {
+          "mean": 0.035321453824274124,
+          "low": 0.028233844586694864,
+          "high": 0.042690549727634766,
+          "n_sources": 16
+        },
+        "input+B_hidden": {
+          "mean": 0.022901360245663676,
+          "low": 0.018934820760616176,
+          "high": 0.027115633662224272,
+          "n_sources": 16
+        },
+        "input+A_forecast": {
+          "mean": 0.013847275247863784,
+          "low": 0.012082654837068363,
+          "high": 0.01581308737281753,
+          "n_sources": 16
+        },
+        "FIT_constant": {
+          "mean": 0.6624894845299161,
+          "low": 0.6278765636916824,
+          "high": 0.6995835042589202,
+          "n_sources": 16
+        }
+      },
+      "gain": {
+        "mean": 0.009158022032920928,
+        "low": 0.007376734028517065,
+        "high": 0.010823333118376903,
+        "n_sources": 16
+      },
+      "primary_family_interval": {
+        "mean": 0.009158022032920928,
+        "low": 0.006957235002588334,
+        "high": 0.01126529570658468,
+        "n_sources": 16
+      },
+      "relative_gain": 0.34100894721653885,
+      "shuffled_gain_mean": -0.012345701013109528,
+      "shuffled_gain_max": -0.006393543566529032,
+      "shuffled_tail_rank": 0.05,
+      "shuffled_gains": [
+        -0.006393543566529032,
+        -0.010543607299983155,
+        -0.013481064518608508,
+        -0.00922735181998193,
+        -0.011225906308612903,
+        -0.013192350945534335,
+        -0.01237425980622615,
+        -0.009485212258621444,
+        -0.010319160788913704,
+        -0.007884165836293748,
+        -0.010825438589901915,
+        -0.020297436074335318,
+        -0.012102336424454456,
+        -0.017690219415153266,
+        -0.008298080300913903,
+        -0.008820101815668412,
+        -0.02130815020844796,
+        -0.015697602549134625,
+        -0.015402330721766267
+      ],
+      "same_model_increment": 0.0039543047087975715,
+      "expand": true,
+      "target_sd": 0.8145277306322478,
+      "target_mean": 0.015430377610024642
+    },
+    {
+      "cohort": "synthetic",
+      "leg": "replication",
+      "domain": "ALL",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "fusion_response",
+      "losses": {
+        "input": {
+          "mean": 0.005718922856762164,
+          "low": 0.004448572062593413,
+          "high": 0.007187252707523013,
+          "n_sources": 16
+        },
+        "A_hidden": {
+          "mean": 0.006758367837605686,
+          "low": 0.005570573454423875,
+          "high": 0.008344019586815011,
+          "n_sources": 16
+        },
+        "input+A_hidden": {
+          "mean": 0.005809811168212321,
+          "low": 0.004633612158055306,
+          "high": 0.00720463990135387,
+          "n_sources": 16
+        },
+        "B_hidden": {
+          "mean": 0.006708987680683745,
+          "low": 0.00532425371376999,
+          "high": 0.008517734271988694,
+          "n_sources": 16
+        },
+        "input+B_hidden": {
+          "mean": 0.005540615316591635,
+          "low": 0.004466279137550425,
+          "high": 0.006845084575572408,
+          "n_sources": 16
+        },
+        "input+A_forecast": {
+          "mean": 0.0058785256464356644,
+          "low": 0.004657798434009052,
+          "high": 0.007352077829885409,
+          "n_sources": 16
+        },
+        "FIT_constant": {
+          "mean": 0.009037662088823348,
+          "low": 0.0071051613915017655,
+          "high": 0.011141512904158513,
+          "n_sources": 16
+        }
+      },
+      "gain": {
+        "mean": -9.088831145015729e-05,
+        "low": -0.00027847808413863055,
+        "high": 9.05411806014603e-05,
+        "n_sources": 16
+      },
+      "primary_family_interval": {
+        "mean": -9.088831145015729e-05,
+        "low": -0.00032895390551552334,
+        "high": 0.000148542175732084,
+        "n_sources": 16
+      },
+      "relative_gain": -0.01589255769426741,
+      "shuffled_gain_mean": -0.0007581914287956806,
+      "shuffled_gain_max": -0.00016487289131460246,
+      "shuffled_tail_rank": 0.05,
+      "shuffled_gains": [
+        -0.0005903834896485298,
+        -0.000863037582127278,
+        -0.0012607519297649426,
+        -0.00022907568931559625,
+        -0.0008688732128748958,
+        -0.0005958873203426474,
+        -0.0010848602118367521,
+        -0.0011349898714995282,
+        -0.0007340679952461236,
+        -0.00016487289131460246,
+        -0.00048216401590107287,
+        -0.0009622550204802291,
+        -0.0005489526189066691,
+        -0.0008405939111088832,
+        -0.0008319339331424895,
+        -0.00041828016233194166,
+        -0.0011567092990544306,
+        -0.0008995362994602947,
+        -0.0007384116927610234
+      ],
+      "same_model_increment": 0.0001783075401705289,
+      "expand": false,
+      "target_sd": 0.09619796978324559,
+      "target_mean": -0.005504316295237766
+    },
+    {
+      "cohort": "synthetic",
+      "leg": "replication",
+      "domain": "ALL",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "log_failure",
+      "losses": {
+        "input": {
+          "mean": 0.001354343734077684,
+          "low": 0.0009917212813475619,
+          "high": 0.0017632095365004697,
+          "n_sources": 16
+        },
+        "A_hidden": {
+          "mean": 0.002074634300704198,
+          "low": 0.0014444084787548306,
+          "high": 0.00279808171641916,
+          "n_sources": 16
+        },
+        "input+A_hidden": {
+          "mean": 0.0013718665473545708,
+          "low": 0.0010205142772823704,
+          "high": 0.0017342820892258704,
+          "n_sources": 16
+        },
+        "B_hidden": {
+          "mean": 0.002299769473846318,
+          "low": 0.0015738272729314505,
+          "high": 0.003075156952320919,
+          "n_sources": 16
+        },
+        "input+B_hidden": {
+          "mean": 0.0013476789935973634,
+          "low": 0.0010022137167729284,
+          "high": 0.0017030375744502585,
+          "n_sources": 16
+        },
+        "input+A_forecast": {
+          "mean": 0.0015764990678852175,
+          "low": 0.0011575514170491666,
+          "high": 0.0020282090565879435,
+          "n_sources": 16
+        },
+        "FIT_constant": {
+          "mean": 0.012241402536201451,
+          "low": 0.01050145109519647,
+          "high": 0.014174329878579459,
+          "n_sources": 16
+        }
+      },
+      "gain": {
+        "mean": -1.7522813276886712e-05,
+        "low": -0.000186136484481192,
+        "high": 0.00016378071851968094,
+        "n_sources": 16
+      },
+      "primary_family_interval": {
+        "mean": -1.7522813276886712e-05,
+        "low": -0.0002351268983296674,
+        "high": 0.000217756936131051,
+        "n_sources": 16
+      },
+      "relative_gain": -0.012938231880121519,
+      "shuffled_gain_mean": 0.00011520012956079926,
+      "shuffled_gain_max": 0.00047058090850875684,
+      "shuffled_tail_rank": 0.7,
+      "shuffled_gains": [
+        4.356507696173883e-05,
+        -7.447265748233686e-05,
+        0.0001225783234008537,
+        -0.00011311556296773623,
+        0.00017933470667050557,
+        0.0003326699887216929,
+        -9.593555346598514e-05,
+        0.0003387900806316698,
+        0.0003695002870509878,
+        -0.0001470766666521638,
+        -0.00014350770706329208,
+        0.0001046867843615837,
+        2.6280491683475367e-05,
+        -3.583090962770541e-05,
+        0.00021685758560434747,
+        0.00023608198874128163,
+        0.00033117470507375074,
+        2.6640591503761433e-05,
+        0.00047058090850875684
+      ],
+      "same_model_increment": 6.664740480320699e-06,
+      "expand": false,
+      "target_sd": 0.11063335945736906,
+      "target_mean": 0.20645310358905217
+    },
+    {
+      "cohort": "synthetic",
+      "leg": "replication",
+      "domain": "ALL",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "failure_flag",
+      "losses": {
+        "input": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 16
+        },
+        "A_hidden": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 16
+        },
+        "input+A_hidden": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 16
+        },
+        "B_hidden": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 16
+        },
+        "input+B_hidden": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 16
+        },
+        "input+A_forecast": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 16
+        },
+        "FIT_constant": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 16
+        }
+      },
+      "gain": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n_sources": 16
+      },
+      "primary_family_interval": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n_sources": 16
+      },
+      "relative_gain": 0.0,
+      "shuffled_gain_mean": 0.0,
+      "shuffled_gain_max": 0.0,
+      "shuffled_tail_rank": 1.0,
+      "shuffled_gains": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "same_model_increment": 0.0,
+      "expand": false,
+      "target_sd": 0.0,
+      "target_mean": 0.0
+    },
+    {
+      "cohort": "synthetic",
+      "leg": "replication",
+      "domain": "ALL",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "forecast",
+      "losses": {
+        "input": {
+          "mean": 0.02398174312703629,
+          "low": 0.01898089610668206,
+          "high": 0.02946111767882749,
+          "n_sources": 16
+        },
+        "A_hidden": {
+          "mean": 0.02944779003954144,
+          "low": 0.022170222266706972,
+          "high": 0.03755410595204971,
+          "n_sources": 16
+        },
+        "input+A_hidden": {
+          "mean": 0.020036055751863173,
+          "low": 0.015527929569329853,
+          "high": 0.025099537036796862,
+          "n_sources": 16
+        },
+        "B_hidden": {
+          "mean": 0.0225799811551241,
+          "low": 0.017082322189790753,
+          "high": 0.02880693632487799,
+          "n_sources": 16
+        },
+        "input+B_hidden": {
+          "mean": 0.014133299536950243,
+          "low": 0.010701424605159148,
+          "high": 0.017874869481699137,
+          "n_sources": 16
+        },
+        "input+A_forecast": {
+          "mean": 0.010813336181818452,
+          "low": 0.008458231281120505,
+          "high": 0.013605011546034869,
+          "n_sources": 16
+        },
+        "FIT_constant": {
+          "mean": 0.5714752123670821,
+          "low": 0.5520671059908973,
+          "high": 0.5937656765059203,
+          "n_sources": 16
+        }
+      },
+      "gain": {
+        "mean": 0.0039456873751731155,
+        "low": 0.0016947157576597525,
+        "high": 0.006391107387246524,
+        "n_sources": 16
+      },
+      "primary_family_interval": {
+        "mean": 0.0039456873751731155,
+        "low": 0.001121127091308126,
+        "high": 0.007075525726243093,
+        "n_sources": 16
+      },
+      "relative_gain": 0.16452879818918864,
+      "shuffled_gain_mean": -0.011909840942583625,
+      "shuffled_gain_max": -0.008244578719067353,
+      "shuffled_tail_rank": 0.05,
+      "shuffled_gains": [
+        -0.013872535507120176,
+        -0.010090595337284049,
+        -0.011466999641407228,
+        -0.008244578719067353,
+        -0.010522735532580686,
+        -0.011415184240605978,
+        -0.012908000089050693,
+        -0.011268151086716435,
+        -0.013450445954428316,
+        -0.011391829580222758,
+        -0.009202326236597282,
+        -0.01322486882481098,
+        -0.012911222034461007,
+        -0.013858643207473043,
+        -0.009704614424733539,
+        -0.01098407242686688,
+        -0.019398860477585544,
+        -0.010350339148222526,
+        -0.012020975439854415
+      ],
+      "same_model_increment": 0.009848443590086048,
+      "expand": true,
+      "target_sd": 0.7563687887466377,
+      "target_mean": 0.05005537196951816
+    },
+    {
+      "cohort": "synthetic",
+      "leg": "replication",
+      "domain": "ALL",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "fusion_response",
+      "losses": {
+        "input": {
+          "mean": 0.0024933167683625517,
+          "low": 0.001970947693665071,
+          "high": 0.003006648983924756,
+          "n_sources": 16
+        },
+        "A_hidden": {
+          "mean": 0.002964371502420403,
+          "low": 0.0023503512498395953,
+          "high": 0.0035978964479599037,
+          "n_sources": 16
+        },
+        "input+A_hidden": {
+          "mean": 0.0021698780749397047,
+          "low": 0.001683169008414241,
+          "high": 0.0026784723403911444,
+          "n_sources": 16
+        },
+        "B_hidden": {
+          "mean": 0.0028510173756242448,
+          "low": 0.0022443371139853952,
+          "high": 0.003482729552273284,
+          "n_sources": 16
+        },
+        "input+B_hidden": {
+          "mean": 0.0023110992299773124,
+          "low": 0.0017943864581802884,
+          "high": 0.0028628196279918026,
+          "n_sources": 16
+        },
+        "input+A_forecast": {
+          "mean": 0.0024418541423520124,
+          "low": 0.0019309668541464366,
+          "high": 0.0029622335331107455,
+          "n_sources": 16
+        },
+        "FIT_constant": {
+          "mean": 0.005202690626135107,
+          "low": 0.004540711042360961,
+          "high": 0.0058574609188893735,
+          "n_sources": 16
+        }
+      },
+      "gain": {
+        "mean": 0.00032343869342284703,
+        "low": 0.00020796137440196418,
+        "high": 0.000472465535968311,
+        "n_sources": 16
+      },
+      "primary_family_interval": {
+        "mean": 0.00032343869342284703,
+        "low": 0.00018802382767396544,
+        "high": 0.0005180272589300456,
+        "n_sources": 16
+      },
+      "relative_gain": 0.12972226294184855,
+      "shuffled_gain_mean": -0.00011620772523841047,
+      "shuffled_gain_max": 7.467257911998915e-05,
+      "shuffled_tail_rank": 0.05,
+      "shuffled_gains": [
+        1.2097564638789215e-05,
+        -5.607966604553364e-05,
+        -0.0004538724899658193,
+        1.990637265380182e-05,
+        -2.4080823808941995e-05,
+        -0.00014013676624097344,
+        -0.0002766431457576349,
+        -9.507961878736694e-05,
+        -0.00020835582223735692,
+        2.9339618620809274e-06,
+        -0.00013341943073875826,
+        -7.184742365266157e-05,
+        6.402394107709629e-05,
+        -0.00012169265260867598,
+        7.467257911998915e-05,
+        -8.546393445802147e-05,
+        -6.234390243755584e-05,
+        -0.00022802164004572743,
+        -0.00042454388209652884
+      ],
+      "same_model_increment": 0.0001822175383852393,
+      "expand": false,
+      "target_sd": 0.0721598939818766,
+      "target_mean": -0.01629319109775424
+    },
+    {
+      "cohort": "synthetic",
+      "leg": "replication",
+      "domain": "ALL",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "log_failure",
+      "losses": {
+        "input": {
+          "mean": 0.001350540260811954,
+          "low": 0.0009432502505130538,
+          "high": 0.0017954600291835805,
+          "n_sources": 16
+        },
+        "A_hidden": {
+          "mean": 0.0025016720747873837,
+          "low": 0.0018041255889461583,
+          "high": 0.0032896681484836203,
+          "n_sources": 16
+        },
+        "input+A_hidden": {
+          "mean": 0.0007544340633196487,
+          "low": 0.0005163803750374159,
+          "high": 0.0010210378084381346,
+          "n_sources": 16
+        },
+        "B_hidden": {
+          "mean": 0.001678973143207461,
+          "low": 0.0012143205868255045,
+          "high": 0.0021863724238135166,
+          "n_sources": 16
+        },
+        "input+B_hidden": {
+          "mean": 0.000801840932737259,
+          "low": 0.0004606359769990896,
+          "high": 0.001196603376384035,
+          "n_sources": 16
+        },
+        "input+A_forecast": {
+          "mean": 0.0018375836855678927,
+          "low": 0.0012399999439703588,
+          "high": 0.0024769375793683417,
+          "n_sources": 16
+        },
+        "FIT_constant": {
+          "mean": 0.10778637995405124,
+          "low": 0.09858640539576567,
+          "high": 0.11657060905627348,
+          "n_sources": 16
+        }
+      },
+      "gain": {
+        "mean": 0.000596106197492305,
+        "low": 0.00034512640094590404,
+        "high": 0.0008811877712326224,
+        "n_sources": 16
+      },
+      "primary_family_interval": {
+        "mean": 0.000596106197492305,
+        "low": 0.0002721739162413799,
+        "high": 0.0009750343119543851,
+        "n_sources": 16
+      },
+      "relative_gain": 0.4413835076148873,
+      "shuffled_gain_mean": 0.00043656627606305213,
+      "shuffled_gain_max": 0.0006027446780478453,
+      "shuffled_tail_rank": 0.1,
+      "shuffled_gains": [
+        0.00048481043225870053,
+        0.00045389109393768754,
+        0.0004916410900259851,
+        0.0005591955891218082,
+        0.0005096563625956068,
+        0.0002518354791811237,
+        0.0002294642042124996,
+        0.00039342204197830656,
+        0.0003746524439509196,
+        0.0005175446832518079,
+        0.0005253750099448575,
+        7.793621551754234e-05,
+        0.0005817421678016463,
+        0.0006027446780478453,
+        0.0005124085797389406,
+        0.00028108349303585504,
+        0.0004055631285259852,
+        0.0004802283634945438,
+        0.0005615641885763311
+      ],
+      "same_model_increment": 0.000548699328074695,
+      "expand": false,
+      "target_sd": 0.32826118155014716,
+      "target_mean": 0.6813678145114567
+    },
+    {
+      "cohort": "synthetic",
+      "leg": "replication",
+      "domain": "ALL",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "failure_flag",
+      "losses": {
+        "input": {
+          "mean": 0.07015667678707763,
+          "low": 0.02659813994974444,
+          "high": 0.12142670244287511,
+          "n_sources": 16
+        },
+        "A_hidden": {
+          "mean": 0.12825785340264861,
+          "low": 0.03890823029707201,
+          "high": 0.2462064765194372,
+          "n_sources": 16
+        },
+        "input+A_hidden": {
+          "mean": 0.07151176704989679,
+          "low": 0.0265945662478962,
+          "high": 0.12559690913234237,
+          "n_sources": 16
+        },
+        "B_hidden": {
+          "mean": 0.12918781494764736,
+          "low": 0.03904421393027352,
+          "high": 0.24796891043004554,
+          "n_sources": 16
+        },
+        "input+B_hidden": {
+          "mean": 0.07211283203804603,
+          "low": 0.026831682146747256,
+          "high": 0.12648014947922617,
+          "n_sources": 16
+        },
+        "input+A_forecast": {
+          "mean": 0.07456069119487142,
+          "low": 0.027961879712325898,
+          "high": 0.13039875530096517,
+          "n_sources": 16
+        },
+        "FIT_constant": {
+          "mean": 0.13025625000000002,
+          "low": 0.03969375,
+          "high": 0.25100625,
+          "n_sources": 16
+        }
+      },
+      "gain": {
+        "mean": -0.0013550902628191625,
+        "low": -0.006830484717528217,
+        "high": 0.004511349083003202,
+        "n_sources": 16
+      },
+      "primary_family_interval": {
+        "mean": -0.0013550902628191625,
+        "low": -0.00848261942707548,
+        "high": 0.006254924231613641,
+        "n_sources": 16
+      },
+      "relative_gain": -0.019315200275688667,
+      "shuffled_gain_mean": -0.008696702560370464,
+      "shuffled_gain_max": 0.0018563300318059604,
+      "shuffled_tail_rank": 0.3,
+      "shuffled_gains": [
+        -0.02009605747340188,
+        -0.0011305468928452808,
+        9.9754079399906e-05,
+        -0.00010642031397964277,
+        -0.0038909582033390525,
+        -0.0057200388737377785,
+        -0.0033632064549270133,
+        -0.005407696776153931,
+        -0.007126498867455233,
+        -0.01021951132056641,
+        -0.016710631301694024,
+        -0.0417007807545806,
+        0.0018563300318059604,
+        -0.0017825124099863402,
+        -0.002978257866406699,
+        -0.01248202549018858,
+        -0.03168815953026015,
+        0.00045375663248983355,
+        -0.003243886861211934
+      ],
+      "same_model_increment": -0.0019561552509684,
+      "expand": false,
+      "target_sd": 0.35707142142714243,
+      "target_mean": 0.15
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "replication",
+      "domain": "ALL",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "forecast",
+      "losses": {
+        "input": {
+          "mean": 0.04837327989399477,
+          "low": 0.030044218623510966,
+          "high": 0.06943651115401724,
+          "n_sources": 16
+        },
+        "A_hidden": {
+          "mean": 0.06955703270587046,
+          "low": 0.029956457150948565,
+          "high": 0.12897911674296045,
+          "n_sources": 16
+        },
+        "input+A_hidden": {
+          "mean": 0.05185324399198902,
+          "low": 0.030104895478314134,
+          "high": 0.0777709593422373,
+          "n_sources": 16
+        },
+        "B_hidden": {
+          "mean": 0.09687883245572103,
+          "low": 0.04762840779069666,
+          "high": 0.15578220694663392,
+          "n_sources": 16
+        },
+        "input+B_hidden": {
+          "mean": 0.048057387982472395,
+          "low": 0.027629064214097172,
+          "high": 0.07364682486281322,
+          "n_sources": 16
+        },
+        "input+A_forecast": {
+          "mean": 0.05672118417558819,
+          "low": 0.027950937508705392,
+          "high": 0.09057213270169968,
+          "n_sources": 16
+        },
+        "FIT_constant": {
+          "mean": 0.28312785674396185,
+          "low": 0.16852953562657325,
+          "high": 0.41778794759300153,
+          "n_sources": 16
+        }
+      },
+      "gain": {
+        "mean": -0.003479964097994237,
+        "low": -0.011990054365033859,
+        "high": 0.003879860063068381,
+        "n_sources": 16
+      },
+      "primary_family_interval": {
+        "mean": -0.003479964097994237,
+        "low": -0.014521681770137308,
+        "high": 0.0055382623737504156,
+        "n_sources": 16
+      },
+      "relative_gain": -0.07193980035300959,
+      "shuffled_gain_mean": -0.024965531636870195,
+      "shuffled_gain_max": 0.0034350276074967363,
+      "shuffled_tail_rank": 0.1,
+      "shuffled_gains": [
+        0.0034350276074967363,
+        -0.0051628891396434265,
+        -0.06171576242423414,
+        -0.014196034430283402,
+        -0.013129594779197394,
+        -0.004052695254785867,
+        -0.034840580648210245,
+        -0.013189689145074191,
+        -0.009983377990847368,
+        -0.03953826583694352,
+        -0.046483209513752524,
+        -0.007666961090454418,
+        -0.0050870737082037,
+        -0.06778029277266596,
+        -0.04404301878590591,
+        -0.04327872192469128,
+        -0.009403586477094905,
+        -0.009199785152324835,
+        -0.04902858963371735
+      ],
+      "same_model_increment": 0.0003158919115223771,
+      "expand": false,
+      "target_sd": 0.831558397479421,
+      "target_mean": 0.04797752724491075
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "replication",
+      "domain": "ALL",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "fusion_response",
+      "losses": {
+        "input": {
+          "mean": 0.019285467130711068,
+          "low": 0.009745839338853255,
+          "high": 0.03294025424610613,
+          "n_sources": 16
+        },
+        "A_hidden": {
+          "mean": 0.01970974758070084,
+          "low": 0.009430248568517804,
+          "high": 0.03474106672946266,
+          "n_sources": 16
+        },
+        "input+A_hidden": {
+          "mean": 0.01976848537983753,
+          "low": 0.009504890874998307,
+          "high": 0.03472613136186807,
+          "n_sources": 16
+        },
+        "B_hidden": {
+          "mean": 0.019715049037860574,
+          "low": 0.00918061208555442,
+          "high": 0.03511691424909281,
+          "n_sources": 16
+        },
+        "input+B_hidden": {
+          "mean": 0.019122696815266807,
+          "low": 0.008690719538420572,
+          "high": 0.03452171389821211,
+          "n_sources": 16
+        },
+        "input+A_forecast": {
+          "mean": 0.019864722715516765,
+          "low": 0.009654857809210472,
+          "high": 0.03460984039236065,
+          "n_sources": 16
+        },
+        "FIT_constant": {
+          "mean": 0.019964024552328836,
+          "low": 0.009534657743364679,
+          "high": 0.035180796656781366,
+          "n_sources": 16
+        }
+      },
+      "gain": {
+        "mean": -0.00048301824912645817,
+        "low": -0.0027230493226121674,
+        "high": 0.0015432300660151344,
+        "n_sources": 16
+      },
+      "primary_family_interval": {
+        "mean": -0.00048301824912645817,
+        "low": -0.0033403680409409948,
+        "high": 0.00208086022145941,
+        "n_sources": 16
+      },
+      "relative_gain": -0.025045711667376604,
+      "shuffled_gain_mean": -0.000503724481056645,
+      "shuffled_gain_max": 0.0005637285755809083,
+      "shuffled_tail_rank": 0.5,
+      "shuffled_gains": [
+        -0.00045610438072870023,
+        -0.0008005765824891417,
+        -0.0004601157048625381,
+        -0.0005252944410799906,
+        -0.0004558174355401534,
+        -0.0018340587592660976,
+        -0.0005786475031169238,
+        -0.0004310795452020407,
+        -0.0005007866955346865,
+        -0.0004707825604585484,
+        -0.0005525889572155535,
+        -0.000495232765900025,
+        -0.00043231100451671133,
+        -0.0005766685509505261,
+        -0.0003938521478331937,
+        -0.000512418736018861,
+        -0.00014707820537276125,
+        0.0005637285755809083,
+        -0.0005110797395707109
+      ],
+      "same_model_increment": 0.00016277031544426057,
+      "expand": false,
+      "target_sd": 0.14911057660567936,
+      "target_mean": 0.024351540969840522
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "replication",
+      "domain": "ALL",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "log_failure",
+      "losses": {
+        "input": {
+          "mean": 0.08090171845889983,
+          "low": 0.023180580352456466,
+          "high": 0.15238755387574818,
+          "n_sources": 16
+        },
+        "A_hidden": {
+          "mean": 0.046227615246277276,
+          "low": 0.015791863756292567,
+          "high": 0.08221493222193284,
+          "n_sources": 16
+        },
+        "input+A_hidden": {
+          "mean": 0.06323095155346875,
+          "low": 0.018719937463936936,
+          "high": 0.1156758209030066,
+          "n_sources": 16
+        },
+        "B_hidden": {
+          "mean": 0.03291823509406213,
+          "low": 0.00910789338380503,
+          "high": 0.06235749015914562,
+          "n_sources": 16
+        },
+        "input+B_hidden": {
+          "mean": 0.05347782520473193,
+          "low": 0.015382829360381938,
+          "high": 0.09690153319739624,
+          "n_sources": 16
+        },
+        "input+A_forecast": {
+          "mean": 0.05665849915869421,
+          "low": 0.015256166614332763,
+          "high": 0.11283820828978564,
+          "n_sources": 16
+        },
+        "FIT_constant": {
+          "mean": 0.05801384759273823,
+          "low": 0.03433578816268799,
+          "high": 0.08450958133270692,
+          "n_sources": 16
+        }
+      },
+      "gain": {
+        "mean": 0.01767076690543109,
+        "low": 0.003885042708056364,
+        "high": 0.039083146041646165,
+        "n_sources": 16
+      },
+      "primary_family_interval": {
+        "mean": 0.01767076690543109,
+        "low": 0.0026469781637826926,
+        "high": 0.04660194637631538,
+        "n_sources": 16
+      },
+      "relative_gain": 0.21842263974167986,
+      "shuffled_gain_mean": 0.004782239700060447,
+      "shuffled_gain_max": 0.022794273309237674,
+      "shuffled_tail_rank": 0.2,
+      "shuffled_gains": [
+        0.006279128779619973,
+        0.001862439227785533,
+        0.0038179450122691706,
+        0.005063990639678353,
+        0.011553478451407303,
+        0.00037855620924150124,
+        0.006158045049541866,
+        0.019014112415976524,
+        -0.00784791985961356,
+        0.010581391938240339,
+        0.003852138619621588,
+        0.006622847002985112,
+        -0.0015102110555854837,
+        -0.009618860996058793,
+        0.022794273309237674,
+        -0.0067878266159044865,
+        0.020633693646015208,
+        0.004808656034270109,
+        -0.006793323507579445
+      ],
+      "same_model_increment": 0.0274238932541679,
+      "expand": false,
+      "target_sd": 0.21505810212505821,
+      "target_mean": 0.19819322900554187
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "replication",
+      "domain": "ALL",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "failure_flag",
+      "losses": {
+        "input": {
+          "mean": 0.0027501425029445963,
+          "low": 0.00037577695224146057,
+          "high": 0.00596649400579017,
+          "n_sources": 16
+        },
+        "A_hidden": {
+          "mean": 0.004601377418940956,
+          "low": 0.00026989808326485895,
+          "high": 0.011878906301120316,
+          "n_sources": 16
+        },
+        "input+A_hidden": {
+          "mean": 0.005590755240513903,
+          "low": 0.00018675350265754537,
+          "high": 0.015797576985175164,
+          "n_sources": 16
+        },
+        "B_hidden": {
+          "mean": 0.00250090895443397,
+          "low": 0.0021037127455029287,
+          "high": 0.002922558548713597,
+          "n_sources": 16
+        },
+        "input+B_hidden": {
+          "mean": 0.0022795918580233434,
+          "low": 0.0014694594810859992,
+          "high": 0.0032816085108395413,
+          "n_sources": 16
+        },
+        "input+A_forecast": {
+          "mean": 0.002425937161973833,
+          "low": 0.001494113194368567,
+          "high": 0.0035215595461122375,
+          "n_sources": 16
+        },
+        "FIT_constant": {
+          "mean": 0.0025000000000000005,
+          "low": 0.0025000000000000005,
+          "high": 0.0025000000000000005,
+          "n_sources": 16
+        }
+      },
+      "gain": {
+        "mean": -0.0028406127375693066,
+        "low": -0.011133309156711334,
+        "high": 0.0023892556057248156,
+        "n_sources": 16
+      },
+      "primary_family_interval": {
+        "mean": -0.0028406127375693066,
+        "low": -0.014872442544239072,
+        "high": 0.003019050289734484,
+        "n_sources": 16
+      },
+      "relative_gain": -1.0328965624609792,
+      "shuffled_gain_mean": 0.0004019036522863478,
+      "shuffled_gain_max": 0.0013476214805751901,
+      "shuffled_tail_rank": 1.0,
+      "shuffled_gains": [
+        9.981801649741248e-05,
+        9.598505473770269e-05,
+        0.0004799661104151635,
+        0.0004828203689335582,
+        0.00011701988011288112,
+        0.0007687620657279913,
+        0.000266982276887161,
+        -0.0013367133016051168,
+        0.0004323508221024146,
+        0.0005394279552641218,
+        3.3115094317741345e-05,
+        0.0002262501389254652,
+        0.0008306529519027564,
+        0.0004175838829766255,
+        0.0004798137434313687,
+        0.000763612057237019,
+        0.0013476214805751901,
+        0.0004850040758937208,
+        0.0011060967191074303
+      ],
+      "same_model_increment": 0.0004705506449212528,
+      "expand": false,
+      "target_sd": 0.0,
+      "target_mean": 0.0
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "replication",
+      "domain": "ALL",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "forecast",
+      "losses": {
+        "input": {
+          "mean": 0.11486081605816524,
+          "low": 0.04603113931915075,
+          "high": 0.2077050122265992,
+          "n_sources": 16
+        },
+        "A_hidden": {
+          "mean": 0.2178369425369941,
+          "low": 0.0876546824157353,
+          "high": 0.3848692277790372,
+          "n_sources": 16
+        },
+        "input+A_hidden": {
+          "mean": 0.15321867319126467,
+          "low": 0.060152387798144746,
+          "high": 0.2731133423474429,
+          "n_sources": 16
+        },
+        "B_hidden": {
+          "mean": 0.1626868734065292,
+          "low": 0.05279954871824157,
+          "high": 0.3307910722856434,
+          "n_sources": 16
+        },
+        "input+B_hidden": {
+          "mean": 0.1260893976291503,
+          "low": 0.04613619813838181,
+          "high": 0.24305428790607517,
+          "n_sources": 16
+        },
+        "input+A_forecast": {
+          "mean": 0.09286340346419696,
+          "low": 0.03219238328508162,
+          "high": 0.16684747251768894,
+          "n_sources": 16
+        },
+        "FIT_constant": {
+          "mean": 0.38461458349443234,
+          "low": 0.2081734016567783,
+          "high": 0.6096863337145775,
+          "n_sources": 16
+        }
+      },
+      "gain": {
+        "mean": -0.038357857133099416,
+        "low": -0.07890079350767074,
+        "high": -0.007362106080811931,
+        "n_sources": 16
+      },
+      "primary_family_interval": {
+        "mean": -0.038357857133099416,
+        "low": -0.09508487605912809,
+        "high": -0.00075721608804496,
+        "n_sources": 16
+      },
+      "relative_gain": -0.33395076275337526,
+      "shuffled_gain_mean": -0.07768012499455523,
+      "shuffled_gain_max": -0.011660424742188528,
+      "shuffled_tail_rank": 0.55,
+      "shuffled_gains": [
+        -0.03597597684253179,
+        -0.0379626493474493,
+        -0.1820935554795591,
+        -0.016470572393005947,
+        -0.02793923479341684,
+        -0.025417644957950868,
+        -0.1603049585775859,
+        -0.03961507739495225,
+        -0.015519104819220086,
+        -0.10293406194962548,
+        -0.19543555560140402,
+        -0.024875772400184064,
+        -0.011660424742188528,
+        -0.1424031203507773,
+        -0.14592004984587043,
+        -0.12087733228308563,
+        -0.019305438086832605,
+        -0.028637651254936926,
+        -0.14257419377597227
+      ],
+      "same_model_increment": -0.011228581570985066,
+      "expand": false,
+      "target_sd": 0.9264797970708323,
+      "target_mean": 0.09708046892427599
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "replication",
+      "domain": "ALL",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "fusion_response",
+      "losses": {
+        "input": {
+          "mean": 0.019764779544423065,
+          "low": 0.010845129286049186,
+          "high": 0.03206424595190096,
+          "n_sources": 16
+        },
+        "A_hidden": {
+          "mean": 0.012696357815931482,
+          "low": 0.008658600584749683,
+          "high": 0.017240060128923027,
+          "n_sources": 16
+        },
+        "input+A_hidden": {
+          "mean": 0.012814114555647224,
+          "low": 0.00876750161724432,
+          "high": 0.01738794244996431,
+          "n_sources": 16
+        },
+        "B_hidden": {
+          "mean": 0.01314502923094981,
+          "low": 0.009074634097607445,
+          "high": 0.017690585921469357,
+          "n_sources": 16
+        },
+        "input+B_hidden": {
+          "mean": 0.013049389798879278,
+          "low": 0.00902011500993692,
+          "high": 0.017638374489618698,
+          "n_sources": 16
+        },
+        "input+A_forecast": {
+          "mean": 0.012886171554787999,
+          "low": 0.009060090336861512,
+          "high": 0.017214133991384942,
+          "n_sources": 16
+        },
+        "FIT_constant": {
+          "mean": 0.013017697342806573,
+          "low": 0.008977645595932473,
+          "high": 0.01768527346195015,
+          "n_sources": 16
+        }
+      },
+      "gain": {
+        "mean": 0.006950664988775839,
+        "low": -0.0009569649813689534,
+        "high": 0.019379052741320606,
+        "n_sources": 16
+      },
+      "primary_family_interval": {
+        "mean": 0.006950664988775839,
+        "low": -0.002182902321683903,
+        "high": 0.024042721958228618,
+        "n_sources": 16
+      },
+      "relative_gain": 0.35166923937368555,
+      "shuffled_gain_mean": 0.006415238875546811,
+      "shuffled_gain_max": 0.007043105715788287,
+      "shuffled_tail_rank": 0.4,
+      "shuffled_gains": [
+        0.007020668586031853,
+        0.006766119706792234,
+        0.006862424920842715,
+        0.006797835599833083,
+        0.007043105715788287,
+        0.00699985168041082,
+        0.007005513283415978,
+        0.0068652569249871495,
+        0.001840817818204274,
+        0.006805548327102957,
+        0.0061945349929501195,
+        0.006774628519692557,
+        0.00698082035131947,
+        0.007008686842598596,
+        0.005250179729647831,
+        0.00700975093187532,
+        0.0050013729635103405,
+        0.0067407009004250154,
+        0.006921720839960801
+      ],
+      "same_model_increment": 0.006715389745543787,
+      "expand": false,
+      "target_sd": 0.09093234660261516,
+      "target_mean": -0.042734223953278735
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "replication",
+      "domain": "ALL",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "log_failure",
+      "losses": {
+        "input": {
+          "mean": 0.09769583872233463,
+          "low": 0.02924326455741161,
+          "high": 0.18149755356235608,
+          "n_sources": 16
+        },
+        "A_hidden": {
+          "mean": 0.08426672355061111,
+          "low": 0.024092643352378863,
+          "high": 0.15837930486760324,
+          "n_sources": 16
+        },
+        "input+A_hidden": {
+          "mean": 0.10929403056317719,
+          "low": 0.03649675285518305,
+          "high": 0.1975196401250082,
+          "n_sources": 16
+        },
+        "B_hidden": {
+          "mean": 0.10433672327158748,
+          "low": 0.025777155741875807,
+          "high": 0.20150601094610207,
+          "n_sources": 16
+        },
+        "input+B_hidden": {
+          "mean": 0.1617337254961425,
+          "low": 0.05225596149241899,
+          "high": 0.2948029922237215,
+          "n_sources": 16
+        },
+        "input+A_forecast": {
+          "mean": 0.08914645621440406,
+          "low": 0.028358705095809015,
+          "high": 0.163310308227466,
+          "n_sources": 16
+        },
+        "FIT_constant": {
+          "mean": 0.06957328930886583,
+          "low": 0.04073864490951127,
+          "high": 0.10531483449973311,
+          "n_sources": 16
+        }
+      },
+      "gain": {
+        "mean": -0.011598191840842566,
+        "low": -0.03783935540673537,
+        "high": 0.017197906959727165,
+        "n_sources": 16
+      },
+      "primary_family_interval": {
+        "mean": -0.011598191840842566,
+        "low": -0.04563224466542595,
+        "high": 0.02603791883251419,
+        "n_sources": 16
+      },
+      "relative_gain": -0.11871735779664337,
+      "shuffled_gain_mean": -0.02951180616428201,
+      "shuffled_gain_max": 0.018897607900909236,
+      "shuffled_tail_rank": 0.3,
+      "shuffled_gains": [
+        0.01761884440069357,
+        -0.013033513298214878,
+        -0.02183014082457186,
+        -0.02105900687916518,
+        -0.010838614258544618,
+        -0.026237056658264205,
+        -0.03580705445093463,
+        0.018897607900909236,
+        -0.052535529001753324,
+        -0.08159029068687708,
+        -0.03131622461499321,
+        -0.0028482214106520763,
+        -0.04757097910113607,
+        -0.047945828809125304,
+        -0.09071435298015446,
+        -0.07123606077024355,
+        0.018756435142991384,
+        -0.039280064740974084,
+        -0.022154266080347866
+      ],
+      "same_model_increment": -0.06403788677380788,
+      "expand": false,
+      "target_sd": 0.23047740615915369,
+      "target_mean": 0.21094663226176485
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "replication",
+      "domain": "ALL",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "failure_flag",
+      "losses": {
+        "input": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 16
+        },
+        "A_hidden": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 16
+        },
+        "input+A_hidden": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 16
+        },
+        "B_hidden": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 16
+        },
+        "input+B_hidden": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 16
+        },
+        "input+A_forecast": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 16
+        },
+        "FIT_constant": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 16
+        }
+      },
+      "gain": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n_sources": 16
+      },
+      "primary_family_interval": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n_sources": 16
+      },
+      "relative_gain": 0.0,
+      "shuffled_gain_mean": 0.0,
+      "shuffled_gain_max": 0.0,
+      "shuffled_tail_rank": 1.0,
+      "shuffled_gains": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "same_model_increment": 0.0,
+      "expand": false,
+      "target_sd": 0.0,
+      "target_mean": 0.0
+    },
+    {
+      "cohort": "real_injected",
+      "leg": "replication",
+      "domain": "ALL",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "forecast",
+      "losses": {
+        "input": {
+          "mean": 0.10242954519862485,
+          "low": 0.046221639354483916,
+          "high": 0.1712081129773406,
+          "n_sources": 16
+        },
+        "A_hidden": {
+          "mean": 0.09308277986460607,
+          "low": 0.047327903296422766,
+          "high": 0.15926053078735847,
+          "n_sources": 16
+        },
+        "input+A_hidden": {
+          "mean": 0.09818808471408132,
+          "low": 0.050470548853963904,
+          "high": 0.1646046842670579,
+          "n_sources": 16
+        },
+        "B_hidden": {
+          "mean": 0.07811179833503619,
+          "low": 0.034792800125096286,
+          "high": 0.13943697238192523,
+          "n_sources": 16
+        },
+        "input+B_hidden": {
+          "mean": 0.0866387753495254,
+          "low": 0.03329752216109315,
+          "high": 0.1551288027066995,
+          "n_sources": 16
+        },
+        "input+A_forecast": {
+          "mean": 0.07325898163255914,
+          "low": 0.03215417949221613,
+          "high": 0.12617585285725488,
+          "n_sources": 16
+        },
+        "FIT_constant": {
+          "mean": 0.14975329958500572,
+          "low": 0.10261456519750556,
+          "high": 0.20462474189162572,
+          "n_sources": 16
+        }
+      },
+      "gain": {
+        "mean": 0.004241460484543536,
+        "low": -0.026491122843538738,
+        "high": 0.04242380868693871,
+        "n_sources": 16
+      },
+      "primary_family_interval": {
+        "mean": 0.004241460484543536,
+        "low": -0.033090974794960086,
+        "high": 0.05415262922111219,
+        "n_sources": 16
+      },
+      "relative_gain": 0.04140856504164659,
+      "shuffled_gain_mean": -0.015011180713672342,
+      "shuffled_gain_max": 0.012934164352147757,
+      "shuffled_tail_rank": 0.15,
+      "shuffled_gains": [
+        -0.0064235838000146605,
+        -0.00511844652640709,
+        -0.017531269423251106,
+        0.0018412917678536887,
+        -0.0018286056978312464,
+        0.005144591861327897,
+        -0.022835217090430834,
+        0.012934164352147757,
+        -0.01092781441726512,
+        -0.02384858261247293,
+        -0.01743960303940667,
+        0.0014499692825865875,
+        -0.010333482282272766,
+        -0.051600454199790896,
+        -0.015149619130862161,
+        -0.04463451706583842,
+        -0.03910716610909903,
+        -0.005428850319209028,
+        -0.034375239109538484
+      ],
+      "same_model_increment": 0.015790769849099454,
+      "expand": false,
+      "target_sd": 1.1336054661746195,
+      "target_mean": 0.18340390316125776
+    },
+    {
+      "cohort": "real_injected",
+      "leg": "replication",
+      "domain": "ALL",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "fusion_response",
+      "losses": {
+        "input": {
+          "mean": 0.017352172360541478,
+          "low": 0.0033868654011916834,
+          "high": 0.03360872853105411,
+          "n_sources": 16
+        },
+        "A_hidden": {
+          "mean": 0.02330764138080358,
+          "low": 0.007761962446484361,
+          "high": 0.04810410151103752,
+          "n_sources": 16
+        },
+        "input+A_hidden": {
+          "mean": 0.018565346954454814,
+          "low": 0.0053891402222149155,
+          "high": 0.03454845249622109,
+          "n_sources": 16
+        },
+        "B_hidden": {
+          "mean": 0.029390191057539563,
+          "low": 0.010284805932645986,
+          "high": 0.05473465555801591,
+          "n_sources": 16
+        },
+        "input+B_hidden": {
+          "mean": 0.021391630898628083,
+          "low": 0.0066509790616178024,
+          "high": 0.04018442982220782,
+          "n_sources": 16
+        },
+        "input+A_forecast": {
+          "mean": 0.02062604092150675,
+          "low": 0.005650591326676068,
+          "high": 0.042287215413062754,
+          "n_sources": 16
+        },
+        "FIT_constant": {
+          "mean": 0.03317018241059709,
+          "low": 0.007979897256271462,
+          "high": 0.07780671984969678,
+          "n_sources": 16
+        }
+      },
+      "gain": {
+        "mean": -0.0012131745939133352,
+        "low": -0.0033445675456569,
+        "high": 0.000788360068114599,
+        "n_sources": 16
+      },
+      "primary_family_interval": {
+        "mean": -0.0012131745939133352,
+        "low": -0.0038962386119725206,
+        "high": 0.001482684215612854,
+        "n_sources": 16
+      },
+      "relative_gain": -0.06991485381231413,
+      "shuffled_gain_mean": -0.006199609415923053,
+      "shuffled_gain_max": 0.0022821105453807106,
+      "shuffled_tail_rank": 0.35,
+      "shuffled_gains": [
+        0.0022821105453807106,
+        0.00039879936272797095,
+        -0.007286496067779068,
+        0.0019052790340337408,
+        -0.0060371556473052335,
+        -0.001516214270115886,
+        -0.00034305036119697914,
+        -0.009195364110710164,
+        -0.00823063916307575,
+        -0.00727712622921508,
+        -0.013865564245422126,
+        0.00045748584474234496,
+        -0.01484389270002974,
+        -0.013996854390704444,
+        -0.0011851379145737314,
+        -0.014100519528224872,
+        -0.01141200971092611,
+        -0.006816953649866647,
+        -0.006729275700276951
+      ],
+      "same_model_increment": -0.004039458538086606,
+      "expand": false,
+      "target_sd": 0.17441821923155515,
+      "target_mean": 0.004632887219745821
+    },
+    {
+      "cohort": "real_injected",
+      "leg": "replication",
+      "domain": "ALL",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "log_failure",
+      "losses": {
+        "input": {
+          "mean": 0.010692896564494419,
+          "low": 0.003784026903183343,
+          "high": 0.018841210905896463,
+          "n_sources": 16
+        },
+        "A_hidden": {
+          "mean": 0.017002640018000073,
+          "low": 0.009277896418180515,
+          "high": 0.026514803089547956,
+          "n_sources": 16
+        },
+        "input+A_hidden": {
+          "mean": 0.010910181332909864,
+          "low": 0.004829927619725478,
+          "high": 0.018120646825911847,
+          "n_sources": 16
+        },
+        "B_hidden": {
+          "mean": 0.011345436234176328,
+          "low": 0.0046120496882410674,
+          "high": 0.019378947246449858,
+          "n_sources": 16
+        },
+        "input+B_hidden": {
+          "mean": 0.018109591658769797,
+          "low": 0.007334271243442521,
+          "high": 0.029917790183900665,
+          "n_sources": 16
+        },
+        "input+A_forecast": {
+          "mean": 0.01124552353409734,
+          "low": 0.005330750135689029,
+          "high": 0.01793819478084792,
+          "n_sources": 16
+        },
+        "FIT_constant": {
+          "mean": 0.02704757675112672,
+          "low": 0.015944832848991897,
+          "high": 0.038755987338727184,
+          "n_sources": 16
+        }
+      },
+      "gain": {
+        "mean": -0.00021728476841544753,
+        "low": -0.0022536040918207626,
+        "high": 0.0018564523810017674,
+        "n_sources": 16
+      },
+      "primary_family_interval": {
+        "mean": -0.00021728476841544753,
+        "low": -0.0027602968339623998,
+        "high": 0.0024219806278620083,
+        "n_sources": 16
+      },
+      "relative_gain": -0.02032047790838433,
+      "shuffled_gain_mean": -0.0026467900385784044,
+      "shuffled_gain_max": 0.001850666730823292,
+      "shuffled_tail_rank": 0.35,
+      "shuffled_gains": [
+        0.0008764373440050411,
+        -0.0013219960063817465,
+        0.0001335471101688475,
+        -0.0086752892409563,
+        0.0002892781744274121,
+        0.001850666730823292,
+        -0.003043056586799969,
+        -0.0022225908991362355,
+        -0.0007877964726310288,
+        -0.00784604952353189,
+        0.0009250288493257252,
+        -0.0021537643862739294,
+        -0.005266632145136257,
+        -0.004516925349748602,
+        0.0004851028325586022,
+        -0.0006471633241146293,
+        -0.0063941053467923845,
+        -0.0020340935019560313,
+        -0.0099396089908396
+      ],
+      "same_model_increment": -0.007416695094275378,
+      "expand": false,
+      "target_sd": 0.1533874596709545,
+      "target_mean": 0.23444790824491615
+    },
+    {
+      "cohort": "real_injected",
+      "leg": "replication",
+      "domain": "ALL",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "failure_flag",
+      "losses": {
+        "input": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 16
+        },
+        "A_hidden": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 16
+        },
+        "input+A_hidden": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 16
+        },
+        "B_hidden": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 16
+        },
+        "input+B_hidden": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 16
+        },
+        "input+A_forecast": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 16
+        },
+        "FIT_constant": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 16
+        }
+      },
+      "gain": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n_sources": 16
+      },
+      "primary_family_interval": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n_sources": 16
+      },
+      "relative_gain": 0.0,
+      "shuffled_gain_mean": 0.0,
+      "shuffled_gain_max": 0.0,
+      "shuffled_tail_rank": 1.0,
+      "shuffled_gains": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "same_model_increment": 0.0,
+      "expand": false,
+      "target_sd": 0.0,
+      "target_mean": 0.0
+    },
+    {
+      "cohort": "real_injected",
+      "leg": "replication",
+      "domain": "ALL",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "forecast",
+      "losses": {
+        "input": {
+          "mean": 0.05334443022689242,
+          "low": 0.01786601992584695,
+          "high": 0.10266033345382874,
+          "n_sources": 16
+        },
+        "A_hidden": {
+          "mean": 0.06295000646169996,
+          "low": 0.02938466303405764,
+          "high": 0.10944612823110125,
+          "n_sources": 16
+        },
+        "input+A_hidden": {
+          "mean": 0.059369207436749775,
+          "low": 0.02361379708484716,
+          "high": 0.10859302024915758,
+          "n_sources": 16
+        },
+        "B_hidden": {
+          "mean": 0.05278935159393484,
+          "low": 0.02939964508785374,
+          "high": 0.07783124452798944,
+          "n_sources": 16
+        },
+        "input+B_hidden": {
+          "mean": 0.052492355462112034,
+          "low": 0.027551033844004348,
+          "high": 0.07917839431915023,
+          "n_sources": 16
+        },
+        "input+A_forecast": {
+          "mean": 0.036223008863303485,
+          "low": 0.015880940728974672,
+          "high": 0.06036094464813131,
+          "n_sources": 16
+        },
+        "FIT_constant": {
+          "mean": 0.08775192071347632,
+          "low": 0.05939170598420005,
+          "high": 0.11991711490574447,
+          "n_sources": 16
+        }
+      },
+      "gain": {
+        "mean": -0.006024777209857354,
+        "low": -0.036304822247563984,
+        "high": 0.022250414418675844,
+        "n_sources": 16
+      },
+      "primary_family_interval": {
+        "mean": -0.006024777209857354,
+        "low": -0.044904346693423296,
+        "high": 0.0316546746796684,
+        "n_sources": 16
+      },
+      "relative_gain": -0.112941073402263,
+      "shuffled_gain_mean": -0.0107330851354363,
+      "shuffled_gain_max": 0.00906063154487289,
+      "shuffled_tail_rank": 0.35,
+      "shuffled_gains": [
+        0.00906063154487289,
+        0.004037728952837708,
+        -0.009652169804566218,
+        -0.007080249658946626,
+        -0.0072657364577190025,
+        -0.008275410940295436,
+        -0.011261593360570872,
+        -0.00013770981017653759,
+        0.0017671565575748437,
+        -0.019112685754123056,
+        -0.019186851664325766,
+        -0.004376796696438071,
+        -0.007405405522853334,
+        -0.042357392611419076,
+        -0.018909827830040405,
+        -0.029739987762014412,
+        -0.00037183895794362025,
+        -0.01674685289084305,
+        -0.01691362490629962
+      ],
+      "same_model_increment": 0.0008520747647803861,
+      "expand": false,
+      "target_sd": 0.8835311452194362,
+      "target_mean": 0.5293110123141592
+    },
+    {
+      "cohort": "real_injected",
+      "leg": "replication",
+      "domain": "ALL",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "fusion_response",
+      "losses": {
+        "input": {
+          "mean": 0.004668635994186632,
+          "low": 0.0019057437251738273,
+          "high": 0.008079709512431732,
+          "n_sources": 16
+        },
+        "A_hidden": {
+          "mean": 0.008781152860947312,
+          "low": 0.003957852455225508,
+          "high": 0.016279941123272912,
+          "n_sources": 16
+        },
+        "input+A_hidden": {
+          "mean": 0.006218593441431566,
+          "low": 0.00289713841967713,
+          "high": 0.010288393688378394,
+          "n_sources": 16
+        },
+        "B_hidden": {
+          "mean": 0.008928969607993612,
+          "low": 0.004187833823371816,
+          "high": 0.01646677607465079,
+          "n_sources": 16
+        },
+        "input+B_hidden": {
+          "mean": 0.008928184627396545,
+          "low": 0.004160991040362789,
+          "high": 0.01657973563106531,
+          "n_sources": 16
+        },
+        "input+A_forecast": {
+          "mean": 0.009154454470449979,
+          "low": 0.004190156369678124,
+          "high": 0.017328358966318,
+          "n_sources": 16
+        },
+        "FIT_constant": {
+          "mean": 0.009736536972268794,
+          "low": 0.0044651175055901125,
+          "high": 0.018339130672982238,
+          "n_sources": 16
+        }
+      },
+      "gain": {
+        "mean": -0.001549957447244934,
+        "low": -0.0031882841503330845,
+        "high": -0.0003686885679764871,
+        "n_sources": 16
+      },
+      "primary_family_interval": {
+        "mean": -0.001549957447244934,
+        "low": -0.003915950588954716,
+        "high": -0.00015924375402371127,
+        "n_sources": 16
+      },
+      "relative_gain": -0.33199363779376573,
+      "shuffled_gain_mean": -0.0028434732400388833,
+      "shuffled_gain_max": -0.0014426460587924758,
+      "shuffled_tail_rank": 0.2,
+      "shuffled_gains": [
+        -0.0017337126495901493,
+        -0.00423159044351315,
+        -0.002556528460310307,
+        -0.0014954335323975388,
+        -0.0019617683786361546,
+        -0.0015337806082852366,
+        -0.004281763572778318,
+        -0.002984609625976219,
+        -0.0016980252511133945,
+        -0.0046654323198445265,
+        -0.004285752846505581,
+        -0.004748514664167143,
+        -0.0015546897951598472,
+        -0.0017582508770561274,
+        -0.0014426460587924758,
+        -0.0042854619504665925,
+        -0.0016172164573077616,
+        -0.00490860827481453,
+        -0.0022822057940237407
+      ],
+      "same_model_increment": -0.004259548633209913,
+      "expand": false,
+      "target_sd": 0.09525787409389447,
+      "target_mean": -0.030507145256490557
+    },
+    {
+      "cohort": "real_injected",
+      "leg": "replication",
+      "domain": "ALL",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "log_failure",
+      "losses": {
+        "input": {
+          "mean": 0.024835045436055962,
+          "low": 0.009606286250355972,
+          "high": 0.04295324663497815,
+          "n_sources": 16
+        },
+        "A_hidden": {
+          "mean": 0.02951412976914891,
+          "low": 0.014973410649545077,
+          "high": 0.04723731320955675,
+          "n_sources": 16
+        },
+        "input+A_hidden": {
+          "mean": 0.026265641650294984,
+          "low": 0.011767218241681683,
+          "high": 0.04450315761627582,
+          "n_sources": 16
+        },
+        "B_hidden": {
+          "mean": 0.02308466613549331,
+          "low": 0.013499847656841805,
+          "high": 0.03403351026602389,
+          "n_sources": 16
+        },
+        "input+B_hidden": {
+          "mean": 0.02034805629557149,
+          "low": 0.010167315767043886,
+          "high": 0.03279880304976252,
+          "n_sources": 16
+        },
+        "input+A_forecast": {
+          "mean": 0.026076127417230324,
+          "low": 0.01192178652900903,
+          "high": 0.0422093799968266,
+          "n_sources": 16
+        },
+        "FIT_constant": {
+          "mean": 0.05796738388325516,
+          "low": 0.03386518983872021,
+          "high": 0.08545453432199299,
+          "n_sources": 16
+        }
+      },
+      "gain": {
+        "mean": -0.0014305962142390214,
+        "low": -0.005033797801093339,
+        "high": 0.0023938497025359894,
+        "n_sources": 16
+      },
+      "primary_family_interval": {
+        "mean": -0.0014305962142390214,
+        "low": -0.005913701988146746,
+        "high": 0.003308257652755316,
+        "n_sources": 16
+      },
+      "relative_gain": -0.05760392981452155,
+      "shuffled_gain_mean": -0.005381606141726989,
+      "shuffled_gain_max": 0.0019342815482420023,
+      "shuffled_tail_rank": 0.2,
+      "shuffled_gains": [
+        0.0005996561523647486,
+        -0.006692931191965894,
+        -0.01482574314883403,
+        -0.0017913319576603258,
+        -0.0026291572554802464,
+        4.913069567705252e-05,
+        -0.0035187018266455185,
+        -0.0029721139203848297,
+        -0.0020644312798842055,
+        -0.006351310064240917,
+        -0.010337700365076068,
+        0.0019342815482420023,
+        -0.007035773722412018,
+        -0.009989382878393464,
+        -0.008935772793883988,
+        -0.010779724726417096,
+        -0.007982771225849672,
+        -0.0016924719491523505,
+        -0.007234266782815975
+      ],
+      "same_model_increment": 0.0044869891404844715,
+      "expand": false,
+      "target_sd": 0.20263238359131344,
+      "target_mean": 0.49998633503066725
+    },
+    {
+      "cohort": "real_injected",
+      "leg": "replication",
+      "domain": "ALL",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "failure_flag",
+      "losses": {
+        "input": {
+          "mean": 0.04872202700865836,
+          "low": 0.00819049861642217,
+          "high": 0.1102770274713173,
+          "n_sources": 16
+        },
+        "A_hidden": {
+          "mean": 0.0134593076263323,
+          "low": 0.005898787650538576,
+          "high": 0.021982003621374323,
+          "n_sources": 16
+        },
+        "input+A_hidden": {
+          "mean": 0.03469522235452385,
+          "low": 0.009356632385464882,
+          "high": 0.07005367436615927,
+          "n_sources": 16
+        },
+        "B_hidden": {
+          "mean": 0.015174404110355593,
+          "low": 0.008311693508832567,
+          "high": 0.023111563322953454,
+          "n_sources": 16
+        },
+        "input+B_hidden": {
+          "mean": 0.032282709244944835,
+          "low": 0.010096015507437016,
+          "high": 0.06309589033780104,
+          "n_sources": 16
+        },
+        "input+A_forecast": {
+          "mean": 0.024272191009032072,
+          "low": 0.0018574613101091347,
+          "high": 0.06636682428140134,
+          "n_sources": 16
+        },
+        "FIT_constant": {
+          "mean": 0.0625,
+          "low": 0.015625,
+          "high": 0.15625,
+          "n_sources": 16
+        }
+      },
+      "gain": {
+        "mean": 0.014026804654134497,
+        "low": -0.00776719806264138,
+        "high": 0.04443451000158241,
+        "n_sources": 16
+      },
+      "primary_family_interval": {
+        "mean": 0.014026804654134497,
+        "low": -0.011362653192419395,
+        "high": 0.055529440614694,
+        "n_sources": 16
+      },
+      "relative_gain": 0.28789452154036616,
+      "shuffled_gain_mean": 0.01509870600763035,
+      "shuffled_gain_max": 0.032117262716632004,
+      "shuffled_tail_rank": 0.6,
+      "shuffled_gains": [
+        0.02978451038879531,
+        0.015926703319868056,
+        0.025913723522037323,
+        0.0103823442669779,
+        0.004458608521814838,
+        0.01377412516884698,
+        0.020559343571573994,
+        -0.005438387574908464,
+        0.01206787915040633,
+        0.022847963627358345,
+        0.027295386171717093,
+        0.032117262716632004,
+        0.010755035718639071,
+        -0.00957117578205292,
+        0.026344601716691677,
+        -0.038672701515488385,
+        0.02566728695283698,
+        0.03101134412354919,
+        0.03165156007968129
+      ],
+      "same_model_increment": 0.016439317763713525,
+      "expand": false,
+      "target_sd": 0.24206145913796356,
+      "target_mean": 0.0625
+    }
+  ],
+  "domain_limited_findings": [
+    {
+      "cohort": "real_natural",
+      "leg": "replication",
+      "domain": "m4_hourly",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "forecast",
+      "losses": {
+        "input": {
+          "mean": 0.04210731791344366,
+          "low": 0.012364839372494104,
+          "high": 0.09203972703252539,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.03522596256548648,
+          "low": 0.012022680136268615,
+          "high": 0.07326853876377895,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.038605935123453845,
+          "low": 0.013005233125837446,
+          "high": 0.08405078823286911,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.08626090811057616,
+          "low": 0.018559826505668293,
+          "high": 0.15396198971548403,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.0402069697983347,
+          "low": 0.014740303159391576,
+          "high": 0.06567363643727782,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.014096202620519138,
+          "low": 0.007611756290732791,
+          "high": 0.024671734248058998,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.3624811951788349,
+          "low": 0.20308569462928786,
+          "high": 0.5872163991332748,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": 0.0035013827899898152,
+        "low": -0.0011984269029838594,
+        "high": 0.00820119248296349,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": 0.0035013827899898152,
+        "low": -0.001756730125880969,
+        "high": 0.009105275172193904,
+        "n_sources": 4
+      },
+      "relative_gain": 0.08315378332068793,
+      "shuffled_gain_mean": -0.06524163300052467,
+      "shuffled_gain_max": 0.011406360221621073,
+      "shuffled_tail_rank": 0.35,
+      "shuffled_gains": [
+        0.010861216974475917,
+        0.005435414172842373,
+        -0.19681979945523645,
+        -0.03134073914458941,
+        -0.022237377420326283,
+        0.002515642099456361,
+        -0.10673115053456471,
+        0.010162720481849075,
+        0.004707610727753213,
+        -0.12780243829828483,
+        -0.1565582601269084,
+        -0.009216682080463215,
+        -0.005723704368503435,
+        -0.20866440741122566,
+        -0.12356817784656846,
+        -0.14626784805512696,
+        0.011406360221621073,
+        0.009089843718833701,
+        -0.15883925066500243
+      ],
+      "same_model_increment": 0.0019003481151089602,
+      "expand": false,
+      "target_sd": 0.9731291799009649,
+      "target_mean": 0.1945138446646314
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "replication",
+      "domain": "m4_hourly",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "log_failure",
+      "losses": {
+        "input": {
+          "mean": 0.013408737542442513,
+          "low": 0.0008911562698423007,
+          "high": 0.02592631881504273,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.006872847057494606,
+          "low": 0.0010575282218484802,
+          "high": 0.01616495956864844,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.009490847164447761,
+          "low": 0.0014568949172219456,
+          "high": 0.01780630897143237,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.0017234139915739582,
+          "low": 0.0005353289592500565,
+          "high": 0.002801461251417387,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.006266645134617036,
+          "low": 0.0005316150130499643,
+          "high": 0.012001675256184108,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.014570083544287243,
+          "low": 0.0012949395717653928,
+          "high": 0.0372571690059586,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.08277611033602134,
+          "low": 0.06200222013836815,
+          "high": 0.09355339464200971,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": 0.003917890377994753,
+        "low": -0.0005657386473796449,
+        "high": 0.00840151940336915,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": 0.003917890377994753,
+        "low": -0.0008841005584500099,
+        "high": 0.00907413687572728,
+        "n_sources": 4
+      },
+      "relative_gain": 0.29218935530608325,
+      "shuffled_gain_mean": -0.0003454762866617841,
+      "shuffled_gain_max": 0.008543454124268986,
+      "shuffled_tail_rank": 0.15,
+      "shuffled_gains": [
+        0.0023654482040562012,
+        0.002235907342068977,
+        0.0022107424220535266,
+        0.0012179292148112699,
+        0.0022161048717679616,
+        0.001474461429192111,
+        -0.0011800380500601568,
+        0.005545192327181952,
+        -0.0015621413635177222,
+        0.00379361948825259,
+        0.002788331176719269,
+        -0.0008897599172178258,
+        -0.021063635951775583,
+        0.0030108332456316176,
+        0.008543454124268986,
+        -0.005372898082939341,
+        0.0018118467879770657,
+        -0.004571566692955348,
+        -0.009137880022089451
+      ],
+      "same_model_increment": 0.0071420924078254774,
+      "expand": false,
+      "target_sd": 0.03386761772485524,
+      "target_mean": 0.020946501217900766
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "replication",
+      "domain": "monash_electricity_hourly",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "forecast",
+      "losses": {
+        "input": {
+          "mean": 0.07492979498617389,
+          "low": 0.026404399072957274,
+          "high": 0.1234551908993905,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.1706844194408148,
+          "low": 0.03511583688212111,
+          "high": 0.3508698879563446,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.09354528939721393,
+          "low": 0.02925209034620456,
+          "high": 0.15783848844822332,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.21432536567450167,
+          "low": 0.06717119513932789,
+          "high": 0.36147953620967543,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.09487568483996611,
+          "low": 0.03331648151169355,
+          "high": 0.1564348881682387,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.11293189928312848,
+          "low": 0.07015798438706553,
+          "high": 0.1536799539145169,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.5037216913030295,
+          "low": 0.19535460032608898,
+          "high": 0.8120887822799702,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": -0.018615494411040046,
+        "low": -0.042723506668565156,
+        "high": -0.0014226886526375222,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": -0.018615494411040046,
+        "low": -0.04422415451792782,
+        "high": 7.795919672513862e-05,
+        "n_sources": 4
+      },
+      "relative_gain": -0.24843914779794865,
+      "shuffled_gain_mean": -0.019825131824106442,
+      "shuffled_gain_max": -0.004662458204966916,
+      "shuffled_tail_rank": 0.6,
+      "shuffled_gains": [
+        -0.004662458204966916,
+        -0.007252844336737252,
+        -0.030422035235332334,
+        -0.017372680447974395,
+        -0.023904678525941078,
+        -0.007756567141825002,
+        -0.023333269460419498,
+        -0.014789723378085918,
+        -0.015467340097683416,
+        -0.01881516382972257,
+        -0.016829102991193206,
+        -0.02541500981622466,
+        -0.015584207370639511,
+        -0.032515666779372634,
+        -0.043097587406603605,
+        -0.013266104336839748,
+        -0.01640039109811242,
+        -0.04089316992480469,
+        -0.008899504275543604
+      ],
+      "same_model_increment": -0.019945889853792226,
+      "expand": false,
+      "target_sd": 0.7430203186894462,
+      "target_mean": 0.15567795995551292
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "replication",
+      "domain": "monash_electricity_hourly",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "log_failure",
+      "losses": {
+        "input": {
+          "mean": 0.1772586497353813,
+          "low": 0.0824508609460301,
+          "high": 0.2720664385247325,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.14489486834915688,
+          "low": 0.07634471097565484,
+          "high": 0.19594234755146622,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.15376939613676568,
+          "low": 0.07006129080767394,
+          "high": 0.23674932497691914,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.11613878992475117,
+          "low": 0.07424094023776816,
+          "high": 0.1684529649821631,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.13162287402560532,
+          "low": 0.0636108558850011,
+          "high": 0.19795308401666908,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.09847550042574232,
+          "low": 0.043222395760630965,
+          "high": 0.17783266893656072,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.08551275781711012,
+          "low": 0.00460666450509416,
+          "high": 0.16641885112912608,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": 0.02348925359861563,
+        "low": 0.011661393649417883,
+        "high": 0.035317113547813375,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": 0.02348925359861563,
+        "low": 0.008235553547002077,
+        "high": 0.03610391780418664,
+        "n_sources": 4
+      },
+      "relative_gain": 0.1325140050072666,
+      "shuffled_gain_mean": 9.082708120970984e-05,
+      "shuffled_gain_max": 0.04198774356294463,
+      "shuffled_tail_rank": 0.2,
+      "shuffled_gains": [
+        -0.0120754355253123,
+        0.008517220271791512,
+        0.0026435316827440013,
+        -0.00575071922393436,
+        -0.015588406702396721,
+        -0.01182096883626706,
+        0.010491744941204417,
+        0.041384097960606846,
+        -0.021696541284760715,
+        0.0017466610119148754,
+        0.0013242847802764184,
+        0.015531821049552393,
+        -0.009158977758780343,
+        -0.03520404376443137,
+        0.0334741568183798,
+        -0.0179388693723818,
+        0.04198774356294463,
+        -0.009167031133213425,
+        -0.016974553934952313
+      ],
+      "same_model_increment": 0.04563577570977598,
+      "expand": false,
+      "target_sd": 0.2223821411820454,
+      "target_mean": 0.49654647944080826
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "replication",
+      "domain": "monash_pedestrian_counts",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "forecast",
+      "losses": {
+        "input": {
+          "mean": 0.04266806472630053,
+          "low": 0.01649448192326628,
+          "high": 0.07154045578620427,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.033532256941638576,
+          "low": 0.014295073145547947,
+          "high": 0.05050539658798514,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.034759043933083135,
+          "low": 0.015799421694548028,
+          "high": 0.053718666171618246,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.043063687472929074,
+          "low": 0.023839515422832972,
+          "high": 0.05642954663736821,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.030859299321216897,
+          "low": 0.010040348226384187,
+          "high": 0.0517019023661796,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.02265250581286765,
+          "low": 0.011499556967587001,
+          "high": 0.03888964734460948,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.13370102659205219,
+          "low": 0.08798299355369966,
+          "high": 0.19539278599964105,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": 0.007909020793217394,
+        "low": -0.0023048891969234394,
+        "high": 0.018122930783358228,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": 0.007909020793217394,
+        "low": -0.0036048713367020156,
+        "high": 0.02086522127321196,
+        "n_sources": 4
+      },
+      "relative_gain": 0.18536160109324773,
+      "shuffled_gain_mean": 0.0011207213467783802,
+      "shuffled_gain_max": 0.015550752463155475,
+      "shuffled_tail_rank": 0.4,
+      "shuffled_gains": [
+        0.015383457985321538,
+        0.010342254545921458,
+        -0.0067726768975431865,
+        0.002990027968370582,
+        0.0014241771480328152,
+        0.010822734672808183,
+        0.0012281772614371783,
+        -0.01252138693924709,
+        0.012472627954838887,
+        0.0009190631464845076,
+        -0.003525107610183537,
+        0.007976891709973476,
+        0.009679029512607054,
+        -0.0053902122518524765,
+        -0.008882909003377546,
+        -0.007021635595786411,
+        -0.009843782260490966,
+        0.015550752463155475,
+        -0.013537778221680717
+      ],
+      "same_model_increment": 0.011808765405083636,
+      "expand": false,
+      "target_sd": 0.7458964611690811,
+      "target_mean": -0.16819368411039676
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "replication",
+      "domain": "monash_pedestrian_counts",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "log_failure",
+      "losses": {
+        "input": {
+          "mean": 0.1289920018008336,
+          "low": 0.003664484494157968,
+          "high": 0.3629873431234101,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.02727931048739234,
+          "low": 0.0013180807709917077,
+          "high": 0.069385012599376,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.08578511426114802,
+          "low": 0.0014294216024402608,
+          "high": 0.2416850660631244,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.0023065596544802375,
+          "low": 0.00023961397803268876,
+          "high": 0.004556116358582881,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.07015684614660342,
+          "low": 6.942174510725932e-05,
+          "high": 0.2093726968933319,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.10527814995209978,
+          "low": 0.0021000466581743253,
+          "high": 0.2966164858687485,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.028403807544103966,
+          "low": 0.014885085309839775,
+          "high": 0.05091533989154588,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": 0.04320688753968557,
+        "low": 0.001835028434485012,
+        "high": 0.1219847480586392,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": 0.04320688753968557,
+        "low": 0.0011435898545476583,
+        "high": 0.12267618663857655,
+        "n_sources": 4
+      },
+      "relative_gain": 0.3349578806164892,
+      "shuffled_gain_mean": 0.024776727319074626,
+      "shuffled_gain_max": 0.05729832368821336,
+      "shuffled_tail_rank": 0.25,
+      "shuffled_gains": [
+        0.043820257982608836,
+        0.006141529974888863,
+        0.018793794010965814,
+        0.022276547743141834,
+        0.05729832368821336,
+        0.010648623739887439,
+        0.014317361539770541,
+        0.0351403996100321,
+        -0.004058923123144391,
+        0.03758340068821792,
+        0.03385147055895673,
+        0.01768341471071301,
+        0.02364071163437063,
+        0.009607715694769984,
+        0.05577771558731938,
+        -0.0007951331395259073,
+        0.04727260050759113,
+        0.03577275410677992,
+        0.005985253546860754
+      ],
+      "same_model_increment": 0.05883515565423017,
+      "expand": false,
+      "target_sd": 0.0519899005109427,
+      "target_mean": 0.14633968915032858
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "replication",
+      "domain": "monash_traffic",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "forecast",
+      "losses": {
+        "input": {
+          "mean": 0.03378794195006103,
+          "low": 0.01374715181901125,
+          "high": 0.05382873208111082,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.038785491875542026,
+          "low": 0.012444481317228275,
+          "high": 0.06512650243385577,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.04050270751420515,
+          "low": 0.013807841664361688,
+          "high": 0.06719757336404861,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.043865368564877244,
+          "low": 0.013639006816648688,
+          "high": 0.08403283705813824,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.026287597970371876,
+          "low": 0.010104523925195749,
+          "high": 0.041733866510080805,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.0772041289858375,
+          "low": 0.014533794320951268,
+          "high": 0.177268994069602,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.1326075139019307,
+          "low": 0.07743005053310668,
+          "high": 0.21264441536480586,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": -0.006714765564144113,
+        "low": -0.013368841282937787,
+        "high": -6.068984535043901e-05,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": -0.006714765564144113,
+        "low": -0.014266833236643002,
+        "high": 0.0009747090140016213,
+        "n_sources": 4
+      },
+      "relative_gain": -0.1987326003480358,
+      "shuffled_gain_mean": -0.015916083069628054,
+      "shuffled_gain_max": -0.0006234008870740562,
+      "shuffled_tail_rank": 0.2,
+      "shuffled_gains": [
+        -0.007842106324843588,
+        -0.029176380940600283,
+        -0.01284853810882461,
+        -0.011060746096940388,
+        -0.007800500318555026,
+        -0.021792590649583006,
+        -0.010526079859293932,
+        -0.03561036674481283,
+        -0.041646410548298145,
+        -0.012454524366251194,
+        -0.009020367326724985,
+        -0.004013044175103274,
+        -0.008719412606278912,
+        -0.02455088464821308,
+        -0.0006234008870740562,
+        -0.006559299711011999,
+        -0.02277653277139731,
+        -0.020546566866483824,
+        -0.014837825372642624
+      ],
+      "same_model_increment": 0.007500343979689156,
+      "expand": false,
+      "target_sd": 0.7932749175030585,
+      "target_mean": 0.009911988469895432
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "replication",
+      "domain": "monash_traffic",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "log_failure",
+      "losses": {
+        "input": {
+          "mean": 0.003947484756941936,
+          "low": 0.0010028026361031351,
+          "high": 0.008247492566259534,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.00586343509106526,
+          "low": 0.0024540575744512907,
+          "high": 0.008961031471354738,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.0038784486515135367,
+          "low": 0.001293799806043196,
+          "high": 0.005384445703317635,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.011504176805443161,
+          "low": 0.001633601832543521,
+          "high": 0.02894379658529264,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.005864935512101942,
+          "low": 0.0013489955804375105,
+          "high": 0.010859965418873668,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.008310262712647506,
+          "low": 0.0010829354375836294,
+          "high": 0.01985930465627449,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.035362714673717474,
+          "low": 0.014200500953089052,
+          "high": 0.055343913252790734,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": 6.903610542839883e-05,
+        "low": -0.002364941376716641,
+        "high": 0.0029232886152938146,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": 6.903610542839883e-05,
+        "low": -0.0025104304486946822,
+        "high": 0.003546026409442689,
+        "n_sources": 4
+      },
+      "relative_gain": 0.017488631287807734,
+      "shuffled_gain_mean": -0.0053931193133807676,
+      "shuffled_gain_max": 0.0025122048246946616,
+      "shuffled_tail_rank": 0.3,
+      "shuffled_gains": [
+        -0.008993755542872848,
+        -0.00944490067760722,
+        -0.008376288066686657,
+        0.0025122048246946616,
+        0.0022878919480446105,
+        0.0012121085041535157,
+        0.0010031117672526656,
+        -0.0060132402339148055,
+        -0.00407407366703141,
+        -0.0007981134354240362,
+        -0.022555532037466065,
+        -0.005834087831107129,
+        0.0005410578538433573,
+        -0.01588994916020539,
+        -0.006618233293017471,
+        -0.0030444058687708977,
+        -0.008537416274451983,
+        -0.002799532143530711,
+        -0.007046113620136771
+      ],
+      "same_model_increment": -0.0019174507551600068,
+      "expand": false,
+      "target_sd": 0.061484448264945736,
+      "target_mean": 0.12894024621312988
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "replication",
+      "domain": "m4_hourly",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "forecast",
+      "losses": {
+        "input": {
+          "mean": 0.031334499476936256,
+          "low": 0.010412614339098675,
+          "high": 0.06384342910898791,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.1098782465198684,
+          "low": 0.015406665878060784,
+          "high": 0.20434982716167602,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.06307955350376016,
+          "low": 0.010664640571035491,
+          "high": 0.11549446643648484,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.032303548541070475,
+          "low": 0.00882846943257138,
+          "high": 0.060543595721346835,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.025084352549399672,
+          "low": 0.005587050312772176,
+          "high": 0.044581654786027165,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.011316636752610047,
+          "low": 0.0048473593489820905,
+          "high": 0.01792389187330409,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.3169022440362176,
+          "low": 0.17400242334117946,
+          "high": 0.5318602703016606,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": -0.0317450540268239,
+        "low": -0.07425609712650671,
+        "high": -0.00025202623193681505,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": -0.0317450540268239,
+        "low": -0.08048922646224077,
+        "high": 0.0015235982509523758,
+        "n_sources": 4
+      },
+      "relative_gain": -1.0131023171501377,
+      "shuffled_gain_mean": -0.18436187116260375,
+      "shuffled_gain_max": 0.010430733077819842,
+      "shuffled_tail_rank": 0.5,
+      "shuffled_gains": [
+        0.0030994752069552454,
+        -0.047895249104147365,
+        -0.533316198908926,
+        -0.01230594970313295,
+        -0.006877982681948447,
+        -0.015129155083494737,
+        -0.4559324723949991,
+        -0.03494219168351787,
+        -0.0127838423298445,
+        -0.24764702063699146,
+        -0.5432200623397614,
+        -0.010613817361637402,
+        0.010430733077819842,
+        -0.4093880057608105,
+        -0.3921041507332981,
+        -0.33804413132071925,
+        -0.007012728694031131,
+        -0.006406749480052218,
+        -0.44278605215693323
+      ],
+      "same_model_increment": 0.006250146927536584,
+      "expand": false,
+      "target_sd": 1.007026107509017,
+      "target_mean": 0.19797631970363821
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "replication",
+      "domain": "m4_hourly",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "log_failure",
+      "losses": {
+        "input": {
+          "mean": 0.008215604516776765,
+          "low": 0.0010600284084288226,
+          "high": 0.019620449336509672,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.001488233998678895,
+          "low": 0.00037897034079190876,
+          "high": 0.0025974976565658814,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.008002615927957204,
+          "low": 0.0011647763504940723,
+          "high": 0.014840455505420336,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.0021420271940439926,
+          "low": 0.0005826100247394401,
+          "high": 0.003997676021570582,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.02929907015854889,
+          "low": 0.003346671432306933,
+          "high": 0.05525146888479084,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.018223028929283958,
+          "low": 0.004245418216698108,
+          "high": 0.035743628394220586,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.1007194125233808,
+          "low": 0.07471139592322637,
+          "high": 0.11407732372875055,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": 0.00021298858881955876,
+        "low": -0.006799974719193971,
+        "high": 0.005947671477925262,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": 0.00021298858881955876,
+        "low": -0.008057914204864368,
+        "high": 0.006630255491111952,
+        "n_sources": 4
+      },
+      "relative_gain": 0.02592488335881104,
+      "shuffled_gain_mean": -0.027001401112346456,
+      "shuffled_gain_max": 0.0037061764695165682,
+      "shuffled_tail_rank": 0.15,
+      "shuffled_gains": [
+        0.0037061764695165682,
+        -0.009909423587623445,
+        -0.017685514059736573,
+        -0.0034120212483886225,
+        -0.003416693017451045,
+        -0.0036838983023458967,
+        -0.03474329377131602,
+        -0.001779410479028814,
+        -0.009909958640641018,
+        -0.09963629356740134,
+        -0.032148824881044175,
+        -0.011025471054253451,
+        -0.014322144189739032,
+        -0.030544393810110385,
+        -0.18876824762623912,
+        -0.04371637477731363,
+        0.0015230437122084673,
+        8.033731084630512e-05,
+        -0.013634215614521383
+      ],
+      "same_model_increment": -0.021083465641772124,
+      "expand": false,
+      "target_sd": 0.03843663060519152,
+      "target_mean": 0.02419060900579129
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "replication",
+      "domain": "monash_electricity_hourly",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "forecast",
+      "losses": {
+        "input": {
+          "mean": 0.2895526084368142,
+          "low": 0.08879368481588332,
+          "high": 0.5592235252875045,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.5071063633055638,
+          "low": 0.18492427763067887,
+          "high": 0.9377826370667592,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.34619091670673807,
+          "low": 0.1117012121818481,
+          "high": 0.6640700089166147,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.48799286397406444,
+          "low": 0.14027846167408117,
+          "high": 1.0180343578572237,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.33242732613680065,
+          "low": 0.08873847377269699,
+          "high": 0.6979644394737933,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.21348279031465228,
+          "low": 0.07452296906031175,
+          "high": 0.38554504048686017,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.8976467942630313,
+          "low": 0.44381946994432475,
+          "high": 1.3837852511686752,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": -0.05663830826992393,
+        "low": -0.10484648362911017,
+        "high": -0.01325209635011567,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": -0.05663830826992393,
+        "low": -0.11690140350318001,
+        "high": -0.010852607491894945,
+        "n_sources": 4
+      },
+      "relative_gain": -0.19560627885790044,
+      "shuffled_gain_mean": -0.0376174780229477,
+      "shuffled_gain_max": 0.014273142510115248,
+      "shuffled_tail_rank": 0.7,
+      "shuffled_gains": [
+        -0.06610532117605049,
+        -0.05137546993861379,
+        0.0035426504156725463,
+        -0.03526080807763623,
+        -0.08349273495635742,
+        -0.06728270864207503,
+        -0.013434915067364342,
+        -0.0656334002395366,
+        -0.08839540634428697,
+        -0.022923014043369994,
+        -0.0372288161827737,
+        -0.07149584600647993,
+        -0.02298213991754291,
+        -0.02379748706410629,
+        -0.0112072101158944,
+        -0.022933975421800527,
+        -0.039858841844193596,
+        -0.009139780323711873,
+        0.014273142510115248
+      ],
+      "same_model_increment": -0.042874717699986464,
+      "expand": false,
+      "target_sd": 0.9401322840153616,
+      "target_mean": 0.21202983518160487
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "replication",
+      "domain": "monash_electricity_hourly",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "log_failure",
+      "losses": {
+        "input": {
+          "mean": 0.2662466146650985,
+          "low": 0.10810321028716266,
+          "high": 0.42439001904303447,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.27013600320397424,
+          "low": 0.12620692845300102,
+          "high": 0.4140650779549474,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.3238996788376978,
+          "low": 0.14526802674636327,
+          "high": 0.5025313309290323,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.3474281913284884,
+          "low": 0.13716647423710757,
+          "high": 0.5576899084198692,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.37342845206768027,
+          "low": 0.21003765035730354,
+          "high": 0.5368192537780571,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.25408486592678176,
+          "low": 0.10006344907432502,
+          "high": 0.40810628277923855,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.0968955849871441,
+          "low": 0.013510461003741505,
+          "high": 0.2262354391950972,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": -0.05765306417259927,
+        "low": -0.1023095096650744,
+        "high": -0.025796130345961996,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": -0.05765306417259927,
+        "low": -0.1079938527216937,
+        "high": -0.0237917373550205,
+        "n_sources": 4
+      },
+      "relative_gain": -0.21654008350535786,
+      "shuffled_gain_mean": -0.06615272063656402,
+      "shuffled_gain_max": 0.043270448968074054,
+      "shuffled_tail_rank": 0.4,
+      "shuffled_gains": [
+        0.04226381220079259,
+        -0.05891657125997411,
+        -0.045746625549716785,
+        -0.09374358778914499,
+        -0.05151389604996183,
+        -0.08591436030918845,
+        -0.07004631981567133,
+        0.043270448968074054,
+        -0.13170593534281846,
+        -0.13397575974689668,
+        -0.06278807350339,
+        -0.004906114558202973,
+        -0.13451692617119265,
+        -0.10572947141219613,
+        -0.09356544615529219,
+        -0.14516661397923575,
+        0.04009522804055494,
+        -0.1157826823720989,
+        -0.04851279728915676
+      ],
+      "same_model_increment": -0.10718183740258175,
+      "expand": false,
+      "target_sd": 0.2640715792466402,
+      "target_mean": 0.5040259833765783
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "replication",
+      "domain": "monash_pedestrian_counts",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "forecast",
+      "losses": {
+        "input": {
+          "mean": 0.05338069467483808,
+          "low": 0.016493921149191505,
+          "high": 0.10048347158681603,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.0541637237853873,
+          "low": 0.02636314286029489,
+          "high": 0.08278836708766685,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.048866629040055204,
+          "low": 0.023142838029697972,
+          "high": 0.07459042005041244,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.05787343666283193,
+          "low": 0.029413218997525633,
+          "high": 0.08364116093067017,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.07286682715021511,
+          "low": 0.025726603514849185,
+          "high": 0.12847804505225452,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.031650950711752994,
+          "low": 0.01396564795803341,
+          "high": 0.052889473259278556,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.1464609450974757,
+          "low": 0.09606545393330282,
+          "high": 0.19930342694421757,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": 0.00451406563478288,
+        "low": -0.024747250235669958,
+        "high": 0.03928254379673013,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": 0.00451406563478288,
+        "low": -0.025495048448624897,
+        "high": 0.04003034200968507,
+        "n_sources": 4
+      },
+      "relative_gain": 0.08456363601634925,
+      "shuffled_gain_mean": -0.030598812590515678,
+      "shuffled_gain_max": 0.009534420978774745,
+      "shuffled_tail_rank": 0.2,
+      "shuffled_gains": [
+        -0.015950311406455857,
+        -0.01714611358071586,
+        -0.07597080614131828,
+        -0.024718250648294388,
+        0.0006346570588174815,
+        0.005917117000672556,
+        -0.0588399736694459,
+        -0.036518503962321175,
+        0.009534420978774745,
+        -0.028829657988563406,
+        -0.065795235109692,
+        0.006664472421139331,
+        -0.006925259927696402,
+        -0.04475175604827556,
+        -0.06177526532050833,
+        -0.030741547369431396,
+        -0.04779308347009466,
+        -0.017553352325266017,
+        -0.07081898971112278
+      ],
+      "same_model_increment": -0.019486132475377033,
+      "expand": false,
+      "target_sd": 0.8481588709706898,
+      "target_mean": -0.06711913698771851
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "replication",
+      "domain": "monash_pedestrian_counts",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "log_failure",
+      "losses": {
+        "input": {
+          "mean": 0.10451054264724602,
+          "low": 0.0018487276424422419,
+          "high": 0.3064318464593912,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.006886561326750104,
+          "low": 0.0010402939227640408,
+          "high": 0.016944879765134764,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.06655947963136351,
+          "low": 0.00043417091907319255,
+          "high": 0.19837265427343165,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.054268550337336796,
+          "low": 0.00016739460388696028,
+          "high": 0.14924966788321942,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.22061817421378127,
+          "low": 0.001674897924553227,
+          "high": 0.6397404579191939,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.07271428397452358,
+          "low": 0.002106503599654693,
+          "high": 0.2110407390837103,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.03730773328984368,
+          "low": 0.02074700345837709,
+          "high": 0.05386846312131027,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": 0.03795106301588252,
+        "low": 0.0013694968774823721,
+        "high": 0.10792839787375093,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": 0.03795106301588252,
+        "low": 0.000597609054867596,
+        "high": 0.10870028569636571,
+        "n_sources": 4
+      },
+      "relative_gain": 0.3631314320506265,
+      "shuffled_gain_mean": -0.005554092243645009,
+      "shuffled_gain_max": 0.04282669021749919,
+      "shuffled_tail_rank": 0.1,
+      "shuffled_gains": [
+        0.03364109367946686,
+        0.012408752417148342,
+        -0.016332437500116072,
+        0.008023609321806392,
+        0.017041794992704265,
+        0.0059873180180549275,
+        -0.01491275324778021,
+        0.034781005247547424,
+        -0.07130666495972633,
+        -0.05207581525994198,
+        0.002398398026404577,
+        0.04282669021749919,
+        -0.026368731293372253,
+        -0.019311585229630654,
+        -0.011730669581108593,
+        -0.054400461740978366,
+        0.03254044301097772,
+        -0.00522336570520676,
+        -0.02351437304300365
+      ],
+      "same_model_increment": -0.11610763156653525,
+      "expand": false,
+      "target_sd": 0.045019672913139436,
+      "target_mean": 0.15138538038225172
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "replication",
+      "domain": "monash_traffic",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "forecast",
+      "losses": {
+        "input": {
+          "mean": 0.0851754616440724,
+          "low": 0.013986815175708635,
+          "high": 0.21796117348744043,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.20019943653715688,
+          "low": 0.020742631051453693,
+          "high": 0.5495620185632337,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.15473759351450508,
+          "low": 0.014349397345442685,
+          "high": 0.42723517779188147,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.07257764444815,
+          "low": 0.012850397575372402,
+          "high": 0.17834916780189064,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.07397908468018587,
+          "low": 0.011496030837781347,
+          "high": 0.19429769409529668,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.11500323607777255,
+          "low": 0.01145997219236632,
+          "high": 0.29771979886089156,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.1774483505810048,
+          "low": 0.07347223975931358,
+          "high": 0.3448698924810846,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": -0.06956213187043273,
+        "low": -0.20695911804681463,
+        "high": 0.006114970977067324,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": -0.06956213187043273,
+        "low": -0.21140608063304944,
+        "high": 0.006731302736981059,
+        "n_sources": 4
+      },
+      "relative_gain": -0.8166921614245662,
+      "shuffled_gain_mean": -0.05814233820215381,
+      "shuffled_gain_max": 0.029568408418476393,
+      "shuffled_tail_rank": 0.55,
+      "shuffled_gains": [
+        -0.06494774999457603,
+        -0.03543376476632018,
+        -0.12262986728366458,
+        0.006402718857039782,
+        -0.02202087859417897,
+        -0.025175833106906256,
+        -0.11301247317853416,
+        -0.021366213694433367,
+        0.029568408418476393,
+        -0.11233655512957706,
+        -0.13549810877338905,
+        -0.02405789865375826,
+        -0.027165032201334642,
+        -0.09167523252991677,
+        -0.11859357321378093,
+        -0.09178967502039131,
+        0.01744290166098896,
+        -0.0814507228907176,
+        -0.07096487574594834
+      ],
+      "same_model_increment": 0.011196376963886534,
+      "expand": false,
+      "target_sd": 0.8735636125807404,
+      "target_mean": 0.045434857799579426
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "replication",
+      "domain": "monash_traffic",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "log_failure",
+      "losses": {
+        "input": {
+          "mean": 0.011810593060217173,
+          "low": 0.006149431998781476,
+          "high": 0.018483560497078326,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.058556095673041264,
+          "low": 0.0013952053308090434,
+          "high": 0.15746963050745927,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.03871434785569025,
+          "low": 0.00128210846410635,
+          "high": 0.09546068961703133,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.013508124226480712,
+          "low": 0.0028949183820293416,
+          "high": 0.02747999496368047,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.023589205544559507,
+          "low": 0.001530201787015231,
+          "high": 0.06316331535123766,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.01156364602702696,
+          "low": 0.006867500365858523,
+          "high": 0.016259791688195396,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.04337042643509469,
+          "low": 0.014515713883109497,
+          "high": 0.06905927805613196,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": -0.026903754795473075,
+        "low": -0.07754911232853685,
+        "high": 0.004867323534675126,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": -0.026903754795473075,
+        "low": -0.08148947837315168,
+        "high": 0.005943024528063308,
+        "n_sources": 4
+      },
+      "relative_gain": -2.2779342797014777,
+      "shuffled_gain_mean": -0.01933901066457256,
+      "shuffled_gain_max": 0.004895972199066503,
+      "shuffled_tail_rank": 0.65,
+      "shuffled_gains": [
+        -0.009135704747001722,
+        0.004283189237589692,
+        -0.007555986188717999,
+        0.004895972199066503,
+        -0.0054656629594698695,
+        -0.021337286039577425,
+        -0.023525850968970932,
+        -0.0006816121329557153,
+        0.002780442936172514,
+        -0.04067329417326827,
+        -0.03272639810194327,
+        -0.03828799024765107,
+        -0.015076114750240323,
+        -0.03619786478456405,
+        -0.06879304855797795,
+        -0.041660792583446495,
+        0.0008670258082244229,
+        -0.03619454819743696,
+        -0.0029556783747096784
+      ],
+      "same_model_increment": -0.011778612484342334,
+      "expand": false,
+      "target_sd": 0.1128443253535079,
+      "target_mean": 0.16418455628243797
+    }
+  ],
+  "pilot_test_sensitivity": [
+    {
+      "cohort": "synthetic",
+      "leg": "pilot_sensitivity",
+      "domain": "ALL",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "forecast",
+      "losses": {
+        "input": {
+          "mean": 0.019345428134690548,
+          "low": 0.012495237195881234,
+          "high": 0.02619561907349987,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.02353704418442598,
+          "low": 0.011959713831041788,
+          "high": 0.03956285191233902,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.01106632389567638,
+          "low": 0.007358379888187677,
+          "high": 0.014774267903165082,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.025528265410425646,
+          "low": 0.014160296370904896,
+          "high": 0.038073097849766556,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.011541682344458308,
+          "low": 0.0075610147151352804,
+          "high": 0.015522349973781335,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.009904591438484368,
+          "low": 0.007561806906906296,
+          "high": 0.012808951686142283,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.6507632599625799,
+          "low": 0.5330619748028295,
+          "high": 0.7470228106173931,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": 0.00827910423901417,
+        "low": 0.004100655503507383,
+        "high": 0.011421351170334786,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": 0.00827910423901417,
+        "low": 0.0035227704242893534,
+        "high": 0.011793741059815135,
+        "n_sources": 4
+      },
+      "relative_gain": 0.427961799623754,
+      "shuffled_gain_mean": -0.008941414552099555,
+      "shuffled_gain_max": -0.002618771313983032,
+      "shuffled_tail_rank": 0.05,
+      "shuffled_gains": [
+        -0.005463608173467904,
+        -0.013072589343697441,
+        -0.010183929824888568,
+        -0.0073279869471729545,
+        -0.008512435103841297,
+        -0.008581527309677267,
+        -0.014282728043105108,
+        -0.006337250142742735,
+        -0.002618771313983032,
+        -0.006921477067105221,
+        -0.01014018437832924,
+        -0.008181435162248517,
+        -0.007869427895215645,
+        -0.014726002019525817,
+        -0.004921747963854689,
+        -0.007577653089382841,
+        -0.012521437679155943,
+        -0.009078458846609043,
+        -0.011568226185888285
+      ],
+      "same_model_increment": 0.00780374579023224,
+      "expand": false,
+      "target_sd": 0.8058520088694215,
+      "target_mean": 0.04902977623553925
+    },
+    {
+      "cohort": "synthetic",
+      "leg": "pilot_sensitivity",
+      "domain": "ALL",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "fusion_response",
+      "losses": {
+        "input": {
+          "mean": 0.003595968973574944,
+          "low": 0.003309463718502002,
+          "high": 0.0040202341246589526,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.005088474503228288,
+          "low": 0.004661161349424809,
+          "high": 0.005672066755432642,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.0037715258092892224,
+          "low": 0.003640855831039621,
+          "high": 0.003902195787538824,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.004930236330708587,
+          "low": 0.0041410739947256945,
+          "high": 0.0058746325676980425,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.0033395934499768137,
+          "low": 0.0031338139825365444,
+          "high": 0.003545372917417083,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.0038563816069735026,
+          "low": 0.003644296131769049,
+          "high": 0.004068467082177956,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.007017188853771271,
+          "low": 0.005447005136059299,
+          "high": 0.008587372571483242,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": -0.00017555683571427908,
+        "low": -0.00039086545132025656,
+        "high": 0.0001896919046134262,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": -0.00017555683571427908,
+        "low": -0.00039280539292374636,
+        "high": 0.00019163184621691603,
+        "n_sources": 4
+      },
+      "relative_gain": -0.04882045340334199,
+      "shuffled_gain_mean": -0.0007498675569265885,
+      "shuffled_gain_max": -0.0001334933832058392,
+      "shuffled_tail_rank": 0.1,
+      "shuffled_gains": [
+        -0.00033131567139530816,
+        -0.0012661285648115856,
+        -0.0012957632464789476,
+        -0.0001334933832058392,
+        -0.0007635603381368229,
+        -0.00035763741861971534,
+        -0.0017264527614537467,
+        -0.0009241785537553912,
+        -0.000630311645414376,
+        -0.00028070083404626976,
+        -0.0008408350670742457,
+        -0.000581028478178443,
+        -0.0008224296671552704,
+        -0.0013574269749710816,
+        -0.0004653420216835083,
+        -0.0004385880652663406,
+        -0.0009605414815555134,
+        -0.0005513556610819151,
+        -0.0005203937473208606
+      ],
+      "same_model_increment": 0.0002563755235981302,
+      "expand": false,
+      "target_sd": 0.0819673397179409,
+      "target_mean": -0.005921314709146192
+    },
+    {
+      "cohort": "synthetic",
+      "leg": "pilot_sensitivity",
+      "domain": "ALL",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "log_failure",
+      "losses": {
+        "input": {
+          "mean": 0.0014652859775572758,
+          "low": 0.0009079795880155062,
+          "high": 0.0020225923670990457,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.003861939329962031,
+          "low": 0.0009444057574393263,
+          "high": 0.0067794729024847344,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.0016774931101458548,
+          "low": 0.0009506323199902176,
+          "high": 0.002404353900301492,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.0038238598130992505,
+          "low": 0.0011458375148876475,
+          "high": 0.006501882111310853,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.0016627467867206306,
+          "low": 0.0010462650681644825,
+          "high": 0.002279228505276779,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.001741517253837351,
+          "low": 0.0010159487863670585,
+          "high": 0.0024670857213076438,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.019859457783030485,
+          "low": 0.012462968334665592,
+          "high": 0.028478535596771617,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": -0.0002122071325885788,
+        "low": -0.0004901585920057,
+        "high": 2.3359838843057063e-05,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": -0.0002122071325885788,
+        "low": -0.0004925862065092774,
+        "high": 2.5787453346634456e-05,
+        "n_sources": 4
+      },
+      "relative_gain": -0.14482301464615221,
+      "shuffled_gain_mean": -0.0003112216719525196,
+      "shuffled_gain_max": 6.300835827277828e-05,
+      "shuffled_tail_rank": 0.4,
+      "shuffled_gains": [
+        -0.0003457446603593814,
+        -0.0003523808098732884,
+        -0.0005303209823687194,
+        -0.0001246490281652671,
+        -0.00021720582348891835,
+        6.300835827277828e-05,
+        -0.000615102596801014,
+        -0.00026977150310884747,
+        -0.00011672223232195253,
+        -0.0005202640853145921,
+        -0.0011101553516039576,
+        -0.00016890248818850385,
+        -0.00023798319458003084,
+        -0.00017829654682180283,
+        -0.00010873770442439102,
+        -0.000580759163380048,
+        -0.00022227914991279957,
+        -0.00027025985663848016,
+        -6.684948018656381e-06
+      ],
+      "same_model_increment": -0.0001974608091633548,
+      "expand": false,
+      "target_sd": 0.13986579994614723,
+      "target_mean": 0.22239794304283256
+    },
+    {
+      "cohort": "synthetic",
+      "leg": "pilot_sensitivity",
+      "domain": "ALL",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "failure_flag",
+      "losses": {
+        "input": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n_sources": 4
+      },
+      "relative_gain": 0.0,
+      "shuffled_gain_mean": 0.0,
+      "shuffled_gain_max": 0.0,
+      "shuffled_tail_rank": 1.0,
+      "shuffled_gains": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "same_model_increment": 0.0,
+      "expand": false,
+      "target_sd": 0.0,
+      "target_mean": 0.0
+    },
+    {
+      "cohort": "synthetic",
+      "leg": "pilot_sensitivity",
+      "domain": "ALL",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "forecast",
+      "losses": {
+        "input": {
+          "mean": 0.006742303865627134,
+          "low": 0.0034278539210510746,
+          "high": 0.011061879167322205,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.010542094830349676,
+          "low": 0.005212438500362732,
+          "high": 0.01593514759842934,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.0063895349004820514,
+          "low": 0.002907025457656848,
+          "high": 0.010643446288019212,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.012160624796982964,
+          "low": 0.005381042919940356,
+          "high": 0.018940206674025573,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.004048406478613929,
+          "low": 0.002260761357251283,
+          "high": 0.0064267077622644124,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.0038235426874958355,
+          "low": 0.0025218736603429205,
+          "high": 0.005176736728265623,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.5143491935546876,
+          "low": 0.49221755696829816,
+          "high": 0.5279168822315661,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": 0.00035276896514508353,
+        "low": -0.0005243021851466167,
+        "high": 0.0013505386585137005,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": 0.00035276896514508353,
+        "low": -0.00066414740133188,
+        "high": 0.0014903838746989637,
+        "n_sources": 4
+      },
+      "relative_gain": 0.05232172446921758,
+      "shuffled_gain_mean": -0.006333523411393885,
+      "shuffled_gain_max": -0.0038976910716897344,
+      "shuffled_tail_rank": 0.05,
+      "shuffled_gains": [
+        -0.008378155515297112,
+        -0.006714525511779215,
+        -0.00951200009501223,
+        -0.0042943115162800026,
+        -0.005137981294978265,
+        -0.00971083457151633,
+        -0.00530372295749418,
+        -0.004964186385679909,
+        -0.0038976910716897344,
+        -0.006249310928320451,
+        -0.005935264353828783,
+        -0.00818282753803241,
+        -0.006595448410028748,
+        -0.005949320402013368,
+        -0.004301757668571582,
+        -0.004912303290204246,
+        -0.00983684136718895,
+        -0.005151919099258682,
+        -0.005308542839309625
+      ],
+      "same_model_increment": 0.002693897387013205,
+      "expand": false,
+      "target_sd": 0.7164761656894234,
+      "target_mean": 0.1157569484003011
+    },
+    {
+      "cohort": "synthetic",
+      "leg": "pilot_sensitivity",
+      "domain": "ALL",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "fusion_response",
+      "losses": {
+        "input": {
+          "mean": 0.001047462152281138,
+          "low": 0.000909665288256047,
+          "high": 0.0011788194493701288,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.0011509981605643536,
+          "low": 0.0011011548926775144,
+          "high": 0.00120383856571191,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.0007752643108372673,
+          "low": 0.000624929410548882,
+          "high": 0.0009295101703623763,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.0012606615008885652,
+          "low": 0.0011150369847075623,
+          "high": 0.0014444429804797826,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.0009037898509601228,
+          "low": 0.000807841253859819,
+          "high": 0.0009810916946342107,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.0010202363324593273,
+          "low": 0.0009097685615472553,
+          "high": 0.001130704103371399,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.0030953696130300015,
+          "low": 0.0022409080059160595,
+          "high": 0.003949831220143943,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": 0.0002721978414438709,
+        "low": 0.00016007676401512205,
+        "high": 0.0003968479549668483,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": 0.0002721978414438709,
+        "low": 0.000153263118403124,
+        "high": 0.00040366160057884635,
+        "n_sources": 4
+      },
+      "relative_gain": 0.259864130509236,
+      "shuffled_gain_mean": -0.00011040063178189,
+      "shuffled_gain_max": 0.00012838439241410294,
+      "shuffled_tail_rank": 0.05,
+      "shuffled_gains": [
+        0.00011479952274728357,
+        -2.0419053294504222e-05,
+        -0.0004319481039360112,
+        0.00012838439241410294,
+        -8.185269102918251e-05,
+        8.471514064111047e-05,
+        -0.00030199542710561183,
+        -0.00015729907302952013,
+        -0.0001402659724377439,
+        -4.1854945043954696e-05,
+        -0.00015157716984046856,
+        -0.00017219990583569784,
+        1.7700932763435206e-05,
+        -0.00011051287764715073,
+        4.3421486852525786e-05,
+        -6.15321269187197e-05,
+        -0.00010348192206609765,
+        -0.00024927008283707553,
+        -0.0004624241282526295
+      ],
+      "same_model_increment": 0.0001436723013210153,
+      "expand": false,
+      "target_sd": 0.05398113690392532,
+      "target_mean": -0.010834409086329126
+    },
+    {
+      "cohort": "synthetic",
+      "leg": "pilot_sensitivity",
+      "domain": "ALL",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "log_failure",
+      "losses": {
+        "input": {
+          "mean": 0.0014005830417139944,
+          "low": 0.0009882047723932526,
+          "high": 0.001812961311034736,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.0025537555923230986,
+          "low": 0.001428177251841487,
+          "high": 0.0035341431243542257,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.0008223259207089321,
+          "low": 0.0004469471809287681,
+          "high": 0.001253883601420991,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.002216473819684541,
+          "low": 0.0011902618806134335,
+          "high": 0.0032426857587556494,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.0006332920540627213,
+          "low": 0.00027676885685821615,
+          "high": 0.000990047389755311,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.0015709361213679738,
+          "low": 0.0009980267420940498,
+          "high": 0.0021438455006418983,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.1223107999917493,
+          "low": 0.09156938374563667,
+          "high": 0.14984974188951947,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": 0.0005782571210050622,
+        "low": 0.0004997846464295365,
+        "high": 0.0006635805927524732,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": 0.0005782571210050622,
+        "low": 0.0004903725865783179,
+        "high": 0.0006843170652699471,
+        "n_sources": 4
+      },
+      "relative_gain": 0.41286885802744494,
+      "shuffled_gain_mean": 0.0003797588382774067,
+      "shuffled_gain_max": 0.0007459111321117297,
+      "shuffled_tail_rank": 0.3,
+      "shuffled_gains": [
+        0.00044241678716082345,
+        7.762245555864312e-05,
+        0.000602783069907891,
+        0.00045713283486289075,
+        0.0004060225868225376,
+        0.00026239814610734606,
+        -0.0004478537487663353,
+        0.00035774143012507967,
+        0.00023964732531864266,
+        0.0004133010883301224,
+        0.00038486934751882636,
+        5.0482462047933275e-05,
+        0.0007459111321117297,
+        0.0005830407436891327,
+        0.0006164888687331433,
+        0.0003764818104430133,
+        0.00043605659313225836,
+        0.0006826919449582162,
+        0.0005281830492088334
+      ],
+      "same_model_increment": 0.0007672909876512731,
+      "expand": false,
+      "target_sd": 0.3482833781816397,
+      "target_mean": 0.7075745965620879
+    },
+    {
+      "cohort": "synthetic",
+      "leg": "pilot_sensitivity",
+      "domain": "ALL",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "failure_flag",
+      "losses": {
+        "input": {
+          "mean": 0.026132869513477736,
+          "low": 4.1572327181624466e-05,
+          "high": 0.06389768563017648,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.3059786177780137,
+          "low": 0.009568858192590141,
+          "high": 0.6023883773634373,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.04292823507748014,
+          "low": 7.939224174502529e-06,
+          "high": 0.09614388020824843,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.308365484753158,
+          "low": 0.00928137975718987,
+          "high": 0.6074495897491261,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.04335850045635564,
+          "low": 1.625254901958969e-06,
+          "high": 0.09657861531879539,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.03743569385089811,
+          "low": 1.4282913137071118e-05,
+          "high": 0.09204956135870575,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.31138125000000005,
+          "low": 0.00950625,
+          "high": 0.6132562500000001,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": -0.016795365564002403,
+        "low": -0.03362436423101193,
+        "high": 3.363310300712194e-05,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": -0.016795365564002403,
+        "low": -0.038320856201889644,
+        "high": 5.0449654510682906e-05,
+        "n_sources": 4
+      },
+      "relative_gain": -0.6426912113627775,
+      "shuffled_gain_mean": -0.029174588835966235,
+      "shuffled_gain_max": -0.007717175979820451,
+      "shuffled_tail_rank": 0.2,
+      "shuffled_gains": [
+        -0.04674603679309213,
+        -0.017936089227011315,
+        -0.012291396560007871,
+        -0.01225024184707786,
+        -0.018801221519905178,
+        -0.03419388868303209,
+        -0.021545087169265655,
+        -0.01775721794439021,
+        -0.026167305661122135,
+        -0.03241864885998438,
+        -0.062420151016347535,
+        -0.06062023080951452,
+        -0.007717175979820451,
+        -0.020907556789501396,
+        -0.02092129525176005,
+        -0.01920362924020958,
+        -0.07480256559804002,
+        -0.029917204047939284,
+        -0.017700244885336825
+      ],
+      "same_model_increment": -0.017225630942877906,
+      "expand": false,
+      "target_sd": 0.4841229182759271,
+      "target_mean": 0.375
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "pilot_sensitivity",
+      "domain": "ALL",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "forecast",
+      "losses": {
+        "input": {
+          "mean": 0.09208790223454863,
+          "low": 0.037895369452319805,
+          "high": 0.14628043501677745,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.12282181710180516,
+          "low": 0.046541256711689426,
+          "high": 0.2035605652829714,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.09771935339432913,
+          "low": 0.04467898725994844,
+          "high": 0.14538029220098447,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.2384120418336624,
+          "low": 0.029154120849118094,
+          "high": 0.4712255839609113,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.13024278449662494,
+          "low": 0.022696381031525208,
+          "high": 0.2509733397312264,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.06610223064991744,
+          "low": 0.0234441800463346,
+          "high": 0.11293868169818676,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.49121455749852594,
+          "low": 0.2577589335318213,
+          "high": 0.8636677080251255,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": -0.00563145115978049,
+        "low": -0.015123503868227306,
+        "high": 0.004388223908411426,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": -0.00563145115978049,
+        "low": -0.015144267405747737,
+        "high": 0.004408987445931857,
+        "n_sources": 4
+      },
+      "relative_gain": -0.06115299646458596,
+      "shuffled_gain_mean": -0.04849961820049381,
+      "shuffled_gain_max": -0.0037659419706126194,
+      "shuffled_tail_rank": 0.15,
+      "shuffled_gains": [
+        -0.0037659419706126194,
+        -0.03729171337103776,
+        -0.10251734453919124,
+        -0.03173703715994439,
+        -0.041066161127812154,
+        -0.03171434189868788,
+        -0.0643416159109527,
+        -0.03596935181964073,
+        -0.04303687368511426,
+        -0.08264556312618312,
+        -0.03033077694522069,
+        -0.012805915165649061,
+        -0.009461160702784882,
+        -0.11622311990871767,
+        -0.08890765687117455,
+        -0.09229040750569423,
+        -0.005400573136162512,
+        -0.009439909435487262,
+        -0.0825472815293147
+      ],
+      "same_model_increment": -0.038154882262076306,
+      "expand": false,
+      "target_sd": 0.643211154877458,
+      "target_mean": -0.21116897097970933
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "pilot_sensitivity",
+      "domain": "ALL",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "fusion_response",
+      "losses": {
+        "input": {
+          "mean": 0.030144538387495493,
+          "low": 0.0030218679243581587,
+          "high": 0.08178811982424612,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.028781776602028995,
+          "low": 0.002783124043622853,
+          "high": 0.08018613695912223,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.028627882925435638,
+          "low": 0.0027526097954235452,
+          "high": 0.07995478613962458,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.02834240300413709,
+          "low": 0.0024923896565022564,
+          "high": 0.07960971883633908,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.02857507786896057,
+          "low": 0.002532422426214892,
+          "high": 0.07974430213117518,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.02861882058002309,
+          "low": 0.002611224085518067,
+          "high": 0.07940229210749782,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.0285869722886038,
+          "low": 0.002924395996203935,
+          "high": 0.07991212487340352,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": 0.0015166554620598565,
+        "low": 0.0002692581289346135,
+        "high": 0.0027640527951850995,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": 0.0015166554620598565,
+        "low": 9.265474726422658e-05,
+        "high": 0.0030276008850758486,
+        "n_sources": 4
+      },
+      "relative_gain": 0.050312777809495106,
+      "shuffled_gain_mean": 0.0007107495926653235,
+      "shuffled_gain_max": 0.0020304101297378015,
+      "shuffled_tail_rank": 0.65,
+      "shuffled_gains": [
+        0.001765893478425323,
+        0.00014290654191570766,
+        0.0020304101297378015,
+        0.001846331611173947,
+        0.0016349155029234629,
+        0.001302139249567556,
+        0.001760453705505201,
+        0.0015074316199502145,
+        0.001982674961579766,
+        0.0017261048152805258,
+        0.001683219174241956,
+        0.001371059157438033,
+        0.0015125736984472823,
+        0.001518237180951734,
+        0.0015817891307003582,
+        0.0016590211502269085,
+        -0.005734759560339465,
+        -0.00767726799607134,
+        0.0018911087089861713
+      ],
+      "same_model_increment": 0.0015694605185349216,
+      "expand": false,
+      "target_sd": 0.154013331686081,
+      "target_mean": 0.07639481155573531
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "pilot_sensitivity",
+      "domain": "ALL",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "log_failure",
+      "losses": {
+        "input": {
+          "mean": 0.050335439489538884,
+          "low": 0.004402758394072527,
+          "high": 0.10044183197967015,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.057248664392686,
+          "low": 0.001342031091677246,
+          "high": 0.16054317501899956,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.05839489422843874,
+          "low": 0.00426950660309806,
+          "high": 0.14679792600444616,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.062234655173334257,
+          "low": 0.0025373590166723335,
+          "high": 0.17190852029719914,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.04229021257212343,
+          "low": 0.0027954583553755977,
+          "high": 0.11253434835626863,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.15489395320789975,
+          "low": 0.002900432218751901,
+          "high": 0.4247257944998918,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.0829760638505973,
+          "low": 0.026852486658097537,
+          "high": 0.1534418301017002,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": -0.008059454738899862,
+        "low": -0.046055121358228576,
+        "high": 0.02174350535055453,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": -0.008059454738899862,
+        "low": -0.046356094024776015,
+        "high": 0.02204447801710197,
+        "n_sources": 4
+      },
+      "relative_gain": -0.16011491745442777,
+      "shuffled_gain_mean": 0.0018494363220928082,
+      "shuffled_gain_max": 0.034558341025089125,
+      "shuffled_tail_rank": 0.7,
+      "shuffled_gains": [
+        0.014451200980821628,
+        -0.016959554187897415,
+        -0.02435819911893482,
+        0.011454281733063882,
+        0.01138802266289852,
+        0.009360043224134727,
+        0.005814454516012115,
+        0.006907347525992739,
+        0.00013063602887683078,
+        0.01818275182369493,
+        -0.013925798293509574,
+        -0.00522174599190978,
+        0.034558341025089125,
+        -0.020566340925620485,
+        0.009236231431563593,
+        -0.013448240083902063,
+        0.021978345922888106,
+        0.016861075079591344,
+        -0.03070356323309004
+      ],
+      "same_model_increment": 0.008045226917415452,
+      "expand": false,
+      "target_sd": 0.28423851568550196,
+      "target_mean": 0.2599156034514271
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "pilot_sensitivity",
+      "domain": "ALL",
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "failure_flag",
+      "losses": {
+        "input": {
+          "mean": 0.016146526615409676,
+          "low": 0.00028843453889619753,
+          "high": 0.046721764008378755,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.017803808108497732,
+          "low": 0.0003885003038410752,
+          "high": 0.05173323799529493,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.012837878577071955,
+          "low": 0.0,
+          "high": 0.03826063589654137,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.0028784382098972616,
+          "low": 0.001681309829512897,
+          "high": 0.004075566590281627,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.003373454226866666,
+          "low": 0.0015224152209129236,
+          "high": 0.005224493232820409,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.005260856811555291,
+          "low": 0.002394031750860324,
+          "high": 0.008677657148718262,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.0025000000000000005,
+          "low": 0.0025000000000000005,
+          "high": 0.0025000000000000005,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": 0.00330864803833772,
+        "low": 0.00011976798244653535,
+        "high": 0.008461128111837378,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": 0.00330864803833772,
+        "low": -5.9546604897100076e-05,
+        "high": 0.008809783262150404,
+        "n_sources": 4
+      },
+      "relative_gain": 0.20491391846343368,
+      "shuffled_gain_mean": 0.0036414266497702,
+      "shuffled_gain_max": 0.01331874175595688,
+      "shuffled_tail_rank": 0.7,
+      "shuffled_gains": [
+        -0.014649218759001622,
+        -0.01696982626839671,
+        0.013263408570709852,
+        0.013250255434380376,
+        0.004360474135911069,
+        0.0088934679483892,
+        -0.011605559984251891,
+        -0.011234054889015806,
+        0.01331874175595688,
+        0.013279436185163085,
+        -0.013222457083276455,
+        0.006801338616411727,
+        -0.005323474491392305,
+        0.012817206208089191,
+        0.013264105642811093,
+        0.009807577494539211,
+        0.010226609417324352,
+        0.013250332473208434,
+        0.009658743938074123
+      ],
+      "same_model_increment": 0.01277307238854301,
+      "expand": false,
+      "target_sd": 0.0,
+      "target_mean": 0.0
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "pilot_sensitivity",
+      "domain": "ALL",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "forecast",
+      "losses": {
+        "input": {
+          "mean": 0.4189539599529839,
+          "low": 0.040501529895814244,
+          "high": 0.7974063900101536,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.6027153686141657,
+          "low": 0.052882208330653484,
+          "high": 1.152548528897678,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.5648880224465513,
+          "low": 0.04379277263096018,
+          "high": 1.0859832722621425,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.36173423976483365,
+          "low": 0.024152466886662338,
+          "high": 0.6993160126430049,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.351328903335699,
+          "low": 0.019341303298067998,
+          "high": 0.68331650337333,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.3210173417843871,
+          "low": 0.04813350720093971,
+          "high": 0.6128359768218952,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.8652453382973381,
+          "low": 0.2828376838710716,
+          "high": 1.519838648071016,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": -0.1459340624935675,
+        "low": -0.48050291431538183,
+        "high": 0.04599196956982535,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": -0.1459340624935675,
+        "low": -0.4848163505590617,
+        "high": 0.05030540581350525,
+        "n_sources": 4
+      },
+      "relative_gain": -0.34832959332797475,
+      "shuffled_gain_mean": -0.1604241292977393,
+      "shuffled_gain_max": 0.08015726386001357,
+      "shuffled_tail_rank": 0.55,
+      "shuffled_gains": [
+        0.0007059219475759838,
+        -0.10175488850247211,
+        -0.39032081694230536,
+        0.04370376613075516,
+        -0.02580464355978524,
+        -0.04519027050480076,
+        -0.36504852234195634,
+        -0.21227853177447198,
+        0.08015726386001357,
+        -0.3135102884566547,
+        -0.42899338903502937,
+        -0.06528993213837513,
+        0.048105079560556395,
+        -0.16653587339039114,
+        -0.30862979447778144,
+        -0.3271208246141514,
+        -0.04472203217703525,
+        -0.030291333112012174,
+        -0.39523934712872527
+      ],
+      "same_model_increment": 0.0676250566172849,
+      "expand": false,
+      "target_sd": 0.8386873903182375,
+      "target_mean": 0.05780580811121101
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "pilot_sensitivity",
+      "domain": "ALL",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "fusion_response",
+      "losses": {
+        "input": {
+          "mean": 0.018807147005902566,
+          "low": 0.01218965761406069,
+          "high": 0.02671221827594545,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.019351662240237773,
+          "low": 0.013515408251839216,
+          "high": 0.025212896506823824,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.019071937470995424,
+          "low": 0.014545987617171022,
+          "high": 0.024955907448134466,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.020148753339172196,
+          "low": 0.014938061114759541,
+          "high": 0.027050682608631527,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.01947038848483544,
+          "low": 0.015348950401539715,
+          "high": 0.025803313420783503,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.01952803515818381,
+          "low": 0.014403393646055964,
+          "high": 0.026874411700425007,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.018631932627993945,
+          "low": 0.015658073098628905,
+          "high": 0.024579651686724026,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": -0.0002647904650928592,
+        "low": -0.005524259733620095,
+        "high": 0.004994678803434376,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": -0.0002647904650928592,
+        "low": -0.005966903688321246,
+        "high": 0.005567394448206307,
+        "n_sources": 4
+      },
+      "relative_gain": -0.014079246842158223,
+      "shuffled_gain_mean": -0.002087804015725452,
+      "shuffled_gain_max": 0.00028325997021803927,
+      "shuffled_tail_rank": 0.6,
+      "shuffled_gains": [
+        -3.8634192865712614e-05,
+        -0.00019359000385440897,
+        -0.0006235140700430334,
+        -0.000319248637718515,
+        -4.612770941504708e-05,
+        -0.00013284387497144697,
+        4.550218513721697e-05,
+        -8.878361413590125e-05,
+        -0.019892749741336632,
+        0.00019188902188049676,
+        -0.0068163795061047805,
+        -3.087402182213412e-05,
+        0.00028325997021803927,
+        -0.00019208987696894527,
+        -0.00825010452875181,
+        -0.0004736350980933668,
+        -0.002768787280945473,
+        0.00025394110365563544,
+        -0.0005755064226477748
+      ],
+      "same_model_increment": -0.0006632414789328744,
+      "expand": false,
+      "target_sd": 0.07706151564802795,
+      "target_mean": -0.010513149573155306
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "pilot_sensitivity",
+      "domain": "ALL",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "log_failure",
+      "losses": {
+        "input": {
+          "mean": 0.06324108035999043,
+          "low": 0.011103991490635977,
+          "high": 0.1290358698709842,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.06946203352387247,
+          "low": 0.014716685033650664,
+          "high": 0.14427859535761817,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.05181691958763357,
+          "low": 0.016739348248782586,
+          "high": 0.08689449092648455,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.10680630612419467,
+          "low": 0.006495100836631578,
+          "high": 0.20711751141175777,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.07104019942731356,
+          "low": 0.005188692216001508,
+          "high": 0.14671667831241905,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.0725966451311376,
+          "low": 0.010020403336348377,
+          "high": 0.16434888575448786,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.19295442335174576,
+          "low": 0.007250732842170713,
+          "high": 0.5372898718037502,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": 0.011424160772356858,
+        "low": -0.011540092242319628,
+        "high": 0.04627050616933284,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": 0.011424160772356858,
+        "low": -0.013765149648437084,
+        "high": 0.04922287391141936,
+        "n_sources": 4
+      },
+      "relative_gain": 0.18064461750695157,
+      "shuffled_gain_mean": 0.005703208429558033,
+      "shuffled_gain_max": 0.044629109547864074,
+      "shuffled_tail_rank": 0.5,
+      "shuffled_gains": [
+        -0.026366860479018445,
+        0.03616022151626996,
+        0.011997794445138958,
+        0.026913971623062326,
+        0.02496547568621291,
+        0.021373302007559585,
+        0.010996100233359292,
+        -0.017494729452037696,
+        0.044629109547864074,
+        -0.02003202992782925,
+        0.002469752940796129,
+        0.003219988252850087,
+        0.020823382353976197,
+        -0.006928003266035878,
+        -0.03715280100628562,
+        -0.0005827782744093719,
+        -0.014675906818205985,
+        0.012347923343787651,
+        0.01569704743454773
+      ],
+      "same_model_increment": -0.007799119067323126,
+      "expand": false,
+      "target_sd": 0.4235411433001139,
+      "target_mean": 0.45569650558772784
+    },
+    {
+      "cohort": "real_natural",
+      "leg": "pilot_sensitivity",
+      "domain": "ALL",
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "failure_flag",
+      "losses": {
+        "input": {
+          "mean": 0.5,
+          "low": 0.0,
+          "high": 1.0,
+          "n_sources": 4
+        },
+        "A_hidden": {
+          "mean": 0.5,
+          "low": 0.0,
+          "high": 1.0,
+          "n_sources": 4
+        },
+        "input+A_hidden": {
+          "mean": 0.5,
+          "low": 0.0,
+          "high": 1.0,
+          "n_sources": 4
+        },
+        "B_hidden": {
+          "mean": 0.5,
+          "low": 0.0,
+          "high": 1.0,
+          "n_sources": 4
+        },
+        "input+B_hidden": {
+          "mean": 0.5,
+          "low": 0.0,
+          "high": 1.0,
+          "n_sources": 4
+        },
+        "input+A_forecast": {
+          "mean": 0.5,
+          "low": 0.0,
+          "high": 1.0,
+          "n_sources": 4
+        },
+        "FIT_constant": {
+          "mean": 0.5,
+          "low": 0.0,
+          "high": 1.0,
+          "n_sources": 4
+        }
+      },
+      "gain": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n_sources": 4
+      },
+      "primary_family_interval": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n_sources": 4
+      },
+      "relative_gain": 0.0,
+      "shuffled_gain_mean": 0.0,
+      "shuffled_gain_max": 0.0,
+      "shuffled_tail_rank": 1.0,
+      "shuffled_gains": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "same_model_increment": 0.0,
+      "expand": false,
+      "target_sd": 0.5,
+      "target_mean": 0.5
+    }
+  ],
+  "distillation": [
+    "Synthetic cross-hidden augmentation improves native-forecast emulation in both directions: Bolt->TimesFM relative loss reduction0.34100894721653885; TimesFM->Bolt0.16452879818918864. Both pass the frozen four-contrast expansion screen.",
+    "Input+Aforecast has lower forecast-emulation loss than input+Ahidden in both directions. Hidden-state usefulness beyond the other model forecast has NOT been tested in this pilot.",
+    "TimesFM->Bolt synthetic fixed fusion-response gain0.00032344 (rounded here; exact in exact_findings) is a descriptive positive, not a registered primary claim or evidence of shared component semantics.",
+    "TimesFM->Bolt synthetic log-failure loss improves44.13835076148873%, but one source-shuffled hidden alignment improves slightly more (tail rank0.10). It fails the full screen. Bolt->TimesFM log-failure does not improve.",
+    "Natural-real forecast emulation gets worse in both directions; natural-real failure signals are mixed and fail alignment-null screening. Each domain has only4 TEST sources.",
+    "Failure flags have no TEST positives for synthetic TimesFM, either natural-real model, and injected-real TimesFM. Zero Brier loss there is uninformative about failure detection.",
+    "Different coordinate systems do not prevent useful supervised cross-model observable prediction. This does not establish independent information beyond inputs, mechanism correspondence, interpretable features, or causal mediation."
+  ],
+  "controls": {
+    "test_validation": {
+      "passed": true,
+      "returncode": 0,
+      "code_hashes": {
+        "experiments/feature_search/comparability_core.py": "afd96282dd04520d53d6872b9b258800c3602a176e1cfbddf439d1a85d89e186",
+        "experiments/feature_search/comparability_pilot.py": "cda64ef12f4fd1100d4c04ad83c96c3923ac5218a2997d9c81f6c18537816b02",
+        "tests/test_comparability_pilot.py": "0218f1be913da01137b4985e2f5ffbf646d3c88f759c92d9dc501dafe24e8940"
+      },
+      "plants": "Known linear shared signal and independent decoy; deleted signal, broken rotation, row split, TEST-fit leakage, row bootstrap, coordinate-scaling and unstable CV ties explicitly rejected in tests."
+    },
+    "initial_validation": {
+      "passed": true,
+      "returncode": 0,
+      "code_hashes": {
+        "experiments/feature_search/comparability_core.py": "7a8530ae989c35fec550afb226848de53d040db4068ec91b35ecdf8a08f03130",
+        "experiments/feature_search/comparability_pilot.py": "2fd710e825bc1f68411d150f15d9bdd320d39992f89864dbec6024850de99138",
+        "tests/test_comparability_pilot.py": "7896890420f6b39ee9da0694a47091d1ede606311230c03793e8209d0491ae32"
+      },
+      "plants": "Known linear shared signal and independent decoy; deleted signal, broken rotation, row split, TEST-fit leakage, row bootstrap and coordinate-scaling regressions explicitly rejected in tests."
+    },
+    "inventory": [
+      {
+        "cohort": "synthetic",
+        "fit_sources": 20,
+        "fit_rows": 96,
+        "tests": {
+          "replication": {
+            "rows": 80,
+            "sources": 16
+          },
+          "pilot_sensitivity": {
+            "rows": 16,
+            "sources": 4
+          }
+        },
+        "fusion_eligible": 192
+      },
+      {
+        "cohort": "real_natural",
+        "fit_sources": 20,
+        "fit_rows": 20,
+        "tests": {
+          "replication": {
+            "rows": 16,
+            "sources": 16
+          },
+          "pilot_sensitivity": {
+            "rows": 4,
+            "sources": 4
+          }
+        },
+        "fusion_eligible": 24
+      },
+      {
+        "cohort": "real_injected",
+        "fit_sources": 16,
+        "fit_rows": 16,
+        "tests": {
+          "replication": {
+            "rows": 16,
+            "sources": 16
+          },
+          "pilot_sensitivity": {
+            "rows": 0,
+            "sources": 0
+          }
+        },
+        "fusion_eligible": 9
+      }
+    ],
+    "normalization": "Every arm predicts the same history-normalized B forecast/response with identical history-only physical inverse. No hidden-only physical-scale disadvantage.",
+    "input_baseline": "Untruncated full-history ridge and full-descriptor ridge plus PCA/RBF candidates; only FIT group CV chooses. Synthetic forecast selects RBF; natural-real forecasts select full-history ridge.",
+    "source_dependence": "FIT/TEST disjoint whole sources, group inner CV, equal source weighting and source bootstrap; repeated conditions are not independent n.",
+    "actual_rotation_max_fixed_candidate_prediction_error": 3.015365734881925e-13,
+    "coordinatewise_scaler_known_bad_kernel_error_range": [
+      0.0013763517267287584,
+      0.01355413969956798
+    ],
+    "native_inference_calls": 0,
+    "execution": {
+      "seconds": 33.51129921001848,
+      "peak_rss_bytes": 287830016,
+      "os_threads": 1,
+      "pools": [
+        {
+          "user_api": "blas",
+          "internal_api": "openblas",
+          "num_threads": 1,
+          "prefix": "libopenblas",
+          "filepath": "/common/users/djk255/conda_envs/cudaPy/lib/libopenblasp-r0.3.33.so",
+          "version": "0.3.33",
+          "threading_layer": "openmp",
+          "architecture": "Zen"
+        },
+        {
+          "user_api": "openmp",
+          "internal_api": "openmp",
+          "num_threads": 1,
+          "prefix": "libomp",
+          "filepath": "/common/users/djk255/conda_envs/cudaPy/lib/libomp.so",
+          "version": null
+        }
+      ],
+      "protocol_sha256": "42d6273a1793c176bdc316dfd7cf0983db4d6e45d2245c18ae68e9f126f20f1d",
+      "code_hashes": {
+        "experiments/feature_search/comparability_core.py": "afd96282dd04520d53d6872b9b258800c3602a176e1cfbddf439d1a85d89e186",
+        "experiments/feature_search/comparability_pilot.py": "cda64ef12f4fd1100d4c04ad83c96c3923ac5218a2997d9c81f6c18537816b02",
+        "tests/test_comparability_pilot.py": "0218f1be913da01137b4985e2f5ffbf646d3c88f759c92d9dc501dafe24e8940"
+      }
+    }
+  },
+  "failed_instrumentation_runs": [
+    {
+      "artifact": "analysis.log",
+      "status": "aborted on actual-state rotation before publishing or interpreting TEST risks",
+      "diagnosis": "Initial actual-state real_natural Bolt->TimesFM log_failure selected pca16+pca8 before rotation and descriptor_ridge+pca8 after. CV losses differed at roundoff1e-17 while final predictions differed0.054029673. CV folds with <=16 rank can tie full and truncated input kernels, while final FIT has20 sources so truncation changes the final model. This is numerical instability of model selection, not substantive fixed-candidate coordinate sensitivity.",
+      "amendment": {
+        "protocol_sha256": "42d6273a1793c176bdc316dfd7cf0983db4d6e45d2245c18ae68e9f126f20f1d",
+        "unix_time": 1794850638.316639,
+        "reason": "Actual-state orthogonal rotation gate failed before publishing/interpreting TEST losses: real_natural Bolt-to-TimesFM log_failure CV choices pca16+pca8 vs descriptor_ridge+pca8 tied at ~0.0347558984261798; 1e-17 CV roundoff changed final candidate and predictions by0.054029673. Fixed-candidate kernels agreed within4.92e-14.",
+        "change": "Choose first declared candidate within 1e-12*max(1,abs(minimum CV loss)) of minimum. No target, baseline, rank, alpha, split, null, bootstrap or promotion-rule changes.",
+        "outcome_status": "Only choices and rotation discrepancies inspected; no TEST risk interpreted. Earlier in-memory results discarded. Original analysis.log retained.",
+        "code_hashes": {
+          "experiments/feature_search/comparability_core.py": "afd96282dd04520d53d6872b9b258800c3602a176e1cfbddf439d1a85d89e186",
+          "experiments/feature_search/comparability_pilot.py": "cda64ef12f4fd1100d4c04ad83c96c3923ac5218a2997d9c81f6c18537816b02",
+          "tests/test_comparability_pilot.py": "0218f1be913da01137b4985e2f5ffbf646d3c88f759c92d9dc501dafe24e8940"
+        }
+      },
+      "unchanged_rotation_tolerance": 1e-07,
+      "audit_artifact": "rotation_audit.json",
+      "classification": "Floating-point CV winner instability; fixed-candidate preprocessing/PCA/ridge is rotation invariant to numerical precision. Not TSFM semantic disagreement."
+    }
+  ],
+  "limitations": [
+    "Prior data/results inspected historically; frozen protocol does not restore unseen-data status.",
+    "Real4/domain and unknown pretraining overlap; synthetic generator families narrow and related.",
+    "Failure prediction is supervised target-risk estimation; future labels only enter FIT fitting and TEST scoring.",
+    "Hidden states are deterministic input transforms; incremental value depends on baseline and probe class, not information-theoretic independence.",
+    "No raw cross-model L2, neuron matching, causal mediation, or mechanistic identity claim.",
+    "No layer/PCA/hyperparameter changes after inspecting TEST.",
+    "Bootstrap omits training-set and domain-level uncertainty.19 null draws yield coarse ranks, not confirmatory p-values.",
+    "The half-depth same-model capture is an empirical comparator, not a guaranteed ceiling.",
+    "Fusion response is a saved within-model intervention outcome; predicting it does not establish signal fidelity or semantic correctness.",
+    "No input+Aforecast+Ahidden baseline was preregistered or measured in this pilot."
+  ],
+  "next_decision": {
+    "status": "User authorizes fresh synthetic replication preparation; native launch ON HOLD pending explicit slot grant.",
+    "fresh_seeds": [
+      4952000,
+      4952001,
+      4952002,
+      4952003,
+      4952004,
+      4952005,
+      4952006,
+      4952007,
+      4952008,
+      4952009,
+      4952010,
+      4952011,
+      4952012,
+      4952013,
+      4952014,
+      4952015,
+      4952016,
+      4952017,
+      4952018,
+      4952019,
+      4952020,
+      4952021,
+      4952022,
+      4952023,
+      4952024,
+      4952025,
+      4952026,
+      4952027,
+      4952028,
+      4952029,
+      4952030,
+      4952031,
+      4952032,
+      4952033,
+      4952034,
+      4952035,
+      4952036,
+      4952037,
+      4952038,
+      4952039,
+      4952040,
+      4952041,
+      4952042,
+      4952043,
+      4952044,
+      4952045,
+      4952046,
+      4952047,
+      4952048,
+      4952049,
+      4952050,
+      4952051,
+      4952052,
+      4952053,
+      4952054,
+      4952055,
+      4952056,
+      4952057,
+      4952058,
+      4952059,
+      4952060,
+      4952061,
+      4952062,
+      4952063
+    ],
+    "primary_replication": [
+      "forecast Bolt->TimesFM",
+      "forecast TimesFM->Bolt",
+      "fusion_response TimesFM->Bolt"
+    ],
+    "probe_rule": "Freeze original FIT-only selected probes; do not tune on pilot TEST. Add input+Aforecast+Ahidden as explicitly exploratory follow-up.",
+    "capture": "Matching half-depth hidden, native, first-block equal pure depth1 fusion only; existing normalization/self-patch gates.",
+    "resources": "<=15min/model, <=3GiB,1 CPU thread",
+    "slot_note": "User says natural priority when slot1 frees, surface currentlyslot2; neither is a launch grant."
+  },
+  "artifacts": {
+    "report": "report.md",
+    "all_results": "results.json",
+    "source_losses": "source_losses.json",
+    "predictions": "predictions.npz",
+    "selections": "selections.json",
+    "frozen_protocol": "protocol.json",
+    "amendment": "amendment_01.json",
+    "rotation_audit": "rotation_audit.json",
+    "execution": "execution.json"
+  },
+  "prohibited_changes": "No ROADMAP/FINDINGS or prior-module edits; no commits."
+}

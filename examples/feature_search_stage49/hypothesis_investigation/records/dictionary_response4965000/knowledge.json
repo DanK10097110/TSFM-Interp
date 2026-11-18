@@ -1,0 +1,98 @@
+{
+  "question": "Does paired response reconstruction justify a separately authorized native preservation test?",
+  "status": "complete",
+  "slot1": "released",
+  "native_launched": false,
+  "exact_results": {
+    "comparison": "comparison.json",
+    "gate": {
+      "lambda0_adequate": true,
+      "lambda1_global_pass": true,
+      "old_relative_gains": {
+        "sinusoid": 0.7573526376955146,
+        "noise": 0.5750734911385774
+      },
+      "focused_absolute_gain": 0.3411795089784613,
+      "passed": true
+    },
+    "table": {
+      "lambda0": {
+        "global_nmse": 0.013896715445253071,
+        "old_response": {
+          "sinusoid": 0.33706543732597316,
+          "noise": 0.6499851374406904
+        },
+        "focused_nmse": 0.4779692525911392,
+        "mean_l0": 15.999999999999998,
+        "dead_fraction": 0.634765625
+      },
+      "lambda1": {
+        "global_nmse": 0.02355438870740306,
+        "old_response": {
+          "sinusoid": 0.08178803929115522,
+          "noise": 0.2761959152644845
+        },
+        "focused_nmse": 0.1367897436126779,
+        "mean_l0": 15.997569444444444,
+        "dead_fraction": 0.49609375
+      },
+      "frozen_pca": {
+        "global_nmse": 0.009173964124244276,
+        "old_response": {
+          "sinusoid": 0.3008273079816649,
+          "noise": 0.6141906102951832
+        },
+        "focused_nmse": 0.4472441056765901,
+        "mean_l0": 15.999999999999998,
+        "dead_fraction": 0.8671875
+      }
+    },
+    "execution": {
+      "returncode": 0,
+      "seconds": 22.251347199897282,
+      "peak_rss": 984236032,
+      "reason": null,
+      "threads": 1
+    },
+    "audit": "arithmetic_audit.json",
+    "arithmetic_checks": 323,
+    "validation": "6 tests passed before freeze; planted regressions recorded in verification.json",
+    "paired_source_gains": {
+      "sinusoid": {
+        "n_sources": 32,
+        "improved_sources": 32,
+        "mean_absolute_gain": 0.2552773980348179,
+        "minimum_gain": 0.1155000919882134
+      },
+      "noise": {
+        "n_sources": 32,
+        "improved_sources": 32,
+        "mean_absolute_gain": 0.3737892221762059,
+        "minimum_gain": 0.2437519300479848
+      },
+      "focused": {
+        "n_sources": 16,
+        "improved_sources": 16,
+        "mean_absolute_gain": 0.3411795089784613,
+        "minimum_gain": 0.12837465900785758
+      }
+    }
+  },
+  "controls": [
+    "same initial hash and full/pair schedule, matched computed branches",
+    "sourceweighted FIT-only scalars/floors",
+    "all32 old TEST sources and16 fresh focused sources",
+    "frozen PCA is adaptive-support full basis, not fixed rank"
+  ],
+  "limitations": [
+    "one new seed; old spectral TEST reused, not confirmatory",
+    "four old real TEST sources/domain;16 focused synthetic sources",
+    "hidden response fidelity predicts model response, not true signal semantics or monosemanticity",
+    "response-aware inspired, not TSAE replication; residual output, not FFN neurons",
+    "no native authorization; no lambda grid; no selection/refitting on focused holdout",
+    "lambda1 trades worse global reconstruction for improved hidden responses; native forecast preservation remains unknown",
+    "lambda1 TEST mean L0 15.99757 rather than exactly16; report measured activity, no forced equal-activity claim",
+    "PCA empirical unused fraction refers to never selected basis coordinates, not SAE dead neurons"
+  ],
+  "next_step": "Request separate native review; no launch authorized."
+}

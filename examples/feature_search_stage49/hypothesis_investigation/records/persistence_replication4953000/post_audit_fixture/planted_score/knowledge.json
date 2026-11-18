@@ -1,0 +1,11 @@
+{
+  "question": "Can a deliberately wrong saved loss evade replay?",
+  "design": "Isolated copied score changed by+1; all other fixture artifacts linked read-only",
+  "exact_findings": {
+    "caught": true
+  },
+  "controls": "Confirmed changed bytes and arithmetic assertion",
+  "limitations": "Model-free fixture",
+  "evidence_class": "planted regression",
+  "next_decision": "Use unchanged replay on native results"
+}

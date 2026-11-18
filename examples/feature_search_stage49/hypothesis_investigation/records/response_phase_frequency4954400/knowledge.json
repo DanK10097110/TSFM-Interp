@@ -1,0 +1,5568 @@
+{
+  "status": "complete_audited",
+  "question": "Does an old-selected output-frequency shift transfer beyond a same-input-frequency phase map?",
+  "design": {
+    "question": "Does an old-selected output-frequency shift transfer beyond a same-input-frequency phase map?",
+    "scope": "SAVED ONLY. Native policy,16OLD FIT sources and16fresh-transfer TEST sources. No native inference, no model-weight training.",
+    "candidate_output_periods": [
+      16.0,
+      18.0,
+      19.2,
+      20.0,
+      22.0,
+      24.0,
+      26.0,
+      28.0,
+      32.0
+    ],
+    "input_periods": [
+      19.2,
+      24.0
+    ],
+    "variants": [
+      "tone_only",
+      "tone_dc_trend"
+    ],
+    "cohorts": {
+      "FIT": {
+        "groups": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase4954200/groups.json",
+        "forecasts": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_surface_focused4954100"
+      },
+      "TEST": {
+        "groups": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/groups.json",
+        "forecasts": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300"
+      }
+    },
+    "source_roles": {
+      "FIT": [
+        "syn:4954000",
+        "syn:4954001",
+        "syn:4954002",
+        "syn:4954003",
+        "syn:4954004",
+        "syn:4954005",
+        "syn:4954006",
+        "syn:4954007",
+        "syn:4954008",
+        "syn:4954009",
+        "syn:4954010",
+        "syn:4954011",
+        "syn:4954012",
+        "syn:4954013",
+        "syn:4954014",
+        "syn:4954015"
+      ],
+      "TEST": [
+        "syn:4954300",
+        "syn:4954301",
+        "syn:4954302",
+        "syn:4954303",
+        "syn:4954304",
+        "syn:4954305",
+        "syn:4954306",
+        "syn:4954307",
+        "syn:4954308",
+        "syn:4954309",
+        "syn:4954310",
+        "syn:4954311",
+        "syn:4954312",
+        "syn:4954313",
+        "syn:4954314",
+        "syn:4954315"
+      ]
+    },
+    "selection": "Separately model/input-period/variant, minimize mean leave-one-SOURCE-out OLD phase-pooled waveform NMSE across all9 candidates; exact ties choose first candidate order. Refit selected candidate on all16OLD. TEST never selects periods, variants, interpolators or hyperparameters.",
+    "baselines": "Same-input-frequency shared2x2H; old-CV-selected output-frequency2x2H; old mean32x2 odd response waveform (64 coefficients, higher capacity descriptive). Every variant retains all9 FIT-train, FIT-CV and TEST source loss curves. Tone+DC+lineartrend jointly fits4x2 maps and uses the same nuisance capacity for every candidate and same-input baseline. Mean32x2 already spans nuisance.",
+    "target": "All4 physical incremental forecasts minus background, divided by history-only stimulus amplitude. Equal-source error pooled over4phases, normalized by total ideal INPUT-frequency signal energy; even response remains scored and cannot be fit by these odd linear maps.",
+    "primary": "19.2input, tone-only, TEST same-inputH minus OLD-CV-selected outputH NMSE, separately Bolt/TimesFM. Descriptive paired16384 balanced-type source bootstrap draws seed4954400; nominal95% and family2 Bonferroni97.5% percentile intervals. No automatic threshold/population claim.24h and nuisance variant descriptive.",
+    "identification": "Report full candidate curves, selected/runner-up OLD-CV gap, source-bootstrap minimizer counts from fixed OLD-CV losses (stability only, not nested refitting or posterior), design singular values/condition, tone-subspace cosines before/after nuisance residualization, fittedH and waveform rank. No TEST minimizer is selected or promoted.",
+    "limitation": "Only32 future samples (1to2 cycles), finite discrete candidate grid, four phases, one weak amplitude, conditional mixture types. Single-frequency projection may summarize mixed/nonstationary response. Reused TEST has prior phase-analysis exposure; exploratory saved-data transfer, not new sealed replication. Predicting model response is not improving forecasts; no identified patch causality.",
+    "stage_order": "Prepare protocol -> tests/plants -> FIT-only selection and coefficient artifacts -> immutable FIT freeze -> TEST scoring -> independent replay -> knowledge. No native slot.",
+    "bindings": {
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_frequency.py": "90e489f8bd8bf9ec72e3fc7ad7bb66bf9f989594043b5be48ae9726853e6a257",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_frequency_audit.py": "5212efba0edf638500404e5acc500690b36e0bcfb1a27184329c1805446c3125",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_frequency_plants.py": "20429a597c6112099b018da888d5ebe86c9dee87748240996fb716d57415f2c1",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tests/test_response_phase_frequency.py": "2c200189d6543fb98c7d058eceae90332294e593a232614f5ebfe3341730e865",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/coherence_study.py": "e9bd4dc10d57cfbc30cb4b01cfafe96789cccb6d34fe85616699ecfef799aec7",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/real_background_poc.py": "c88868ab339608f52afa8041d89cf3b48aa4260e87fb497b64fa7bf058b3eda6",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_surface_focused4954100/sources.json": "462064575313677c3f9c28a2e344ada82dd7ae1a44a652ef30a9a47d4ca4b588",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_surface_focused4954100/execution.json": "0f3526f9231b229bb0733452066c8d127a4e278938f010bda66f2f69b9fd37b3",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_surface_focused4954100/protocol.json": "12f90d5aef20c09f29f4850651b868564d9acfcd4131dba2754f599e9cd32a27",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_surface_focused4954100/bolt_native_forecast.npy": "03e2bc05a8fd3ffc50f13b0f6ecfc2b38ad64349f257bd14bfa3518234b4fbea",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_surface_focused4954100/timesfm_native_forecast.npy": "c8e1af1302809eb99e849cceab790f33c5d950c64494db8351c530bc01bfb1b2",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_surface_focused4954100/bolt_worker.json": "9294b85d36af2e1a12220259dedbf067bf9eb9955656459c35e0e58faef6072a",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_surface_focused4954100/timesfm_worker.json": "bf074b6117495e83269a5d6af7e85e8465a50651498a04580e08e9385bf7935c",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/sources.json": "759549340b1747c32439c94d8a5eeec7684159553c169cb091bb6ec31d49ac28",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/execution.json": "9963b7325032deeb500c19d8f0c50191d8fe1bcac54900b9e15e762b24fd0990",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/protocol.json": "fc5b74295f9d30e0afb23809699b339f647976685d2b9637951511fea2231572",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/bolt_native_forecast.npy": "3d736b5a1d63faaaafc2cb7d75dc2f8b1c1c284e2a4a8a21bf074ca0cb6b63cf",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/timesfm_native_forecast.npy": "c47081c79692db23823970d2b2b90846c1e71e29b955c88793f36d1e8097eea8",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/bolt_worker.json": "8c064d477e62c20e1694efdf9215cf7a596cd6402f1b913d6669c5ba616ba59a",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/timesfm_worker.json": "e9169886da86a35d2da194fcdcbcea74ea8f8653f73c85791a90c0104dc2d9ca",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase4954200/groups.json": "9657f70716e4a0de241e3b75c39e6f6eea5f901c836ba781c0c2247c65224a25",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase4954200/audit.json": "f428f4e70da8e02040442e28b9e50d915b69617b9299ba5d2f8eb07e22b39c2c",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/groups.json": "ea5909cd07e132407b9cc9187c3961e7fc415386b5fdd0ad134cf533026911f2",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer4954300/audit.json": "258c234bab95bf4cdc7903a71106d345e45502953d2948c63a6be5b129d12048"
+    }
+  },
+  "exact_findings": [
+    {
+      "model": "bolt",
+      "input_period": 19.2,
+      "variant": "tone_only",
+      "selected_index": 5,
+      "selected_period": 24.0,
+      "same_index": 2,
+      "fit_train_curve": [
+        0.6568950532405045,
+        0.5361295556725011,
+        0.47351468766720584,
+        0.442184761666947,
+        0.4000437713156683,
+        0.39655269417684536,
+        0.4178467784499723,
+        0.4519469831921841,
+        0.5245361203333165
+      ],
+      "fit_cv_curve": [
+        0.6731491558755119,
+        0.5644495784559848,
+        0.5068692957225513,
+        0.47749893482564437,
+        0.43634715267713275,
+        0.43062669652196117,
+        0.4483249601604806,
+        0.4784809035856835,
+        0.5440385743503329
+      ],
+      "cv_runner_up_gap": 0.005720456155171583,
+      "cv_fixed_loss_bootstrap_selection_counts": {
+        "16.0": 0,
+        "18.0": 0,
+        "19.2": 0,
+        "20.0": 0,
+        "22.0": 2611,
+        "24.0": 13760,
+        "26.0": 13,
+        "28.0": 0,
+        "32.0": 0
+      },
+      "geometry": [
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.0,
+            3.999999999999999
+          ],
+          "condition_number": 1.0000000000000002,
+          "tone_principal_cosines": [
+            0.8681621866343091,
+            0.7840426623374973
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.8553210986027651,
+            0.8087985234359759
+          ],
+          "residual_tone_singular_values": [
+            3.9999999999999996,
+            3.6789117048297144
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.176085801415712,
+            3.815797083076364
+          ],
+          "condition_number": 1.0944203034111228,
+          "tone_principal_cosines": [
+            0.986678014882033,
+            0.9716953759277492
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9882528527211896,
+            0.9733624357414775
+          ],
+          "residual_tone_singular_values": [
+            3.87683763440616,
+            3.7592698037553594
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.164985590845939,
+            3.827910007830082
+          ],
+          "condition_number": 1.0880573426037605,
+          "tone_principal_cosines": [
+            1.0000000000000002,
+            1.0000000000000002
+          ],
+          "nuisance_residualized_principal_cosines": [
+            1.0,
+            0.9999999999999997
+          ],
+          "residual_tone_singular_values": [
+            3.97344160213695,
+            3.710744600493853
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.117166078298902,
+            3.8792967769564686
+          ],
+          "condition_number": 1.0613176343597654,
+          "tone_principal_cosines": [
+            0.9949950173994978,
+            0.9902409462904694
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9969475831219481,
+            0.990095224391664
+          ],
+          "residual_tone_singular_values": [
+            4.000641106397174,
+            3.7274524071495705
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.06201920231798,
+            3.937003937005905
+          ],
+          "condition_number": 1.0317539091431922,
+          "tone_principal_cosines": [
+            0.9427562240380472,
+            0.9149638828617422
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9764664347883102,
+            0.9098737383508654
+          ],
+          "residual_tone_singular_values": [
+            3.9338822486568725,
+            3.871473596712286
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.203930614017746,
+            3.7850980690761995
+          ],
+          "condition_number": 1.1106530233293974,
+          "tone_principal_cosines": [
+            0.8394771423422696,
+            0.8223983993987949
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9533316159442377,
+            0.8098614296817289
+          ],
+          "residual_tone_singular_values": [
+            4.036998548711205,
+            3.7214868960132073
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.2513594828759995,
+            3.7317479211972926
+          ],
+          "condition_number": 1.1392407988565303,
+          "tone_principal_cosines": [
+            0.7383279484225651,
+            0.7004596193547046
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9331784519933611,
+            0.7228709361535031
+          ],
+          "residual_tone_singular_values": [
+            4.138629901817401,
+            3.4306401957030315
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.2138770027908805,
+            3.7740218077470287
+          ],
+          "condition_number": 1.1165481328541744,
+          "tone_principal_cosines": [
+            0.6654681506736955,
+            0.5513026431102215
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.916609776436761,
+            0.6540062507685621
+          ],
+          "residual_tone_singular_values": [
+            4.157820923870304,
+            3.1115182349271757
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.0,
+            3.9999999999999996
+          ],
+          "condition_number": 1.0000000000000002,
+          "tone_principal_cosines": [
+            0.5416601443791433,
+            0.2969782144006351
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.8921537925440732,
+            0.5587628658775555
+          ],
+          "residual_tone_singular_values": [
+            3.9999999999999996,
+            2.4964609522515744
+          ]
+        }
+      ],
+      "selected_H_singular_values": [
+        0.6194200376951529,
+        0.5897515933833785
+      ],
+      "selected_H_rank": 2,
+      "mean_waveform_singular_values": [
+        2.6058853413426384,
+        2.386831701791328
+      ],
+      "test_curve": [
+        0.7363952706228875,
+        0.599635697705807,
+        0.5306089803018366,
+        0.4995637954962224,
+        0.4705520354295929,
+        0.48412325715727056,
+        0.5153582303087152,
+        0.551396308891936,
+        0.6196142219717227
+      ],
+      "same_input_test_nmse": 0.5306089803018366,
+      "selected_output_test_nmse": 0.48412325715727056,
+      "mean_waveform_test_nmse": 0.45748844616145007,
+      "same_minus_selected": {
+        "mean": 0.04648572314456607,
+        "wins": 11,
+        "source_differences": [
+          0.09455923723563331,
+          0.07151563625250007,
+          0.09369898070601801,
+          -0.10235404950244714,
+          0.07937459895442439,
+          0.05670367424446876,
+          0.14799240126758484,
+          -0.0792006009334899,
+          0.11321571837127897,
+          0.0595129797711238,
+          -0.00748712591119971,
+          -0.07172801416940944,
+          0.12061353074257947,
+          0.0465758295242753,
+          0.2615643201171223,
+          -0.14078554635740592
+        ],
+        "percentile95": [
+          0.02140775251454366,
+          0.07177369625141278
+        ],
+        "primary_family2_percentile": [
+          0.018388450565124514,
+          0.07555328900533036
+        ]
+      },
+      "selected_minus_mean_waveform": {
+        "mean": 0.026634810995820497,
+        "wins": 10,
+        "source_differences": [
+          0.006634994089717627,
+          -0.006743625101481937,
+          0.014895052302449807,
+          0.08548342780497631,
+          -0.015381914330929058,
+          -0.0017078980339045868,
+          0.04988836441799216,
+          0.096828975928972,
+          -0.03328339462859131,
+          -0.0022371650164252355,
+          0.04868619523994999,
+          0.0934183929228175,
+          -0.015136439823739245,
+          0.0014443976323564867,
+          0.015500557687838201,
+          0.08786705484112922
+        ],
+        "percentile95": [
+          0.021080375777135743,
+          0.03230420491773354
+        ],
+        "primary_family2_percentile": [
+          0.020343017734548243,
+          0.033030396821662575
+        ]
+      },
+      "by_type": [
+        {
+          "background_type": 0,
+          "sources": 4,
+          "mean_same_minus_selected": 0.10194077132597903
+        },
+        {
+          "background_type": 1,
+          "sources": 4,
+          "mean_same_minus_selected": 0.05857702994809198
+        },
+        {
+          "background_type": 2,
+          "sources": 4,
+          "mean_same_minus_selected": 0.12394214404488135
+        },
+        {
+          "background_type": 3,
+          "sources": 4,
+          "mean_same_minus_selected": -0.0985170527406881
+        }
+      ]
+    },
+    {
+      "model": "bolt",
+      "input_period": 19.2,
+      "variant": "tone_dc_trend",
+      "selected_index": 4,
+      "selected_period": 22.0,
+      "same_index": 2,
+      "fit_train_curve": [
+        0.6067004037139443,
+        0.48531230194659264,
+        0.43287343745688955,
+        0.4093040509598074,
+        0.38447987268407813,
+        0.38715548433025565,
+        0.3982919555878394,
+        0.4102659375539701,
+        0.42982384042190946
+      ],
+      "fit_cv_curve": [
+        0.6325117537607076,
+        0.5217389667888672,
+        0.4731609730927248,
+        0.4509475836833339,
+        0.42638849710449045,
+        0.42733944404054514,
+        0.4365202094688974,
+        0.44681837891687215,
+        0.4639769936598409
+      ],
+      "cv_runner_up_gap": 0.0009509469360546863,
+      "cv_fixed_loss_bootstrap_selection_counts": {
+        "16.0": 0,
+        "18.0": 0,
+        "19.2": 0,
+        "20.0": 0,
+        "22.0": 11020,
+        "24.0": 5364,
+        "26.0": 0,
+        "28.0": 0,
+        "32.0": 0
+      },
+      "geometry": [
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.6568542494923815,
+            4.410885550326371,
+            4.0,
+            2.8105030460043006
+          ],
+          "condition_number": 2.0127550680063293,
+          "tone_principal_cosines": [
+            0.8681621866343091,
+            0.7840426623374973
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.8553210986027651,
+            0.8087985234359759
+          ],
+          "residual_tone_singular_values": [
+            3.9999999999999996,
+            3.6789117048297144
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.723038598508149,
+            4.522020694347056,
+            3.715795551318718,
+            2.888920242990503
+          ],
+          "condition_number": 1.9810303217592022,
+          "tone_principal_cosines": [
+            0.986678014882033,
+            0.9716953759277492
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9882528527211896,
+            0.9733624357414775
+          ],
+          "residual_tone_singular_values": [
+            3.87683763440616,
+            3.7592698037553594
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.787892840124371,
+            4.417691474979678,
+            3.6267328960488303,
+            3.03083251162508
+          ],
+          "condition_number": 1.9096709626560668,
+          "tone_principal_cosines": [
+            1.0000000000000002,
+            1.0000000000000002
+          ],
+          "nuisance_residualized_principal_cosines": [
+            1.0,
+            0.9999999999999997
+          ],
+          "residual_tone_singular_values": [
+            3.97344160213695,
+            3.710744600493853
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.827091918249082,
+            4.296774444471056,
+            3.61855541065507,
+            3.137455115107313
+          ],
+          "condition_number": 1.8572670219856748,
+          "tone_principal_cosines": [
+            0.9949950173994978,
+            0.9902409462904694
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9969475831219481,
+            0.990095224391664
+          ],
+          "residual_tone_singular_values": [
+            4.000641106397174,
+            3.7274524071495705
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.887553990450214,
+            3.9454083549596524,
+            3.7197725749746806,
+            3.3598499404425755
+          ],
+          "condition_number": 1.7523264713645745,
+          "tone_principal_cosines": [
+            0.9427562240380472,
+            0.9149638828617422
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9764664347883102,
+            0.9098737383508654
+          ],
+          "residual_tone_singular_values": [
+            3.9338822486568725,
+            3.871473596712286
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.882226505738701,
+            3.950090179613595,
+            3.882324554008937,
+            3.174680090201535
+          ],
+          "condition_number": 1.852856457535312,
+          "tone_principal_cosines": [
+            0.8394771423422696,
+            0.8223983993987949
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9533316159442377,
+            0.8098614296817289
+          ],
+          "residual_tone_singular_values": [
+            4.036998548711205,
+            3.7214868960132073
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.823321024093705,
+            4.213457441664059,
+            4.020322089458498,
+            2.7436394887673363
+          ],
+          "condition_number": 2.1224803943574995,
+          "tone_principal_cosines": [
+            0.7383279484225651,
+            0.7004596193547046
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9331784519933611,
+            0.7228709361535031
+          ],
+          "residual_tone_singular_values": [
+            4.138629901817401,
+            3.4306401957030315
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.743349743416585,
+            4.487710496066612,
+            4.095203672523073,
+            2.3363505341710025
+          ],
+          "condition_number": 2.4582568666026283,
+          "tone_principal_cosines": [
+            0.6654681506736955,
+            0.5513026431102215
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.916609776436761,
+            0.6540062507685621
+          ],
+          "residual_tone_singular_values": [
+            4.157820923870304,
+            3.1115182349271757
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.6568542494923815,
+            4.9458964453127345,
+            4.000000000000001,
+            1.700866562056023
+          ],
+          "condition_number": 3.3258659883667323,
+          "tone_principal_cosines": [
+            0.5416601443791433,
+            0.2969782144006351
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.8921537925440732,
+            0.5587628658775555
+          ],
+          "residual_tone_singular_values": [
+            3.9999999999999996,
+            2.4964609522515744
+          ]
+        }
+      ],
+      "selected_H_singular_values": [
+        0.6265151943419235,
+        0.582040334842674
+      ],
+      "selected_H_rank": 2,
+      "mean_waveform_singular_values": [
+        2.6058853413426384,
+        2.386831701791328
+      ],
+      "test_curve": [
+        0.7022789614738831,
+        0.5822070615238232,
+        0.5218874113150689,
+        0.4939808802843203,
+        0.46578340158972487,
+        0.4716794958928331,
+        0.4874417251609632,
+        0.503534252599358,
+        0.5289084516325369
+      ],
+      "same_input_test_nmse": 0.5218874113150689,
+      "selected_output_test_nmse": 0.46578340158972487,
+      "mean_waveform_test_nmse": 0.45748844616145007,
+      "same_minus_selected": {
+        "mean": 0.05610400972534409,
+        "wins": 14,
+        "source_differences": [
+          0.05212373605732823,
+          0.02417149137423466,
+          0.14408004866651786,
+          -0.00352014754647495,
+          0.04804083541930115,
+          0.01544882540578868,
+          0.10204069226049373,
+          0.025894546115804662,
+          0.08179704102347085,
+          0.012992359603549497,
+          0.11020848081963242,
+          0.03478282321884407,
+          0.07557692586141357,
+          0.021506715653461295,
+          0.15428661217432826,
+          -0.001766830502188621
+        ],
+        "percentile95": [
+          0.04834861373040647,
+          0.06373365100587387
+        ],
+        "primary_family2_percentile": [
+          0.047370213472283235,
+          0.06464232973894847
+        ]
+      },
+      "selected_minus_mean_waveform": {
+        "mean": 0.00829495542827483,
+        "wins": 11,
+        "source_differences": [
+          0.0228666192610113,
+          0.01522057012946712,
+          -0.013725541273960584,
+          0.007578556677149961,
+          -0.002279101218802926,
+          0.01326989662878747,
+          0.014004236475766207,
+          0.013167494456180373,
+          -0.017086356226841792,
+          0.0191981235386951,
+          0.05472983886221927,
+          0.008635033043659313,
+          -0.02275051077968787,
+          0.02280085524941944,
+          -0.005627759819713862,
+          0.0027173318490487652
+        ],
+        "percentile95": [
+          0.0010249568927912524,
+          0.016651679604926094
+        ],
+        "primary_family2_percentile": [
+          0.00026495078646538995,
+          0.01793527394366699
+        ]
+      },
+      "by_type": [
+        {
+          "background_type": 0,
+          "sources": 4,
+          "mean_same_minus_selected": 0.06438463459037845
+        },
+        {
+          "background_type": 1,
+          "sources": 4,
+          "mean_same_minus_selected": 0.018529848009258533
+        },
+        {
+          "background_type": 2,
+          "sources": 4,
+          "mean_same_minus_selected": 0.12765395848024308
+        },
+        {
+          "background_type": 3,
+          "sources": 4,
+          "mean_same_minus_selected": 0.01384759782149629
+        }
+      ]
+    },
+    {
+      "model": "bolt",
+      "input_period": 24.0,
+      "variant": "tone_only",
+      "selected_index": 5,
+      "selected_period": 24.0,
+      "same_index": 5,
+      "fit_train_curve": [
+        0.8103357714394697,
+        0.6091457820398092,
+        0.49376254783211126,
+        0.4328988024758704,
+        0.34359221402049345,
+        0.32442549341296156,
+        0.3504610732642444,
+        0.40037675725443644,
+        0.5135698034282139
+      ],
+      "fit_cv_curve": [
+        0.8203778687889453,
+        0.6268627761398753,
+        0.5151372439261145,
+        0.455952455817241,
+        0.36845442184962146,
+        0.3488437368323817,
+        0.37320166848206265,
+        0.42087095921098827,
+        0.529502074995712
+      ],
+      "cv_runner_up_gap": 0.019610685017239782,
+      "cv_fixed_loss_bootstrap_selection_counts": {
+        "16.0": 0,
+        "18.0": 0,
+        "19.2": 0,
+        "20.0": 0,
+        "22.0": 2,
+        "24.0": 16382,
+        "26.0": 0,
+        "28.0": 0,
+        "32.0": 0
+      },
+      "geometry": [
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.0,
+            3.999999999999999
+          ],
+          "condition_number": 1.0000000000000002,
+          "tone_principal_cosines": [
+            0.526259648304816,
+            0.3136093369995299
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.6612237041358074,
+            0.3265772520713496
+          ],
+          "residual_tone_singular_values": [
+            3.9999999999999996,
+            3.6789117048297144
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.176085801415712,
+            3.815797083076364
+          ],
+          "condition_number": 1.0944203034111228,
+          "tone_principal_cosines": [
+            0.7501374164898728,
+            0.6682700750275385
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.8962022636725027,
+            0.6557946074840469
+          ],
+          "residual_tone_singular_values": [
+            3.87683763440616,
+            3.7592698037553594
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.164985590845939,
+            3.827910007830082
+          ],
+          "condition_number": 1.0880573426037605,
+          "tone_principal_cosines": [
+            0.8394771423422694,
+            0.8223983993987948
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9533316159442378,
+            0.8098614296817287
+          ],
+          "residual_tone_singular_values": [
+            3.97344160213695,
+            3.710744600493853
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.117166078298902,
+            3.8792967769564686
+          ],
+          "condition_number": 1.0613176343597654,
+          "tone_principal_cosines": [
+            0.8928379395157362,
+            0.8873671067410072
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9739635215571647,
+            0.8838630297444214
+          ],
+          "residual_tone_singular_values": [
+            4.000641106397174,
+            3.7274524071495705
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.06201920231798,
+            3.937003937005905
+          ],
+          "condition_number": 1.0317539091431922,
+          "tone_principal_cosines": [
+            0.9814667257994926,
+            0.9712144239123274
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9959979299179096,
+            0.9800852746936422
+          ],
+          "residual_tone_singular_values": [
+            3.9338822486568725,
+            3.871473596712286
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.203930614017746,
+            3.7850980690761995
+          ],
+          "condition_number": 1.1106530233293974,
+          "tone_principal_cosines": [
+            1.0,
+            1.0
+          ],
+          "nuisance_residualized_principal_cosines": [
+            1.0000000000000004,
+            0.9999999999999999
+          ],
+          "residual_tone_singular_values": [
+            4.036998548711205,
+            3.7214868960132073
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.2513594828759995,
+            3.7317479211972926
+          ],
+          "condition_number": 1.1392407988565303,
+          "tone_principal_cosines": [
+            0.9898860402495551,
+            0.9740169649601095
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9981314744999559,
+            0.9906242143504781
+          ],
+          "residual_tone_singular_values": [
+            4.138629901817401,
+            3.4306401957030315
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.2138770027908805,
+            3.7740218077470287
+          ],
+          "condition_number": 1.1165481328541744,
+          "tone_principal_cosines": [
+            0.9672287545920863,
+            0.9094536731127705
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9944928646140476,
+            0.9729349519643751
+          ],
+          "residual_tone_singular_values": [
+            4.157820923870304,
+            3.1115182349271757
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.0,
+            3.9999999999999996
+          ],
+          "condition_number": 1.0000000000000002,
+          "tone_principal_cosines": [
+            0.9004168474138147,
+            0.7481544070131616
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.986777202187889,
+            0.937649569239681
+          ],
+          "residual_tone_singular_values": [
+            3.9999999999999996,
+            2.4964609522515744
+          ]
+        }
+      ],
+      "selected_H_singular_values": [
+        0.8043689234290482,
+        0.7381435107348873
+      ],
+      "selected_H_rank": 2,
+      "mean_waveform_singular_values": [
+        3.3724433765537887,
+        2.83947068303682
+      ],
+      "test_curve": [
+        0.812067968440779,
+        0.6206879669741905,
+        0.5117482718925392,
+        0.4532901537233588,
+        0.36417869447116397,
+        0.3426607142872489,
+        0.36749411785308006,
+        0.41680957961595255,
+        0.5259191180720623
+      ],
+      "same_input_test_nmse": 0.3426607142872489,
+      "selected_output_test_nmse": 0.3426607142872489,
+      "mean_waveform_test_nmse": 0.3431423293899737,
+      "same_minus_selected": {
+        "mean": 0.0,
+        "wins": 0,
+        "source_differences": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "percentile95": [
+          0.0,
+          0.0
+        ],
+        "primary_family2_percentile": [
+          0.0,
+          0.0
+        ]
+      },
+      "selected_minus_mean_waveform": {
+        "mean": -0.00048161510272476914,
+        "wins": 8,
+        "source_differences": [
+          0.002913158746972816,
+          -0.018571596777136934,
+          0.014668838494588887,
+          0.005659495069040732,
+          -0.001626713641468519,
+          -0.010847901089762468,
+          -0.015550675735689246,
+          0.001718445285229131,
+          0.0011735978308574646,
+          -0.00799828274408726,
+          0.026786157530709342,
+          0.0029305698500410315,
+          -0.00710961216691261,
+          -0.0017926033195364843,
+          -0.003191046669002967,
+          0.003132327692560777
+        ],
+        "percentile95": [
+          -0.0048231754854374,
+          0.0038144495484418732
+        ],
+        "primary_family2_percentile": [
+          -0.005388059359473548,
+          0.004410890465042404
+        ]
+      },
+      "by_type": [
+        {
+          "background_type": 0,
+          "sources": 4,
+          "mean_same_minus_selected": 0.0
+        },
+        {
+          "background_type": 1,
+          "sources": 4,
+          "mean_same_minus_selected": 0.0
+        },
+        {
+          "background_type": 2,
+          "sources": 4,
+          "mean_same_minus_selected": 0.0
+        },
+        {
+          "background_type": 3,
+          "sources": 4,
+          "mean_same_minus_selected": 0.0
+        }
+      ]
+    },
+    {
+      "model": "bolt",
+      "input_period": 24.0,
+      "variant": "tone_dc_trend",
+      "selected_index": 5,
+      "selected_period": 24.0,
+      "same_index": 5,
+      "fit_train_curve": [
+        0.7433503807294007,
+        0.5423324881541506,
+        0.44243068584534134,
+        0.39299268218729366,
+        0.32909053826497625,
+        0.319294603441719,
+        0.32987367253818994,
+        0.3453630204904654,
+        0.37379001709001836
+      ],
+      "fit_cv_curve": [
+        0.7617044129510573,
+        0.5680447248773596,
+        0.4710139221978563,
+        0.4227187884500472,
+        0.3595615948376165,
+        0.34900588447476094,
+        0.3585089704220417,
+        0.3730099030593166,
+        0.3999538474512042
+      ],
+      "cv_runner_up_gap": 0.009503085947280776,
+      "cv_fixed_loss_bootstrap_selection_counts": {
+        "16.0": 0,
+        "18.0": 0,
+        "19.2": 0,
+        "20.0": 0,
+        "22.0": 146,
+        "24.0": 15614,
+        "26.0": 622,
+        "28.0": 2,
+        "32.0": 0
+      },
+      "geometry": [
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.6568542494923815,
+            4.410885550326371,
+            4.0,
+            2.8105030460043006
+          ],
+          "condition_number": 2.0127550680063293,
+          "tone_principal_cosines": [
+            0.526259648304816,
+            0.3136093369995299
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.6612237041358074,
+            0.3265772520713496
+          ],
+          "residual_tone_singular_values": [
+            3.9999999999999996,
+            3.6789117048297144
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.723038598508149,
+            4.522020694347056,
+            3.715795551318718,
+            2.888920242990503
+          ],
+          "condition_number": 1.9810303217592022,
+          "tone_principal_cosines": [
+            0.7501374164898728,
+            0.6682700750275385
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.8962022636725027,
+            0.6557946074840469
+          ],
+          "residual_tone_singular_values": [
+            3.87683763440616,
+            3.7592698037553594
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.787892840124371,
+            4.417691474979678,
+            3.6267328960488303,
+            3.03083251162508
+          ],
+          "condition_number": 1.9096709626560668,
+          "tone_principal_cosines": [
+            0.8394771423422694,
+            0.8223983993987948
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9533316159442378,
+            0.8098614296817287
+          ],
+          "residual_tone_singular_values": [
+            3.97344160213695,
+            3.710744600493853
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.827091918249082,
+            4.296774444471056,
+            3.61855541065507,
+            3.137455115107313
+          ],
+          "condition_number": 1.8572670219856748,
+          "tone_principal_cosines": [
+            0.8928379395157362,
+            0.8873671067410072
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9739635215571647,
+            0.8838630297444214
+          ],
+          "residual_tone_singular_values": [
+            4.000641106397174,
+            3.7274524071495705
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.887553990450214,
+            3.9454083549596524,
+            3.7197725749746806,
+            3.3598499404425755
+          ],
+          "condition_number": 1.7523264713645745,
+          "tone_principal_cosines": [
+            0.9814667257994926,
+            0.9712144239123274
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9959979299179096,
+            0.9800852746936422
+          ],
+          "residual_tone_singular_values": [
+            3.9338822486568725,
+            3.871473596712286
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.882226505738701,
+            3.950090179613595,
+            3.882324554008937,
+            3.174680090201535
+          ],
+          "condition_number": 1.852856457535312,
+          "tone_principal_cosines": [
+            1.0,
+            1.0
+          ],
+          "nuisance_residualized_principal_cosines": [
+            1.0000000000000004,
+            0.9999999999999999
+          ],
+          "residual_tone_singular_values": [
+            4.036998548711205,
+            3.7214868960132073
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.823321024093705,
+            4.213457441664059,
+            4.020322089458498,
+            2.7436394887673363
+          ],
+          "condition_number": 2.1224803943574995,
+          "tone_principal_cosines": [
+            0.9898860402495551,
+            0.9740169649601095
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9981314744999559,
+            0.9906242143504781
+          ],
+          "residual_tone_singular_values": [
+            4.138629901817401,
+            3.4306401957030315
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.743349743416585,
+            4.487710496066612,
+            4.095203672523073,
+            2.3363505341710025
+          ],
+          "condition_number": 2.4582568666026283,
+          "tone_principal_cosines": [
+            0.9672287545920863,
+            0.9094536731127705
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9944928646140476,
+            0.9729349519643751
+          ],
+          "residual_tone_singular_values": [
+            4.157820923870304,
+            3.1115182349271757
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.6568542494923815,
+            4.9458964453127345,
+            4.000000000000001,
+            1.700866562056023
+          ],
+          "condition_number": 3.3258659883667323,
+          "tone_principal_cosines": [
+            0.9004168474138147,
+            0.7481544070131616
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.986777202187889,
+            0.937649569239681
+          ],
+          "residual_tone_singular_values": [
+            3.9999999999999996,
+            2.4964609522515744
+          ]
+        }
+      ],
+      "selected_H_singular_values": [
+        0.803171102095714,
+        0.7483748388956699
+      ],
+      "selected_H_rank": 2,
+      "mean_waveform_singular_values": [
+        3.3724433765537887,
+        2.83947068303682
+      ],
+      "test_curve": [
+        0.7681748883144363,
+        0.5686588371877026,
+        0.4708013443062622,
+        0.42185176927667645,
+        0.3556341146371764,
+        0.34131480892837074,
+        0.3476290638657695,
+        0.3597318807200137,
+        0.38362698156519565
+      ],
+      "same_input_test_nmse": 0.34131480892837074,
+      "selected_output_test_nmse": 0.34131480892837074,
+      "mean_waveform_test_nmse": 0.3431423293899737,
+      "same_minus_selected": {
+        "mean": 0.0,
+        "wins": 0,
+        "source_differences": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "percentile95": [
+          0.0,
+          0.0
+        ],
+        "primary_family2_percentile": [
+          0.0,
+          0.0
+        ]
+      },
+      "selected_minus_mean_waveform": {
+        "mean": -0.0018275204616029148,
+        "wins": 6,
+        "source_differences": [
+          0.001955403809023787,
+          -0.0005653702491525969,
+          -0.005677544786630739,
+          0.0026677222382933685,
+          -0.00500871397425362,
+          -0.009148630227120702,
+          0.006522463808791318,
+          0.0017079285324128612,
+          -0.0021227190186775824,
+          -0.0034661477720467904,
+          -0.015739205390831623,
+          0.0034555019291930833,
+          -0.00024075785485291878,
+          -0.001661932524896853,
+          0.0023119869434841955,
+          -0.004230312848381823
+        ],
+        "percentile95": [
+          -0.004352648727168743,
+          0.0005117736808477607
+        ],
+        "primary_family2_percentile": [
+          -0.004701420947685791,
+          0.000817710059898888
+        ]
+      },
+      "by_type": [
+        {
+          "background_type": 0,
+          "sources": 4,
+          "mean_same_minus_selected": 0.0
+        },
+        {
+          "background_type": 1,
+          "sources": 4,
+          "mean_same_minus_selected": 0.0
+        },
+        {
+          "background_type": 2,
+          "sources": 4,
+          "mean_same_minus_selected": 0.0
+        },
+        {
+          "background_type": 3,
+          "sources": 4,
+          "mean_same_minus_selected": 0.0
+        }
+      ]
+    },
+    {
+      "model": "timesfm",
+      "input_period": 19.2,
+      "variant": "tone_only",
+      "selected_index": 4,
+      "selected_period": 22.0,
+      "same_index": 2,
+      "fit_train_curve": [
+        2.0372355704547895,
+        1.9127494405708374,
+        1.866750119109189,
+        1.850601716916268,
+        1.848442113400915,
+        1.878255674028766,
+        1.9222135343627316,
+        1.9683213049485415,
+        2.043477146161461
+      ],
+      "fit_cv_curve": [
+        2.1161230015606183,
+        2.033779126121156,
+        1.999695124522527,
+        1.985906043634431,
+        1.9762232381372409,
+        1.9884887078191873,
+        2.0119936195859256,
+        2.0391844553128866,
+        2.0871877144760287
+      ],
+      "cv_runner_up_gap": 0.009682805497190028,
+      "cv_fixed_loss_bootstrap_selection_counts": {
+        "16.0": 0,
+        "18.0": 0,
+        "19.2": 0,
+        "20.0": 1167,
+        "22.0": 13549,
+        "24.0": 1466,
+        "26.0": 177,
+        "28.0": 25,
+        "32.0": 0
+      },
+      "geometry": [
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.0,
+            3.999999999999999
+          ],
+          "condition_number": 1.0000000000000002,
+          "tone_principal_cosines": [
+            0.8681621866343091,
+            0.7840426623374973
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.8553210986027651,
+            0.8087985234359759
+          ],
+          "residual_tone_singular_values": [
+            3.9999999999999996,
+            3.6789117048297144
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.176085801415712,
+            3.815797083076364
+          ],
+          "condition_number": 1.0944203034111228,
+          "tone_principal_cosines": [
+            0.986678014882033,
+            0.9716953759277492
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9882528527211896,
+            0.9733624357414775
+          ],
+          "residual_tone_singular_values": [
+            3.87683763440616,
+            3.7592698037553594
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.164985590845939,
+            3.827910007830082
+          ],
+          "condition_number": 1.0880573426037605,
+          "tone_principal_cosines": [
+            1.0000000000000002,
+            1.0000000000000002
+          ],
+          "nuisance_residualized_principal_cosines": [
+            1.0,
+            0.9999999999999997
+          ],
+          "residual_tone_singular_values": [
+            3.97344160213695,
+            3.710744600493853
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.117166078298902,
+            3.8792967769564686
+          ],
+          "condition_number": 1.0613176343597654,
+          "tone_principal_cosines": [
+            0.9949950173994978,
+            0.9902409462904694
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9969475831219481,
+            0.990095224391664
+          ],
+          "residual_tone_singular_values": [
+            4.000641106397174,
+            3.7274524071495705
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.06201920231798,
+            3.937003937005905
+          ],
+          "condition_number": 1.0317539091431922,
+          "tone_principal_cosines": [
+            0.9427562240380472,
+            0.9149638828617422
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9764664347883102,
+            0.9098737383508654
+          ],
+          "residual_tone_singular_values": [
+            3.9338822486568725,
+            3.871473596712286
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.203930614017746,
+            3.7850980690761995
+          ],
+          "condition_number": 1.1106530233293974,
+          "tone_principal_cosines": [
+            0.8394771423422696,
+            0.8223983993987949
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9533316159442377,
+            0.8098614296817289
+          ],
+          "residual_tone_singular_values": [
+            4.036998548711205,
+            3.7214868960132073
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.2513594828759995,
+            3.7317479211972926
+          ],
+          "condition_number": 1.1392407988565303,
+          "tone_principal_cosines": [
+            0.7383279484225651,
+            0.7004596193547046
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9331784519933611,
+            0.7228709361535031
+          ],
+          "residual_tone_singular_values": [
+            4.138629901817401,
+            3.4306401957030315
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.2138770027908805,
+            3.7740218077470287
+          ],
+          "condition_number": 1.1165481328541744,
+          "tone_principal_cosines": [
+            0.6654681506736955,
+            0.5513026431102215
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.916609776436761,
+            0.6540062507685621
+          ],
+          "residual_tone_singular_values": [
+            4.157820923870304,
+            3.1115182349271757
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.0,
+            3.9999999999999996
+          ],
+          "condition_number": 1.0000000000000002,
+          "tone_principal_cosines": [
+            0.5416601443791433,
+            0.2969782144006351
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.8921537925440732,
+            0.5587628658775555
+          ],
+          "residual_tone_singular_values": [
+            3.9999999999999996,
+            2.4964609522515744
+          ]
+        }
+      ],
+      "selected_H_singular_values": [
+        0.6198673386301159,
+        0.5651034870649441
+      ],
+      "selected_H_rank": 2,
+      "mean_waveform_singular_values": [
+        2.575096377009754,
+        2.5118951137346475
+      ],
+      "test_curve": [
+        1.8900580386696848,
+        1.7866329509377135,
+        1.748531948416094,
+        1.734038673479119,
+        1.726079453649708,
+        1.7447944802074713,
+        1.7795996136358165,
+        1.8201683730269491,
+        1.8899120291247868
+      ],
+      "same_input_test_nmse": 1.748531948416094,
+      "selected_output_test_nmse": 1.726079453649708,
+      "mean_waveform_test_nmse": 1.6466122728733559,
+      "same_minus_selected": {
+        "mean": 0.0224524947663863,
+        "wins": 6,
+        "source_differences": [
+          -0.015279981278540244,
+          0.20674655824384747,
+          0.0036359786831254848,
+          -0.03130091463249551,
+          -0.03242527258224137,
+          0.13500233636594317,
+          -0.024624860372820856,
+          -0.01980347741721722,
+          0.09898835154498098,
+          0.10948581578911565,
+          -0.03205627093598107,
+          -0.02106945042378444,
+          -0.02027701111671787,
+          0.09257180870953041,
+          -0.038797516113828756,
+          -0.05155617820073499
+        ],
+        "percentile95": [
+          0.006249206646004883,
+          0.04097193634686246
+        ],
+        "primary_family2_percentile": [
+          0.0046856230816903965,
+          0.043969545295262105
+        ]
+      },
+      "selected_minus_mean_waveform": {
+        "mean": 0.07946718077635193,
+        "wins": 8,
+        "source_differences": [
+          0.17071325873981125,
+          0.2355381169346007,
+          -0.008014329374127604,
+          -0.012551740044976945,
+          -0.008577034091266533,
+          0.30266120573164734,
+          0.006891868485934927,
+          -0.00895012585475008,
+          0.01818819199796673,
+          0.319872460093686,
+          -0.0010976622012603965,
+          -0.007762243268667535,
+          0.125938846843191,
+          0.1626938427326765,
+          -0.009113368610523809,
+          -0.014956395692310887
+        ],
+        "percentile95": [
+          0.05562285661790049,
+          0.10293382056667164
+        ],
+        "primary_family2_percentile": [
+          0.052478953815726315,
+          0.10564930200098985
+        ]
+      },
+      "by_type": [
+        {
+          "background_type": 0,
+          "sources": 4,
+          "mean_same_minus_selected": 0.007751521641870374
+        },
+        {
+          "background_type": 1,
+          "sources": 4,
+          "mean_same_minus_selected": 0.13595162977710917
+        },
+        {
+          "background_type": 2,
+          "sources": 4,
+          "mean_same_minus_selected": -0.0229606671848763
+        },
+        {
+          "background_type": 3,
+          "sources": 4,
+          "mean_same_minus_selected": -0.03093250516855804
+        }
+      ]
+    },
+    {
+      "model": "timesfm",
+      "input_period": 19.2,
+      "variant": "tone_dc_trend",
+      "selected_index": 4,
+      "selected_period": 22.0,
+      "same_index": 2,
+      "fit_train_curve": [
+        2.0158542397135046,
+        1.8959820591924124,
+        1.8565938174330803,
+        1.8443059677956524,
+        1.8471594805667284,
+        1.869696176510843,
+        1.8931675490436277,
+        1.9126786900968378,
+        1.9400460971453053
+      ],
+      "fit_cv_curve": [
+        2.107853717512697,
+        2.0257603561686643,
+        1.99577582903871,
+        1.9850278111271469,
+        1.9820194204636037,
+        1.994422140699011,
+        2.00881254733919,
+        2.0212172244223776,
+        2.0390144881997103
+      ],
+      "cv_runner_up_gap": 0.0030083906635431923,
+      "cv_fixed_loss_bootstrap_selection_counts": {
+        "16.0": 0,
+        "18.0": 0,
+        "19.2": 0,
+        "20.0": 4061,
+        "22.0": 12228,
+        "24.0": 87,
+        "26.0": 6,
+        "28.0": 2,
+        "32.0": 0
+      },
+      "geometry": [
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.6568542494923815,
+            4.410885550326371,
+            4.0,
+            2.8105030460043006
+          ],
+          "condition_number": 2.0127550680063293,
+          "tone_principal_cosines": [
+            0.8681621866343091,
+            0.7840426623374973
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.8553210986027651,
+            0.8087985234359759
+          ],
+          "residual_tone_singular_values": [
+            3.9999999999999996,
+            3.6789117048297144
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.723038598508149,
+            4.522020694347056,
+            3.715795551318718,
+            2.888920242990503
+          ],
+          "condition_number": 1.9810303217592022,
+          "tone_principal_cosines": [
+            0.986678014882033,
+            0.9716953759277492
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9882528527211896,
+            0.9733624357414775
+          ],
+          "residual_tone_singular_values": [
+            3.87683763440616,
+            3.7592698037553594
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.787892840124371,
+            4.417691474979678,
+            3.6267328960488303,
+            3.03083251162508
+          ],
+          "condition_number": 1.9096709626560668,
+          "tone_principal_cosines": [
+            1.0000000000000002,
+            1.0000000000000002
+          ],
+          "nuisance_residualized_principal_cosines": [
+            1.0,
+            0.9999999999999997
+          ],
+          "residual_tone_singular_values": [
+            3.97344160213695,
+            3.710744600493853
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.827091918249082,
+            4.296774444471056,
+            3.61855541065507,
+            3.137455115107313
+          ],
+          "condition_number": 1.8572670219856748,
+          "tone_principal_cosines": [
+            0.9949950173994978,
+            0.9902409462904694
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9969475831219481,
+            0.990095224391664
+          ],
+          "residual_tone_singular_values": [
+            4.000641106397174,
+            3.7274524071495705
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.887553990450214,
+            3.9454083549596524,
+            3.7197725749746806,
+            3.3598499404425755
+          ],
+          "condition_number": 1.7523264713645745,
+          "tone_principal_cosines": [
+            0.9427562240380472,
+            0.9149638828617422
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9764664347883102,
+            0.9098737383508654
+          ],
+          "residual_tone_singular_values": [
+            3.9338822486568725,
+            3.871473596712286
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.882226505738701,
+            3.950090179613595,
+            3.882324554008937,
+            3.174680090201535
+          ],
+          "condition_number": 1.852856457535312,
+          "tone_principal_cosines": [
+            0.8394771423422696,
+            0.8223983993987949
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9533316159442377,
+            0.8098614296817289
+          ],
+          "residual_tone_singular_values": [
+            4.036998548711205,
+            3.7214868960132073
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.823321024093705,
+            4.213457441664059,
+            4.020322089458498,
+            2.7436394887673363
+          ],
+          "condition_number": 2.1224803943574995,
+          "tone_principal_cosines": [
+            0.7383279484225651,
+            0.7004596193547046
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9331784519933611,
+            0.7228709361535031
+          ],
+          "residual_tone_singular_values": [
+            4.138629901817401,
+            3.4306401957030315
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.743349743416585,
+            4.487710496066612,
+            4.095203672523073,
+            2.3363505341710025
+          ],
+          "condition_number": 2.4582568666026283,
+          "tone_principal_cosines": [
+            0.6654681506736955,
+            0.5513026431102215
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.916609776436761,
+            0.6540062507685621
+          ],
+          "residual_tone_singular_values": [
+            4.157820923870304,
+            3.1115182349271757
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.6568542494923815,
+            4.9458964453127345,
+            4.000000000000001,
+            1.700866562056023
+          ],
+          "condition_number": 3.3258659883667323,
+          "tone_principal_cosines": [
+            0.5416601443791433,
+            0.2969782144006351
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.8921537925440732,
+            0.5587628658775555
+          ],
+          "residual_tone_singular_values": [
+            3.9999999999999996,
+            2.4964609522515744
+          ]
+        }
+      ],
+      "selected_H_singular_values": [
+        0.6347560717182965,
+        0.5653473582806791
+      ],
+      "selected_H_rank": 2,
+      "mean_waveform_singular_values": [
+        2.575096377009754,
+        2.5118951137346475
+      ],
+      "test_curve": [
+        1.8701032463758218,
+        1.7635337783951615,
+        1.7310649292249531,
+        1.7215193215411264,
+        1.724262539784375,
+        1.741405649300696,
+        1.7587395565730195,
+        1.7729287117652035,
+        1.7926070099250668
+      ],
+      "same_input_test_nmse": 1.7310649292249531,
+      "selected_output_test_nmse": 1.724262539784375,
+      "mean_waveform_test_nmse": 1.6466122728733559,
+      "same_minus_selected": {
+        "mean": 0.006802389440578434,
+        "wins": 5,
+        "source_differences": [
+          -0.04900095753219946,
+          0.19590160647996413,
+          -0.0276271063091984,
+          -0.03772743600352135,
+          -0.042648586587099135,
+          0.11481226612657025,
+          -0.0564514499644746,
+          -0.01711673265489555,
+          0.029097045077423278,
+          0.08145677992566291,
+          -0.040368331095197885,
+          -0.01842179147675116,
+          -0.05120295896305427,
+          0.09793743112923803,
+          -0.027202071120546734,
+          -0.042599475982665114
+        ],
+        "percentile95": [
+          -0.006156647440292677,
+          0.02161400282674593
+        ],
+        "primary_family2_percentile": [
+          -0.0073128981793817785,
+          0.023795563745229672
+        ]
+      },
+      "selected_minus_mean_waveform": {
+        "mean": 0.07765026691101888,
+        "wins": 8,
+        "source_differences": [
+          0.16759858757040158,
+          0.22280048079616943,
+          -0.005167726870362599,
+          -0.009788908741991231,
+          -0.013829848938644584,
+          0.30445131182278473,
+          0.009149771281104835,
+          -0.00803245149097731,
+          0.00866609694725562,
+          0.32137465179472624,
+          -0.0016477531905472187,
+          -0.007348887152511141,
+          0.11648716599851805,
+          0.15564167709646348,
+          -0.0025284872610633613,
+          -0.015421409085024429
+        ],
+        "percentile95": [
+          0.05313146909871896,
+          0.1021083728524972
+        ],
+        "primary_family2_percentile": [
+          0.04980260578380853,
+          0.10495105255483268
+        ]
+      },
+      "by_type": [
+        {
+          "background_type": 0,
+          "sources": 4,
+          "mean_same_minus_selected": -0.028438864501232397
+        },
+        {
+          "background_type": 1,
+          "sources": 4,
+          "mean_same_minus_selected": 0.12252702091535883
+        },
+        {
+          "background_type": 2,
+          "sources": 4,
+          "mean_same_minus_selected": -0.037912239622354404
+        },
+        {
+          "background_type": 3,
+          "sources": 4,
+          "mean_same_minus_selected": -0.028966359029458294
+        }
+      ]
+    },
+    {
+      "model": "timesfm",
+      "input_period": 24.0,
+      "variant": "tone_only",
+      "selected_index": 5,
+      "selected_period": 24.0,
+      "same_index": 5,
+      "fit_train_curve": [
+        1.5545801003001567,
+        1.3051975581247306,
+        1.1714757212364577,
+        1.1035740527987339,
+        1.0102261202410125,
+        0.9991514777840963,
+        1.0398686679476887,
+        1.1064948400333816,
+        1.2478140635349328
+      ],
+      "fit_cv_curve": [
+        1.5674918952643093,
+        1.324909869111275,
+        1.1936327099843322,
+        1.1266559252305406,
+        1.0338472297169203,
+        1.0216419042019265,
+        1.0601487423247271,
+        1.1240837286475793,
+        1.2604444425496404
+      ],
+      "cv_runner_up_gap": 0.01220532551499387,
+      "cv_fixed_loss_bootstrap_selection_counts": {
+        "16.0": 0,
+        "18.0": 0,
+        "19.2": 0,
+        "20.0": 0,
+        "22.0": 0,
+        "24.0": 16384,
+        "26.0": 0,
+        "28.0": 0,
+        "32.0": 0
+      },
+      "geometry": [
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.0,
+            3.999999999999999
+          ],
+          "condition_number": 1.0000000000000002,
+          "tone_principal_cosines": [
+            0.526259648304816,
+            0.3136093369995299
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.6612237041358074,
+            0.3265772520713496
+          ],
+          "residual_tone_singular_values": [
+            3.9999999999999996,
+            3.6789117048297144
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.176085801415712,
+            3.815797083076364
+          ],
+          "condition_number": 1.0944203034111228,
+          "tone_principal_cosines": [
+            0.7501374164898728,
+            0.6682700750275385
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.8962022636725027,
+            0.6557946074840469
+          ],
+          "residual_tone_singular_values": [
+            3.87683763440616,
+            3.7592698037553594
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.164985590845939,
+            3.827910007830082
+          ],
+          "condition_number": 1.0880573426037605,
+          "tone_principal_cosines": [
+            0.8394771423422694,
+            0.8223983993987948
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9533316159442378,
+            0.8098614296817287
+          ],
+          "residual_tone_singular_values": [
+            3.97344160213695,
+            3.710744600493853
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.117166078298902,
+            3.8792967769564686
+          ],
+          "condition_number": 1.0613176343597654,
+          "tone_principal_cosines": [
+            0.8928379395157362,
+            0.8873671067410072
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9739635215571647,
+            0.8838630297444214
+          ],
+          "residual_tone_singular_values": [
+            4.000641106397174,
+            3.7274524071495705
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.06201920231798,
+            3.937003937005905
+          ],
+          "condition_number": 1.0317539091431922,
+          "tone_principal_cosines": [
+            0.9814667257994926,
+            0.9712144239123274
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9959979299179096,
+            0.9800852746936422
+          ],
+          "residual_tone_singular_values": [
+            3.9338822486568725,
+            3.871473596712286
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.203930614017746,
+            3.7850980690761995
+          ],
+          "condition_number": 1.1106530233293974,
+          "tone_principal_cosines": [
+            1.0,
+            1.0
+          ],
+          "nuisance_residualized_principal_cosines": [
+            1.0000000000000004,
+            0.9999999999999999
+          ],
+          "residual_tone_singular_values": [
+            4.036998548711205,
+            3.7214868960132073
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.2513594828759995,
+            3.7317479211972926
+          ],
+          "condition_number": 1.1392407988565303,
+          "tone_principal_cosines": [
+            0.9898860402495551,
+            0.9740169649601095
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9981314744999559,
+            0.9906242143504781
+          ],
+          "residual_tone_singular_values": [
+            4.138629901817401,
+            3.4306401957030315
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.2138770027908805,
+            3.7740218077470287
+          ],
+          "condition_number": 1.1165481328541744,
+          "tone_principal_cosines": [
+            0.9672287545920863,
+            0.9094536731127705
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9944928646140476,
+            0.9729349519643751
+          ],
+          "residual_tone_singular_values": [
+            4.157820923870304,
+            3.1115182349271757
+          ]
+        },
+        {
+          "design_rank": 2,
+          "design_singular_values": [
+            4.0,
+            3.9999999999999996
+          ],
+          "condition_number": 1.0000000000000002,
+          "tone_principal_cosines": [
+            0.9004168474138147,
+            0.7481544070131616
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.986777202187889,
+            0.937649569239681
+          ],
+          "residual_tone_singular_values": [
+            3.9999999999999996,
+            2.4964609522515744
+          ]
+        }
+      ],
+      "selected_H_singular_values": [
+        0.8885121394034022,
+        0.8060300589199164
+      ],
+      "selected_H_rank": 2,
+      "mean_waveform_singular_values": [
+        3.698113727713232,
+        3.150343276317189
+      ],
+      "test_curve": [
+        1.6001054190445148,
+        1.3693601200931167,
+        1.236680912293275,
+        1.1665835062335723,
+        1.0641022980411134,
+        1.0428322638795517,
+        1.0727605691707476,
+        1.128650954514696,
+        1.2533094260509539
+      ],
+      "same_input_test_nmse": 1.0428322638795517,
+      "selected_output_test_nmse": 1.0428322638795517,
+      "mean_waveform_test_nmse": 1.0436487189917965,
+      "same_minus_selected": {
+        "mean": 0.0,
+        "wins": 0,
+        "source_differences": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "percentile95": [
+          0.0,
+          0.0
+        ],
+        "primary_family2_percentile": [
+          0.0,
+          0.0
+        ]
+      },
+      "selected_minus_mean_waveform": {
+        "mean": -0.000816455112244598,
+        "wins": 5,
+        "source_differences": [
+          -0.007989752393843794,
+          -0.08204816848288843,
+          -0.020454755842084796,
+          0.004357683923978561,
+          -0.009134744911870503,
+          0.0962196525936918,
+          -0.0012592344586408316,
+          0.011208012581158,
+          -0.010231916134322977,
+          0.08435382671875935,
+          -0.021832467075362245,
+          0.015071593716633691,
+          -0.046494535805348014,
+          -0.004027030331910986,
+          -0.011911479251093093,
+          -0.00888996664276931
+        ],
+        "percentile95": [
+          -0.01983920554776992,
+          0.016679558023795983
+        ],
+        "primary_family2_percentile": [
+          -0.02247411466612417,
+          0.018148841245487428
+        ]
+      },
+      "by_type": [
+        {
+          "background_type": 0,
+          "sources": 4,
+          "mean_same_minus_selected": 0.0
+        },
+        {
+          "background_type": 1,
+          "sources": 4,
+          "mean_same_minus_selected": 0.0
+        },
+        {
+          "background_type": 2,
+          "sources": 4,
+          "mean_same_minus_selected": 0.0
+        },
+        {
+          "background_type": 3,
+          "sources": 4,
+          "mean_same_minus_selected": 0.0
+        }
+      ]
+    },
+    {
+      "model": "timesfm",
+      "input_period": 24.0,
+      "variant": "tone_dc_trend",
+      "selected_index": 5,
+      "selected_period": 24.0,
+      "same_index": 5,
+      "fit_train_curve": [
+        1.4873529641014147,
+        1.2367420282114292,
+        1.1198840697427226,
+        1.0646972845657625,
+        0.9998091562146277,
+        0.997198098180105,
+        1.015802552921611,
+        1.0381239216545548,
+        1.0762940853573426
+      ],
+      "fit_cv_curve": [
+        1.504504464110105,
+        1.2605104629098132,
+        1.1453600969927542,
+        1.0905448140857308,
+        1.0250759615940255,
+        1.021210995381375,
+        1.0386721621847523,
+        1.060097283817448,
+        1.0970614797382015
+      ],
+      "cv_runner_up_gap": 0.0038649662126504225,
+      "cv_fixed_loss_bootstrap_selection_counts": {
+        "16.0": 0,
+        "18.0": 0,
+        "19.2": 0,
+        "20.0": 0,
+        "22.0": 1031,
+        "24.0": 15353,
+        "26.0": 0,
+        "28.0": 0,
+        "32.0": 0
+      },
+      "geometry": [
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.6568542494923815,
+            4.410885550326371,
+            4.0,
+            2.8105030460043006
+          ],
+          "condition_number": 2.0127550680063293,
+          "tone_principal_cosines": [
+            0.526259648304816,
+            0.3136093369995299
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.6612237041358074,
+            0.3265772520713496
+          ],
+          "residual_tone_singular_values": [
+            3.9999999999999996,
+            3.6789117048297144
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.723038598508149,
+            4.522020694347056,
+            3.715795551318718,
+            2.888920242990503
+          ],
+          "condition_number": 1.9810303217592022,
+          "tone_principal_cosines": [
+            0.7501374164898728,
+            0.6682700750275385
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.8962022636725027,
+            0.6557946074840469
+          ],
+          "residual_tone_singular_values": [
+            3.87683763440616,
+            3.7592698037553594
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.787892840124371,
+            4.417691474979678,
+            3.6267328960488303,
+            3.03083251162508
+          ],
+          "condition_number": 1.9096709626560668,
+          "tone_principal_cosines": [
+            0.8394771423422694,
+            0.8223983993987948
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9533316159442378,
+            0.8098614296817287
+          ],
+          "residual_tone_singular_values": [
+            3.97344160213695,
+            3.710744600493853
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.827091918249082,
+            4.296774444471056,
+            3.61855541065507,
+            3.137455115107313
+          ],
+          "condition_number": 1.8572670219856748,
+          "tone_principal_cosines": [
+            0.8928379395157362,
+            0.8873671067410072
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9739635215571647,
+            0.8838630297444214
+          ],
+          "residual_tone_singular_values": [
+            4.000641106397174,
+            3.7274524071495705
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.887553990450214,
+            3.9454083549596524,
+            3.7197725749746806,
+            3.3598499404425755
+          ],
+          "condition_number": 1.7523264713645745,
+          "tone_principal_cosines": [
+            0.9814667257994926,
+            0.9712144239123274
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9959979299179096,
+            0.9800852746936422
+          ],
+          "residual_tone_singular_values": [
+            3.9338822486568725,
+            3.871473596712286
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.882226505738701,
+            3.950090179613595,
+            3.882324554008937,
+            3.174680090201535
+          ],
+          "condition_number": 1.852856457535312,
+          "tone_principal_cosines": [
+            1.0,
+            1.0
+          ],
+          "nuisance_residualized_principal_cosines": [
+            1.0000000000000004,
+            0.9999999999999999
+          ],
+          "residual_tone_singular_values": [
+            4.036998548711205,
+            3.7214868960132073
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.823321024093705,
+            4.213457441664059,
+            4.020322089458498,
+            2.7436394887673363
+          ],
+          "condition_number": 2.1224803943574995,
+          "tone_principal_cosines": [
+            0.9898860402495551,
+            0.9740169649601095
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9981314744999559,
+            0.9906242143504781
+          ],
+          "residual_tone_singular_values": [
+            4.138629901817401,
+            3.4306401957030315
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.743349743416585,
+            4.487710496066612,
+            4.095203672523073,
+            2.3363505341710025
+          ],
+          "condition_number": 2.4582568666026283,
+          "tone_principal_cosines": [
+            0.9672287545920863,
+            0.9094536731127705
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.9944928646140476,
+            0.9729349519643751
+          ],
+          "residual_tone_singular_values": [
+            4.157820923870304,
+            3.1115182349271757
+          ]
+        },
+        {
+          "design_rank": 4,
+          "design_singular_values": [
+            5.6568542494923815,
+            4.9458964453127345,
+            4.000000000000001,
+            1.700866562056023
+          ],
+          "condition_number": 3.3258659883667323,
+          "tone_principal_cosines": [
+            0.9004168474138147,
+            0.7481544070131616
+          ],
+          "nuisance_residualized_principal_cosines": [
+            0.986777202187889,
+            0.937649569239681
+          ],
+          "residual_tone_singular_values": [
+            3.9999999999999996,
+            2.4964609522515744
+          ]
+        }
+      ],
+      "selected_H_singular_values": [
+        0.8991372403522696,
+        0.8154412408265653
+      ],
+      "selected_H_rank": 2,
+      "mean_waveform_singular_values": [
+        3.698113727713232,
+        3.150343276317189
+      ],
+      "test_curve": [
+        1.5416189540544774,
+        1.3103260493451345,
+        1.1925521510635821,
+        1.1332426122790897,
+        1.0545363499116616,
+        1.040558500959556,
+        1.0517228114611437,
+        1.0693447082813508,
+        1.1024488417495366
+      ],
+      "same_input_test_nmse": 1.040558500959556,
+      "selected_output_test_nmse": 1.040558500959556,
+      "mean_waveform_test_nmse": 1.0436487189917965,
+      "same_minus_selected": {
+        "mean": 0.0,
+        "wins": 0,
+        "source_differences": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "percentile95": [
+          0.0,
+          0.0
+        ],
+        "primary_family2_percentile": [
+          0.0,
+          0.0
+        ]
+      },
+      "selected_minus_mean_waveform": {
+        "mean": -0.003090218032240347,
+        "wins": 4,
+        "source_differences": [
+          -0.00675017965833094,
+          -0.07905869839441326,
+          -0.019787070980259294,
+          -0.00397093021357392,
+          -0.008241987687863501,
+          0.0866012189849743,
+          -0.002687793321514753,
+          0.008746657086866616,
+          -0.008828054177561953,
+          0.08025248933991058,
+          -0.018915455102984348,
+          0.00824654166976857,
+          -0.04435687624200356,
+          -0.007855670515466429,
+          -0.013500538648682073,
+          -0.019337140654711593
+        ],
+        "percentile95": [
+          -0.021092758044713188,
+          0.01365765065268513
+        ],
+        "primary_family2_percentile": [
+          -0.023762227443585412,
+          0.015028489836914388
+        ]
+      },
+      "by_type": [
+        {
+          "background_type": 0,
+          "sources": 4,
+          "mean_same_minus_selected": 0.0
+        },
+        {
+          "background_type": 1,
+          "sources": 4,
+          "mean_same_minus_selected": 0.0
+        },
+        {
+          "background_type": 2,
+          "sources": 4,
+          "mean_same_minus_selected": 0.0
+        },
+        {
+          "background_type": 3,
+          "sources": 4,
+          "mean_same_minus_selected": 0.0
+        }
+      ]
+    }
+  ],
+  "controls": {
+    "old_only_fit_freeze": {
+      "protocol_sha256": "7e18f358b4b778bf41edda46c504a47bc315e1426a17b3af7011c7f104998f56",
+      "files": {
+        "fit_arrays.npz": "e3d479478eb4c6ee660689e0be987d7700c4f2afc5f9f402e3b49c2ee10b8d85",
+        "fit_selection.json": "86eb53e765ac0a8dfafd2d1f015870e2fe9b2d0d531da979bc66f792437b49bb"
+      },
+      "test_analysis_performed": false,
+      "selection_basis": "OLD16 only; no TEST outcomes loaded by fit()"
+    },
+    "known_answer_tests": 8,
+    "plants_detected": 9,
+    "independent_audit": {
+      "passed": true,
+      "checks": 768,
+      "maximum_absolute_discrepancy": 2.3314683517128287e-15,
+      "source_hashes_verified": true,
+      "old_only_selection_replayed": true,
+      "source_cv_replayed": true,
+      "all_nine_test_curves_replayed": true,
+      "independent_sources_per_cohort": 16,
+      "native_capture": false
+    }
+  },
+  "limitations": "Only32 future samples (1to2 cycles), finite discrete candidate grid, four phases, one weak amplitude, conditional mixture types. Single-frequency projection may summarize mixed/nonstationary response. Reused TEST has prior phase-analysis exposure; exploratory saved-data transfer, not new sealed replication. Predicting model response is not improving forecasts; no identified patch causality.",
+  "evidence_class": "Prospective saved-only hypothesis test with OLD-only selection and previously examined TEST cohort",
+  "failed_instrumentation_runs": [
+    {
+      "stage": "pre_freeze_plant_harness",
+      "failure": "CV mutation anchor appeared twice; harness refused ambiguous replacement before running that plant.",
+      "resolution": "Narrowed mutation anchor to fit_map call; clean tests and all plants rerun before FIT."
+    }
+  ],
+  "next_decision": "Close output-frequency selection; no grid expansion. Separately authorized oblique-phase holdout is preparation-only and tests cardinal-phase aliasing with existing old same-frequency coefficients.",
+  "native_capture": false,
+  "verification": {
+    "tests_passed": 8,
+    "plants_detected": 9
+  },
+  "distilled_findings": {
+    "primary": [
+      {
+        "model": "bolt",
+        "input_period": 19.2,
+        "variant": "tone_only",
+        "selected_index": 5,
+        "selected_period": 24.0,
+        "same_index": 2,
+        "fit_train_curve": [
+          0.6568950532405045,
+          0.5361295556725011,
+          0.47351468766720584,
+          0.442184761666947,
+          0.4000437713156683,
+          0.39655269417684536,
+          0.4178467784499723,
+          0.4519469831921841,
+          0.5245361203333165
+        ],
+        "fit_cv_curve": [
+          0.6731491558755119,
+          0.5644495784559848,
+          0.5068692957225513,
+          0.47749893482564437,
+          0.43634715267713275,
+          0.43062669652196117,
+          0.4483249601604806,
+          0.4784809035856835,
+          0.5440385743503329
+        ],
+        "cv_runner_up_gap": 0.005720456155171583,
+        "cv_fixed_loss_bootstrap_selection_counts": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 2611,
+          "24.0": 13760,
+          "26.0": 13,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "geometry": [
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.0,
+              3.999999999999999
+            ],
+            "condition_number": 1.0000000000000002,
+            "tone_principal_cosines": [
+              0.8681621866343091,
+              0.7840426623374973
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.8553210986027651,
+              0.8087985234359759
+            ],
+            "residual_tone_singular_values": [
+              3.9999999999999996,
+              3.6789117048297144
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.176085801415712,
+              3.815797083076364
+            ],
+            "condition_number": 1.0944203034111228,
+            "tone_principal_cosines": [
+              0.986678014882033,
+              0.9716953759277492
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9882528527211896,
+              0.9733624357414775
+            ],
+            "residual_tone_singular_values": [
+              3.87683763440616,
+              3.7592698037553594
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.164985590845939,
+              3.827910007830082
+            ],
+            "condition_number": 1.0880573426037605,
+            "tone_principal_cosines": [
+              1.0000000000000002,
+              1.0000000000000002
+            ],
+            "nuisance_residualized_principal_cosines": [
+              1.0,
+              0.9999999999999997
+            ],
+            "residual_tone_singular_values": [
+              3.97344160213695,
+              3.710744600493853
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.117166078298902,
+              3.8792967769564686
+            ],
+            "condition_number": 1.0613176343597654,
+            "tone_principal_cosines": [
+              0.9949950173994978,
+              0.9902409462904694
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9969475831219481,
+              0.990095224391664
+            ],
+            "residual_tone_singular_values": [
+              4.000641106397174,
+              3.7274524071495705
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.06201920231798,
+              3.937003937005905
+            ],
+            "condition_number": 1.0317539091431922,
+            "tone_principal_cosines": [
+              0.9427562240380472,
+              0.9149638828617422
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9764664347883102,
+              0.9098737383508654
+            ],
+            "residual_tone_singular_values": [
+              3.9338822486568725,
+              3.871473596712286
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.203930614017746,
+              3.7850980690761995
+            ],
+            "condition_number": 1.1106530233293974,
+            "tone_principal_cosines": [
+              0.8394771423422696,
+              0.8223983993987949
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9533316159442377,
+              0.8098614296817289
+            ],
+            "residual_tone_singular_values": [
+              4.036998548711205,
+              3.7214868960132073
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.2513594828759995,
+              3.7317479211972926
+            ],
+            "condition_number": 1.1392407988565303,
+            "tone_principal_cosines": [
+              0.7383279484225651,
+              0.7004596193547046
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9331784519933611,
+              0.7228709361535031
+            ],
+            "residual_tone_singular_values": [
+              4.138629901817401,
+              3.4306401957030315
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.2138770027908805,
+              3.7740218077470287
+            ],
+            "condition_number": 1.1165481328541744,
+            "tone_principal_cosines": [
+              0.6654681506736955,
+              0.5513026431102215
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.916609776436761,
+              0.6540062507685621
+            ],
+            "residual_tone_singular_values": [
+              4.157820923870304,
+              3.1115182349271757
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.0,
+              3.9999999999999996
+            ],
+            "condition_number": 1.0000000000000002,
+            "tone_principal_cosines": [
+              0.5416601443791433,
+              0.2969782144006351
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.8921537925440732,
+              0.5587628658775555
+            ],
+            "residual_tone_singular_values": [
+              3.9999999999999996,
+              2.4964609522515744
+            ]
+          }
+        ],
+        "selected_H_singular_values": [
+          0.6194200376951529,
+          0.5897515933833785
+        ],
+        "selected_H_rank": 2,
+        "mean_waveform_singular_values": [
+          2.6058853413426384,
+          2.386831701791328
+        ],
+        "test_curve": [
+          0.7363952706228875,
+          0.599635697705807,
+          0.5306089803018366,
+          0.4995637954962224,
+          0.4705520354295929,
+          0.48412325715727056,
+          0.5153582303087152,
+          0.551396308891936,
+          0.6196142219717227
+        ],
+        "same_input_test_nmse": 0.5306089803018366,
+        "selected_output_test_nmse": 0.48412325715727056,
+        "mean_waveform_test_nmse": 0.45748844616145007,
+        "same_minus_selected": {
+          "mean": 0.04648572314456607,
+          "wins": 11,
+          "source_differences": [
+            0.09455923723563331,
+            0.07151563625250007,
+            0.09369898070601801,
+            -0.10235404950244714,
+            0.07937459895442439,
+            0.05670367424446876,
+            0.14799240126758484,
+            -0.0792006009334899,
+            0.11321571837127897,
+            0.0595129797711238,
+            -0.00748712591119971,
+            -0.07172801416940944,
+            0.12061353074257947,
+            0.0465758295242753,
+            0.2615643201171223,
+            -0.14078554635740592
+          ],
+          "percentile95": [
+            0.02140775251454366,
+            0.07177369625141278
+          ],
+          "primary_family2_percentile": [
+            0.018388450565124514,
+            0.07555328900533036
+          ]
+        },
+        "selected_minus_mean_waveform": {
+          "mean": 0.026634810995820497,
+          "wins": 10,
+          "source_differences": [
+            0.006634994089717627,
+            -0.006743625101481937,
+            0.014895052302449807,
+            0.08548342780497631,
+            -0.015381914330929058,
+            -0.0017078980339045868,
+            0.04988836441799216,
+            0.096828975928972,
+            -0.03328339462859131,
+            -0.0022371650164252355,
+            0.04868619523994999,
+            0.0934183929228175,
+            -0.015136439823739245,
+            0.0014443976323564867,
+            0.015500557687838201,
+            0.08786705484112922
+          ],
+          "percentile95": [
+            0.021080375777135743,
+            0.03230420491773354
+          ],
+          "primary_family2_percentile": [
+            0.020343017734548243,
+            0.033030396821662575
+          ]
+        },
+        "by_type": [
+          {
+            "background_type": 0,
+            "sources": 4,
+            "mean_same_minus_selected": 0.10194077132597903
+          },
+          {
+            "background_type": 1,
+            "sources": 4,
+            "mean_same_minus_selected": 0.05857702994809198
+          },
+          {
+            "background_type": 2,
+            "sources": 4,
+            "mean_same_minus_selected": 0.12394214404488135
+          },
+          {
+            "background_type": 3,
+            "sources": 4,
+            "mean_same_minus_selected": -0.0985170527406881
+          }
+        ]
+      },
+      {
+        "model": "timesfm",
+        "input_period": 19.2,
+        "variant": "tone_only",
+        "selected_index": 4,
+        "selected_period": 22.0,
+        "same_index": 2,
+        "fit_train_curve": [
+          2.0372355704547895,
+          1.9127494405708374,
+          1.866750119109189,
+          1.850601716916268,
+          1.848442113400915,
+          1.878255674028766,
+          1.9222135343627316,
+          1.9683213049485415,
+          2.043477146161461
+        ],
+        "fit_cv_curve": [
+          2.1161230015606183,
+          2.033779126121156,
+          1.999695124522527,
+          1.985906043634431,
+          1.9762232381372409,
+          1.9884887078191873,
+          2.0119936195859256,
+          2.0391844553128866,
+          2.0871877144760287
+        ],
+        "cv_runner_up_gap": 0.009682805497190028,
+        "cv_fixed_loss_bootstrap_selection_counts": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 1167,
+          "22.0": 13549,
+          "24.0": 1466,
+          "26.0": 177,
+          "28.0": 25,
+          "32.0": 0
+        },
+        "geometry": [
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.0,
+              3.999999999999999
+            ],
+            "condition_number": 1.0000000000000002,
+            "tone_principal_cosines": [
+              0.8681621866343091,
+              0.7840426623374973
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.8553210986027651,
+              0.8087985234359759
+            ],
+            "residual_tone_singular_values": [
+              3.9999999999999996,
+              3.6789117048297144
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.176085801415712,
+              3.815797083076364
+            ],
+            "condition_number": 1.0944203034111228,
+            "tone_principal_cosines": [
+              0.986678014882033,
+              0.9716953759277492
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9882528527211896,
+              0.9733624357414775
+            ],
+            "residual_tone_singular_values": [
+              3.87683763440616,
+              3.7592698037553594
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.164985590845939,
+              3.827910007830082
+            ],
+            "condition_number": 1.0880573426037605,
+            "tone_principal_cosines": [
+              1.0000000000000002,
+              1.0000000000000002
+            ],
+            "nuisance_residualized_principal_cosines": [
+              1.0,
+              0.9999999999999997
+            ],
+            "residual_tone_singular_values": [
+              3.97344160213695,
+              3.710744600493853
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.117166078298902,
+              3.8792967769564686
+            ],
+            "condition_number": 1.0613176343597654,
+            "tone_principal_cosines": [
+              0.9949950173994978,
+              0.9902409462904694
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9969475831219481,
+              0.990095224391664
+            ],
+            "residual_tone_singular_values": [
+              4.000641106397174,
+              3.7274524071495705
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.06201920231798,
+              3.937003937005905
+            ],
+            "condition_number": 1.0317539091431922,
+            "tone_principal_cosines": [
+              0.9427562240380472,
+              0.9149638828617422
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9764664347883102,
+              0.9098737383508654
+            ],
+            "residual_tone_singular_values": [
+              3.9338822486568725,
+              3.871473596712286
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.203930614017746,
+              3.7850980690761995
+            ],
+            "condition_number": 1.1106530233293974,
+            "tone_principal_cosines": [
+              0.8394771423422696,
+              0.8223983993987949
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9533316159442377,
+              0.8098614296817289
+            ],
+            "residual_tone_singular_values": [
+              4.036998548711205,
+              3.7214868960132073
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.2513594828759995,
+              3.7317479211972926
+            ],
+            "condition_number": 1.1392407988565303,
+            "tone_principal_cosines": [
+              0.7383279484225651,
+              0.7004596193547046
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9331784519933611,
+              0.7228709361535031
+            ],
+            "residual_tone_singular_values": [
+              4.138629901817401,
+              3.4306401957030315
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.2138770027908805,
+              3.7740218077470287
+            ],
+            "condition_number": 1.1165481328541744,
+            "tone_principal_cosines": [
+              0.6654681506736955,
+              0.5513026431102215
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.916609776436761,
+              0.6540062507685621
+            ],
+            "residual_tone_singular_values": [
+              4.157820923870304,
+              3.1115182349271757
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.0,
+              3.9999999999999996
+            ],
+            "condition_number": 1.0000000000000002,
+            "tone_principal_cosines": [
+              0.5416601443791433,
+              0.2969782144006351
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.8921537925440732,
+              0.5587628658775555
+            ],
+            "residual_tone_singular_values": [
+              3.9999999999999996,
+              2.4964609522515744
+            ]
+          }
+        ],
+        "selected_H_singular_values": [
+          0.6198673386301159,
+          0.5651034870649441
+        ],
+        "selected_H_rank": 2,
+        "mean_waveform_singular_values": [
+          2.575096377009754,
+          2.5118951137346475
+        ],
+        "test_curve": [
+          1.8900580386696848,
+          1.7866329509377135,
+          1.748531948416094,
+          1.734038673479119,
+          1.726079453649708,
+          1.7447944802074713,
+          1.7795996136358165,
+          1.8201683730269491,
+          1.8899120291247868
+        ],
+        "same_input_test_nmse": 1.748531948416094,
+        "selected_output_test_nmse": 1.726079453649708,
+        "mean_waveform_test_nmse": 1.6466122728733559,
+        "same_minus_selected": {
+          "mean": 0.0224524947663863,
+          "wins": 6,
+          "source_differences": [
+            -0.015279981278540244,
+            0.20674655824384747,
+            0.0036359786831254848,
+            -0.03130091463249551,
+            -0.03242527258224137,
+            0.13500233636594317,
+            -0.024624860372820856,
+            -0.01980347741721722,
+            0.09898835154498098,
+            0.10948581578911565,
+            -0.03205627093598107,
+            -0.02106945042378444,
+            -0.02027701111671787,
+            0.09257180870953041,
+            -0.038797516113828756,
+            -0.05155617820073499
+          ],
+          "percentile95": [
+            0.006249206646004883,
+            0.04097193634686246
+          ],
+          "primary_family2_percentile": [
+            0.0046856230816903965,
+            0.043969545295262105
+          ]
+        },
+        "selected_minus_mean_waveform": {
+          "mean": 0.07946718077635193,
+          "wins": 8,
+          "source_differences": [
+            0.17071325873981125,
+            0.2355381169346007,
+            -0.008014329374127604,
+            -0.012551740044976945,
+            -0.008577034091266533,
+            0.30266120573164734,
+            0.006891868485934927,
+            -0.00895012585475008,
+            0.01818819199796673,
+            0.319872460093686,
+            -0.0010976622012603965,
+            -0.007762243268667535,
+            0.125938846843191,
+            0.1626938427326765,
+            -0.009113368610523809,
+            -0.014956395692310887
+          ],
+          "percentile95": [
+            0.05562285661790049,
+            0.10293382056667164
+          ],
+          "primary_family2_percentile": [
+            0.052478953815726315,
+            0.10564930200098985
+          ]
+        },
+        "by_type": [
+          {
+            "background_type": 0,
+            "sources": 4,
+            "mean_same_minus_selected": 0.007751521641870374
+          },
+          {
+            "background_type": 1,
+            "sources": 4,
+            "mean_same_minus_selected": 0.13595162977710917
+          },
+          {
+            "background_type": 2,
+            "sources": 4,
+            "mean_same_minus_selected": -0.0229606671848763
+          },
+          {
+            "background_type": 3,
+            "sources": 4,
+            "mean_same_minus_selected": -0.03093250516855804
+          }
+        ]
+      }
+    ],
+    "nuisance": [
+      {
+        "model": "bolt",
+        "input_period": 19.2,
+        "variant": "tone_dc_trend",
+        "selected_index": 4,
+        "selected_period": 22.0,
+        "same_index": 2,
+        "fit_train_curve": [
+          0.6067004037139443,
+          0.48531230194659264,
+          0.43287343745688955,
+          0.4093040509598074,
+          0.38447987268407813,
+          0.38715548433025565,
+          0.3982919555878394,
+          0.4102659375539701,
+          0.42982384042190946
+        ],
+        "fit_cv_curve": [
+          0.6325117537607076,
+          0.5217389667888672,
+          0.4731609730927248,
+          0.4509475836833339,
+          0.42638849710449045,
+          0.42733944404054514,
+          0.4365202094688974,
+          0.44681837891687215,
+          0.4639769936598409
+        ],
+        "cv_runner_up_gap": 0.0009509469360546863,
+        "cv_fixed_loss_bootstrap_selection_counts": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 11020,
+          "24.0": 5364,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "geometry": [
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.6568542494923815,
+              4.410885550326371,
+              4.0,
+              2.8105030460043006
+            ],
+            "condition_number": 2.0127550680063293,
+            "tone_principal_cosines": [
+              0.8681621866343091,
+              0.7840426623374973
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.8553210986027651,
+              0.8087985234359759
+            ],
+            "residual_tone_singular_values": [
+              3.9999999999999996,
+              3.6789117048297144
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.723038598508149,
+              4.522020694347056,
+              3.715795551318718,
+              2.888920242990503
+            ],
+            "condition_number": 1.9810303217592022,
+            "tone_principal_cosines": [
+              0.986678014882033,
+              0.9716953759277492
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9882528527211896,
+              0.9733624357414775
+            ],
+            "residual_tone_singular_values": [
+              3.87683763440616,
+              3.7592698037553594
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.787892840124371,
+              4.417691474979678,
+              3.6267328960488303,
+              3.03083251162508
+            ],
+            "condition_number": 1.9096709626560668,
+            "tone_principal_cosines": [
+              1.0000000000000002,
+              1.0000000000000002
+            ],
+            "nuisance_residualized_principal_cosines": [
+              1.0,
+              0.9999999999999997
+            ],
+            "residual_tone_singular_values": [
+              3.97344160213695,
+              3.710744600493853
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.827091918249082,
+              4.296774444471056,
+              3.61855541065507,
+              3.137455115107313
+            ],
+            "condition_number": 1.8572670219856748,
+            "tone_principal_cosines": [
+              0.9949950173994978,
+              0.9902409462904694
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9969475831219481,
+              0.990095224391664
+            ],
+            "residual_tone_singular_values": [
+              4.000641106397174,
+              3.7274524071495705
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.887553990450214,
+              3.9454083549596524,
+              3.7197725749746806,
+              3.3598499404425755
+            ],
+            "condition_number": 1.7523264713645745,
+            "tone_principal_cosines": [
+              0.9427562240380472,
+              0.9149638828617422
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9764664347883102,
+              0.9098737383508654
+            ],
+            "residual_tone_singular_values": [
+              3.9338822486568725,
+              3.871473596712286
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.882226505738701,
+              3.950090179613595,
+              3.882324554008937,
+              3.174680090201535
+            ],
+            "condition_number": 1.852856457535312,
+            "tone_principal_cosines": [
+              0.8394771423422696,
+              0.8223983993987949
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9533316159442377,
+              0.8098614296817289
+            ],
+            "residual_tone_singular_values": [
+              4.036998548711205,
+              3.7214868960132073
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.823321024093705,
+              4.213457441664059,
+              4.020322089458498,
+              2.7436394887673363
+            ],
+            "condition_number": 2.1224803943574995,
+            "tone_principal_cosines": [
+              0.7383279484225651,
+              0.7004596193547046
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9331784519933611,
+              0.7228709361535031
+            ],
+            "residual_tone_singular_values": [
+              4.138629901817401,
+              3.4306401957030315
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.743349743416585,
+              4.487710496066612,
+              4.095203672523073,
+              2.3363505341710025
+            ],
+            "condition_number": 2.4582568666026283,
+            "tone_principal_cosines": [
+              0.6654681506736955,
+              0.5513026431102215
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.916609776436761,
+              0.6540062507685621
+            ],
+            "residual_tone_singular_values": [
+              4.157820923870304,
+              3.1115182349271757
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.6568542494923815,
+              4.9458964453127345,
+              4.000000000000001,
+              1.700866562056023
+            ],
+            "condition_number": 3.3258659883667323,
+            "tone_principal_cosines": [
+              0.5416601443791433,
+              0.2969782144006351
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.8921537925440732,
+              0.5587628658775555
+            ],
+            "residual_tone_singular_values": [
+              3.9999999999999996,
+              2.4964609522515744
+            ]
+          }
+        ],
+        "selected_H_singular_values": [
+          0.6265151943419235,
+          0.582040334842674
+        ],
+        "selected_H_rank": 2,
+        "mean_waveform_singular_values": [
+          2.6058853413426384,
+          2.386831701791328
+        ],
+        "test_curve": [
+          0.7022789614738831,
+          0.5822070615238232,
+          0.5218874113150689,
+          0.4939808802843203,
+          0.46578340158972487,
+          0.4716794958928331,
+          0.4874417251609632,
+          0.503534252599358,
+          0.5289084516325369
+        ],
+        "same_input_test_nmse": 0.5218874113150689,
+        "selected_output_test_nmse": 0.46578340158972487,
+        "mean_waveform_test_nmse": 0.45748844616145007,
+        "same_minus_selected": {
+          "mean": 0.05610400972534409,
+          "wins": 14,
+          "source_differences": [
+            0.05212373605732823,
+            0.02417149137423466,
+            0.14408004866651786,
+            -0.00352014754647495,
+            0.04804083541930115,
+            0.01544882540578868,
+            0.10204069226049373,
+            0.025894546115804662,
+            0.08179704102347085,
+            0.012992359603549497,
+            0.11020848081963242,
+            0.03478282321884407,
+            0.07557692586141357,
+            0.021506715653461295,
+            0.15428661217432826,
+            -0.001766830502188621
+          ],
+          "percentile95": [
+            0.04834861373040647,
+            0.06373365100587387
+          ],
+          "primary_family2_percentile": [
+            0.047370213472283235,
+            0.06464232973894847
+          ]
+        },
+        "selected_minus_mean_waveform": {
+          "mean": 0.00829495542827483,
+          "wins": 11,
+          "source_differences": [
+            0.0228666192610113,
+            0.01522057012946712,
+            -0.013725541273960584,
+            0.007578556677149961,
+            -0.002279101218802926,
+            0.01326989662878747,
+            0.014004236475766207,
+            0.013167494456180373,
+            -0.017086356226841792,
+            0.0191981235386951,
+            0.05472983886221927,
+            0.008635033043659313,
+            -0.02275051077968787,
+            0.02280085524941944,
+            -0.005627759819713862,
+            0.0027173318490487652
+          ],
+          "percentile95": [
+            0.0010249568927912524,
+            0.016651679604926094
+          ],
+          "primary_family2_percentile": [
+            0.00026495078646538995,
+            0.01793527394366699
+          ]
+        },
+        "by_type": [
+          {
+            "background_type": 0,
+            "sources": 4,
+            "mean_same_minus_selected": 0.06438463459037845
+          },
+          {
+            "background_type": 1,
+            "sources": 4,
+            "mean_same_minus_selected": 0.018529848009258533
+          },
+          {
+            "background_type": 2,
+            "sources": 4,
+            "mean_same_minus_selected": 0.12765395848024308
+          },
+          {
+            "background_type": 3,
+            "sources": 4,
+            "mean_same_minus_selected": 0.01384759782149629
+          }
+        ]
+      },
+      {
+        "model": "timesfm",
+        "input_period": 19.2,
+        "variant": "tone_dc_trend",
+        "selected_index": 4,
+        "selected_period": 22.0,
+        "same_index": 2,
+        "fit_train_curve": [
+          2.0158542397135046,
+          1.8959820591924124,
+          1.8565938174330803,
+          1.8443059677956524,
+          1.8471594805667284,
+          1.869696176510843,
+          1.8931675490436277,
+          1.9126786900968378,
+          1.9400460971453053
+        ],
+        "fit_cv_curve": [
+          2.107853717512697,
+          2.0257603561686643,
+          1.99577582903871,
+          1.9850278111271469,
+          1.9820194204636037,
+          1.994422140699011,
+          2.00881254733919,
+          2.0212172244223776,
+          2.0390144881997103
+        ],
+        "cv_runner_up_gap": 0.0030083906635431923,
+        "cv_fixed_loss_bootstrap_selection_counts": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 4061,
+          "22.0": 12228,
+          "24.0": 87,
+          "26.0": 6,
+          "28.0": 2,
+          "32.0": 0
+        },
+        "geometry": [
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.6568542494923815,
+              4.410885550326371,
+              4.0,
+              2.8105030460043006
+            ],
+            "condition_number": 2.0127550680063293,
+            "tone_principal_cosines": [
+              0.8681621866343091,
+              0.7840426623374973
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.8553210986027651,
+              0.8087985234359759
+            ],
+            "residual_tone_singular_values": [
+              3.9999999999999996,
+              3.6789117048297144
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.723038598508149,
+              4.522020694347056,
+              3.715795551318718,
+              2.888920242990503
+            ],
+            "condition_number": 1.9810303217592022,
+            "tone_principal_cosines": [
+              0.986678014882033,
+              0.9716953759277492
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9882528527211896,
+              0.9733624357414775
+            ],
+            "residual_tone_singular_values": [
+              3.87683763440616,
+              3.7592698037553594
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.787892840124371,
+              4.417691474979678,
+              3.6267328960488303,
+              3.03083251162508
+            ],
+            "condition_number": 1.9096709626560668,
+            "tone_principal_cosines": [
+              1.0000000000000002,
+              1.0000000000000002
+            ],
+            "nuisance_residualized_principal_cosines": [
+              1.0,
+              0.9999999999999997
+            ],
+            "residual_tone_singular_values": [
+              3.97344160213695,
+              3.710744600493853
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.827091918249082,
+              4.296774444471056,
+              3.61855541065507,
+              3.137455115107313
+            ],
+            "condition_number": 1.8572670219856748,
+            "tone_principal_cosines": [
+              0.9949950173994978,
+              0.9902409462904694
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9969475831219481,
+              0.990095224391664
+            ],
+            "residual_tone_singular_values": [
+              4.000641106397174,
+              3.7274524071495705
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.887553990450214,
+              3.9454083549596524,
+              3.7197725749746806,
+              3.3598499404425755
+            ],
+            "condition_number": 1.7523264713645745,
+            "tone_principal_cosines": [
+              0.9427562240380472,
+              0.9149638828617422
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9764664347883102,
+              0.9098737383508654
+            ],
+            "residual_tone_singular_values": [
+              3.9338822486568725,
+              3.871473596712286
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.882226505738701,
+              3.950090179613595,
+              3.882324554008937,
+              3.174680090201535
+            ],
+            "condition_number": 1.852856457535312,
+            "tone_principal_cosines": [
+              0.8394771423422696,
+              0.8223983993987949
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9533316159442377,
+              0.8098614296817289
+            ],
+            "residual_tone_singular_values": [
+              4.036998548711205,
+              3.7214868960132073
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.823321024093705,
+              4.213457441664059,
+              4.020322089458498,
+              2.7436394887673363
+            ],
+            "condition_number": 2.1224803943574995,
+            "tone_principal_cosines": [
+              0.7383279484225651,
+              0.7004596193547046
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9331784519933611,
+              0.7228709361535031
+            ],
+            "residual_tone_singular_values": [
+              4.138629901817401,
+              3.4306401957030315
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.743349743416585,
+              4.487710496066612,
+              4.095203672523073,
+              2.3363505341710025
+            ],
+            "condition_number": 2.4582568666026283,
+            "tone_principal_cosines": [
+              0.6654681506736955,
+              0.5513026431102215
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.916609776436761,
+              0.6540062507685621
+            ],
+            "residual_tone_singular_values": [
+              4.157820923870304,
+              3.1115182349271757
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.6568542494923815,
+              4.9458964453127345,
+              4.000000000000001,
+              1.700866562056023
+            ],
+            "condition_number": 3.3258659883667323,
+            "tone_principal_cosines": [
+              0.5416601443791433,
+              0.2969782144006351
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.8921537925440732,
+              0.5587628658775555
+            ],
+            "residual_tone_singular_values": [
+              3.9999999999999996,
+              2.4964609522515744
+            ]
+          }
+        ],
+        "selected_H_singular_values": [
+          0.6347560717182965,
+          0.5653473582806791
+        ],
+        "selected_H_rank": 2,
+        "mean_waveform_singular_values": [
+          2.575096377009754,
+          2.5118951137346475
+        ],
+        "test_curve": [
+          1.8701032463758218,
+          1.7635337783951615,
+          1.7310649292249531,
+          1.7215193215411264,
+          1.724262539784375,
+          1.741405649300696,
+          1.7587395565730195,
+          1.7729287117652035,
+          1.7926070099250668
+        ],
+        "same_input_test_nmse": 1.7310649292249531,
+        "selected_output_test_nmse": 1.724262539784375,
+        "mean_waveform_test_nmse": 1.6466122728733559,
+        "same_minus_selected": {
+          "mean": 0.006802389440578434,
+          "wins": 5,
+          "source_differences": [
+            -0.04900095753219946,
+            0.19590160647996413,
+            -0.0276271063091984,
+            -0.03772743600352135,
+            -0.042648586587099135,
+            0.11481226612657025,
+            -0.0564514499644746,
+            -0.01711673265489555,
+            0.029097045077423278,
+            0.08145677992566291,
+            -0.040368331095197885,
+            -0.01842179147675116,
+            -0.05120295896305427,
+            0.09793743112923803,
+            -0.027202071120546734,
+            -0.042599475982665114
+          ],
+          "percentile95": [
+            -0.006156647440292677,
+            0.02161400282674593
+          ],
+          "primary_family2_percentile": [
+            -0.0073128981793817785,
+            0.023795563745229672
+          ]
+        },
+        "selected_minus_mean_waveform": {
+          "mean": 0.07765026691101888,
+          "wins": 8,
+          "source_differences": [
+            0.16759858757040158,
+            0.22280048079616943,
+            -0.005167726870362599,
+            -0.009788908741991231,
+            -0.013829848938644584,
+            0.30445131182278473,
+            0.009149771281104835,
+            -0.00803245149097731,
+            0.00866609694725562,
+            0.32137465179472624,
+            -0.0016477531905472187,
+            -0.007348887152511141,
+            0.11648716599851805,
+            0.15564167709646348,
+            -0.0025284872610633613,
+            -0.015421409085024429
+          ],
+          "percentile95": [
+            0.05313146909871896,
+            0.1021083728524972
+          ],
+          "primary_family2_percentile": [
+            0.04980260578380853,
+            0.10495105255483268
+          ]
+        },
+        "by_type": [
+          {
+            "background_type": 0,
+            "sources": 4,
+            "mean_same_minus_selected": -0.028438864501232397
+          },
+          {
+            "background_type": 1,
+            "sources": 4,
+            "mean_same_minus_selected": 0.12252702091535883
+          },
+          {
+            "background_type": 2,
+            "sources": 4,
+            "mean_same_minus_selected": -0.037912239622354404
+          },
+          {
+            "background_type": 3,
+            "sources": 4,
+            "mean_same_minus_selected": -0.028966359029458294
+          }
+        ]
+      }
+    ],
+    "control24": [
+      {
+        "model": "bolt",
+        "input_period": 24.0,
+        "variant": "tone_only",
+        "selected_index": 5,
+        "selected_period": 24.0,
+        "same_index": 5,
+        "fit_train_curve": [
+          0.8103357714394697,
+          0.6091457820398092,
+          0.49376254783211126,
+          0.4328988024758704,
+          0.34359221402049345,
+          0.32442549341296156,
+          0.3504610732642444,
+          0.40037675725443644,
+          0.5135698034282139
+        ],
+        "fit_cv_curve": [
+          0.8203778687889453,
+          0.6268627761398753,
+          0.5151372439261145,
+          0.455952455817241,
+          0.36845442184962146,
+          0.3488437368323817,
+          0.37320166848206265,
+          0.42087095921098827,
+          0.529502074995712
+        ],
+        "cv_runner_up_gap": 0.019610685017239782,
+        "cv_fixed_loss_bootstrap_selection_counts": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 2,
+          "24.0": 16382,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "geometry": [
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.0,
+              3.999999999999999
+            ],
+            "condition_number": 1.0000000000000002,
+            "tone_principal_cosines": [
+              0.526259648304816,
+              0.3136093369995299
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.6612237041358074,
+              0.3265772520713496
+            ],
+            "residual_tone_singular_values": [
+              3.9999999999999996,
+              3.6789117048297144
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.176085801415712,
+              3.815797083076364
+            ],
+            "condition_number": 1.0944203034111228,
+            "tone_principal_cosines": [
+              0.7501374164898728,
+              0.6682700750275385
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.8962022636725027,
+              0.6557946074840469
+            ],
+            "residual_tone_singular_values": [
+              3.87683763440616,
+              3.7592698037553594
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.164985590845939,
+              3.827910007830082
+            ],
+            "condition_number": 1.0880573426037605,
+            "tone_principal_cosines": [
+              0.8394771423422694,
+              0.8223983993987948
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9533316159442378,
+              0.8098614296817287
+            ],
+            "residual_tone_singular_values": [
+              3.97344160213695,
+              3.710744600493853
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.117166078298902,
+              3.8792967769564686
+            ],
+            "condition_number": 1.0613176343597654,
+            "tone_principal_cosines": [
+              0.8928379395157362,
+              0.8873671067410072
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9739635215571647,
+              0.8838630297444214
+            ],
+            "residual_tone_singular_values": [
+              4.000641106397174,
+              3.7274524071495705
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.06201920231798,
+              3.937003937005905
+            ],
+            "condition_number": 1.0317539091431922,
+            "tone_principal_cosines": [
+              0.9814667257994926,
+              0.9712144239123274
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9959979299179096,
+              0.9800852746936422
+            ],
+            "residual_tone_singular_values": [
+              3.9338822486568725,
+              3.871473596712286
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.203930614017746,
+              3.7850980690761995
+            ],
+            "condition_number": 1.1106530233293974,
+            "tone_principal_cosines": [
+              1.0,
+              1.0
+            ],
+            "nuisance_residualized_principal_cosines": [
+              1.0000000000000004,
+              0.9999999999999999
+            ],
+            "residual_tone_singular_values": [
+              4.036998548711205,
+              3.7214868960132073
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.2513594828759995,
+              3.7317479211972926
+            ],
+            "condition_number": 1.1392407988565303,
+            "tone_principal_cosines": [
+              0.9898860402495551,
+              0.9740169649601095
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9981314744999559,
+              0.9906242143504781
+            ],
+            "residual_tone_singular_values": [
+              4.138629901817401,
+              3.4306401957030315
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.2138770027908805,
+              3.7740218077470287
+            ],
+            "condition_number": 1.1165481328541744,
+            "tone_principal_cosines": [
+              0.9672287545920863,
+              0.9094536731127705
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9944928646140476,
+              0.9729349519643751
+            ],
+            "residual_tone_singular_values": [
+              4.157820923870304,
+              3.1115182349271757
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.0,
+              3.9999999999999996
+            ],
+            "condition_number": 1.0000000000000002,
+            "tone_principal_cosines": [
+              0.9004168474138147,
+              0.7481544070131616
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.986777202187889,
+              0.937649569239681
+            ],
+            "residual_tone_singular_values": [
+              3.9999999999999996,
+              2.4964609522515744
+            ]
+          }
+        ],
+        "selected_H_singular_values": [
+          0.8043689234290482,
+          0.7381435107348873
+        ],
+        "selected_H_rank": 2,
+        "mean_waveform_singular_values": [
+          3.3724433765537887,
+          2.83947068303682
+        ],
+        "test_curve": [
+          0.812067968440779,
+          0.6206879669741905,
+          0.5117482718925392,
+          0.4532901537233588,
+          0.36417869447116397,
+          0.3426607142872489,
+          0.36749411785308006,
+          0.41680957961595255,
+          0.5259191180720623
+        ],
+        "same_input_test_nmse": 0.3426607142872489,
+        "selected_output_test_nmse": 0.3426607142872489,
+        "mean_waveform_test_nmse": 0.3431423293899737,
+        "same_minus_selected": {
+          "mean": 0.0,
+          "wins": 0,
+          "source_differences": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "percentile95": [
+            0.0,
+            0.0
+          ],
+          "primary_family2_percentile": [
+            0.0,
+            0.0
+          ]
+        },
+        "selected_minus_mean_waveform": {
+          "mean": -0.00048161510272476914,
+          "wins": 8,
+          "source_differences": [
+            0.002913158746972816,
+            -0.018571596777136934,
+            0.014668838494588887,
+            0.005659495069040732,
+            -0.001626713641468519,
+            -0.010847901089762468,
+            -0.015550675735689246,
+            0.001718445285229131,
+            0.0011735978308574646,
+            -0.00799828274408726,
+            0.026786157530709342,
+            0.0029305698500410315,
+            -0.00710961216691261,
+            -0.0017926033195364843,
+            -0.003191046669002967,
+            0.003132327692560777
+          ],
+          "percentile95": [
+            -0.0048231754854374,
+            0.0038144495484418732
+          ],
+          "primary_family2_percentile": [
+            -0.005388059359473548,
+            0.004410890465042404
+          ]
+        },
+        "by_type": [
+          {
+            "background_type": 0,
+            "sources": 4,
+            "mean_same_minus_selected": 0.0
+          },
+          {
+            "background_type": 1,
+            "sources": 4,
+            "mean_same_minus_selected": 0.0
+          },
+          {
+            "background_type": 2,
+            "sources": 4,
+            "mean_same_minus_selected": 0.0
+          },
+          {
+            "background_type": 3,
+            "sources": 4,
+            "mean_same_minus_selected": 0.0
+          }
+        ]
+      },
+      {
+        "model": "bolt",
+        "input_period": 24.0,
+        "variant": "tone_dc_trend",
+        "selected_index": 5,
+        "selected_period": 24.0,
+        "same_index": 5,
+        "fit_train_curve": [
+          0.7433503807294007,
+          0.5423324881541506,
+          0.44243068584534134,
+          0.39299268218729366,
+          0.32909053826497625,
+          0.319294603441719,
+          0.32987367253818994,
+          0.3453630204904654,
+          0.37379001709001836
+        ],
+        "fit_cv_curve": [
+          0.7617044129510573,
+          0.5680447248773596,
+          0.4710139221978563,
+          0.4227187884500472,
+          0.3595615948376165,
+          0.34900588447476094,
+          0.3585089704220417,
+          0.3730099030593166,
+          0.3999538474512042
+        ],
+        "cv_runner_up_gap": 0.009503085947280776,
+        "cv_fixed_loss_bootstrap_selection_counts": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 146,
+          "24.0": 15614,
+          "26.0": 622,
+          "28.0": 2,
+          "32.0": 0
+        },
+        "geometry": [
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.6568542494923815,
+              4.410885550326371,
+              4.0,
+              2.8105030460043006
+            ],
+            "condition_number": 2.0127550680063293,
+            "tone_principal_cosines": [
+              0.526259648304816,
+              0.3136093369995299
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.6612237041358074,
+              0.3265772520713496
+            ],
+            "residual_tone_singular_values": [
+              3.9999999999999996,
+              3.6789117048297144
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.723038598508149,
+              4.522020694347056,
+              3.715795551318718,
+              2.888920242990503
+            ],
+            "condition_number": 1.9810303217592022,
+            "tone_principal_cosines": [
+              0.7501374164898728,
+              0.6682700750275385
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.8962022636725027,
+              0.6557946074840469
+            ],
+            "residual_tone_singular_values": [
+              3.87683763440616,
+              3.7592698037553594
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.787892840124371,
+              4.417691474979678,
+              3.6267328960488303,
+              3.03083251162508
+            ],
+            "condition_number": 1.9096709626560668,
+            "tone_principal_cosines": [
+              0.8394771423422694,
+              0.8223983993987948
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9533316159442378,
+              0.8098614296817287
+            ],
+            "residual_tone_singular_values": [
+              3.97344160213695,
+              3.710744600493853
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.827091918249082,
+              4.296774444471056,
+              3.61855541065507,
+              3.137455115107313
+            ],
+            "condition_number": 1.8572670219856748,
+            "tone_principal_cosines": [
+              0.8928379395157362,
+              0.8873671067410072
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9739635215571647,
+              0.8838630297444214
+            ],
+            "residual_tone_singular_values": [
+              4.000641106397174,
+              3.7274524071495705
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.887553990450214,
+              3.9454083549596524,
+              3.7197725749746806,
+              3.3598499404425755
+            ],
+            "condition_number": 1.7523264713645745,
+            "tone_principal_cosines": [
+              0.9814667257994926,
+              0.9712144239123274
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9959979299179096,
+              0.9800852746936422
+            ],
+            "residual_tone_singular_values": [
+              3.9338822486568725,
+              3.871473596712286
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.882226505738701,
+              3.950090179613595,
+              3.882324554008937,
+              3.174680090201535
+            ],
+            "condition_number": 1.852856457535312,
+            "tone_principal_cosines": [
+              1.0,
+              1.0
+            ],
+            "nuisance_residualized_principal_cosines": [
+              1.0000000000000004,
+              0.9999999999999999
+            ],
+            "residual_tone_singular_values": [
+              4.036998548711205,
+              3.7214868960132073
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.823321024093705,
+              4.213457441664059,
+              4.020322089458498,
+              2.7436394887673363
+            ],
+            "condition_number": 2.1224803943574995,
+            "tone_principal_cosines": [
+              0.9898860402495551,
+              0.9740169649601095
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9981314744999559,
+              0.9906242143504781
+            ],
+            "residual_tone_singular_values": [
+              4.138629901817401,
+              3.4306401957030315
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.743349743416585,
+              4.487710496066612,
+              4.095203672523073,
+              2.3363505341710025
+            ],
+            "condition_number": 2.4582568666026283,
+            "tone_principal_cosines": [
+              0.9672287545920863,
+              0.9094536731127705
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9944928646140476,
+              0.9729349519643751
+            ],
+            "residual_tone_singular_values": [
+              4.157820923870304,
+              3.1115182349271757
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.6568542494923815,
+              4.9458964453127345,
+              4.000000000000001,
+              1.700866562056023
+            ],
+            "condition_number": 3.3258659883667323,
+            "tone_principal_cosines": [
+              0.9004168474138147,
+              0.7481544070131616
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.986777202187889,
+              0.937649569239681
+            ],
+            "residual_tone_singular_values": [
+              3.9999999999999996,
+              2.4964609522515744
+            ]
+          }
+        ],
+        "selected_H_singular_values": [
+          0.803171102095714,
+          0.7483748388956699
+        ],
+        "selected_H_rank": 2,
+        "mean_waveform_singular_values": [
+          3.3724433765537887,
+          2.83947068303682
+        ],
+        "test_curve": [
+          0.7681748883144363,
+          0.5686588371877026,
+          0.4708013443062622,
+          0.42185176927667645,
+          0.3556341146371764,
+          0.34131480892837074,
+          0.3476290638657695,
+          0.3597318807200137,
+          0.38362698156519565
+        ],
+        "same_input_test_nmse": 0.34131480892837074,
+        "selected_output_test_nmse": 0.34131480892837074,
+        "mean_waveform_test_nmse": 0.3431423293899737,
+        "same_minus_selected": {
+          "mean": 0.0,
+          "wins": 0,
+          "source_differences": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "percentile95": [
+            0.0,
+            0.0
+          ],
+          "primary_family2_percentile": [
+            0.0,
+            0.0
+          ]
+        },
+        "selected_minus_mean_waveform": {
+          "mean": -0.0018275204616029148,
+          "wins": 6,
+          "source_differences": [
+            0.001955403809023787,
+            -0.0005653702491525969,
+            -0.005677544786630739,
+            0.0026677222382933685,
+            -0.00500871397425362,
+            -0.009148630227120702,
+            0.006522463808791318,
+            0.0017079285324128612,
+            -0.0021227190186775824,
+            -0.0034661477720467904,
+            -0.015739205390831623,
+            0.0034555019291930833,
+            -0.00024075785485291878,
+            -0.001661932524896853,
+            0.0023119869434841955,
+            -0.004230312848381823
+          ],
+          "percentile95": [
+            -0.004352648727168743,
+            0.0005117736808477607
+          ],
+          "primary_family2_percentile": [
+            -0.004701420947685791,
+            0.000817710059898888
+          ]
+        },
+        "by_type": [
+          {
+            "background_type": 0,
+            "sources": 4,
+            "mean_same_minus_selected": 0.0
+          },
+          {
+            "background_type": 1,
+            "sources": 4,
+            "mean_same_minus_selected": 0.0
+          },
+          {
+            "background_type": 2,
+            "sources": 4,
+            "mean_same_minus_selected": 0.0
+          },
+          {
+            "background_type": 3,
+            "sources": 4,
+            "mean_same_minus_selected": 0.0
+          }
+        ]
+      },
+      {
+        "model": "timesfm",
+        "input_period": 24.0,
+        "variant": "tone_only",
+        "selected_index": 5,
+        "selected_period": 24.0,
+        "same_index": 5,
+        "fit_train_curve": [
+          1.5545801003001567,
+          1.3051975581247306,
+          1.1714757212364577,
+          1.1035740527987339,
+          1.0102261202410125,
+          0.9991514777840963,
+          1.0398686679476887,
+          1.1064948400333816,
+          1.2478140635349328
+        ],
+        "fit_cv_curve": [
+          1.5674918952643093,
+          1.324909869111275,
+          1.1936327099843322,
+          1.1266559252305406,
+          1.0338472297169203,
+          1.0216419042019265,
+          1.0601487423247271,
+          1.1240837286475793,
+          1.2604444425496404
+        ],
+        "cv_runner_up_gap": 0.01220532551499387,
+        "cv_fixed_loss_bootstrap_selection_counts": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 0,
+          "24.0": 16384,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "geometry": [
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.0,
+              3.999999999999999
+            ],
+            "condition_number": 1.0000000000000002,
+            "tone_principal_cosines": [
+              0.526259648304816,
+              0.3136093369995299
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.6612237041358074,
+              0.3265772520713496
+            ],
+            "residual_tone_singular_values": [
+              3.9999999999999996,
+              3.6789117048297144
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.176085801415712,
+              3.815797083076364
+            ],
+            "condition_number": 1.0944203034111228,
+            "tone_principal_cosines": [
+              0.7501374164898728,
+              0.6682700750275385
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.8962022636725027,
+              0.6557946074840469
+            ],
+            "residual_tone_singular_values": [
+              3.87683763440616,
+              3.7592698037553594
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.164985590845939,
+              3.827910007830082
+            ],
+            "condition_number": 1.0880573426037605,
+            "tone_principal_cosines": [
+              0.8394771423422694,
+              0.8223983993987948
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9533316159442378,
+              0.8098614296817287
+            ],
+            "residual_tone_singular_values": [
+              3.97344160213695,
+              3.710744600493853
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.117166078298902,
+              3.8792967769564686
+            ],
+            "condition_number": 1.0613176343597654,
+            "tone_principal_cosines": [
+              0.8928379395157362,
+              0.8873671067410072
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9739635215571647,
+              0.8838630297444214
+            ],
+            "residual_tone_singular_values": [
+              4.000641106397174,
+              3.7274524071495705
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.06201920231798,
+              3.937003937005905
+            ],
+            "condition_number": 1.0317539091431922,
+            "tone_principal_cosines": [
+              0.9814667257994926,
+              0.9712144239123274
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9959979299179096,
+              0.9800852746936422
+            ],
+            "residual_tone_singular_values": [
+              3.9338822486568725,
+              3.871473596712286
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.203930614017746,
+              3.7850980690761995
+            ],
+            "condition_number": 1.1106530233293974,
+            "tone_principal_cosines": [
+              1.0,
+              1.0
+            ],
+            "nuisance_residualized_principal_cosines": [
+              1.0000000000000004,
+              0.9999999999999999
+            ],
+            "residual_tone_singular_values": [
+              4.036998548711205,
+              3.7214868960132073
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.2513594828759995,
+              3.7317479211972926
+            ],
+            "condition_number": 1.1392407988565303,
+            "tone_principal_cosines": [
+              0.9898860402495551,
+              0.9740169649601095
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9981314744999559,
+              0.9906242143504781
+            ],
+            "residual_tone_singular_values": [
+              4.138629901817401,
+              3.4306401957030315
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.2138770027908805,
+              3.7740218077470287
+            ],
+            "condition_number": 1.1165481328541744,
+            "tone_principal_cosines": [
+              0.9672287545920863,
+              0.9094536731127705
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9944928646140476,
+              0.9729349519643751
+            ],
+            "residual_tone_singular_values": [
+              4.157820923870304,
+              3.1115182349271757
+            ]
+          },
+          {
+            "design_rank": 2,
+            "design_singular_values": [
+              4.0,
+              3.9999999999999996
+            ],
+            "condition_number": 1.0000000000000002,
+            "tone_principal_cosines": [
+              0.9004168474138147,
+              0.7481544070131616
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.986777202187889,
+              0.937649569239681
+            ],
+            "residual_tone_singular_values": [
+              3.9999999999999996,
+              2.4964609522515744
+            ]
+          }
+        ],
+        "selected_H_singular_values": [
+          0.8885121394034022,
+          0.8060300589199164
+        ],
+        "selected_H_rank": 2,
+        "mean_waveform_singular_values": [
+          3.698113727713232,
+          3.150343276317189
+        ],
+        "test_curve": [
+          1.6001054190445148,
+          1.3693601200931167,
+          1.236680912293275,
+          1.1665835062335723,
+          1.0641022980411134,
+          1.0428322638795517,
+          1.0727605691707476,
+          1.128650954514696,
+          1.2533094260509539
+        ],
+        "same_input_test_nmse": 1.0428322638795517,
+        "selected_output_test_nmse": 1.0428322638795517,
+        "mean_waveform_test_nmse": 1.0436487189917965,
+        "same_minus_selected": {
+          "mean": 0.0,
+          "wins": 0,
+          "source_differences": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "percentile95": [
+            0.0,
+            0.0
+          ],
+          "primary_family2_percentile": [
+            0.0,
+            0.0
+          ]
+        },
+        "selected_minus_mean_waveform": {
+          "mean": -0.000816455112244598,
+          "wins": 5,
+          "source_differences": [
+            -0.007989752393843794,
+            -0.08204816848288843,
+            -0.020454755842084796,
+            0.004357683923978561,
+            -0.009134744911870503,
+            0.0962196525936918,
+            -0.0012592344586408316,
+            0.011208012581158,
+            -0.010231916134322977,
+            0.08435382671875935,
+            -0.021832467075362245,
+            0.015071593716633691,
+            -0.046494535805348014,
+            -0.004027030331910986,
+            -0.011911479251093093,
+            -0.00888996664276931
+          ],
+          "percentile95": [
+            -0.01983920554776992,
+            0.016679558023795983
+          ],
+          "primary_family2_percentile": [
+            -0.02247411466612417,
+            0.018148841245487428
+          ]
+        },
+        "by_type": [
+          {
+            "background_type": 0,
+            "sources": 4,
+            "mean_same_minus_selected": 0.0
+          },
+          {
+            "background_type": 1,
+            "sources": 4,
+            "mean_same_minus_selected": 0.0
+          },
+          {
+            "background_type": 2,
+            "sources": 4,
+            "mean_same_minus_selected": 0.0
+          },
+          {
+            "background_type": 3,
+            "sources": 4,
+            "mean_same_minus_selected": 0.0
+          }
+        ]
+      },
+      {
+        "model": "timesfm",
+        "input_period": 24.0,
+        "variant": "tone_dc_trend",
+        "selected_index": 5,
+        "selected_period": 24.0,
+        "same_index": 5,
+        "fit_train_curve": [
+          1.4873529641014147,
+          1.2367420282114292,
+          1.1198840697427226,
+          1.0646972845657625,
+          0.9998091562146277,
+          0.997198098180105,
+          1.015802552921611,
+          1.0381239216545548,
+          1.0762940853573426
+        ],
+        "fit_cv_curve": [
+          1.504504464110105,
+          1.2605104629098132,
+          1.1453600969927542,
+          1.0905448140857308,
+          1.0250759615940255,
+          1.021210995381375,
+          1.0386721621847523,
+          1.060097283817448,
+          1.0970614797382015
+        ],
+        "cv_runner_up_gap": 0.0038649662126504225,
+        "cv_fixed_loss_bootstrap_selection_counts": {
+          "16.0": 0,
+          "18.0": 0,
+          "19.2": 0,
+          "20.0": 0,
+          "22.0": 1031,
+          "24.0": 15353,
+          "26.0": 0,
+          "28.0": 0,
+          "32.0": 0
+        },
+        "geometry": [
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.6568542494923815,
+              4.410885550326371,
+              4.0,
+              2.8105030460043006
+            ],
+            "condition_number": 2.0127550680063293,
+            "tone_principal_cosines": [
+              0.526259648304816,
+              0.3136093369995299
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.6612237041358074,
+              0.3265772520713496
+            ],
+            "residual_tone_singular_values": [
+              3.9999999999999996,
+              3.6789117048297144
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.723038598508149,
+              4.522020694347056,
+              3.715795551318718,
+              2.888920242990503
+            ],
+            "condition_number": 1.9810303217592022,
+            "tone_principal_cosines": [
+              0.7501374164898728,
+              0.6682700750275385
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.8962022636725027,
+              0.6557946074840469
+            ],
+            "residual_tone_singular_values": [
+              3.87683763440616,
+              3.7592698037553594
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.787892840124371,
+              4.417691474979678,
+              3.6267328960488303,
+              3.03083251162508
+            ],
+            "condition_number": 1.9096709626560668,
+            "tone_principal_cosines": [
+              0.8394771423422694,
+              0.8223983993987948
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9533316159442378,
+              0.8098614296817287
+            ],
+            "residual_tone_singular_values": [
+              3.97344160213695,
+              3.710744600493853
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.827091918249082,
+              4.296774444471056,
+              3.61855541065507,
+              3.137455115107313
+            ],
+            "condition_number": 1.8572670219856748,
+            "tone_principal_cosines": [
+              0.8928379395157362,
+              0.8873671067410072
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9739635215571647,
+              0.8838630297444214
+            ],
+            "residual_tone_singular_values": [
+              4.000641106397174,
+              3.7274524071495705
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.887553990450214,
+              3.9454083549596524,
+              3.7197725749746806,
+              3.3598499404425755
+            ],
+            "condition_number": 1.7523264713645745,
+            "tone_principal_cosines": [
+              0.9814667257994926,
+              0.9712144239123274
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9959979299179096,
+              0.9800852746936422
+            ],
+            "residual_tone_singular_values": [
+              3.9338822486568725,
+              3.871473596712286
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.882226505738701,
+              3.950090179613595,
+              3.882324554008937,
+              3.174680090201535
+            ],
+            "condition_number": 1.852856457535312,
+            "tone_principal_cosines": [
+              1.0,
+              1.0
+            ],
+            "nuisance_residualized_principal_cosines": [
+              1.0000000000000004,
+              0.9999999999999999
+            ],
+            "residual_tone_singular_values": [
+              4.036998548711205,
+              3.7214868960132073
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.823321024093705,
+              4.213457441664059,
+              4.020322089458498,
+              2.7436394887673363
+            ],
+            "condition_number": 2.1224803943574995,
+            "tone_principal_cosines": [
+              0.9898860402495551,
+              0.9740169649601095
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9981314744999559,
+              0.9906242143504781
+            ],
+            "residual_tone_singular_values": [
+              4.138629901817401,
+              3.4306401957030315
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.743349743416585,
+              4.487710496066612,
+              4.095203672523073,
+              2.3363505341710025
+            ],
+            "condition_number": 2.4582568666026283,
+            "tone_principal_cosines": [
+              0.9672287545920863,
+              0.9094536731127705
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.9944928646140476,
+              0.9729349519643751
+            ],
+            "residual_tone_singular_values": [
+              4.157820923870304,
+              3.1115182349271757
+            ]
+          },
+          {
+            "design_rank": 4,
+            "design_singular_values": [
+              5.6568542494923815,
+              4.9458964453127345,
+              4.000000000000001,
+              1.700866562056023
+            ],
+            "condition_number": 3.3258659883667323,
+            "tone_principal_cosines": [
+              0.9004168474138147,
+              0.7481544070131616
+            ],
+            "nuisance_residualized_principal_cosines": [
+              0.986777202187889,
+              0.937649569239681
+            ],
+            "residual_tone_singular_values": [
+              3.9999999999999996,
+              2.4964609522515744
+            ]
+          }
+        ],
+        "selected_H_singular_values": [
+          0.8991372403522696,
+          0.8154412408265653
+        ],
+        "selected_H_rank": 2,
+        "mean_waveform_singular_values": [
+          3.698113727713232,
+          3.150343276317189
+        ],
+        "test_curve": [
+          1.5416189540544774,
+          1.3103260493451345,
+          1.1925521510635821,
+          1.1332426122790897,
+          1.0545363499116616,
+          1.040558500959556,
+          1.0517228114611437,
+          1.0693447082813508,
+          1.1024488417495366
+        ],
+        "same_input_test_nmse": 1.040558500959556,
+        "selected_output_test_nmse": 1.040558500959556,
+        "mean_waveform_test_nmse": 1.0436487189917965,
+        "same_minus_selected": {
+          "mean": 0.0,
+          "wins": 0,
+          "source_differences": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "percentile95": [
+            0.0,
+            0.0
+          ],
+          "primary_family2_percentile": [
+            0.0,
+            0.0
+          ]
+        },
+        "selected_minus_mean_waveform": {
+          "mean": -0.003090218032240347,
+          "wins": 4,
+          "source_differences": [
+            -0.00675017965833094,
+            -0.07905869839441326,
+            -0.019787070980259294,
+            -0.00397093021357392,
+            -0.008241987687863501,
+            0.0866012189849743,
+            -0.002687793321514753,
+            0.008746657086866616,
+            -0.008828054177561953,
+            0.08025248933991058,
+            -0.018915455102984348,
+            0.00824654166976857,
+            -0.04435687624200356,
+            -0.007855670515466429,
+            -0.013500538648682073,
+            -0.019337140654711593
+          ],
+          "percentile95": [
+            -0.021092758044713188,
+            0.01365765065268513
+          ],
+          "primary_family2_percentile": [
+            -0.023762227443585412,
+            0.015028489836914388
+          ]
+        },
+        "by_type": [
+          {
+            "background_type": 0,
+            "sources": 4,
+            "mean_same_minus_selected": 0.0
+          },
+          {
+            "background_type": 1,
+            "sources": 4,
+            "mean_same_minus_selected": 0.0
+          },
+          {
+            "background_type": 2,
+            "sources": 4,
+            "mean_same_minus_selected": 0.0
+          },
+          {
+            "background_type": 3,
+            "sources": 4,
+            "mean_same_minus_selected": 0.0
+          }
+        ]
+      }
+    ],
+    "interpretation": "OLD-selected longer-period output maps transfer modestly beyond same-frequencyH on19.2 inputs. Bolt plain selection24 shifts to22 with DC/trend; TimesFM plain22 gains weaken under matched nuisance. Old mean32x2 waveform improves more than either single-frequency map on19.2.24hcontrol selects24 and has zero shift gain. This supports conditional waveform distortion, not a uniquely identified output oscillator or patch mechanism.",
+    "identification": "Every selected toneH rank2; stable coefficient estimation does not imply identified frequency. OLD runner-up gaps are small; full curves and fixed-CV bootstrap selection counts retained.32samples,1to2cycles, nuisance sensitivity, mixture-type heterogeneity and reused TEST constrain interpretation.",
+    "next_decision": "Close output-frequency selection; no grid expansion. Separately authorized oblique-phase holdout is preparation-only and tests cardinal-phase aliasing with existing old same-frequency coefficients."
+  }
+}

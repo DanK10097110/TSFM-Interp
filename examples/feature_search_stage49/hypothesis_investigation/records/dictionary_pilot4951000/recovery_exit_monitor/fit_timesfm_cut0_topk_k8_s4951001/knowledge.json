@@ -1,0 +1,41 @@
+{
+  "question": "Does this bounded dictionary preserve and selectively expose spectral information?",
+  "exact_results": {
+    "results_file": "results.json",
+    "sha256": "894ab9f03116384090e5a624c6dd3e762fe3a34d54bf25cbaa33b71e742a93fd",
+    "budget": {
+      "steps": 500,
+      "batch": 64,
+      "sampled_tokens": 32000,
+      "equivalent_uniform_token_passes": 71.42857142857143,
+      "trainable_parameters": 3279360,
+      "reconstruction_terms": 1,
+      "forward_dense_matmul_flops_per_step": 419430400,
+      "flop_scope": "analytical dense forward matmuls only; backward/TopK/Adam excluded; nested 1.25x forward cost at even width",
+      "first_loss": 0.974308967590332,
+      "final_loss": 0.022387467324733734,
+      "aux_k": false,
+      "expected_sampled_tokens_per_source": 1000.0
+    },
+    "test": {
+      "nmse": 0.07628665031865689,
+      "mean_l0": 8.000000000000002,
+      "dead_fraction": 0.85078125
+    },
+    "native_forecast_preservation": "not_run"
+  },
+  "controls": [
+    "FIT-only scaling/selection; source weights; input/metadata controls; nuisance response; activity matched bases"
+  ],
+  "limitations": [
+    "spectral cache only; four independent TEST real sources/domain",
+    "residual coordinates are not post-activation FFN expansion neurons",
+    "random initialization can retain decodable tones (PM35); trained-vs-init causal control missing",
+    "Matryoshka-inspired global TopK two-prefix loss; no full paper reproduction",
+    "TSAE main controlled comparison PatchTST/ETT; univariate variable routing inapplicable; no TSAE implemented",
+    "BatchTopK deferred; if added, threshold must be FIT-frozen and batch-independent",
+    "all claims exploratory; no TEST-best selection or token-level confidence intervals"
+  ],
+  "next_step": "Finish three seeds; compare stability; request native patch slot.",
+  "status": "descriptive_complete_native_pending"
+}

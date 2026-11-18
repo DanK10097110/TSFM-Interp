@@ -1,0 +1,590 @@
+{
+  "question": "Are reproducible October2026 airport temperature observations accessible and chronologically after the exact cached weight revisions?",
+  "design": {
+    "question": "Are reproducible October2026 airport temperature observations accessible and chronologically after the exact cached weight revisions?",
+    "stage": "PREPARATION ONLY; native HOLD",
+    "created_utc": "2026-11-16T18:45:22.442815+00:00",
+    "airports": [
+      {
+        "icao": "KSEA",
+        "name": "Seattle Tacoma",
+        "station_id": "72793024233"
+      },
+      {
+        "icao": "KPHX",
+        "name": "Phoenix Sky Harbor",
+        "station_id": "72278023183"
+      },
+      {
+        "icao": "KDEN",
+        "name": "Denver International",
+        "station_id": "72565003017"
+      },
+      {
+        "icao": "KMSP",
+        "name": "Minneapolis Saint Paul",
+        "station_id": "72658014922"
+      },
+      {
+        "icao": "KDFW",
+        "name": "Dallas Fort Worth",
+        "station_id": "72259003927"
+      },
+      {
+        "icao": "KJFK",
+        "name": "New York JFK",
+        "station_id": "74486094789"
+      },
+      {
+        "icao": "KATL",
+        "name": "Atlanta Hartsfield Jackson",
+        "station_id": "72219013874"
+      },
+      {
+        "icao": "KMIA",
+        "name": "Miami International",
+        "station_id": "72202012839"
+      }
+    ],
+    "checkpoints": {
+      "bolt": {
+        "repo": "amazon/chronos-bolt-small",
+        "path": "/common/home/djk255/.cache/huggingface/hub/models--amazon--chronos-bolt-small/snapshots/772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "revision": "772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "weights": {
+          "model.safetensors": "06a6a19bbe74bc10a9cd193bd4bf2bf638ae07f7e0d51653ae7ab8ea968a21dd"
+        }
+      },
+      "timesfm": {
+        "repo": "google/timesfm-2.5-200m-pytorch",
+        "path": "/common/home/djk255/.cache/huggingface/hub/models--google--timesfm-2.5-200m-pytorch/snapshots/1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+        "revision": "1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+        "weights": {
+          "model.safetensors": "2f776efe6245e42b24bc4153ffdf61810140210e4bd3b01fb21f7aa779ab6ce8"
+        }
+      }
+    },
+    "max_download_bytes": 40000000,
+    "credentials": "none; public HTTPS GET only; no model weight downloads",
+    "month": "2026-10",
+    "origins_utc": [
+      "2026-10-08T00:00:00Z",
+      "2026-10-15T00:00:00Z",
+      "2026-10-22T00:00:00Z",
+      "2026-10-29T00:00:00Z"
+    ],
+    "context_hours": 128,
+    "horizon_hours": 32,
+    "cohort": "8 predetermined airports x4 predetermined origins; no replacements based on missingness or outcomes",
+    "sampling_unit": "station, n<=8; four origins remain dependent, not32 independent samples",
+    "chronology": "Exact HF revision commit timestamp before2026-10-01 AND model.safetensors LFS SHA256 at that revision equals cached bytes. No cached mtime inference.",
+    "scope": "Temporal observation holdout only; no new-location or unseen-temperature-distribution claim. Cached Monash pretraining overlap remains unknown.",
+    "access": "NOAA global-hourly month subset API with TMP attributes; if unavailable, same-station official2026 annual CSV within remaining budget. No alternative station/month substitution.",
+    "quality": "Verify official ISD TMP tenths-Celsius and quality definitions; accept codes0,1,4,5 only; reject+9999 and malformed values.",
+    "aggregation": "UTC left-closed hour bins[h,h+1); average distinct accepted temperatures at each exact timestamp, then average timestamps within hour; all history timestamps strictly before origin.",
+    "history_missing": "At most2 missing hourly bins total per128h history; forward-fill only from preceding observed bins within context. Leading missing or>2 missing makes history ineligible. No backward/interpolated/future fill.",
+    "future_missing": "No future imputation. Preserve every scheduled origin and missing mask; score only complete32h futures, report excluded origins/stations. Do not replace them. History eligibility is independent of future completeness.",
+    "methods": [
+      "native median",
+      "fixed depth1 selective tones + native residual median",
+      "seasonal24 repeat last24h"
+    ],
+    "hybrid": "Reuse frozen selective_tree.decompose(depth=1), stability>=.65,energy>=.15,prominence>=8,continuous frequencies2..48/128; continuation on horizon32; abstention exactly native; no veto/refit/new tuning or forecast selection.",
+    "metrics": "Future squared error in Celsius^2 and divided by history variance; station averages across complete fixed origins, then equally weight stations. Missingness counts and actual station n always reported.",
+    "caveats": [
+      "Archived quality control may be retrospective; this is not a real-time data-vintage test.",
+      "Post-checkpoint dates do not imply unfamiliar geography, climate, seasonality, or distribution."
+    ],
+    "next_decision": "First verify public accessibility, station IDs, exact checkpoint chronology and eligible-window counts; then wait for native slot grant."
+  },
+  "exact_findings": {
+    "status": "Checkpoint chronology/weight hashes and8 official station IDs verified; observation availability pending",
+    "metadata": {
+      "models": {
+        "bolt": {
+          "revision": "772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+          "commit_utc": "2025-11-21T12:54:10.000Z",
+          "weight_sha256": "06a6a19bbe74bc10a9cd193bd4bf2bf638ae07f7e0d51653ae7ab8ea968a21dd",
+          "weights_match": true,
+          "predates_observations": true,
+          "commit_url": "https://huggingface.co/amazon/chronos-bolt-small/commit/772f3d25d38aec6d914c8949dab4462e2d46f5d8"
+        },
+        "timesfm": {
+          "revision": "1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+          "commit_utc": "2025-10-02T17:21:38.000Z",
+          "weight_sha256": "2f776efe6245e42b24bc4153ffdf61810140210e4bd3b01fb21f7aa779ab6ce8",
+          "weights_match": true,
+          "predates_observations": true,
+          "commit_url": "https://huggingface.co/google/timesfm-2.5-200m-pytorch/commit/1d952420fba87f3c6dee4f240de0f1a0fbc790e3"
+        }
+      },
+      "stations": [
+        {
+          "icao": "KSEA",
+          "name": "Seattle Tacoma",
+          "station_id": "72793024233",
+          "official_record": {
+            "USAF": "727930",
+            "WBAN": "24233",
+            "STATION NAME": "SEATTLE-TACOMA INTERNATIONAL AIRPORT",
+            "CTRY": "US",
+            "STATE": "WA",
+            "ICAO": "KSEA",
+            "LAT": "+47.445",
+            "LON": "-122.314",
+            "ELEV(M)": "+0112.5",
+            "BEGIN": "19480101",
+            "END": "20250827"
+          }
+        },
+        {
+          "icao": "KPHX",
+          "name": "Phoenix Sky Harbor",
+          "station_id": "72278023183",
+          "official_record": {
+            "USAF": "722780",
+            "WBAN": "23183",
+            "STATION NAME": "PHOENIX SKY HARBOR INTL AIRPORT",
+            "CTRY": "US",
+            "STATE": "AZ",
+            "ICAO": "KPHX",
+            "LAT": "+33.428",
+            "LON": "-112.004",
+            "ELEV(M)": "+0339.2",
+            "BEGIN": "19730101",
+            "END": "20250826"
+          }
+        },
+        {
+          "icao": "KDEN",
+          "name": "Denver International",
+          "station_id": "72565003017",
+          "official_record": {
+            "USAF": "725650",
+            "WBAN": "03017",
+            "STATION NAME": "DENVER INTERNATIONAL AIRPORT",
+            "CTRY": "US",
+            "STATE": "CO",
+            "ICAO": "KDEN",
+            "LAT": "+39.847",
+            "LON": "-104.656",
+            "ELEV(M)": "+1647.2",
+            "BEGIN": "19940718",
+            "END": "20250827"
+          }
+        },
+        {
+          "icao": "KMSP",
+          "name": "Minneapolis Saint Paul",
+          "station_id": "72658014922",
+          "official_record": {
+            "USAF": "726580",
+            "WBAN": "14922",
+            "STATION NAME": "MINNEAPOLIS-ST PAUL INTERNATIONAL AP",
+            "CTRY": "US",
+            "STATE": "MN",
+            "ICAO": "KMSP",
+            "LAT": "+44.885",
+            "LON": "-093.231",
+            "ELEV(M)": "+0254.5",
+            "BEGIN": "19450101",
+            "END": "20250825"
+          }
+        },
+        {
+          "icao": "KDFW",
+          "name": "Dallas Fort Worth",
+          "station_id": "72259003927",
+          "official_record": {
+            "USAF": "722590",
+            "WBAN": "03927",
+            "STATION NAME": "DALLAS/FT WORTH INTERNATIONAL AP",
+            "CTRY": "US",
+            "STATE": "TX",
+            "ICAO": "KDFW",
+            "LAT": "+32.897",
+            "LON": "-097.022",
+            "ELEV(M)": "+0165.7",
+            "BEGIN": "19730101",
+            "END": "20250827"
+          }
+        },
+        {
+          "icao": "KJFK",
+          "name": "New York JFK",
+          "station_id": "74486094789",
+          "official_record": {
+            "USAF": "744860",
+            "WBAN": "94789",
+            "STATION NAME": "JOHN F KENNEDY INTERNATIONAL AIRPORT",
+            "CTRY": "US",
+            "STATE": "NY",
+            "ICAO": "KJFK",
+            "LAT": "+40.639",
+            "LON": "-073.764",
+            "ELEV(M)": "+0002.7",
+            "BEGIN": "19730101",
+            "END": "20250827"
+          }
+        },
+        {
+          "icao": "KATL",
+          "name": "Atlanta Hartsfield Jackson",
+          "station_id": "72219013874",
+          "official_record": {
+            "USAF": "722190",
+            "WBAN": "13874",
+            "STATION NAME": "HARTSFIELD-JACKSON ATLANTA INTL AP",
+            "CTRY": "US",
+            "STATE": "GA",
+            "ICAO": "KATL",
+            "LAT": "+33.630",
+            "LON": "-084.442",
+            "ELEV(M)": "+0308.3",
+            "BEGIN": "19730101",
+            "END": "20250827"
+          }
+        },
+        {
+          "icao": "KMIA",
+          "name": "Miami International",
+          "station_id": "72202012839",
+          "official_record": {
+            "USAF": "722020",
+            "WBAN": "12839",
+            "STATION NAME": "MIAMI INTERNATIONAL AIRPORT",
+            "CTRY": "US",
+            "STATE": "FL",
+            "ICAO": "KMIA",
+            "LAT": "+25.788",
+            "LON": "-080.317",
+            "ELEV(M)": "+0001.4",
+            "BEGIN": "19730101",
+            "END": "20250827"
+          }
+        }
+      ],
+      "verified": true,
+      "verified_utc": "2026-11-16T18:45:52.361333+00:00"
+    },
+    "native_launched": false,
+    "legacy_availability": {
+      "status": "UNAVAILABLE: legacy ISD retired before requested observation month",
+      "october_rows_by_station": {
+        "KSEA": 0,
+        "KPHX": 0,
+        "KDEN": 0,
+        "KMSP": 0,
+        "KDFW": 0,
+        "KJFK": 0,
+        "KATL": 0,
+        "KMIA": 0
+      },
+      "archive_statuses": {
+        "KSEA": 404,
+        "KPHX": 404,
+        "KDEN": 404,
+        "KMSP": 404,
+        "KDFW": 404,
+        "KJFK": 404,
+        "KATL": 404,
+        "KMIA": 404
+      },
+      "prefix2026_xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ListBucketResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Name>noaa-global-hourly-pds</Name><Prefix>2026/</Prefix><KeyCount>0</KeyCount><MaxKeys>2</MaxKeys><IsTruncated>false</IsTruncated></ListBucketResult>",
+      "positive_control_rows": 37,
+      "official_retirement_url": "https://www.nesdis.noaa.gov/news/service-location-change-integrated-surface-data-global-hourly",
+      "claim": "NOAA notice says no updates beyond2025-08-24; October2026 must use successor GHCNh, not ISD"
+    }
+  },
+  "controls": "Fixed cohort and recipes; public download cap; no credentials",
+  "limitations": [
+    "Archived quality control may be retrospective; this is not a real-time data-vintage test.",
+    "Post-checkpoint dates do not imply unfamiliar geography, climate, seasonality, or distribution."
+  ],
+  "evidence_class": "prospective feasibility/provenance investigation",
+  "next_decision": "Prepare authorized outcome-blind GHCNh successor amendment for same airports/October2026; native HOLD",
+  "metadata_retrievals": [
+    {
+      "url": "https://huggingface.co/api/models/amazon/chronos-bolt-small/revision/772f3d25d38aec6d914c8949dab4462e2d46f5d8?blobs=true",
+      "name": "bolt_revision.json",
+      "started_utc": "2026-11-16T18:45:33.517640+00:00",
+      "bytes_received": 2336,
+      "limit_bytes": 1000000,
+      "status": 200,
+      "final_url": "https://huggingface.co/api/models/amazon/chronos-bolt-small/revision/772f3d25d38aec6d914c8949dab4462e2d46f5d8?blobs=true",
+      "headers": {
+        "Content-Type": "application/json; charset=utf-8",
+        "Content-Length": "2336",
+        "ETag": "W/\"920-02x8lVXwFe+DWd9gTwEWDHcM/4I\"",
+        "Last-Modified": null,
+        "Date": "Mon, 16 Nov 2026 18:45:33 GMT"
+      },
+      "valid": true,
+      "sha256": "f1c3435d751ca1272c5bd03f5dcba93d0e13aac4842ba998ffcd5262976e5d97",
+      "finished_utc": "2026-11-16T18:45:33.568578+00:00"
+    },
+    {
+      "url": "https://huggingface.co/api/models/amazon/chronos-bolt-small/commits/772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+      "name": "bolt_commits.json",
+      "started_utc": "2026-11-16T18:45:33.569914+00:00",
+      "bytes_received": 1912,
+      "limit_bytes": 1000000,
+      "status": 200,
+      "final_url": "https://huggingface.co/api/models/amazon/chronos-bolt-small/commits/772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+      "headers": {
+        "Content-Type": "application/json; charset=utf-8",
+        "Content-Length": "1912",
+        "ETag": "W/\"778-YtBlZ8A7Fcg9vycFWLVyEL4YgLs\"",
+        "Last-Modified": null,
+        "Date": "Mon, 16 Nov 2026 18:45:33 GMT"
+      },
+      "valid": true,
+      "sha256": "348df01860e3fba14a4ba25973cbff37da7cc8159501f091c9174faf75793287",
+      "finished_utc": "2026-11-16T18:45:33.644455+00:00"
+    },
+    {
+      "url": "https://huggingface.co/api/models/google/timesfm-2.5-200m-pytorch/revision/1d952420fba87f3c6dee4f240de0f1a0fbc790e3?blobs=true",
+      "name": "timesfm_revision.json",
+      "started_utc": "2026-11-16T18:45:33.645795+00:00",
+      "bytes_received": 2753,
+      "limit_bytes": 1000000,
+      "status": 200,
+      "final_url": "https://huggingface.co/api/models/google/timesfm-2.5-200m-pytorch/revision/1d952420fba87f3c6dee4f240de0f1a0fbc790e3?blobs=true",
+      "headers": {
+        "Content-Type": "application/json; charset=utf-8",
+        "Content-Length": "2753",
+        "ETag": "W/\"ac1-hK074Ydhzwtm5N913m4If47xjDY\"",
+        "Last-Modified": null,
+        "Date": "Mon, 16 Nov 2026 18:45:33 GMT"
+      },
+      "valid": true,
+      "sha256": "4e5df8620bec18a3e6c4d10e81864ff303e9fcd7deb92633af01e333a696deda",
+      "finished_utc": "2026-11-16T18:45:33.691351+00:00"
+    },
+    {
+      "url": "https://huggingface.co/api/models/google/timesfm-2.5-200m-pytorch/commits/1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+      "name": "timesfm_commits.json",
+      "started_utc": "2026-11-16T18:45:33.692668+00:00",
+      "bytes_received": 4730,
+      "limit_bytes": 1000000,
+      "status": 200,
+      "final_url": "https://huggingface.co/api/models/google/timesfm-2.5-200m-pytorch/commits/1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+      "headers": {
+        "Content-Type": "application/json; charset=utf-8",
+        "Content-Length": "4730",
+        "ETag": "W/\"127a-sFdqa3BQJ/3Ur+/Vhq6ohnWMjQQ\"",
+        "Last-Modified": null,
+        "Date": "Mon, 16 Nov 2026 18:45:33 GMT"
+      },
+      "valid": true,
+      "sha256": "637f45d5a906198ed3b2e67e7e3a5e71271072146f2bf90aa5e9b6e10346e898",
+      "finished_utc": "2026-11-16T18:45:33.778953+00:00"
+    },
+    {
+      "url": "https://www.ncei.noaa.gov/pub/data/noaa/isd-history.csv",
+      "name": "isd-history.csv",
+      "started_utc": "2026-11-16T18:45:33.780403+00:00",
+      "bytes_received": 2914601,
+      "limit_bytes": 4000000,
+      "status": 200,
+      "final_url": "https://www.ncei.noaa.gov/pub/data/noaa/isd-history.csv",
+      "headers": {
+        "Content-Type": "text/csv",
+        "Content-Length": "2914601",
+        "ETag": "\"2c7929-63d89d9229022\"",
+        "Last-Modified": "Sat, 30 Aug 2025 00:02:02 GMT",
+        "Date": "Mon, 16 Nov 2026 18:45:33 GMT"
+      },
+      "valid": true,
+      "sha256": "1994747ab4af1b97e63adb434b4d0d022f2daee76f0c144ea9ab46be2d906604",
+      "finished_utc": "2026-11-16T18:45:34.215506+00:00"
+    },
+    {
+      "url": "https://www.ncei.noaa.gov/data/global-hourly/doc/isd-format-document.pdf",
+      "name": "isd-format-document.pdf",
+      "started_utc": "2026-11-16T18:45:34.217003+00:00",
+      "bytes_received": 36822,
+      "limit_bytes": 2000000,
+      "status": 200,
+      "final_url": "https://noaa-global-hourly-pds.s3.amazonaws.com/index.html",
+      "headers": {
+        "Content-Type": "text/html",
+        "Content-Length": "36822",
+        "ETag": "\"0d6853386d167e668f7e862944150ab0\"",
+        "Last-Modified": "Mon, 24 Nov 2025 20:33:43 GMT",
+        "Date": "Mon, 16 Nov 2026 18:45:34 GMT"
+      },
+      "valid": true,
+      "sha256": "48661c476a2bde160781f149d112592fa9ef719376f181049b351a585491d9a2",
+      "finished_utc": "2026-11-16T18:45:34.449331+00:00"
+    },
+    {
+      "url": "https://www.ncei.noaa.gov/data/global-hourly/access/2026/",
+      "name": "noaa_2026_index.html",
+      "started_utc": "2026-11-16T18:45:34.451014+00:00",
+      "bytes_received": 36822,
+      "limit_bytes": 1000000,
+      "status": 200,
+      "final_url": "https://noaa-global-hourly-pds.s3.amazonaws.com/index.html",
+      "headers": {
+        "Content-Type": "text/html",
+        "Content-Length": "36822",
+        "ETag": "\"0d6853386d167e668f7e862944150ab0\"",
+        "Last-Modified": "Mon, 24 Nov 2025 20:33:43 GMT",
+        "Date": "Mon, 16 Nov 2026 18:45:34 GMT"
+      },
+      "valid": true,
+      "sha256": "48661c476a2bde160781f149d112592fa9ef719376f181049b351a585491d9a2",
+      "finished_utc": "2026-11-16T18:45:34.654030+00:00"
+    }
+  ],
+  "access_amendment": {
+    "recorded_utc": "2026-11-16T18:46:48.034141+00:00",
+    "before_observation_download": true,
+    "reason": "NOAA legacy /data/global-hourly/access and /doc routes redirect to generic S3 browser HTML",
+    "change": "Use NOAA documented month-subset API first; fallback to same-station/year CSV object on official NOAA-linked noaa-global-hourly-pds.s3.amazonaws.com bucket. Obtain format PDF at official /pub/data/noaa/isd-format-document.pdf.",
+    "cohort_changed": false,
+    "forecast_or_quality_rules_changed": false,
+    "download_cap_changed": false,
+    "official_bucket_link": "https://www.ncei.noaa.gov/products/land-based-station/integrated-surface-database",
+    "rejected_metadata_downloads": [
+      "raw/isd-format-document.pdf",
+      "raw/noaa_2026_index.html"
+    ],
+    "original_protocol_sha256": "77982e37e3c5e4bf1410a5fc59b6e153c525a63bd66e2fc7045c4db66d5c6840"
+  },
+  "weather_retrievals": [
+    {
+      "icao": "KSEA",
+      "station_id": "72793024233",
+      "retrieval": {
+        "url": "https://noaa-global-hourly-pds.s3.amazonaws.com/2026/72793024233.csv",
+        "name": "72793024233_2026_archive.csv",
+        "started_utc": "2026-11-16T18:47:03.026981+00:00",
+        "bytes_received": 0,
+        "limit_bytes": 5000000,
+        "valid": false,
+        "error_type": "HTTPError",
+        "error": "HTTP Error 404: Not Found",
+        "status": 404,
+        "finished_utc": "2026-11-16T18:47:03.129184+00:00"
+      }
+    },
+    {
+      "icao": "KPHX",
+      "station_id": "72278023183",
+      "retrieval": {
+        "url": "https://noaa-global-hourly-pds.s3.amazonaws.com/2026/72278023183.csv",
+        "name": "72278023183_2026_archive.csv",
+        "started_utc": "2026-11-16T18:47:03.212786+00:00",
+        "bytes_received": 0,
+        "limit_bytes": 5000000,
+        "valid": false,
+        "error_type": "HTTPError",
+        "error": "HTTP Error 404: Not Found",
+        "status": 404,
+        "finished_utc": "2026-11-16T18:47:03.311317+00:00"
+      }
+    },
+    {
+      "icao": "KDEN",
+      "station_id": "72565003017",
+      "retrieval": {
+        "url": "https://noaa-global-hourly-pds.s3.amazonaws.com/2026/72565003017.csv",
+        "name": "72565003017_2026_archive.csv",
+        "started_utc": "2026-11-16T18:47:03.396524+00:00",
+        "bytes_received": 0,
+        "limit_bytes": 5000000,
+        "valid": false,
+        "error_type": "HTTPError",
+        "error": "HTTP Error 404: Not Found",
+        "status": 404,
+        "finished_utc": "2026-11-16T18:47:03.486551+00:00"
+      }
+    },
+    {
+      "icao": "KMSP",
+      "station_id": "72658014922",
+      "retrieval": {
+        "url": "https://noaa-global-hourly-pds.s3.amazonaws.com/2026/72658014922.csv",
+        "name": "72658014922_2026_archive.csv",
+        "started_utc": "2026-11-16T18:47:03.573668+00:00",
+        "bytes_received": 0,
+        "limit_bytes": 5000000,
+        "valid": false,
+        "error_type": "HTTPError",
+        "error": "HTTP Error 404: Not Found",
+        "status": 404,
+        "finished_utc": "2026-11-16T18:47:03.668398+00:00"
+      }
+    },
+    {
+      "icao": "KDFW",
+      "station_id": "72259003927",
+      "retrieval": {
+        "url": "https://noaa-global-hourly-pds.s3.amazonaws.com/2026/72259003927.csv",
+        "name": "72259003927_2026_archive.csv",
+        "started_utc": "2026-11-16T18:47:03.758769+00:00",
+        "bytes_received": 0,
+        "limit_bytes": 5000000,
+        "valid": false,
+        "error_type": "HTTPError",
+        "error": "HTTP Error 404: Not Found",
+        "status": 404,
+        "finished_utc": "2026-11-16T18:47:03.853817+00:00"
+      }
+    },
+    {
+      "icao": "KJFK",
+      "station_id": "74486094789",
+      "retrieval": {
+        "url": "https://noaa-global-hourly-pds.s3.amazonaws.com/2026/74486094789.csv",
+        "name": "74486094789_2026_archive.csv",
+        "started_utc": "2026-11-16T18:47:03.942481+00:00",
+        "bytes_received": 0,
+        "limit_bytes": 5000000,
+        "valid": false,
+        "error_type": "HTTPError",
+        "error": "HTTP Error 404: Not Found",
+        "status": 404,
+        "finished_utc": "2026-11-16T18:47:04.043569+00:00"
+      }
+    },
+    {
+      "icao": "KATL",
+      "station_id": "72219013874",
+      "retrieval": {
+        "url": "https://noaa-global-hourly-pds.s3.amazonaws.com/2026/72219013874.csv",
+        "name": "72219013874_2026_archive.csv",
+        "started_utc": "2026-11-16T18:47:04.128321+00:00",
+        "bytes_received": 0,
+        "limit_bytes": 5000000,
+        "valid": false,
+        "error_type": "HTTPError",
+        "error": "HTTP Error 404: Not Found",
+        "status": 404,
+        "finished_utc": "2026-11-16T18:47:04.232413+00:00"
+      }
+    },
+    {
+      "icao": "KMIA",
+      "station_id": "72202012839",
+      "retrieval": {
+        "url": "https://noaa-global-hourly-pds.s3.amazonaws.com/2026/72202012839.csv",
+        "name": "72202012839_2026_archive.csv",
+        "started_utc": "2026-11-16T18:47:04.329493+00:00",
+        "bytes_received": 0,
+        "limit_bytes": 5000000,
+        "valid": false,
+        "error_type": "HTTPError",
+        "error": "HTTP Error 404: Not Found",
+        "status": 404,
+        "finished_utc": "2026-11-16T18:47:04.442468+00:00"
+      }
+    }
+  ],
+  "successor_stage": {
+    "path": "ghcnh_oct2026/knowledge.json",
+    "status": "October2026 retrieved;32 histories,30 scoreable futures,8 stations;native HOLD"
+  }
+}

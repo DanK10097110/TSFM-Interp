@@ -1,0 +1,138 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<title>Controlled feature comparison in time-series models</title><style>
+body{font:17px/1.55 system-ui,sans-serif;max-width:1120px;margin:40px auto;padding:0 24px;color:#182332;background:#fafbfd}
+h1{font-size:2.25rem;line-height:1.15}h2{margin-top:2rem}a{color:#0755a2}figure{margin:24px 0}img{max-width:100%;height:auto;background:white}figcaption{font-size:.9rem;color:#475569}table{border-collapse:collapse;width:100%;font-size:.9rem}td,th{text-align:left;vertical-align:top;border:1px solid #cbd5e1;padding:10px}th{background:#e7eef6}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.75rem}.scope{padding:16px;background:#e7eef6;border-left:4px solid #365d83}</style>
+<h1>Compare what models retain, use and mix</h1>
+<p>A controlled feature-comparison workflow links known input composition, actual forecast-head recoverability and native use, context/patch boundaries, and robustness to representation choices. These are complementary measurements: accurate decoding alone does not establish effective native use.</p>
+<p><a href="../feature_interference/report.html">Reproduce the feature-interference audit</a> · <a href="../window_robustness/report.html">Inspect window robustness</a> · <a href="study_summary.json">Portable source summary</a> · <a href="../../tsfm_lens/docs/feature_search_plan.md">Replication planner usage</a></p>
+<p class="scope">No reliable model-exclusive causal feature has been established. Behavioral input interventions are not isolated hidden-feature interventions. This comparison does not establish a universal winning model or pooling method.</p>
+<figure><img src="spectral_composition_summary.png" alt="Four panels comparing composition behavior, head information, context boundaries and native branch attribution"><figcaption>Existing four-panel synthesis. Each panel retains its own seed cohort, units and gate; panels are not a pooled statistical test. Native component sums are diagnostics, not a deployment improvement guarantee.</figcaption></figure>
+<h2>Evidence and decisions</h2><table><thead><tr><th>Branch</th><th>Scope</th><th>Reported evidence</th><th>Decision and limit</th></tr></thead><tbody><tr><td>Controlled composition</td><td>Fresh two-frequency replication</td><td>Mixed-minus-pure model-gap interaction: 0.25178730121876025</td><td>Promoted behavioral input-intervention diagnostic; not a hidden-feature cause.</td></tr><tr><td>Actual native head</td><td>Fresh 128-seed, three-model replication</td><td>bolt: 0.0679202943; timesfm: 0.52614528; chronos2: 0.00104934692</td><td>Absolute off-frequency energy ratios at delta 0.01; recoverability and native use differ.</td></tr><tr><td>Window sensitivity</td><td>Matched physical extent, whole-series grouped comparisons</td><td>Mean, native concatenation and common-grid concatenation; fixed PCA ranks</td><td>Choice, rank and data dependence; no universal best representation.</td></tr><tr><td>Frozen SAE hierarchy</td><td>ROADMAP §48.2</td><td>All three promotion conditions fail; uncompressed codes score 1.0 on both tasks</td><td>Closed limited frozen-dictionary ablation; not a full SAE++ rejection.</td></tr><tr><td>Specialized phase subspaces</td><td>ROADMAP §48.6</td><td>All four specialization gates fail</td><td>Accurate phase decoding does not establish a privileged causal direction.</td></tr><tr><td>Frozen TimesFM probe</td><td>ROADMAP §48.13</td><td>Off-target relative RMS 0.113262 exceeds frozen threshold 0.1</td><td>Retention comparison fails; significant energy contrasts do not rescue the gate.</td></tr><tr><td>Trend–seasonality</td><td>ROADMAP §48.16</td><td>0/12 pass the absolute practical threshold 0.05</td><td>Closed without promotion; two-frequency behavior is not universal composition failure.</td></tr></tbody></table>
+<figure><img src="native_head_replication.png" alt="Fresh native-head energy ratios and exact conditional sign probabilities"><figcaption>Fresh native-head replication: 128 matched seeds, three cached models, no fitted probes. Energy intervals are pointwise seed-bootstrap intervals. Exact conditional majority probabilities answer a different question from mean energy superiority; branch attribution does not isolate a unique feature.</figcaption></figure>
+<h2>Statistical and literature boundaries</h2>
+<p>The historical native interference example retains its registered mean contrasts. Its sign-flip inference requires symmetry/exchangeability and is not calibrated for arbitrary skew. New prospective studies can predeclare exact two-sided q = P(D &gt; 0 | D ≠ 0, jointly identifiable). Exact q evidence does not establish mean-MSE superiority or practical relevance. Endpoint families receive separate Holm correction; secondary evidence cannot rescue the selected primary family. Confidence intervals are pointwise. Undefined phase excludes the matched bundle and changes the conditional estimand.</p>
+<p>Whole-series window permutations preserve dependent windows and assess identity alignment, not learned features conditional on inputs. Raw CKA depends on dimensionality and covariance spectrum; matched PCA rank does not match the full spectrum. Sequence-level concatenation supplies a window-partition invariance control.</p>
+<p>Prior work already studies TSFM concepts, composition and component attribution. No novelty or universal monosemanticity claim is made. <a href="https://arxiv.org/abs/2511.15324">Pandey et al.: Internal Semantics</a> · <a href="https://proceedings.mlr.press/v306/bao26c.html">Bao et al.: Universal Redundancies</a> · <a href="https://arxiv.org/abs/2605.05151">Yildirim: PatchTST superposition study</a> · <a href="https://arxiv.org/abs/2606.16193">SAE++: Cascaded Sparse Autoencoders</a>.</p>
+<p>Rebuild this page without model caches or run stores, from the repository root:</p><pre>python tsfm_lens/experiments/feature_search/research_overview.py --summary examples/feature_search_20261111/study_summary.json --out examples/feature_search_20261111_rebuild</pre>
+<details><summary>Source hashes and selected replication comparisons</summary><pre>{
+  &quot;rows&quot;: [
+    [
+      &quot;Controlled composition&quot;,
+      &quot;Fresh two-frequency replication&quot;,
+      &quot;Mixed-minus-pure model-gap interaction: 0.25178730121876025&quot;,
+      &quot;Promoted behavioral input-intervention diagnostic; not a hidden-feature cause.&quot;
+    ],
+    [
+      &quot;Actual native head&quot;,
+      &quot;Fresh 128-seed, three-model replication&quot;,
+      &quot;bolt: 0.0679202943; timesfm: 0.52614528; chronos2: 0.00104934692&quot;,
+      &quot;Absolute off-frequency energy ratios at delta 0.01; recoverability and native use differ.&quot;
+    ],
+    [
+      &quot;Window sensitivity&quot;,
+      &quot;Matched physical extent, whole-series grouped comparisons&quot;,
+      &quot;Mean, native concatenation and common-grid concatenation; fixed PCA ranks&quot;,
+      &quot;Choice, rank and data dependence; no universal best representation.&quot;
+    ],
+    [
+      &quot;Frozen SAE hierarchy&quot;,
+      &quot;ROADMAP \u00a748.2&quot;,
+      &quot;All three promotion conditions fail; uncompressed codes score 1.0 on both tasks&quot;,
+      &quot;Closed limited frozen-dictionary ablation; not a full SAE++ rejection.&quot;
+    ],
+    [
+      &quot;Specialized phase subspaces&quot;,
+      &quot;ROADMAP \u00a748.6&quot;,
+      &quot;All four specialization gates fail&quot;,
+      &quot;Accurate phase decoding does not establish a privileged causal direction.&quot;
+    ],
+    [
+      &quot;Frozen TimesFM probe&quot;,
+      &quot;ROADMAP \u00a748.13&quot;,
+      &quot;Off-target relative RMS 0.113262 exceeds frozen threshold 0.1&quot;,
+      &quot;Retention comparison fails; significant energy contrasts do not rescue the gate.&quot;
+    ],
+    [
+      &quot;Trend\u2013seasonality&quot;,
+      &quot;ROADMAP \u00a748.16&quot;,
+      &quot;0/12 pass the absolute practical threshold 0.05&quot;,
+      &quot;Closed without promotion; two-frequency behavior is not universal composition failure.&quot;
+    ]
+  ],
+  &quot;sources&quot;: {
+    &quot;FINDINGS.md&quot;: &quot;8895b81d9658f094dc5d4cda15d0ce3c5a1188cd4fae01023f19f374f00c0ec0&quot;,
+    &quot;ROADMAP.md&quot;: &quot;6abbaac58b06ed97dfa7299c6e41accd03047212ab157a9962bc36bff9dc1ac9&quot;,
+    &quot;examples/feature_search_20261111/source_data.json&quot;: &quot;dcb2aca8d9687f66a9c896d1412a49d2805b73d263a52d86d5a5dfdaa99e6cd3&quot;,
+    &quot;examples/feature_search_20261111/native_head_replication_source_data.json&quot;: &quot;89701b348204526cd3885dc8d0f292c34ba69e12dbb2a72619b0bcfc28a965cb&quot;,
+    &quot;examples/feature_interference/results.json&quot;: &quot;7b7b5486abda18ba0fa2ce7ce066bbf7a8edb1c411dae8dc030816f89129a386&quot;,
+    &quot;examples/window_robustness/results.json&quot;: &quot;9f1fa7c6810daf02fc00c49243579b846588dd83bb471e713d6a26d49a7635ab&quot;
+  },
+  &quot;native_comparisons&quot;: {
+    &quot;timesfm_minus_chronos2&quot;: {
+      &quot;value&quot;: 0.5250959333814048,
+      &quot;lo&quot;: 0.3280945788163841,
+      &quot;hi&quot;: 0.7723828712240296,
+      &quot;n_seeds&quot;: 128,
+      &quot;sign_test&quot;: {
+        &quot;positive&quot;: 126,
+        &quot;negative&quot;: 2,
+        &quot;ties&quot;: 0,
+        &quot;n_non_ties&quot;: 128,
+        &quot;q&quot;: 0.984375,
+        &quot;q_cp95&quot;: [
+          0.944697409977551,
+          0.9981021068782607
+        ],
+        &quot;p&quot;: 4.853028427369814e-35,
+        &quot;majority_positive&quot;: true
+      },
+      &quot;scope&quot;: &quot;ratio interval approximate;exact sign test establishes conditional majority,not assumption-free mean superiority&quot;,
+      &quot;minimum_point_effect&quot;: 0.1,
+      &quot;p_holm&quot;: 9.706056854739628e-35,
+      &quot;passed&quot;: true
+    },
+    &quot;bolt_minus_chronos2&quot;: {
+      &quot;value&quot;: 0.06687094742955753,
+      &quot;lo&quot;: 0.052205034722263094,
+      &quot;hi&quot;: 0.08340006809074582,
+      &quot;n_seeds&quot;: 128,
+      &quot;sign_test&quot;: {
+        &quot;positive&quot;: 126,
+        &quot;negative&quot;: 2,
+        &quot;ties&quot;: 0,
+        &quot;n_non_ties&quot;: 128,
+        &quot;q&quot;: 0.984375,
+        &quot;q_cp95&quot;: [
+          0.944697409977551,
+          0.9981021068782607
+        ],
+        &quot;p&quot;: 4.853028427369814e-35,
+        &quot;majority_positive&quot;: true
+      },
+      &quot;scope&quot;: &quot;ratio interval approximate;exact sign test establishes conditional majority,not assumption-free mean superiority&quot;,
+      &quot;minimum_point_effect&quot;: 0.02,
+      &quot;p_holm&quot;: 9.706056854739628e-35,
+      &quot;passed&quot;: true
+    }
+  },
+  &quot;interference_primary_estimand&quot;: &quot;mean&quot;,
+  &quot;literature&quot;: [
+    [
+      &quot;Pandey et al.: Internal Semantics&quot;,
+      &quot;https://arxiv.org/abs/2511.15324&quot;
+    ],
+    [
+      &quot;Bao et al.: Universal Redundancies&quot;,
+      &quot;https://proceedings.mlr.press/v306/bao26c.html&quot;
+    ],
+    [
+      &quot;Yildirim: PatchTST superposition study&quot;,
+      &quot;https://arxiv.org/abs/2605.05151&quot;
+    ],
+    [
+      &quot;SAE++: Cascaded Sparse Autoencoders&quot;,
+      &quot;https://arxiv.org/abs/2606.16193&quot;
+    ]
+  ],
+  &quot;scope&quot;: &quot;Selected reported results only; this manifest is not a new scientific analysis.&quot;
+}</pre></details></html>

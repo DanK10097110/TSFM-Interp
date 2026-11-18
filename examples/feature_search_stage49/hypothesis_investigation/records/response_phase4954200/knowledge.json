@@ -1,0 +1,1817 @@
+{
+  "status": "complete_audited",
+  "question": "Can conditional phase-response matrices explain smooth but phase-sensitive known-tone responses, and does a source-global mean predict held-out sources better than identity?",
+  "design": {
+    "question": "Can conditional phase-response matrices explain smooth but phase-sensitive known-tone responses, and does a source-global mean predict held-out sources better than identity?",
+    "prior": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_surface_focused4954100",
+    "source_count": 16,
+    "groups": 32,
+    "amplitude_peak_background_sd": 0.1,
+    "centers": [
+      5.333333333333333,
+      6.666666666666667
+    ],
+    "horizon": 32,
+    "scope": "REUSE ONLY: center signal rows and base forecasts. No hidden states, no extra frequencies/amplitudes, no native inference.",
+    "coordinate_convention": "Input/output coordinates [sin(omega*t),cos(omega*t)], phase at forecast origin. Input coefficients A[cos(phi),sin(phi)]. H columns are opposite-phase central differences projected onto forecast basis and divided by A.",
+    "primary_projection": "Uncentered orthogonal least-squares projection onto exact continuous sine/cosine basis,32 future steps. Also fit a DC nuisance jointly and report H_dc_adjusted, DC coefficients and matrix shift; finite-window leakage is not ignored.",
+    "decomposition": "J=[[0,-1],[1,0]],q=trace(H)/2,r=(H21-H12)/2; H=(qI+rJ)+S, S symmetric traceless. Frobenius energy split only, not a physical waveform-energy attribution. S includes phase conjugation; nonzero S need not imply an eccentric ellipse.",
+    "rank": "Both singular values, axis ratio, participation rank, numerical rank at1e-10*max(1,smax), relative rank at10% of smax with absolute dead floor1e-8. Threshold flags do not prove absent information.",
+    "residuals": "Odd waveform M=[(f0-fpi)/2,(fpi2-f3pi2)/2]/A. Off-frequency residual R=M-BH is orthogonal to B. E=[f0+fpi-2fbase,fpi2+f3pi2-2fbase]. Save raw E, odd M, projection and residual.",
+    "input_gate": "Verify actual FP32 center-minus-background histories against nominal four-phase waveforms; RMS error/peak A must be<=1e-5. Record antipodal input closure; no phase or source is replaced.",
+    "energy_closure": "For every matrix predictor K, phase-energy-pooled NMSE = ||B(H-K)||F^2/||B||F^2 + ||R||F^2/||B||F^2 + ||E||F^2/(4*A^2*||B||F^2). Exact finite-horizon algebra, no stationarity assumption.",
+    "baselines": [
+      "fixed H=I",
+      "source-global LOSO arithmetic mean H from other15 sources, separately model/policy/frequency",
+      "per-source H, fitted on same4 phases: optimistic descriptive in-band ceiling, NOT held-out prediction"
+    ],
+    "score": "Sum squared waveform errors over all4 phases divided by total ideal signal energy. Equal-source aggregate. Different from earlier unweighted mean of per-phase NMSE because finite-window phase energies differ.",
+    "resampling": "4096 source bootstrap draws, seed4954200, stratified4 background types with4 sources each. Reuse the same source draws for all models/policies/frequencies/endpoints; phases are never resampling units.",
+    "inference": "Descriptive reused16-source exploratory comparison; percentile95 intervals on source means and paired gains, no corrected confirmation or p-values. All source rows and gain signs retained.",
+    "primary_comparison": "Identity-minus-LOSO waveform NMSE by model/policy/frequency. Per-source H is an explanatory ceiling and cannot establish new-source predictive performance.",
+    "limitations": "Finite horizon and a fixed background break phase/time-shift symmetry. No LTI, global smoothness, cross-model coordinate equivalence, training-causality or absent-information claim. Only4 phases at one amplitude: even response can expose nonlinearity, but full phase orbit is unobserved.",
+    "source_hashes": {
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_study.py": "baa8f5a94890b89411df99e108e9ab01e906e8419c1696002cc9a6d6f8a48187",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_audit.py": "fc568db9cfc53b1be78926c1865a87af48db1aeebbf675b46c3d88bc7c92cdf9",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tests/test_response_phase_study.py": "5ef5e4181def340071dfb955fb7a11157a8b2ca0e03faf8699c1b42f14f9eec7",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_phase_plants.py": "4213fd8d78bdaa1149b6377c79f948acc6b8be4fad92e32548bd4023e50c5d22",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/coherence_study.py": "e9bd4dc10d57cfbc30cb4b01cfafe96789cccb6d34fe85616699ecfef799aec7"
+    },
+    "prior_hashes": {
+      "protocol.json": "12f90d5aef20c09f29f4850651b868564d9acfcd4131dba2754f599e9cd32a27",
+      "sources.json": "462064575313677c3f9c28a2e344ada82dd7ae1a44a652ef30a9a47d4ca4b588",
+      "signals.json": "ca56ea652c5cde4107562fd424dedf3c941fc32b89006723b88ad63be4ef5ca7",
+      "inputs.npy": "30489820fe91db02fe81362cf835134f9507a418e7ad3c205eb2a387f9bb4692",
+      "execution.json": "0f3526f9231b229bb0733452066c8d127a4e278938f010bda66f2f69b9fd37b3",
+      "bolt_native_forecast.npy": "03e2bc05a8fd3ffc50f13b0f6ecfc2b38ad64349f257bd14bfa3518234b4fbea",
+      "bolt_locked_forecast.npy": "072c680987c22635b3f44831f4aaef789496abbcfc619ceaedeabb033effd07f",
+      "timesfm_native_forecast.npy": "c8e1af1302809eb99e849cceab790f33c5d950c64494db8351c530bc01bfb1b2",
+      "timesfm_locked_forecast.npy": "e920975b885affc49b1a9edf4eb2c25fb2f47819d66d5aff87a3797c546f3c3c",
+      "bolt_worker.json": "9294b85d36af2e1a12220259dedbf067bf9eb9955656459c35e0e58faef6072a",
+      "timesfm_worker.json": "bf074b6117495e83269a5d6af7e85e8465a50651498a04580e08e9385bf7935c"
+    },
+    "hashes": {
+      "groups.json": "9657f70716e4a0de241e3b75c39e6f6eea5f901c836ba781c0c2247c65224a25"
+    }
+  },
+  "exact_findings": [
+    {
+      "model": "bolt",
+      "policy": "native",
+      "frequency": 5.333333333333333,
+      "period": 24.0,
+      "source_count": 16,
+      "baselines": {
+        "identity": {
+          "mean": 0.3889789795026971,
+          "median": 0.2577503893751684,
+          "min": 0.04573526289157016,
+          "max": 1.1042907822234076,
+          "percentile95": [
+            0.31711002565548563,
+            0.47101480914991034
+          ]
+        },
+        "loso": {
+          "mean": 0.3488437368323816,
+          "median": 0.2288118997854561,
+          "min": 0.10213790182086335,
+          "max": 0.7729786830822601,
+          "percentile95": [
+            0.29661437016481307,
+            0.40464575335748204
+          ]
+        },
+        "source_fit": {
+          "mean": 0.1471963073042673,
+          "median": 0.14305096346299548,
+          "min": 0.0335001529129073,
+          "max": 0.2861918727846378,
+          "percentile95": [
+            0.11963592379371046,
+            0.174441583263686
+          ]
+        }
+      },
+      "paired_identity_minus_loso": {
+        "mean": 0.04013524267031546,
+        "median": 0.057602358771548096,
+        "min": -0.18748451478808048,
+        "max": 0.33131209914114745,
+        "percentile95": [
+          -0.006007901229799917,
+          0.08372024131896975
+        ]
+      },
+      "loso_win_sources": 10,
+      "paired_identity_minus_source_fit": {
+        "mean": 0.24178267219842975,
+        "median": 0.0935361996065753,
+        "min": 0.002946048411184725,
+        "max": 0.9701118310490795,
+        "percentile95": [
+          0.16588435372100235,
+          0.32710658598940023
+        ]
+      },
+      "q": {
+        "mean": 0.7648084446662067,
+        "median": 0.7672502490985161,
+        "min": 0.1301900981641891,
+        "max": 1.2002084264039263,
+        "percentile95": [
+          0.6826998431182276,
+          0.8520257215419936
+        ]
+      },
+      "r": {
+        "mean": 0.09951982392892937,
+        "median": 0.03498165211312725,
+        "min": -0.07706197377872429,
+        "max": 0.6084334945216853,
+        "percentile95": [
+          0.03425800489405237,
+          0.17361728283833114
+        ]
+      },
+      "complex_gain": {
+        "mean": 0.8028975595543819,
+        "median": 0.7998054271666784,
+        "min": 0.1512878364663663,
+        "max": 1.2002097632213102,
+        "percentile95": [
+          0.7351760168911203,
+          0.8689296884731427
+        ]
+      },
+      "conjugate_gain": {
+        "mean": 0.18740214131677385,
+        "median": 0.14793196177922444,
+        "min": 0.03363833721322784,
+        "max": 0.5678852208904686,
+        "percentile95": [
+          0.14550020073348088,
+          0.2290140738630705
+        ]
+      },
+      "anisotropy_frobenius_fraction": {
+        "mean": 0.1279878961497729,
+        "median": 0.01717738291659122,
+        "min": 0.002073932144788467,
+        "max": 0.7001535499798698,
+        "percentile95": [
+          0.08849049735916964,
+          0.17098369410651376
+        ]
+      },
+      "singular_ratio": {
+        "mean": 0.6243675962377615,
+        "median": 0.7667652946958075,
+        "min": 0.05849902444964276,
+        "max": 0.9127997761011307,
+        "percentile95": [
+          0.5888910480488078,
+          0.6598812978617213
+        ]
+      },
+      "participation_rank": {
+        "mean": 1.7940625951954217,
+        "median": 1.9656452341668178,
+        "min": 1.1165990311732843,
+        "max": 1.9958521357104229,
+        "percentile95": [
+          1.7505241738940247,
+          1.8383810130649438
+        ]
+      },
+      "off_frequency_odd_energy_fraction": {
+        "mean": 0.1621789759740672,
+        "median": 0.1458573112892613,
+        "min": 0.031626810342048284,
+        "max": 0.6207342021068025,
+        "percentile95": [
+          0.12014925341407903,
+          0.21472501729657997
+        ]
+      },
+      "off_frequency_nmse_contribution": {
+        "mean": 0.10919731869093402,
+        "median": 0.09949261932580009,
+        "min": 0.03068291872260813,
+        "max": 0.20050351433257835,
+        "percentile95": [
+          0.08780126570567952,
+          0.12956441854289572
+        ]
+      },
+      "even_nmse_contribution": {
+        "mean": 0.0379989886133333,
+        "median": 0.023493820321471647,
+        "min": 0.0008792573890922527,
+        "max": 0.12424061618797282,
+        "percentile95": [
+          0.027723315222118017,
+          0.049110141376916105
+        ]
+      },
+      "dc_matrix_shift_frobenius": {
+        "mean": 0.050746254681748884,
+        "median": 0.0355790712586712,
+        "min": 0.005935880127025683,
+        "max": 0.13778273056553167,
+        "percentile95": [
+          0.036682953136986385,
+          0.06511322027295183
+        ]
+      },
+      "relative_rank_counts": {
+        "0": 0,
+        "1": 2,
+        "2": 14
+      },
+      "negative_determinant_sources": 1
+    },
+    {
+      "model": "bolt",
+      "policy": "native",
+      "frequency": 6.666666666666667,
+      "period": 19.2,
+      "source_count": 16,
+      "baselines": {
+        "identity": {
+          "mean": 1.3906871921613242,
+          "median": 1.4302310551396724,
+          "min": 0.5933503278900849,
+          "max": 2.6777948709280945,
+          "percentile95": [
+            1.2069302708598053,
+            1.5655352318145956
+          ]
+        },
+        "loso": {
+          "mean": 0.5068692957225513,
+          "median": 0.3865039374491277,
+          "min": 0.1960484952590632,
+          "max": 1.0704418906474347,
+          "percentile95": [
+            0.4297404303434755,
+            0.5864109754337659
+          ]
+        },
+        "source_fit": {
+          "mean": 0.2314247904913106,
+          "median": 0.18949337744963424,
+          "min": 0.05540671213521246,
+          "max": 0.6596329009020245,
+          "percentile95": [
+            0.1934950831285948,
+            0.2714401708089622
+          ]
+        }
+      },
+      "paired_identity_minus_loso": {
+        "mean": 0.883817896438773,
+        "median": 1.0897511241336004,
+        "min": 0.0865002439523802,
+        "max": 1.7554789688904413,
+        "percentile95": [
+          0.7367125200276745,
+          1.0345996461054745
+        ]
+      },
+      "loso_win_sources": 16,
+      "paired_identity_minus_source_fit": {
+        "mean": 1.1592624016700137,
+        "median": 1.245313431007991,
+        "min": 0.429294377151021,
+        "max": 2.0181619700260702,
+        "percentile95": [
+          1.009286647245497,
+          1.296499377298196
+        ]
+      },
+      "q": {
+        "mean": 0.18606411662427574,
+        "median": -0.05638391863001445,
+        "min": -0.19085495735196525,
+        "max": 0.849586871218208,
+        "percentile95": [
+          0.08452439354979718,
+          0.28652774035835815
+        ]
+      },
+      "r": {
+        "mean": -0.5048456681295121,
+        "median": -0.4302564774356599,
+        "min": -1.0706143662370693,
+        "max": -0.19753275156561187,
+        "percentile95": [
+          -0.5847245287789106,
+          -0.4335109070599529
+        ]
+      },
+      "complex_gain": {
+        "mean": 0.6142034984284719,
+        "median": 0.45576162368890005,
+        "min": 0.20548910028388861,
+        "max": 1.2634798802230205,
+        "percentile95": [
+          0.5350469702336152,
+          0.7025024875580778
+        ]
+      },
+      "conjugate_gain": {
+        "mean": 0.18156524048315437,
+        "median": 0.13197489037255794,
+        "min": 0.04111075025823855,
+        "max": 0.4250280004141899,
+        "percentile95": [
+          0.165576170523748,
+          0.19761867400053743
+        ]
+      },
+      "anisotropy_frobenius_fraction": {
+        "mean": 0.08390039613546739,
+        "median": 0.061597555129093165,
+        "min": 0.011251982274961944,
+        "max": 0.25269222066262115,
+        "percentile95": [
+          0.05734649290418606,
+          0.1126639267181109
+        ]
+      },
+      "singular_ratio": {
+        "mean": 0.5806545264413153,
+        "median": 0.5925652942661158,
+        "min": 0.2646259785824452,
+        "max": 0.807211674897611,
+        "percentile95": [
+          0.5182495941672882,
+          0.6412114855977261
+        ]
+      },
+      "participation_rank": {
+        "mean": 1.8321992077290652,
+        "median": 1.876804889741814,
+        "min": 1.4946155586747576,
+        "max": 1.977496035450076,
+        "percentile95": [
+          1.7746721465637783,
+          1.885307014191628
+        ]
+      },
+      "off_frequency_odd_energy_fraction": {
+        "mean": 0.4156957062288913,
+        "median": 0.48337903813239647,
+        "min": 0.05755560911963907,
+        "max": 0.8044061874570592,
+        "percentile95": [
+          0.3593959068192394,
+          0.4730439771431121
+        ]
+      },
+      "off_frequency_nmse_contribution": {
+        "mean": 0.21993587845223628,
+        "median": 0.18096463833907583,
+        "min": 0.05395107805314306,
+        "max": 0.6482331896235931,
+        "percentile95": [
+          0.182776447979542,
+          0.26163181061774343
+        ]
+      },
+      "even_nmse_contribution": {
+        "mean": 0.011488912039074263,
+        "median": 0.008407919368184814,
+        "min": 0.0014556340820694189,
+        "max": 0.062396875190763604,
+        "percentile95": [
+          0.006819575870768175,
+          0.01811448683793559
+        ]
+      },
+      "dc_matrix_shift_frobenius": {
+        "mean": 0.053800644778501175,
+        "median": 0.043460263458806575,
+        "min": 0.015435534542015792,
+        "max": 0.10754913588883205,
+        "percentile95": [
+          0.0423135179037808,
+          0.06412558765868476
+        ]
+      },
+      "relative_rank_counts": {
+        "0": 0,
+        "1": 0,
+        "2": 16
+      },
+      "negative_determinant_sources": 0
+    },
+    {
+      "model": "bolt",
+      "policy": "locked",
+      "frequency": 5.333333333333333,
+      "period": 24.0,
+      "source_count": 16,
+      "baselines": {
+        "identity": {
+          "mean": 0.39525218927785344,
+          "median": 0.25284679837816826,
+          "min": 0.11266377551283933,
+          "max": 1.1062997385338413,
+          "percentile95": [
+            0.3301878109967556,
+            0.46620169194591504
+          ]
+        },
+        "loso": {
+          "mean": 0.32253720805451314,
+          "median": 0.24518706142965602,
+          "min": 0.09992889930937827,
+          "max": 0.6977246946629417,
+          "percentile95": [
+            0.2768825447833962,
+            0.3773317673598028
+          ]
+        },
+        "source_fit": {
+          "mean": 0.1374104984148858,
+          "median": 0.12356003066865895,
+          "min": 0.023110363949256457,
+          "max": 0.2763337308268136,
+          "percentile95": [
+            0.11009957486848149,
+            0.16633155543337275
+          ]
+        }
+      },
+      "paired_identity_minus_loso": {
+        "mean": 0.07271498122334033,
+        "median": 0.0843043244341106,
+        "min": -0.13273315101568584,
+        "max": 0.4085750438708996,
+        "percentile95": [
+          0.031143074387921844,
+          0.11280091314143825
+        ]
+      },
+      "loso_win_sources": 11,
+      "paired_identity_minus_source_fit": {
+        "mean": 0.25784169086296765,
+        "median": 0.101934254381363,
+        "min": 0.036210229973911434,
+        "max": 0.9756557824975112,
+        "percentile95": [
+          0.18941323920420655,
+          0.32891435084613063
+        ]
+      },
+      "q": {
+        "mean": 0.7229923837252537,
+        "median": 0.8001300957740838,
+        "min": 0.13880296976541712,
+        "max": 1.0067923710693518,
+        "percentile95": [
+          0.6554997480728625,
+          0.7915804971496802
+        ]
+      },
+      "r": {
+        "mean": 0.13890002903233317,
+        "median": 0.05929271537965146,
+        "min": -0.0663345559449161,
+        "max": 0.6535339069905066,
+        "percentile95": [
+          0.08367416687289028,
+          0.20152494522716144
+        ]
+      },
+      "complex_gain": {
+        "mean": 0.767686554591718,
+        "median": 0.8013159373107728,
+        "min": 0.15383932438784467,
+        "max": 1.088975952524947,
+        "percentile95": [
+          0.7060230852028175,
+          0.8248915339498911
+        ]
+      },
+      "conjugate_gain": {
+        "mean": 0.19434402803957712,
+        "median": 0.18279625633300337,
+        "min": 0.016420273271889548,
+        "max": 0.576911058799982,
+        "percentile95": [
+          0.1515565382721231,
+          0.23870902836469718
+        ]
+      },
+      "anisotropy_frobenius_fraction": {
+        "mean": 0.13246398027338835,
+        "median": 0.04009636288568891,
+        "min": 0.00031229388000673187,
+        "max": 0.6763870217593435,
+        "percentile95": [
+          0.09074230735318618,
+          0.17313058309375326
+        ]
+      },
+      "singular_ratio": {
+        "mean": 0.6053263372220983,
+        "median": 0.6607099587563025,
+        "min": 0.031138352410856617,
+        "max": 0.9652647345479358,
+        "percentile95": [
+          0.568655599587743,
+          0.6475816672562781
+        ]
+      },
+      "participation_rank": {
+        "mean": 1.7791687948930592,
+        "median": 1.919807274228622,
+        "min": 1.0622163800068765,
+        "max": 1.9993754122399863,
+        "percentile95": [
+          1.7318956745766796,
+          1.8281323235343394
+        ]
+      },
+      "off_frequency_odd_energy_fraction": {
+        "mean": 0.1561833070759762,
+        "median": 0.12108721286219613,
+        "min": 0.027758645819779226,
+        "max": 0.6081284053831176,
+        "percentile95": [
+          0.11661919599673012,
+          0.20678154841028715
+        ]
+      },
+      "off_frequency_nmse_contribution": {
+        "mean": 0.10038321993417151,
+        "median": 0.09141221788104284,
+        "min": 0.01770980143371691,
+        "max": 0.1975850094851473,
+        "percentile95": [
+          0.08065202190988272,
+          0.12153085071737127
+        ]
+      },
+      "even_nmse_contribution": {
+        "mean": 0.03702727848071429,
+        "median": 0.02719148070832351,
+        "min": 0.001259139985512032,
+        "max": 0.11696115637751599,
+        "percentile95": [
+          0.026848543655705548,
+          0.04804538076081127
+        ]
+      },
+      "dc_matrix_shift_frobenius": {
+        "mean": 0.038200327331835884,
+        "median": 0.026669693795442078,
+        "min": 0.005991810218820685,
+        "max": 0.11604409828224335,
+        "percentile95": [
+          0.02604730703608841,
+          0.05177832431629512
+        ]
+      },
+      "relative_rank_counts": {
+        "0": 0,
+        "1": 2,
+        "2": 14
+      },
+      "negative_determinant_sources": 1
+    },
+    {
+      "model": "bolt",
+      "policy": "locked",
+      "frequency": 6.666666666666667,
+      "period": 19.2,
+      "source_count": 16,
+      "baselines": {
+        "identity": {
+          "mean": 1.2548076792235088,
+          "median": 1.4186204375856857,
+          "min": 0.4221707761128907,
+          "max": 2.1989178428962446,
+          "percentile95": [
+            1.0992216796554533,
+            1.3957696437592884
+          ]
+        },
+        "loso": {
+          "mean": 0.5154595120712486,
+          "median": 0.3291630420507885,
+          "min": 0.18894941799753395,
+          "max": 1.344075213308102,
+          "percentile95": [
+            0.4179767083285131,
+            0.6266941022363333
+          ]
+        },
+        "source_fit": {
+          "mean": 0.22870576908115894,
+          "median": 0.1980356790539034,
+          "min": 0.05734103041042243,
+          "max": 0.5814596367722978,
+          "percentile95": [
+            0.1912005778415222,
+            0.2632887667318515
+          ]
+        }
+      },
+      "paired_identity_minus_loso": {
+        "mean": 0.7393481671522601,
+        "median": 1.0504424916159318,
+        "min": -0.12620780092217188,
+        "max": 1.4258709354288,
+        "percentile95": [
+          0.6074307659893606,
+          0.8848665832524722
+        ]
+      },
+      "loso_win_sources": 13,
+      "paired_identity_minus_source_fit": {
+        "mean": 1.0261019101423499,
+        "median": 1.178265452162523,
+        "min": 0.3214295257360975,
+        "max": 1.6174582061239469,
+        "percentile95": [
+          0.9023538462807706,
+          1.1373297028456675
+        ]
+      },
+      "q": {
+        "mean": 0.22188780476837916,
+        "median": -0.04306907314853506,
+        "min": -0.12061119534599482,
+        "max": 0.8891205320505702,
+        "percentile95": [
+          0.1153495496343459,
+          0.32619665056039293
+        ]
+      },
+      "r": {
+        "mean": -0.404681408928803,
+        "median": -0.36502347880247776,
+        "min": -0.9804172269169449,
+        "max": -0.19844483291826534,
+        "percentile95": [
+          -0.49146824390396165,
+          -0.3296595660120291
+        ]
+      },
+      "complex_gain": {
+        "mean": 0.5494624236844852,
+        "median": 0.42338054555803395,
+        "min": 0.2047283048017172,
+        "max": 1.2859265520564762,
+        "percentile95": [
+          0.44854272403764117,
+          0.6611371965061824
+        ]
+      },
+      "conjugate_gain": {
+        "mean": 0.21121863162497867,
+        "median": 0.11224228034650238,
+        "min": 0.04083467997899109,
+        "max": 0.5732904116446496,
+        "percentile95": [
+          0.17107804368270985,
+          0.2488627260158832
+        ]
+      },
+      "anisotropy_frobenius_fraction": {
+        "mean": 0.1393726087302012,
+        "median": 0.07480216874566091,
+        "min": 0.014417735095630066,
+        "max": 0.7674467462313318,
+        "percentile95": [
+          0.0835662160403922,
+          0.22609465784982855
+        ]
+      },
+      "singular_ratio": {
+        "mean": 0.531372740838887,
+        "median": 0.5575237292036719,
+        "min": 0.28992782294135594,
+        "max": 0.7842025818508676,
+        "percentile95": [
+          0.478052960846649,
+          0.5881501129897551
+        ]
+      },
+      "participation_rank": {
+        "mean": 1.7881164690974307,
+        "median": 1.8503956625086782,
+        "min": 1.5348934924626643,
+        "max": 1.9711645298087397,
+        "percentile95": [
+          1.7420942993833775,
+          1.8328675679192157
+        ]
+      },
+      "off_frequency_odd_energy_fraction": {
+        "mean": 0.4351314441495525,
+        "median": 0.48808796874023,
+        "min": 0.07104114416796527,
+        "max": 0.8047253019990804,
+        "percentile95": [
+          0.37011446925417885,
+          0.5018891793173433
+        ]
+      },
+      "off_frequency_nmse_contribution": {
+        "mean": 0.2160149293060469,
+        "median": 0.18844875113429801,
+        "min": 0.05522375930555961,
+        "max": 0.5613101235893481,
+        "percentile95": [
+          0.17956125146675742,
+          0.25063095467383134
+        ]
+      },
+      "even_nmse_contribution": {
+        "mean": 0.012690839775112008,
+        "median": 0.00827369067795218,
+        "min": 0.0021172711048628476,
+        "max": 0.0684602003847719,
+        "percentile95": [
+          0.007584887812712489,
+          0.01991046491380579
+        ]
+      },
+      "dc_matrix_shift_frobenius": {
+        "mean": 0.05678345523817356,
+        "median": 0.04531003428234869,
+        "min": 0.002750499924086487,
+        "max": 0.16241266635194668,
+        "percentile95": [
+          0.041236798069782664,
+          0.07228070424240449
+        ]
+      },
+      "relative_rank_counts": {
+        "0": 0,
+        "1": 0,
+        "2": 16
+      },
+      "negative_determinant_sources": 1
+    },
+    {
+      "model": "timesfm",
+      "policy": "native",
+      "frequency": 5.333333333333333,
+      "period": 24.0,
+      "source_count": 16,
+      "baselines": {
+        "identity": {
+          "mean": 1.0278992325615017,
+          "median": 0.6216014666847849,
+          "min": 0.017970337279641892,
+          "max": 4.898706364642642,
+          "percentile95": [
+            0.7334801513209357,
+            1.42755025507989
+          ]
+        },
+        "loso": {
+          "mean": 1.0216419042019265,
+          "median": 0.56746993075646,
+          "min": 0.04462789978868155,
+          "max": 4.895361048059251,
+          "percentile95": [
+            0.7186835374338307,
+            1.4248129473735074
+          ]
+        },
+        "source_fit": {
+          "mean": 0.8359145118482325,
+          "median": 0.41886614235055375,
+          "min": 0.012860154386998867,
+          "max": 4.472240788956789,
+          "percentile95": [
+            0.5514544773780818,
+            1.2217552082089733
+          ]
+        }
+      },
+      "paired_identity_minus_loso": {
+        "mean": 0.006257328359575213,
+        "median": -0.006843726638817025,
+        "min": -0.07162179626335186,
+        "max": 0.12588836045726293,
+        "percentile95": [
+          -0.012445290179485298,
+          0.024906332375161967
+        ]
+      },
+      "loso_win_sources": 7,
+      "paired_identity_minus_source_fit": {
+        "mean": 0.19198472071326914,
+        "median": 0.08691124539486642,
+        "min": 0.004620154076310792,
+        "max": 0.532412350946334,
+        "percentile95": [
+          0.15674958851663154,
+          0.22264401816248452
+        ]
+      },
+      "q": {
+        "mean": 0.8449490343362411,
+        "median": 0.9284460568602297,
+        "min": 0.42149177288929607,
+        "max": 1.155184029211789,
+        "percentile95": [
+          0.7938198088029979,
+          0.9012706039894267
+        ]
+      },
+      "r": {
+        "mean": 0.06268528414914999,
+        "median": 0.01597458512879696,
+        "min": -0.438670608680371,
+        "max": 0.6812127957748952,
+        "percentile95": [
+          0.005413738399038473,
+          0.12394624401419319
+        ]
+      },
+      "complex_gain": {
+        "mean": 0.8924488994487693,
+        "median": 0.9443651088762322,
+        "min": 0.42221113477593797,
+        "max": 1.3410820312245753,
+        "percentile95": [
+          0.8306247341687313,
+          0.9575690324808374
+        ]
+      },
+      "conjugate_gain": {
+        "mean": 0.17207247174059423,
+        "median": 0.11567942746220543,
+        "min": 0.02177670765264204,
+        "max": 0.4928343928537589,
+        "percentile95": [
+          0.13882458845874812,
+          0.20036369799451845
+        ]
+      },
+      "anisotropy_frobenius_fraction": {
+        "mean": 0.06102366313977821,
+        "median": 0.02134419938131753,
+        "min": 0.0004986521443024661,
+        "max": 0.2871330991222618,
+        "percentile95": [
+          0.034806019140375934,
+          0.08467774179396526
+        ]
+      },
+      "singular_ratio": {
+        "mean": 0.695103351816043,
+        "median": 0.7430711119472115,
+        "min": 0.22350009010028785,
+        "max": 0.9563038215199181,
+        "percentile95": [
+          0.647746513220561,
+          0.7496924335783977
+        ]
+      },
+      "participation_rank": {
+        "mean": 1.8779526737204437,
+        "median": 1.957311601237365,
+        "min": 1.4257338017554766,
+        "max": 1.999002695711395,
+        "percentile95": [
+          1.8306445164120695,
+          1.9303879617192483
+        ]
+      },
+      "off_frequency_odd_energy_fraction": {
+        "mean": 0.19392609271417613,
+        "median": 0.07236728359645297,
+        "min": 0.013221549938047422,
+        "max": 0.788685825716719,
+        "percentile95": [
+          0.16052956071675722,
+          0.2272487843110477
+        ]
+      },
+      "off_frequency_nmse_contribution": {
+        "mean": 0.2784415899438086,
+        "median": 0.07541520479087849,
+        "min": 0.012699595550475784,
+        "max": 2.1010164865708862,
+        "percentile95": [
+          0.16330629908349498,
+          0.47197602429399965
+        ]
+      },
+      "even_nmse_contribution": {
+        "mean": 0.5574729219044241,
+        "median": 0.18870224648395192,
+        "min": 0.00016055883652308736,
+        "max": 2.3712243023859028,
+        "percentile95": [
+          0.372149457858724,
+          0.7719726375584892
+        ]
+      },
+      "dc_matrix_shift_frobenius": {
+        "mean": 0.025308263087807356,
+        "median": 0.02000537027219214,
+        "min": 0.005888073273292353,
+        "max": 0.06096517974380394,
+        "percentile95": [
+          0.019462401091454654,
+          0.03210001133963561
+        ]
+      },
+      "relative_rank_counts": {
+        "0": 0,
+        "1": 0,
+        "2": 16
+      },
+      "negative_determinant_sources": 0
+    },
+    {
+      "model": "timesfm",
+      "policy": "native",
+      "frequency": 6.666666666666667,
+      "period": 19.2,
+      "source_count": 16,
+      "baselines": {
+        "identity": {
+          "mean": 2.3537098800938168,
+          "median": 2.0020805445180025,
+          "min": 0.22174078585217433,
+          "max": 7.416855837782921,
+          "percentile95": [
+            2.0231838863366205,
+            2.727006717897737
+          ]
+        },
+        "loso": {
+          "mean": 1.999695124522527,
+          "median": 1.4688930301729097,
+          "min": 0.8233966629891427,
+          "max": 6.111335799307331,
+          "percentile95": [
+            1.6803447690463438,
+            2.34471462273219
+          ]
+        },
+        "source_fit": {
+          "mean": 0.9018266927220593,
+          "median": 0.3383601663737452,
+          "min": 0.04891312880432554,
+          "max": 3.5343221372826337,
+          "percentile95": [
+            0.6750480917606169,
+            1.0887659279320394
+          ]
+        }
+      },
+      "paired_identity_minus_loso": {
+        "mean": 0.3540147555712898,
+        "median": 0.276365981356433,
+        "min": -1.0292240351270447,
+        "max": 1.6660250867130109,
+        "percentile95": [
+          0.25652539509187594,
+          0.44407495812047193
+        ]
+      },
+      "loso_win_sources": 8,
+      "paired_identity_minus_source_fit": {
+        "mean": 1.4518831873717575,
+        "median": 1.0479962346488623,
+        "min": 0.1362429731082756,
+        "max": 3.8825337005002876,
+        "percentile95": [
+          1.2349074675062592,
+          1.7012126821598466
+        ]
+      },
+      "q": {
+        "mean": 0.4279219026505532,
+        "median": 0.5230571683464332,
+        "min": -0.9617346578544406,
+        "max": 1.66061536143765,
+        "percentile95": [
+          0.340342590305991,
+          0.5163595064583638
+        ]
+      },
+      "r": {
+        "mean": -0.39158091957652885,
+        "median": -0.33902569781302594,
+        "min": -1.0866124845732121,
+        "max": 0.194797703123878,
+        "percentile95": [
+          -0.4590051842202161,
+          -0.33286165885857544
+        ]
+      },
+      "complex_gain": {
+        "mean": 1.0581221061648045,
+        "median": 1.180744384923113,
+        "min": 0.16770881335500382,
+        "max": 1.7296870524746433,
+        "percentile95": [
+          0.9752475242190212,
+          1.145713656446294
+        ]
+      },
+      "conjugate_gain": {
+        "mean": 0.1712376428146658,
+        "median": 0.17187813398929985,
+        "min": 0.05604413725224533,
+        "max": 0.32315293238388076,
+        "percentile95": [
+          0.14690719978653097,
+          0.19746983035599305
+        ]
+      },
+      "anisotropy_frobenius_fraction": {
+        "mean": 0.04125483739755781,
+        "median": 0.02629203888215511,
+        "min": 0.003251426710671839,
+        "max": 0.1539630216508154,
+        "percentile95": [
+          0.02546677624990394,
+          0.057002579507989495
+        ]
+      },
+      "singular_ratio": {
+        "mean": 0.6959989639644872,
+        "median": 0.7177688373832235,
+        "min": 0.40194172703415765,
+        "max": 0.8919431611847175,
+        "percentile95": [
+          0.6441371755092945,
+          0.752503267932114
+        ]
+      },
+      "participation_rank": {
+        "mean": 1.9174903252048843,
+        "median": 1.9474159222356897,
+        "min": 1.692073956698369,
+        "max": 1.9934971465786566,
+        "percentile95": [
+          1.8859948409840208,
+          1.9490664475001922
+        ]
+      },
+      "off_frequency_odd_energy_fraction": {
+        "mean": 0.30644727384457826,
+        "median": 0.20247708277879353,
+        "min": 0.017388871320974903,
+        "max": 0.9415869670750112,
+        "percentile95": [
+          0.267110635145765,
+          0.3414595354817441
+        ]
+      },
+      "off_frequency_nmse_contribution": {
+        "mean": 0.45200737569333693,
+        "median": 0.2956552293811349,
+        "min": 0.030904729202581856,
+        "max": 1.7061096411820174,
+        "percentile95": [
+          0.3485880687771019,
+          0.5554456036416906
+        ]
+      },
+      "even_nmse_contribution": {
+        "mean": 0.4498193170287224,
+        "median": 0.07309638812505226,
+        "min": 0.01744381578488049,
+        "max": 2.311472442134507,
+        "percentile95": [
+          0.24186986347508244,
+          0.5976212740122722
+        ]
+      },
+      "dc_matrix_shift_frobenius": {
+        "mean": 0.04203524295780028,
+        "median": 0.03788738708875411,
+        "min": 0.010158927293312466,
+        "max": 0.0824250331079741,
+        "percentile95": [
+          0.03269892733808165,
+          0.0521220537055314
+        ]
+      },
+      "relative_rank_counts": {
+        "0": 0,
+        "1": 0,
+        "2": 16
+      },
+      "negative_determinant_sources": 0
+    },
+    {
+      "model": "timesfm",
+      "policy": "locked",
+      "frequency": 5.333333333333333,
+      "period": 24.0,
+      "source_count": 16,
+      "baselines": {
+        "identity": {
+          "mean": 1.2780823677033624,
+          "median": 0.8683287500654489,
+          "min": 0.08179550363089048,
+          "max": 5.073934713497059,
+          "percentile95": [
+            0.9606954350727039,
+            1.698284280323896
+          ]
+        },
+        "loso": {
+          "mean": 1.2594233221904987,
+          "median": 0.7611490583223393,
+          "min": 0.14292843152155674,
+          "max": 5.184272294665277,
+          "percentile95": [
+            0.9269012723502564,
+            1.697968003574936
+          ]
+        },
+        "source_fit": {
+          "mean": 0.9958527992317981,
+          "median": 0.5253226611949054,
+          "min": 0.0486613673279287,
+          "max": 4.648548407504431,
+          "percentile95": [
+            0.690759999018046,
+            1.4058509302243773
+          ]
+        }
+      },
+      "paired_identity_minus_loso": {
+        "mean": 0.01865904551286366,
+        "median": 0.022087942161642643,
+        "min": -0.1103375811682179,
+        "max": 0.16751691409317448,
+        "percentile95": [
+          -0.012008843693113974,
+          0.04870757462203354
+        ]
+      },
+      "loso_win_sources": 8,
+      "paired_identity_minus_source_fit": {
+        "mean": 0.2822295684715642,
+        "median": 0.2461841746386283,
+        "min": 0.016233916068273124,
+        "max": 0.8807216765511481,
+        "percentile95": [
+          0.22133542632905387,
+          0.34683219346117555
+        ]
+      },
+      "q": {
+        "mean": 0.8302670305577703,
+        "median": 0.8423481375459299,
+        "min": 0.4243789331579759,
+        "max": 1.1193399094119851,
+        "percentile95": [
+          0.770983159885755,
+          0.8924542006095613
+        ]
+      },
+      "r": {
+        "mean": 0.14912795201814427,
+        "median": 0.08939887623610451,
+        "min": -0.44193332536833524,
+        "max": 0.895057975851776,
+        "percentile95": [
+          0.08209449957401777,
+          0.21599142578147093
+        ]
+      },
+      "complex_gain": {
+        "mean": 0.9134419778616863,
+        "median": 0.9112710835666562,
+        "min": 0.4247740077038446,
+        "max": 1.4076023947027352,
+        "percentile95": [
+          0.8450893320524833,
+          0.9851611893448118
+        ]
+      },
+      "conjugate_gain": {
+        "mean": 0.21262072041859406,
+        "median": 0.1922556075777617,
+        "min": 0.07057985297790301,
+        "max": 0.4784442936561683,
+        "percentile95": [
+          0.17344548589813757,
+          0.2587410014615955
+        ]
+      },
+      "anisotropy_frobenius_fraction": {
+        "mean": 0.06740500841923519,
+        "median": 0.040894180911645144,
+        "min": 0.004674241185970904,
+        "max": 0.323770101160577,
+        "percentile95": [
+          0.04000772547054588,
+          0.10571573168211791
+        ]
+      },
+      "singular_ratio": {
+        "mean": 0.6297696979105427,
+        "median": 0.6578999404232868,
+        "min": 0.18207195464476061,
+        "max": 0.8717324756241892,
+        "percentile95": [
+          0.5538324787332832,
+          0.6960965710680561
+        ]
+      },
+      "participation_rank": {
+        "mean": 1.8651899831615295,
+        "median": 1.9182116381767096,
+        "min": 1.3524597976788462,
+        "max": 1.990651517628058,
+        "percentile95": [
+          1.7885685366357642,
+          1.9199845490589083
+        ]
+      },
+      "off_frequency_odd_energy_fraction": {
+        "mean": 0.2332071508148031,
+        "median": 0.12477721128959335,
+        "min": 0.044469197004093325,
+        "max": 0.8016025738503129,
+        "percentile95": [
+          0.19931779771875843,
+          0.26825614219642624
+        ]
+      },
+      "off_frequency_nmse_contribution": {
+        "mean": 0.34374961592912934,
+        "median": 0.148067889025237,
+        "min": 0.040746633840633296,
+        "max": 2.2911138439634713,
+        "percentile95": [
+          0.2113386672359105,
+          0.5592132284002412
+        ]
+      },
+      "even_nmse_contribution": {
+        "mean": 0.6521031833026688,
+        "median": 0.23267754558495005,
+        "min": 0.005565906675289286,
+        "max": 2.35743456354096,
+        "percentile95": [
+          0.4474734165127913,
+          0.8738847047074189
+        ]
+      },
+      "dc_matrix_shift_frobenius": {
+        "mean": 0.03217092277208966,
+        "median": 0.028846511805800085,
+        "min": 0.00598254142411128,
+        "max": 0.06990289236913044,
+        "percentile95": [
+          0.022870502857340637,
+          0.041657348596492075
+        ]
+      },
+      "relative_rank_counts": {
+        "0": 0,
+        "1": 0,
+        "2": 16
+      },
+      "negative_determinant_sources": 0
+    },
+    {
+      "model": "timesfm",
+      "policy": "locked",
+      "frequency": 6.666666666666667,
+      "period": 19.2,
+      "source_count": 16,
+      "baselines": {
+        "identity": {
+          "mean": 2.49734228133093,
+          "median": 2.05979642164496,
+          "min": 0.4204527168558376,
+          "max": 7.552157676248424,
+          "percentile95": [
+            2.147328117826959,
+            2.886632276095434
+          ]
+        },
+        "loso": {
+          "mean": 2.204296404439238,
+          "median": 1.747325634096868,
+          "min": 0.9000195689829614,
+          "max": 6.372966141915608,
+          "percentile95": [
+            1.876658553700316,
+            2.571035723797525
+          ]
+        },
+        "source_fit": {
+          "mean": 0.9807938651523206,
+          "median": 0.387938892659161,
+          "min": 0.16743076621135566,
+          "max": 3.717069388469292,
+          "percentile95": [
+            0.7436465296616825,
+            1.1780573168303623
+          ]
+        }
+      },
+      "paired_identity_minus_loso": {
+        "mean": 0.2930458768916917,
+        "median": 0.15618707614109567,
+        "min": -1.221642852843637,
+        "max": 1.5902811733440685,
+        "percentile95": [
+          0.19612373029085312,
+          0.39125827500693044
+        ]
+      },
+      "loso_win_sources": 8,
+      "paired_identity_minus_source_fit": {
+        "mean": 1.5165484161786091,
+        "median": 1.1136041425477041,
+        "min": 0.18282162696082932,
+        "max": 3.835088287779132,
+        "percentile95": [
+          1.3032989269362427,
+          1.7610044430190583
+        ]
+      },
+      "q": {
+        "mean": 0.46932746425369887,
+        "median": 0.5384867441226217,
+        "min": -0.9492282212202621,
+        "max": 1.706050487205454,
+        "percentile95": [
+          0.3858601441876579,
+          0.5506263302742331
+        ]
+      },
+      "r": {
+        "mean": -0.3807616691242687,
+        "median": -0.4718974484606035,
+        "min": -1.0977716505341228,
+        "max": 0.18981400472996013,
+        "percentile95": [
+          -0.4718428911415727,
+          -0.2903188587490783
+        ]
+      },
+      "complex_gain": {
+        "mean": 1.0900262632638853,
+        "median": 1.2122714638238188,
+        "min": 0.16373408810970114,
+        "max": 1.7773808181479014,
+        "percentile95": [
+          1.010224733000322,
+          1.1733287593201078
+        ]
+      },
+      "conjugate_gain": {
+        "mean": 0.23716031301449175,
+        "median": 0.21052280407377166,
+        "min": 0.04267608804608721,
+        "max": 0.5441483422398672,
+        "percentile95": [
+          0.20729857424257875,
+          0.26746757963494117
+        ]
+      },
+      "anisotropy_frobenius_fraction": {
+        "mean": 0.061456362828442745,
+        "median": 0.05164594368438852,
+        "min": 0.0010134554630318127,
+        "max": 0.1647036308026476,
+        "percentile95": [
+          0.04362075970528703,
+          0.07962952633200089
+        ]
+      },
+      "singular_ratio": {
+        "mean": 0.6396366466631007,
+        "median": 0.6220929804899958,
+        "min": 0.38499416778127843,
+        "max": 0.938264419216398,
+        "percentile95": [
+          0.5824944107558143,
+          0.7005442744167716
+        ]
+      },
+      "participation_rank": {
+        "mean": 1.8770872743431146,
+        "median": 1.896708112631223,
+        "min": 1.6705927383947046,
+        "max": 1.9979730890739362,
+        "percentile95": [
+          1.8407409473359981,
+          1.912758480589426
+        ]
+      },
+      "off_frequency_odd_energy_fraction": {
+        "mean": 0.31234441970933924,
+        "median": 0.19438556926910333,
+        "min": 0.02733254819813653,
+        "max": 0.9473217375439293,
+        "percentile95": [
+          0.27414387851127886,
+          0.34624074964785695
+        ]
+      },
+      "off_frequency_nmse_contribution": {
+        "mean": 0.4622958222562985,
+        "median": 0.292025273892458,
+        "min": 0.05103991618871637,
+        "max": 1.6990810452542435,
+        "percentile95": [
+          0.36476019379566516,
+          0.5609232592536902
+        ]
+      },
+      "even_nmse_contribution": {
+        "mean": 0.518498042896022,
+        "median": 0.1777188818271066,
+        "min": 0.05591229614609761,
+        "max": 2.4773217685511453,
+        "percentile95": [
+          0.30030171773558506,
+          0.6813835407614017
+        ]
+      },
+      "dc_matrix_shift_frobenius": {
+        "mean": 0.04312687192700905,
+        "median": 0.04058596811492693,
+        "min": 0.012036471945823215,
+        "max": 0.09163052074195381,
+        "percentile95": [
+          0.033170529721403524,
+          0.05359903946634838
+        ]
+      },
+      "relative_rank_counts": {
+        "0": 0,
+        "1": 0,
+        "2": 16
+      },
+      "negative_determinant_sources": 0
+    }
+  ],
+  "controls": {
+    "baselines": [
+      "fixed H=I",
+      "source-global LOSO arithmetic mean H from other15 sources, separately model/policy/frequency",
+      "per-source H, fitted on same4 phases: optimistic descriptive in-band ceiling, NOT held-out prediction"
+    ],
+    "dc_sensitivity": true,
+    "raw_arithmetic_saved": true,
+    "source_grouped_resampling": true
+  },
+  "limitations": "Finite horizon and a fixed background break phase/time-shift symmetry. No LTI, global smoothness, cross-model coordinate equivalence, training-causality or absent-information claim. Only4 phases at one amplitude: even response can expose nonlinearity, but full phase orbit is unobserved.",
+  "evidence_class": "Descriptive conditional behavioral response geometry; LOSO response prediction is distinct from same-source explanatory fit",
+  "failed_instrumentation_runs": [],
+  "next_decision": "Review proposal-only fresh16-source transfer at the same centers using frozen old mean H. Nearby-frequency/anchoring controls remain optional separately declared work; no native slot used.",
+  "native_capture_performed": false,
+  "independent_audit": {
+    "passed": true,
+    "checks": 4672,
+    "matrices": 128,
+    "independent_sources": 16,
+    "bootstrap_source_draws": 4096,
+    "maximum_absolute_discrepancy": 8.929789570134933e-15,
+    "maximum_energy_closure_discrepancy": 1.7763568394002505e-15,
+    "source_hashes_verified": true,
+    "prior_forecasts_unchanged": true,
+    "native_capture": false
+  },
+  "interpretation": [
+    "H is a finite-amplitude conditional odd-response map, fitted on four cardinal phases at one amplitude. It is not an LTI transfer function or a tested full phase orbit.",
+    "A large symmetric-traceless component is phase-sensitive or conjugate-linear behavior in these coordinates. Pure phase conjugation can still map a circle to a circle; singular values and determinant disambiguate shape and orientation.",
+    "Source-global LOSO scores measure prediction of the model response to a known intervention, not improvement of its forecasting accuracy. Identity encodes ideal continuation semantics.",
+    "Per-source H is fitted on the same responses and is an optimistic in-band explanatory ceiling. Its remaining waveform error separates exactly into off-frequency odd response and even response.",
+    "Primary sine/cos projection can absorb finite-window DC leakage. The DC-adjusted H and intercept are sensitivity controls, not alternate results selected after seeing outcomes."
+  ],
+  "distilled_findings": [
+    {
+      "model": "bolt",
+      "policy": "native",
+      "period": 24.0,
+      "q_source_mean": 0.7648084446662067,
+      "r_source_mean": 0.09951982392892937,
+      "identity_nmse": 0.3889789795026971,
+      "loso_nmse": 0.3488437368323816,
+      "source_fit_nmse": 0.1471963073042673,
+      "identity_minus_loso": {
+        "mean": 0.04013524267031546,
+        "median": 0.057602358771548096,
+        "min": -0.18748451478808048,
+        "max": 0.33131209914114745,
+        "percentile95": [
+          -0.006007901229799917,
+          0.08372024131896975
+        ]
+      },
+      "loso_wins": 10,
+      "off_frequency_odd_nmse": 0.10919731869093402,
+      "even_nmse": 0.0379989886133333,
+      "off_frequency_odd_energy_fraction": 0.1621789759740672,
+      "anisotropy_fraction": 0.1279878961497729,
+      "mean_singular_ratio": 0.6243675962377615,
+      "relative_rank_counts": {
+        "0": 0,
+        "1": 2,
+        "2": 14
+      }
+    },
+    {
+      "model": "bolt",
+      "policy": "native",
+      "period": 19.2,
+      "q_source_mean": 0.18606411662427574,
+      "r_source_mean": -0.5048456681295121,
+      "identity_nmse": 1.3906871921613242,
+      "loso_nmse": 0.5068692957225513,
+      "source_fit_nmse": 0.2314247904913106,
+      "identity_minus_loso": {
+        "mean": 0.883817896438773,
+        "median": 1.0897511241336004,
+        "min": 0.0865002439523802,
+        "max": 1.7554789688904413,
+        "percentile95": [
+          0.7367125200276745,
+          1.0345996461054745
+        ]
+      },
+      "loso_wins": 16,
+      "off_frequency_odd_nmse": 0.21993587845223628,
+      "even_nmse": 0.011488912039074263,
+      "off_frequency_odd_energy_fraction": 0.4156957062288913,
+      "anisotropy_fraction": 0.08390039613546739,
+      "mean_singular_ratio": 0.5806545264413153,
+      "relative_rank_counts": {
+        "0": 0,
+        "1": 0,
+        "2": 16
+      }
+    },
+    {
+      "model": "bolt",
+      "policy": "locked",
+      "period": 24.0,
+      "q_source_mean": 0.7229923837252537,
+      "r_source_mean": 0.13890002903233317,
+      "identity_nmse": 0.39525218927785344,
+      "loso_nmse": 0.32253720805451314,
+      "source_fit_nmse": 0.1374104984148858,
+      "identity_minus_loso": {
+        "mean": 0.07271498122334033,
+        "median": 0.0843043244341106,
+        "min": -0.13273315101568584,
+        "max": 0.4085750438708996,
+        "percentile95": [
+          0.031143074387921844,
+          0.11280091314143825
+        ]
+      },
+      "loso_wins": 11,
+      "off_frequency_odd_nmse": 0.10038321993417151,
+      "even_nmse": 0.03702727848071429,
+      "off_frequency_odd_energy_fraction": 0.1561833070759762,
+      "anisotropy_fraction": 0.13246398027338835,
+      "mean_singular_ratio": 0.6053263372220983,
+      "relative_rank_counts": {
+        "0": 0,
+        "1": 2,
+        "2": 14
+      }
+    },
+    {
+      "model": "bolt",
+      "policy": "locked",
+      "period": 19.2,
+      "q_source_mean": 0.22188780476837916,
+      "r_source_mean": -0.404681408928803,
+      "identity_nmse": 1.2548076792235088,
+      "loso_nmse": 0.5154595120712486,
+      "source_fit_nmse": 0.22870576908115894,
+      "identity_minus_loso": {
+        "mean": 0.7393481671522601,
+        "median": 1.0504424916159318,
+        "min": -0.12620780092217188,
+        "max": 1.4258709354288,
+        "percentile95": [
+          0.6074307659893606,
+          0.8848665832524722
+        ]
+      },
+      "loso_wins": 13,
+      "off_frequency_odd_nmse": 0.2160149293060469,
+      "even_nmse": 0.012690839775112008,
+      "off_frequency_odd_energy_fraction": 0.4351314441495525,
+      "anisotropy_fraction": 0.1393726087302012,
+      "mean_singular_ratio": 0.531372740838887,
+      "relative_rank_counts": {
+        "0": 0,
+        "1": 0,
+        "2": 16
+      }
+    },
+    {
+      "model": "timesfm",
+      "policy": "native",
+      "period": 24.0,
+      "q_source_mean": 0.8449490343362411,
+      "r_source_mean": 0.06268528414914999,
+      "identity_nmse": 1.0278992325615017,
+      "loso_nmse": 1.0216419042019265,
+      "source_fit_nmse": 0.8359145118482325,
+      "identity_minus_loso": {
+        "mean": 0.006257328359575213,
+        "median": -0.006843726638817025,
+        "min": -0.07162179626335186,
+        "max": 0.12588836045726293,
+        "percentile95": [
+          -0.012445290179485298,
+          0.024906332375161967
+        ]
+      },
+      "loso_wins": 7,
+      "off_frequency_odd_nmse": 0.2784415899438086,
+      "even_nmse": 0.5574729219044241,
+      "off_frequency_odd_energy_fraction": 0.19392609271417613,
+      "anisotropy_fraction": 0.06102366313977821,
+      "mean_singular_ratio": 0.695103351816043,
+      "relative_rank_counts": {
+        "0": 0,
+        "1": 0,
+        "2": 16
+      }
+    },
+    {
+      "model": "timesfm",
+      "policy": "native",
+      "period": 19.2,
+      "q_source_mean": 0.4279219026505532,
+      "r_source_mean": -0.39158091957652885,
+      "identity_nmse": 2.3537098800938168,
+      "loso_nmse": 1.999695124522527,
+      "source_fit_nmse": 0.9018266927220593,
+      "identity_minus_loso": {
+        "mean": 0.3540147555712898,
+        "median": 0.276365981356433,
+        "min": -1.0292240351270447,
+        "max": 1.6660250867130109,
+        "percentile95": [
+          0.25652539509187594,
+          0.44407495812047193
+        ]
+      },
+      "loso_wins": 8,
+      "off_frequency_odd_nmse": 0.45200737569333693,
+      "even_nmse": 0.4498193170287224,
+      "off_frequency_odd_energy_fraction": 0.30644727384457826,
+      "anisotropy_fraction": 0.04125483739755781,
+      "mean_singular_ratio": 0.6959989639644872,
+      "relative_rank_counts": {
+        "0": 0,
+        "1": 0,
+        "2": 16
+      }
+    },
+    {
+      "model": "timesfm",
+      "policy": "locked",
+      "period": 24.0,
+      "q_source_mean": 0.8302670305577703,
+      "r_source_mean": 0.14912795201814427,
+      "identity_nmse": 1.2780823677033624,
+      "loso_nmse": 1.2594233221904987,
+      "source_fit_nmse": 0.9958527992317981,
+      "identity_minus_loso": {
+        "mean": 0.01865904551286366,
+        "median": 0.022087942161642643,
+        "min": -0.1103375811682179,
+        "max": 0.16751691409317448,
+        "percentile95": [
+          -0.012008843693113974,
+          0.04870757462203354
+        ]
+      },
+      "loso_wins": 8,
+      "off_frequency_odd_nmse": 0.34374961592912934,
+      "even_nmse": 0.6521031833026688,
+      "off_frequency_odd_energy_fraction": 0.2332071508148031,
+      "anisotropy_fraction": 0.06740500841923519,
+      "mean_singular_ratio": 0.6297696979105427,
+      "relative_rank_counts": {
+        "0": 0,
+        "1": 0,
+        "2": 16
+      }
+    },
+    {
+      "model": "timesfm",
+      "policy": "locked",
+      "period": 19.2,
+      "q_source_mean": 0.46932746425369887,
+      "r_source_mean": -0.3807616691242687,
+      "identity_nmse": 2.49734228133093,
+      "loso_nmse": 2.204296404439238,
+      "source_fit_nmse": 0.9807938651523206,
+      "identity_minus_loso": {
+        "mean": 0.2930458768916917,
+        "median": 0.15618707614109567,
+        "min": -1.221642852843637,
+        "max": 1.5902811733440685,
+        "percentile95": [
+          0.19612373029085312,
+          0.39125827500693044
+        ]
+      },
+      "loso_wins": 8,
+      "off_frequency_odd_nmse": 0.4622958222562985,
+      "even_nmse": 0.518498042896022,
+      "off_frequency_odd_energy_fraction": 0.31234441970933924,
+      "anisotropy_fraction": 0.061456362828442745,
+      "mean_singular_ratio": 0.6396366466631007,
+      "relative_rank_counts": {
+        "0": 0,
+        "1": 0,
+        "2": 16
+      }
+    }
+  ],
+  "verification": {
+    "tests_passed": 7,
+    "plants_detected": 7,
+    "independent_audit": {
+      "passed": true,
+      "checks": 4672,
+      "matrices": 128,
+      "independent_sources": 16,
+      "bootstrap_source_draws": 4096,
+      "maximum_absolute_discrepancy": 8.929789570134933e-15,
+      "maximum_energy_closure_discrepancy": 1.7763568394002505e-15,
+      "source_hashes_verified": true,
+      "prior_forecasts_unchanged": true,
+      "native_capture": false
+    },
+    "rendered_plot_inspected": true,
+    "report_links_exist": true
+  },
+  "rank_summary": {
+    "numerical_rank2_matrices": 128,
+    "total_matrices": 128,
+    "relative_rank1_at10pct": [
+      {
+        "model": "bolt",
+        "policy": "native",
+        "source": "syn:4954003",
+        "period": 24.0,
+        "singular_values": [
+          1.1660406180520313,
+          0.11463862978509336
+        ]
+      },
+      {
+        "model": "bolt",
+        "policy": "native",
+        "source": "syn:4954011",
+        "period": 24.0,
+        "singular_values": [
+          1.2063401645622502,
+          0.07056972278131314
+        ]
+      },
+      {
+        "model": "bolt",
+        "policy": "locked",
+        "source": "syn:4954003",
+        "period": 24.0,
+        "singular_values": [
+          1.1497231503803644,
+          0.082621991511848
+        ]
+      },
+      {
+        "model": "bolt",
+        "policy": "locked",
+        "source": "syn:4954011",
+        "period": 24.0,
+        "singular_values": [
+          1.190904935158766,
+          0.037082817558802
+        ]
+      }
+    ]
+  },
+  "leading_interpretation": "A reproducible conditional phase-response structure is visible, especially Bolt at19.2h; this challenges a blanket jagged/messy account. TimesFM retains substantial even and off-band response error. Smooth conditional structure is neither time invariance nor correct semantics. LOSO predicts model behavior, not improved forecasts.",
+  "proposal": "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/runs/response_phase_transfer_proposal4954300"
+}

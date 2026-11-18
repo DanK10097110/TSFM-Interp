@@ -1,0 +1,2373 @@
+{
+  "status": "complete_pilot_stop_for_orchestration",
+  "question": "Do model-local irregularity, smooth context dependence, amplitude/frequency response preferences, normalization and mixture interference explain different aspects of known-tone response?",
+  "design": {
+    "background_count": 8,
+    "nodes": 848,
+    "centers": [
+      5.333333333333333,
+      6.666666666666667
+    ],
+    "offsets": [
+      -0.12,
+      -0.06,
+      -0.03,
+      0.0,
+      0.03,
+      0.06,
+      0.12
+    ],
+    "amplitudes": [
+      0.1,
+      0.5,
+      2.0
+    ],
+    "phase": "One seeded phase per source, shared across every frequency/amplitude and both tones; t=0 is forecast origin",
+    "normalization": "native versus background-locked actual normalizer and matching inverse; anchor is same background for entire surface",
+    "local": "FP64 centered parameter derivatives; chord-midpoint model curvature removes frequency-path bend; sensitivities divide actual RMS input distances/background SD",
+    "interaction": "f(x+a+b)-f(x+a)-f(x+b)+f(x); RMS relative to each individual effect and sum; normalize mixed effect by input-distance product",
+    "decodability": "Fixed ridge alpha=.01, full-token hidden differences versus raw-input differences, joint fixed-frequency sine/cos coefficients; leave-one-source-out, train-only scaling and mean/permuted-label controls; exploratory only",
+    "provenance": "Real FIT sources explicitly reused from selective_replication4942000 for instrumentation; pretraining overlap unknown. No real futures loaded."
+  },
+  "source_groups": [
+    {
+      "source": "syn:4951000",
+      "domain": "synthetic",
+      "split": "instrumentation",
+      "seed": 4951000,
+      "distractor_frequency": 17.35,
+      "distractor_amplitude": 0.5
+    },
+    {
+      "source": "syn:4951001",
+      "domain": "synthetic",
+      "split": "instrumentation",
+      "seed": 4951001,
+      "distractor_frequency": 17.35,
+      "distractor_amplitude": 8.0
+    },
+    {
+      "source": "syn:4951002",
+      "domain": "synthetic",
+      "split": "instrumentation",
+      "seed": 4951002,
+      "distractor_frequency": 6.35,
+      "distractor_amplitude": 0.5
+    },
+    {
+      "source": "syn:4951003",
+      "domain": "synthetic",
+      "split": "instrumentation",
+      "seed": 4951003,
+      "distractor_frequency": 6.35,
+      "distractor_amplitude": 8.0
+    },
+    {
+      "source": "monash_electricity_hourly:T000221",
+      "domain": "monash_electricity_hourly",
+      "split": "instrumentation",
+      "original_split": "fit",
+      "original_index": 128,
+      "original_rank": 56
+    },
+    {
+      "source": "m4_hourly:T000172",
+      "domain": "m4_hourly",
+      "split": "instrumentation",
+      "original_split": "fit",
+      "original_index": 136,
+      "original_rank": 56
+    },
+    {
+      "source": "monash_pedestrian_counts:T000028",
+      "domain": "monash_pedestrian_counts",
+      "split": "instrumentation",
+      "original_split": "fit",
+      "original_index": 144,
+      "original_rank": 56
+    },
+    {
+      "source": "monash_traffic:T000099",
+      "domain": "monash_traffic",
+      "split": "instrumentation",
+      "original_split": "fit",
+      "original_index": 152,
+      "original_rank": 56
+    }
+  ],
+  "exact_findings": [
+    {
+      "claim": "Sampled local responses usually shrink in relative chord curvature as radius decreases; this supports smooth context-dependent response, not globally linear behavior or universal smoothness.",
+      "evidence_class": "L1 hidden geometry and behavioral local response",
+      "exact": [
+        {
+          "model": "bolt",
+          "policy": "locked",
+          "cut": "0",
+          "axis": "amplitude",
+          "dependent_paths": 48,
+          "sources": 8,
+          "shrink_count": 48,
+          "small_curvature_median": 0.006799094162761245,
+          "large_curvature_median": 0.00954671981556492,
+          "sensitivity_ratio_median": 1.0000422916660718,
+          "small_curvature_max": 0.019313489595358946
+        },
+        {
+          "model": "bolt",
+          "policy": "locked",
+          "cut": "0",
+          "axis": "frequency",
+          "dependent_paths": 48,
+          "sources": 8,
+          "shrink_count": 48,
+          "small_curvature_median": 0.04958554875376216,
+          "large_curvature_median": 0.13572852646746314,
+          "sensitivity_ratio_median": 1.000817173227833,
+          "small_curvature_max": 0.15330949327607657
+        },
+        {
+          "model": "bolt",
+          "policy": "locked",
+          "cut": "forecast",
+          "axis": "amplitude",
+          "dependent_paths": 48,
+          "sources": 8,
+          "shrink_count": 46,
+          "small_curvature_median": 0.012060217980158647,
+          "large_curvature_median": 0.019854133910751207,
+          "sensitivity_ratio_median": 1.0005752854040835,
+          "small_curvature_max": 0.0632181873151555
+        },
+        {
+          "model": "bolt",
+          "policy": "locked",
+          "cut": "forecast",
+          "axis": "frequency",
+          "dependent_paths": 48,
+          "sources": 8,
+          "shrink_count": 48,
+          "small_curvature_median": 0.07203856098098466,
+          "large_curvature_median": 0.2459357682644237,
+          "sensitivity_ratio_median": 1.0438729242992122,
+          "small_curvature_max": 0.5183516136299998
+        },
+        {
+          "model": "bolt",
+          "policy": "native",
+          "cut": "0",
+          "axis": "amplitude",
+          "dependent_paths": 48,
+          "sources": 8,
+          "shrink_count": 48,
+          "small_curvature_median": 0.007733490447062867,
+          "large_curvature_median": 0.012955955853578328,
+          "sensitivity_ratio_median": 1.0000799549902724,
+          "small_curvature_max": 0.020677660762090655
+        },
+        {
+          "model": "bolt",
+          "policy": "native",
+          "cut": "0",
+          "axis": "frequency",
+          "dependent_paths": 48,
+          "sources": 8,
+          "shrink_count": 48,
+          "small_curvature_median": 0.044912302009634045,
+          "large_curvature_median": 0.1350294713261502,
+          "sensitivity_ratio_median": 1.0010782822566222,
+          "small_curvature_max": 0.11894395861437922
+        },
+        {
+          "model": "bolt",
+          "policy": "native",
+          "cut": "forecast",
+          "axis": "amplitude",
+          "dependent_paths": 48,
+          "sources": 8,
+          "shrink_count": 44,
+          "small_curvature_median": 0.005325633655011663,
+          "large_curvature_median": 0.008657890789421566,
+          "sensitivity_ratio_median": 1.0002452668259385,
+          "small_curvature_max": 0.05849544783258891
+        },
+        {
+          "model": "bolt",
+          "policy": "native",
+          "cut": "forecast",
+          "axis": "frequency",
+          "dependent_paths": 48,
+          "sources": 8,
+          "shrink_count": 48,
+          "small_curvature_median": 0.1040549349788486,
+          "large_curvature_median": 0.3262856188404294,
+          "sensitivity_ratio_median": 1.0275018329759709,
+          "small_curvature_max": 0.39221351319551007
+        },
+        {
+          "model": "timesfm",
+          "policy": "locked",
+          "cut": "0",
+          "axis": "amplitude",
+          "dependent_paths": 48,
+          "sources": 8,
+          "shrink_count": 47,
+          "small_curvature_median": 0.0021255692057375723,
+          "large_curvature_median": 0.004249312397759755,
+          "sensitivity_ratio_median": 1.0000122215572365,
+          "small_curvature_max": 0.008646095765397464
+        },
+        {
+          "model": "timesfm",
+          "policy": "locked",
+          "cut": "0",
+          "axis": "frequency",
+          "dependent_paths": 48,
+          "sources": 8,
+          "shrink_count": 48,
+          "small_curvature_median": 0.03914950195727847,
+          "large_curvature_median": 0.12690292559335786,
+          "sensitivity_ratio_median": 1.0029959262843144,
+          "small_curvature_max": 0.13116035128731987
+        },
+        {
+          "model": "timesfm",
+          "policy": "locked",
+          "cut": "forecast",
+          "axis": "amplitude",
+          "dependent_paths": 48,
+          "sources": 8,
+          "shrink_count": 48,
+          "small_curvature_median": 0.00851316214122716,
+          "large_curvature_median": 0.01606660811200617,
+          "sensitivity_ratio_median": 1.0000904918060118,
+          "small_curvature_max": 0.08617836279607867
+        },
+        {
+          "model": "timesfm",
+          "policy": "locked",
+          "cut": "forecast",
+          "axis": "frequency",
+          "dependent_paths": 48,
+          "sources": 8,
+          "shrink_count": 48,
+          "small_curvature_median": 0.16142688085041815,
+          "large_curvature_median": 0.4838681581416988,
+          "sensitivity_ratio_median": 0.9887448783015322,
+          "small_curvature_max": 0.7418558323835143
+        },
+        {
+          "model": "timesfm",
+          "policy": "native",
+          "cut": "0",
+          "axis": "amplitude",
+          "dependent_paths": 48,
+          "sources": 8,
+          "shrink_count": 47,
+          "small_curvature_median": 0.0029389153586593768,
+          "large_curvature_median": 0.00586961335339832,
+          "sensitivity_ratio_median": 0.9999982476347437,
+          "small_curvature_max": 0.011871513179286503
+        },
+        {
+          "model": "timesfm",
+          "policy": "native",
+          "cut": "0",
+          "axis": "frequency",
+          "dependent_paths": 48,
+          "sources": 8,
+          "shrink_count": 48,
+          "small_curvature_median": 0.048030141643583116,
+          "large_curvature_median": 0.16535541607759519,
+          "sensitivity_ratio_median": 0.9914582111466842,
+          "small_curvature_max": 0.19896375649486797
+        },
+        {
+          "model": "timesfm",
+          "policy": "native",
+          "cut": "forecast",
+          "axis": "amplitude",
+          "dependent_paths": 48,
+          "sources": 8,
+          "shrink_count": 44,
+          "small_curvature_median": 0.002556940800767412,
+          "large_curvature_median": 0.00521193720743981,
+          "sensitivity_ratio_median": 1.0000337225858336,
+          "small_curvature_max": 0.02936266750209246
+        },
+        {
+          "model": "timesfm",
+          "policy": "native",
+          "cut": "forecast",
+          "axis": "frequency",
+          "dependent_paths": 48,
+          "sources": 8,
+          "shrink_count": 47,
+          "small_curvature_median": 0.1438662447471985,
+          "large_curvature_median": 0.4122199236106857,
+          "sensitivity_ratio_median": 1.003365910557885,
+          "small_curvature_max": 0.572397863311153
+        }
+      ]
+    },
+    {
+      "claim": "Frequency and amplitude response preferences depend on background;19.2h is not categorically absent. The M4 native response improves strongly at amplitude2, while intermediate amplitudes can be worse.",
+      "evidence_class": "Behavioral controlled additions; reused real FIT instrumentation",
+      "exact_m4": [
+        {
+          "model": "bolt",
+          "source": "m4_hourly:T000172",
+          "domain": "m4_hourly",
+          "period": 24.0,
+          "amplitude": 0.1,
+          "native_nmse": 0.0057872483574018295,
+          "locked_nmse": 0.15145863477084917,
+          "locked_minus_native": 0.14567138641344735,
+          "native_gain": 1.060422006947429,
+          "locked_gain": 0.7537655767905476
+        },
+        {
+          "model": "bolt",
+          "source": "m4_hourly:T000172",
+          "domain": "m4_hourly",
+          "period": 24.0,
+          "amplitude": 0.5,
+          "native_nmse": 0.0009191523282405785,
+          "locked_nmse": 0.1904719545467741,
+          "locked_minus_native": 0.18955280221853352,
+          "native_gain": 1.0156698094713847,
+          "locked_gain": 0.6426475322167914
+        },
+        {
+          "model": "bolt",
+          "source": "m4_hourly:T000172",
+          "domain": "m4_hourly",
+          "period": 24.0,
+          "amplitude": 2.0,
+          "native_nmse": 0.0009513055884297022,
+          "locked_nmse": 0.3092812615708151,
+          "locked_minus_native": 0.3083299559823854,
+          "native_gain": 1.0166177255724143,
+          "locked_gain": 0.4691203843654798
+        },
+        {
+          "model": "bolt",
+          "source": "m4_hourly:T000172",
+          "domain": "m4_hourly",
+          "period": 19.2,
+          "amplitude": 0.1,
+          "native_nmse": 1.5311312967619244,
+          "locked_nmse": 1.4307748328010048,
+          "locked_minus_native": -0.10035646396091957,
+          "native_gain": -0.10596273406997264,
+          "locked_gain": -0.09743504547100605
+        },
+        {
+          "model": "bolt",
+          "source": "m4_hourly:T000172",
+          "domain": "m4_hourly",
+          "period": 19.2,
+          "amplitude": 0.5,
+          "native_nmse": 2.309598714782917,
+          "locked_nmse": 2.0340021422528753,
+          "locked_minus_native": -0.2755965725300418,
+          "native_gain": -0.16430215811865215,
+          "locked_gain": -0.16539111418531674
+        },
+        {
+          "model": "bolt",
+          "source": "m4_hourly:T000172",
+          "domain": "m4_hourly",
+          "period": 19.2,
+          "amplitude": 2.0,
+          "native_nmse": 0.2214899345277517,
+          "locked_nmse": 0.44493109423514104,
+          "locked_minus_native": 0.22344115970738934,
+          "native_gain": 0.7632152165358277,
+          "locked_gain": 0.410573511946235
+        },
+        {
+          "model": "timesfm",
+          "source": "m4_hourly:T000172",
+          "domain": "m4_hourly",
+          "period": 24.0,
+          "amplitude": 0.1,
+          "native_nmse": 0.001625654780169459,
+          "locked_nmse": 0.10073244626146995,
+          "locked_minus_native": 0.09910679148130049,
+          "native_gain": 0.984990883215538,
+          "locked_gain": 0.7857394554693826
+        },
+        {
+          "model": "timesfm",
+          "source": "m4_hourly:T000172",
+          "domain": "m4_hourly",
+          "period": 24.0,
+          "amplitude": 0.5,
+          "native_nmse": 0.0012996365765077747,
+          "locked_nmse": 0.035309818281356556,
+          "locked_minus_native": 0.034010181704848784,
+          "native_gain": 0.9877290066573878,
+          "locked_gain": 1.1190951858274407
+        },
+        {
+          "model": "timesfm",
+          "source": "m4_hourly:T000172",
+          "domain": "m4_hourly",
+          "period": 24.0,
+          "amplitude": 2.0,
+          "native_nmse": 0.0010692114829016876,
+          "locked_nmse": 0.017102531026039213,
+          "locked_minus_native": 0.016033319543137525,
+          "native_gain": 0.9911149694022413,
+          "locked_gain": 0.9774263864730152
+        },
+        {
+          "model": "timesfm",
+          "source": "m4_hourly:T000172",
+          "domain": "m4_hourly",
+          "period": 19.2,
+          "amplitude": 0.1,
+          "native_nmse": 1.5089727639671786,
+          "locked_nmse": 1.4928281470714577,
+          "locked_minus_native": -0.016144616895720887,
+          "native_gain": 0.7000585318518057,
+          "locked_gain": 0.7564625544667465
+        },
+        {
+          "model": "timesfm",
+          "source": "m4_hourly:T000172",
+          "domain": "m4_hourly",
+          "period": 19.2,
+          "amplitude": 0.5,
+          "native_nmse": 0.06010054786491814,
+          "locked_nmse": 0.1108477617402953,
+          "locked_minus_native": 0.05074721387537716,
+          "native_gain": 1.0502681983933226,
+          "locked_gain": 0.7891926716701697
+        },
+        {
+          "model": "timesfm",
+          "source": "m4_hourly:T000172",
+          "domain": "m4_hourly",
+          "period": 19.2,
+          "amplitude": 2.0,
+          "native_nmse": 0.010456317966434536,
+          "locked_nmse": 0.08685873093505553,
+          "locked_minus_native": 0.07640241296862099,
+          "native_gain": 0.9962080496430524,
+          "locked_gain": 1.039226713128076
+        }
+      ],
+      "exact_all_sources": [
+        {
+          "model": "bolt",
+          "source": "syn:4951000",
+          "domain": "synthetic",
+          "period": 24.0,
+          "amplitude": 0.1,
+          "native_nmse": 0.04583253488397404,
+          "locked_nmse": 0.20514127655322567,
+          "locked_minus_native": 0.15930874166925163,
+          "native_gain": 0.8749338323388233,
+          "locked_gain": 0.6450173391637861
+        },
+        {
+          "model": "bolt",
+          "source": "syn:4951000",
+          "domain": "synthetic",
+          "period": 24.0,
+          "amplitude": 0.5,
+          "native_nmse": 0.03734083509969341,
+          "locked_nmse": 0.2581660415891619,
+          "locked_minus_native": 0.2208252064894685,
+          "native_gain": 0.8729882960177325,
+          "locked_gain": 0.5504911944385543
+        },
+        {
+          "model": "bolt",
+          "source": "syn:4951000",
+          "domain": "synthetic",
+          "period": 24.0,
+          "amplitude": 2.0,
+          "native_nmse": 0.016312460592677228,
+          "locked_nmse": 0.3408738804725213,
+          "locked_minus_native": 0.3245614198798441,
+          "native_gain": 0.9073378731259762,
+          "locked_gain": 0.4480988043916677
+        },
+        {
+          "model": "bolt",
+          "source": "syn:4951000",
+          "domain": "synthetic",
+          "period": 19.2,
+          "amplitude": 0.1,
+          "native_nmse": 1.9534691645900177,
+          "locked_nmse": 1.9551791615927234,
+          "locked_minus_native": 0.0017099970027056877,
+          "native_gain": -0.23337686152745668,
+          "locked_gain": -0.24276501438804163
+        },
+        {
+          "model": "bolt",
+          "source": "syn:4951000",
+          "domain": "synthetic",
+          "period": 19.2,
+          "amplitude": 0.5,
+          "native_nmse": 1.5015732981788925,
+          "locked_nmse": 1.4590842550799479,
+          "locked_minus_native": -0.042489043098944634,
+          "native_gain": -0.14539408443204044,
+          "locked_gain": -0.1478938974103307
+        },
+        {
+          "model": "bolt",
+          "source": "syn:4951000",
+          "domain": "synthetic",
+          "period": 19.2,
+          "amplitude": 2.0,
+          "native_nmse": 0.6814064061297483,
+          "locked_nmse": 0.7613816079106924,
+          "locked_minus_native": 0.07997520178094408,
+          "native_gain": 0.28370775281956134,
+          "locked_gain": 0.17219225058049345
+        },
+        {
+          "model": "bolt",
+          "source": "syn:4951001",
+          "domain": "synthetic",
+          "period": 24.0,
+          "amplitude": 0.1,
+          "native_nmse": 1.2456773492907973,
+          "locked_nmse": 1.201335987881038,
+          "locked_minus_native": -0.04434136140975942,
+          "native_gain": 1.0127614902500905,
+          "locked_gain": 1.0045657585303431
+        },
+        {
+          "model": "bolt",
+          "source": "syn:4951001",
+          "domain": "synthetic",
+          "period": 24.0,
+          "amplitude": 0.5,
+          "native_nmse": 0.9717521479379334,
+          "locked_nmse": 0.8553289565771728,
+          "locked_minus_native": -0.11642319136076063,
+          "native_gain": 1.4039778463304915,
+          "locked_gain": 1.3369920435223177
+        },
+        {
+          "model": "bolt",
+          "source": "syn:4951001",
+          "domain": "synthetic",
+          "period": 24.0,
+          "amplitude": 2.0,
+          "native_nmse": 0.13873299772657569,
+          "locked_nmse": 0.2613280945824882,
+          "locked_minus_native": 0.1225950968559125,
+          "native_gain": 1.0358328465882838,
+          "locked_gain": 0.744995601527865
+        },
+        {
+          "model": "bolt",
+          "source": "syn:4951001",
+          "domain": "synthetic",
+          "period": 19.2,
+          "amplitude": 0.1,
+          "native_nmse": 1.5600727805408472,
+          "locked_nmse": 1.5638289567439387,
+          "locked_minus_native": 0.0037561762030915435,
+          "native_gain": -0.14042574400934915,
+          "locked_gain": -0.14106776622778805
+        },
+        {
+          "model": "bolt",
+          "source": "syn:4951001",
+          "domain": "synthetic",
+          "period": 19.2,
+          "amplitude": 0.5,
+          "native_nmse": 1.6914860010888242,
+          "locked_nmse": 1.6700799323063105,
+          "locked_minus_native": -0.02140606878251372,
+          "native_gain": -0.19751559344937702,
+          "locked_gain": -0.18897090996072013
+        },
+        {
+          "model": "bolt",
+          "source": "syn:4951001",
+          "domain": "synthetic",
+          "period": 19.2,
+          "amplitude": 2.0,
+          "native_nmse": 1.0342931574779888,
+          "locked_nmse": 0.7710043681303854,
+          "locked_minus_native": -0.26328878934760336,
+          "native_gain": 0.19271222407097263,
+          "locked_gain": 0.27739463133117487
+        },
+        {
+          "model": "bolt",
+          "source": "syn:4951002",
+          "domain": "synthetic",
+          "period": 24.0,
+          "amplitude": 0.1,
+          "native_nmse": 4.5616555429995636,
+          "locked_nmse": 5.440732629243554,
+          "locked_minus_native": 0.8790770862439903,
+          "native_gain": 2.9794136968780416,
+          "locked_gain": 2.921050068436623
+        },
+        {
+          "model": "bolt",
+          "source": "syn:4951002",
+          "domain": "synthetic",
+          "period": 24.0,
+          "amplitude": 0.5,
+          "native_nmse": 2.3546896348971553,
+          "locked_nmse": 3.4359290257496307,
+          "locked_minus_native": 1.0812393908524753,
+          "native_gain": 2.2823762054986503,
+          "locked_gain": 1.9531549443414136
+        },
+        {
+          "model": "bolt",
+          "source": "syn:4951002",
+          "domain": "synthetic",
+          "period": 24.0,
+          "amplitude": 2.0,
+          "native_nmse": 0.32029429577890123,
+          "locked_nmse": 0.5117391982024132,
+          "locked_minus_native": 0.19144490242351198,
+          "native_gain": 1.3364431753523955,
+          "locked_gain": 0.7019678124724414
+        },
+        {
+          "model": "bolt",
+          "source": "syn:4951002",
+          "domain": "synthetic",
+          "period": 19.2,
+          "amplitude": 0.1,
+          "native_nmse": 15.440930160357192,
+          "locked_nmse": 14.456790668945546,
+          "locked_minus_native": -0.9841394914116464,
+          "native_gain": 0.04559009258644118,
+          "locked_gain": 0.25721272620349084
+        },
+        {
+          "model": "bolt",
+          "source": "syn:4951002",
+          "domain": "synthetic",
+          "period": 19.2,
+          "amplitude": 0.5,
+          "native_nmse": 11.222138004388995,
+          "locked_nmse": 11.128549356775233,
+          "locked_minus_native": -0.09358864761376218,
+          "native_gain": -0.9696659950200254,
+          "locked_gain": -0.8930657720790343
+        },
+        {
+          "model": "bolt",
+          "source": "syn:4951002",
+          "domain": "synthetic",
+          "period": 19.2,
+          "amplitude": 2.0,
+          "native_nmse": 0.4658108319564455,
+          "locked_nmse": 0.7242748128110359,
+          "locked_minus_native": 0.2584639808545904,
+          "native_gain": 0.4071132804029081,
+          "locked_gain": 0.21561859813154538
+        },
+        {
+          "model": "bolt",
+          "source": "syn:4951003",
+          "domain": "synthetic",
+          "period": 24.0,
+          "amplitude": 0.1,
+          "native_nmse": 0.5016379506034038,
+          "locked_nmse": 0.5500392151039959,
+          "locked_minus_native": 0.04840126450059212,
+          "native_gain": 0.4177904956992411,
+          "locked_gain": 0.38302072435554557
+        },
+        {
+          "model": "bolt",
+          "source": "syn:4951003",
+          "domain": "synthetic",
+          "period": 24.0,
+          "amplitude": 0.5,
+          "native_nmse": 0.6792749518221199,
+          "locked_nmse": 0.8093775443809451,
+          "locked_minus_native": 0.13010259255882517,
+          "native_gain": 0.2108875835742168,
+          "locked_gain": 0.13690112784563604
+        },
+        {
+          "model": "bolt",
+          "source": "syn:4951003",
+          "domain": "synthetic",
+          "period": 24.0,
+          "amplitude": 2.0,
+          "native_nmse": 0.1512815161271941,
+          "locked_nmse": 0.4725146347049251,
+          "locked_minus_native": 0.321233118577731,
+          "native_gain": 0.6477215949874295,
+          "locked_gain": 0.38566318760500795
+        },
+        {
+          "model": "bolt",
+          "source": "syn:4951003",
+          "domain": "synthetic",
+          "period": 19.2,
+          "amplitude": 0.1,
+          "native_nmse": 1.435873597073774,
+          "locked_nmse": 0.6300891985154492,
+          "locked_minus_native": -0.8057843985583247,
+          "native_gain": 0.9288688645654092,
+          "locked_gain": 1.0312437991349745
+        },
+        {
+          "model": "bolt",
+          "source": "syn:4951003",
+          "domain": "synthetic",
+          "period": 19.2,
+          "amplitude": 0.5,
+          "native_nmse": 1.1453223003317146,
+          "locked_nmse": 0.3127937226563116,
+          "locked_minus_native": -0.832528577675403,
+          "native_gain": 0.815597752811557,
+          "locked_gain": 0.8815245890646284
+        },
+        {
+          "model": "bolt",
+          "source": "syn:4951003",
+          "domain": "synthetic",
+          "period": 19.2,
+          "amplitude": 2.0,
+          "native_nmse": 0.9538025551550728,
+          "locked_nmse": 0.2392123131345767,
+          "locked_minus_native": -0.7145902420204961,
+          "native_gain": 0.6545894865454598,
+          "locked_gain": 0.5700213899914504
+        },
+        {
+          "model": "bolt",
+          "source": "monash_electricity_hourly:T000221",
+          "domain": "monash_electricity_hourly",
+          "period": 24.0,
+          "amplitude": 0.1,
+          "native_nmse": 0.08297909178420224,
+          "locked_nmse": 0.18477642229759958,
+          "locked_minus_native": 0.10179733051339734,
+          "native_gain": 0.8871263097156429,
+          "locked_gain": 0.8447963714808822
+        },
+        {
+          "model": "bolt",
+          "source": "monash_electricity_hourly:T000221",
+          "domain": "monash_electricity_hourly",
+          "period": 24.0,
+          "amplitude": 0.5,
+          "native_nmse": 0.06283321049386746,
+          "locked_nmse": 0.09197494852470393,
+          "locked_minus_native": 0.029141738030836473,
+          "native_gain": 0.8481002498025498,
+          "locked_gain": 0.7585188802611859
+        },
+        {
+          "model": "bolt",
+          "source": "monash_electricity_hourly:T000221",
+          "domain": "monash_electricity_hourly",
+          "period": 24.0,
+          "amplitude": 2.0,
+          "native_nmse": 0.02419942107877652,
+          "locked_nmse": 0.18653495649223734,
+          "locked_minus_native": 0.16233553541346082,
+          "native_gain": 0.938356760458259,
+          "locked_gain": 0.6169969879681957
+        },
+        {
+          "model": "bolt",
+          "source": "monash_electricity_hourly:T000221",
+          "domain": "monash_electricity_hourly",
+          "period": 19.2,
+          "amplitude": 0.1,
+          "native_nmse": 1.7501710620738755,
+          "locked_nmse": 1.7357609126649198,
+          "locked_minus_native": -0.014410149408955686,
+          "native_gain": -0.21252725964509592,
+          "locked_gain": -0.2205744860746873
+        },
+        {
+          "model": "bolt",
+          "source": "monash_electricity_hourly:T000221",
+          "domain": "monash_electricity_hourly",
+          "period": 19.2,
+          "amplitude": 0.5,
+          "native_nmse": 2.4794884681087863,
+          "locked_nmse": 2.2589849852194885,
+          "locked_minus_native": -0.22050348288929777,
+          "native_gain": -0.1838036260927466,
+          "locked_gain": -0.1718241578676122
+        },
+        {
+          "model": "bolt",
+          "source": "monash_electricity_hourly:T000221",
+          "domain": "monash_electricity_hourly",
+          "period": 19.2,
+          "amplitude": 2.0,
+          "native_nmse": 0.12232066806341563,
+          "locked_nmse": 0.3494043119501722,
+          "locked_minus_native": 0.22708364388675656,
+          "native_gain": 1.0925995550334242,
+          "locked_gain": 0.616353512676789
+        },
+        {
+          "model": "bolt",
+          "source": "m4_hourly:T000172",
+          "domain": "m4_hourly",
+          "period": 24.0,
+          "amplitude": 0.1,
+          "native_nmse": 0.0057872483574018295,
+          "locked_nmse": 0.15145863477084917,
+          "locked_minus_native": 0.14567138641344735,
+          "native_gain": 1.060422006947429,
+          "locked_gain": 0.7537655767905476
+        },
+        {
+          "model": "bolt",
+          "source": "m4_hourly:T000172",
+          "domain": "m4_hourly",
+          "period": 24.0,
+          "amplitude": 0.5,
+          "native_nmse": 0.0009191523282405785,
+          "locked_nmse": 0.1904719545467741,
+          "locked_minus_native": 0.18955280221853352,
+          "native_gain": 1.0156698094713847,
+          "locked_gain": 0.6426475322167914
+        },
+        {
+          "model": "bolt",
+          "source": "m4_hourly:T000172",
+          "domain": "m4_hourly",
+          "period": 24.0,
+          "amplitude": 2.0,
+          "native_nmse": 0.0009513055884297022,
+          "locked_nmse": 0.3092812615708151,
+          "locked_minus_native": 0.3083299559823854,
+          "native_gain": 1.0166177255724143,
+          "locked_gain": 0.4691203843654798
+        },
+        {
+          "model": "bolt",
+          "source": "m4_hourly:T000172",
+          "domain": "m4_hourly",
+          "period": 19.2,
+          "amplitude": 0.1,
+          "native_nmse": 1.5311312967619244,
+          "locked_nmse": 1.4307748328010048,
+          "locked_minus_native": -0.10035646396091957,
+          "native_gain": -0.10596273406997264,
+          "locked_gain": -0.09743504547100605
+        },
+        {
+          "model": "bolt",
+          "source": "m4_hourly:T000172",
+          "domain": "m4_hourly",
+          "period": 19.2,
+          "amplitude": 0.5,
+          "native_nmse": 2.309598714782917,
+          "locked_nmse": 2.0340021422528753,
+          "locked_minus_native": -0.2755965725300418,
+          "native_gain": -0.16430215811865215,
+          "locked_gain": -0.16539111418531674
+        },
+        {
+          "model": "bolt",
+          "source": "m4_hourly:T000172",
+          "domain": "m4_hourly",
+          "period": 19.2,
+          "amplitude": 2.0,
+          "native_nmse": 0.2214899345277517,
+          "locked_nmse": 0.44493109423514104,
+          "locked_minus_native": 0.22344115970738934,
+          "native_gain": 0.7632152165358277,
+          "locked_gain": 0.410573511946235
+        },
+        {
+          "model": "bolt",
+          "source": "monash_pedestrian_counts:T000028",
+          "domain": "monash_pedestrian_counts",
+          "period": 24.0,
+          "amplitude": 0.1,
+          "native_nmse": 0.3803964561830391,
+          "locked_nmse": 0.23909785761131322,
+          "locked_minus_native": -0.14129859857172586,
+          "native_gain": 1.2396868962724752,
+          "locked_gain": 1.1110640747073897
+        },
+        {
+          "model": "bolt",
+          "source": "monash_pedestrian_counts:T000028",
+          "domain": "monash_pedestrian_counts",
+          "period": 24.0,
+          "amplitude": 0.5,
+          "native_nmse": 0.10108926401272096,
+          "locked_nmse": 0.061832296182680616,
+          "locked_minus_native": -0.039256967830040346,
+          "native_gain": 1.1180693723892845,
+          "locked_gain": 0.8469580640766633
+        },
+        {
+          "model": "bolt",
+          "source": "monash_pedestrian_counts:T000028",
+          "domain": "monash_pedestrian_counts",
+          "period": 24.0,
+          "amplitude": 2.0,
+          "native_nmse": 0.01997691526513989,
+          "locked_nmse": 0.2838365631296882,
+          "locked_minus_native": 0.2638596478645483,
+          "native_gain": 0.9547306475765688,
+          "locked_gain": 0.5243515368813606
+        },
+        {
+          "model": "bolt",
+          "source": "monash_pedestrian_counts:T000028",
+          "domain": "monash_pedestrian_counts",
+          "period": 19.2,
+          "amplitude": 0.1,
+          "native_nmse": 1.8058187821485447,
+          "locked_nmse": 1.803254475010399,
+          "locked_minus_native": -0.002564307138145816,
+          "native_gain": 0.1970927122430581,
+          "locked_gain": 0.18786840184767092
+        },
+        {
+          "model": "bolt",
+          "source": "monash_pedestrian_counts:T000028",
+          "domain": "monash_pedestrian_counts",
+          "period": 19.2,
+          "amplitude": 0.5,
+          "native_nmse": 1.2327705007199163,
+          "locked_nmse": 1.2077512391561416,
+          "locked_minus_native": -0.025019261563774764,
+          "native_gain": 0.12979205903707988,
+          "locked_gain": 0.10818741003514401
+        },
+        {
+          "model": "bolt",
+          "source": "monash_pedestrian_counts:T000028",
+          "domain": "monash_pedestrian_counts",
+          "period": 19.2,
+          "amplitude": 2.0,
+          "native_nmse": 1.5227609642154971,
+          "locked_nmse": 1.1279473136468596,
+          "locked_minus_native": -0.3948136505686375,
+          "native_gain": 0.06300923809027387,
+          "locked_gain": 0.09375680516318702
+        },
+        {
+          "model": "bolt",
+          "source": "monash_traffic:T000099",
+          "domain": "monash_traffic",
+          "period": 24.0,
+          "amplitude": 0.1,
+          "native_nmse": 0.009360095430180604,
+          "locked_nmse": 0.02604322636138039,
+          "locked_minus_native": 0.01668313093119979,
+          "native_gain": 0.9780555200598874,
+          "locked_gain": 0.972226627912482
+        },
+        {
+          "model": "bolt",
+          "source": "monash_traffic:T000099",
+          "domain": "monash_traffic",
+          "period": 24.0,
+          "amplitude": 0.5,
+          "native_nmse": 0.004160804968457205,
+          "locked_nmse": 0.008940367057329623,
+          "locked_minus_native": 0.004779562088872418,
+          "native_gain": 0.9722398305047829,
+          "locked_gain": 0.9931531043488452
+        },
+        {
+          "model": "bolt",
+          "source": "monash_traffic:T000099",
+          "domain": "monash_traffic",
+          "period": 24.0,
+          "amplitude": 2.0,
+          "native_nmse": 0.0036149788602856878,
+          "locked_nmse": 0.03952415077042464,
+          "locked_minus_native": 0.035909171910138954,
+          "native_gain": 1.0077711218651142,
+          "locked_gain": 0.8572895007314525
+        },
+        {
+          "model": "bolt",
+          "source": "monash_traffic:T000099",
+          "domain": "monash_traffic",
+          "period": 19.2,
+          "amplitude": 0.1,
+          "native_nmse": 1.6425615530912145,
+          "locked_nmse": 1.5697213400868344,
+          "locked_minus_native": -0.07284021300438015,
+          "native_gain": -0.23610957918531075,
+          "locked_gain": -0.21424854220515327
+        },
+        {
+          "model": "bolt",
+          "source": "monash_traffic:T000099",
+          "domain": "monash_traffic",
+          "period": 19.2,
+          "amplitude": 0.5,
+          "native_nmse": 1.4739406155674384,
+          "locked_nmse": 1.4794422711496278,
+          "locked_minus_native": 0.005501655582189402,
+          "native_gain": -0.04163998801948144,
+          "locked_gain": -0.04086711627260381
+        },
+        {
+          "model": "bolt",
+          "source": "monash_traffic:T000099",
+          "domain": "monash_traffic",
+          "period": 19.2,
+          "amplitude": 2.0,
+          "native_nmse": 0.9412762167192522,
+          "locked_nmse": 0.8873631032091788,
+          "locked_minus_native": -0.05391311351007344,
+          "native_gain": 0.6772678654358784,
+          "locked_gain": 0.35472545737112166
+        },
+        {
+          "model": "timesfm",
+          "source": "syn:4951000",
+          "domain": "synthetic",
+          "period": 24.0,
+          "amplitude": 0.1,
+          "native_nmse": 0.021983829450146663,
+          "locked_nmse": 0.1961182035065275,
+          "locked_minus_native": 0.17413437405638085,
+          "native_gain": 0.9572479050509449,
+          "locked_gain": 0.7925506250126158
+        },
+        {
+          "model": "timesfm",
+          "source": "syn:4951000",
+          "domain": "synthetic",
+          "period": 24.0,
+          "amplitude": 0.5,
+          "native_nmse": 0.008253109624048753,
+          "locked_nmse": 0.10225916700553045,
+          "locked_minus_native": 0.0940060573814817,
+          "native_gain": 0.9859117963595319,
+          "locked_gain": 1.0128129020493049
+        },
+        {
+          "model": "timesfm",
+          "source": "syn:4951000",
+          "domain": "synthetic",
+          "period": 24.0,
+          "amplitude": 2.0,
+          "native_nmse": 0.005187263355486478,
+          "locked_nmse": 0.04212032166217498,
+          "locked_minus_native": 0.0369330583066885,
+          "native_gain": 0.9952006735129145,
+          "locked_gain": 1.0572703475649554
+        },
+        {
+          "model": "timesfm",
+          "source": "syn:4951000",
+          "domain": "synthetic",
+          "period": 19.2,
+          "amplitude": 0.1,
+          "native_nmse": 2.79974118795273,
+          "locked_nmse": 2.9519008011117855,
+          "locked_minus_native": 0.15215961315905568,
+          "native_gain": -0.28066398121213143,
+          "locked_gain": -0.36902799105662515
+        },
+        {
+          "model": "timesfm",
+          "source": "syn:4951000",
+          "domain": "synthetic",
+          "period": 19.2,
+          "amplitude": 0.5,
+          "native_nmse": 0.31645826302004687,
+          "locked_nmse": 0.4341167426010667,
+          "locked_minus_native": 0.11765847958101983,
+          "native_gain": 0.4800197952896773,
+          "locked_gain": 0.4138968741971074
+        },
+        {
+          "model": "timesfm",
+          "source": "syn:4951000",
+          "domain": "synthetic",
+          "period": 19.2,
+          "amplitude": 2.0,
+          "native_nmse": 0.10138847119066008,
+          "locked_nmse": 0.2802117382055535,
+          "locked_minus_native": 0.17882326701489343,
+          "native_gain": 0.9394189507914421,
+          "locked_gain": 0.996901851064989
+        },
+        {
+          "model": "timesfm",
+          "source": "syn:4951001",
+          "domain": "synthetic",
+          "period": 24.0,
+          "amplitude": 0.1,
+          "native_nmse": 2.4849693893799163,
+          "locked_nmse": 2.6552910950055533,
+          "locked_minus_native": 0.17032170562563698,
+          "native_gain": 1.3720638907294738,
+          "locked_gain": 1.3555021866994117
+        },
+        {
+          "model": "timesfm",
+          "source": "syn:4951001",
+          "domain": "synthetic",
+          "period": 24.0,
+          "amplitude": 0.5,
+          "native_nmse": 0.28675469837613166,
+          "locked_nmse": 0.2846522722212887,
+          "locked_minus_native": -0.0021024261548429624,
+          "native_gain": 1.0338115326310942,
+          "locked_gain": 1.0101864743290685
+        },
+        {
+          "model": "timesfm",
+          "source": "syn:4951001",
+          "domain": "synthetic",
+          "period": 24.0,
+          "amplitude": 2.0,
+          "native_nmse": 0.11896865217045584,
+          "locked_nmse": 0.15098949505646067,
+          "locked_minus_native": 0.03202084288600483,
+          "native_gain": 0.9172593905895624,
+          "locked_gain": 0.9658810642516883
+        },
+        {
+          "model": "timesfm",
+          "source": "syn:4951001",
+          "domain": "synthetic",
+          "period": 19.2,
+          "amplitude": 0.1,
+          "native_nmse": 6.0479294012792035,
+          "locked_nmse": 6.109248827081309,
+          "locked_minus_native": 0.0613194258021057,
+          "native_gain": -0.9972354266741328,
+          "locked_gain": -0.9724004176138176
+        },
+        {
+          "model": "timesfm",
+          "source": "syn:4951001",
+          "domain": "synthetic",
+          "period": 19.2,
+          "amplitude": 0.5,
+          "native_nmse": 1.561733195776529,
+          "locked_nmse": 1.7162293124879469,
+          "locked_minus_native": 0.15449611671141783,
+          "native_gain": 0.3321179327113656,
+          "locked_gain": 0.24705960777301744
+        },
+        {
+          "model": "timesfm",
+          "source": "syn:4951001",
+          "domain": "synthetic",
+          "period": 19.2,
+          "amplitude": 2.0,
+          "native_nmse": 0.22799825521953784,
+          "locked_nmse": 0.16992084494595752,
+          "locked_minus_native": -0.05807741027358032,
+          "native_gain": 0.8390355838238118,
+          "locked_gain": 0.8763077548420704
+        },
+        {
+          "model": "timesfm",
+          "source": "syn:4951002",
+          "domain": "synthetic",
+          "period": 24.0,
+          "amplitude": 0.1,
+          "native_nmse": 0.019732053818179298,
+          "locked_nmse": 0.33122468160437346,
+          "locked_minus_native": 0.3114926277861942,
+          "native_gain": 0.9533887045689166,
+          "locked_gain": 1.4078192579835747
+        },
+        {
+          "model": "timesfm",
+          "source": "syn:4951002",
+          "domain": "synthetic",
+          "period": 24.0,
+          "amplitude": 0.5,
+          "native_nmse": 0.05541284401202493,
+          "locked_nmse": 0.35301044307967533,
+          "locked_minus_native": 0.2975975990676504,
+          "native_gain": 0.9613131861887474,
+          "locked_gain": 0.7898995077129778
+        },
+        {
+          "model": "timesfm",
+          "source": "syn:4951002",
+          "domain": "synthetic",
+          "period": 24.0,
+          "amplitude": 2.0,
+          "native_nmse": 0.042091458952122504,
+          "locked_nmse": 0.2621425834439249,
+          "locked_minus_native": 0.22005112449180236,
+          "native_gain": 1.0027949905293911,
+          "locked_gain": 1.0323427267111216
+        },
+        {
+          "model": "timesfm",
+          "source": "syn:4951002",
+          "domain": "synthetic",
+          "period": 19.2,
+          "amplitude": 0.1,
+          "native_nmse": 0.37933689801063225,
+          "locked_nmse": 0.9329171144192643,
+          "locked_minus_native": 0.5535802164086321,
+          "native_gain": 1.3295213499022558,
+          "locked_gain": 1.8184302142534847
+        },
+        {
+          "model": "timesfm",
+          "source": "syn:4951002",
+          "domain": "synthetic",
+          "period": 19.2,
+          "amplitude": 0.5,
+          "native_nmse": 0.26617051650262996,
+          "locked_nmse": 0.2503100366323072,
+          "locked_minus_native": -0.01586047987032274,
+          "native_gain": 1.3284992712927872,
+          "locked_gain": 1.363819558608452
+        },
+        {
+          "model": "timesfm",
+          "source": "syn:4951002",
+          "domain": "synthetic",
+          "period": 19.2,
+          "amplitude": 2.0,
+          "native_nmse": 0.1238488909147345,
+          "locked_nmse": 0.6731156553159449,
+          "locked_minus_native": 0.5492667644012104,
+          "native_gain": 0.75351317626486,
+          "locked_gain": 0.34321217613880284
+        },
+        {
+          "model": "timesfm",
+          "source": "syn:4951003",
+          "domain": "synthetic",
+          "period": 24.0,
+          "amplitude": 0.1,
+          "native_nmse": 0.6979736135790104,
+          "locked_nmse": 0.25287112562836117,
+          "locked_minus_native": -0.4451024879506493,
+          "native_gain": 1.1061760281825035,
+          "locked_gain": 1.0887959588617213
+        },
+        {
+          "model": "timesfm",
+          "source": "syn:4951003",
+          "domain": "synthetic",
+          "period": 24.0,
+          "amplitude": 0.5,
+          "native_nmse": 0.2845676871844703,
+          "locked_nmse": 0.2735385264119723,
+          "locked_minus_native": -0.011029160772497992,
+          "native_gain": 1.0740470251150098,
+          "locked_gain": 0.6034602739671143
+        },
+        {
+          "model": "timesfm",
+          "source": "syn:4951003",
+          "domain": "synthetic",
+          "period": 24.0,
+          "amplitude": 2.0,
+          "native_nmse": 0.008801212641686198,
+          "locked_nmse": 0.10559257356576375,
+          "locked_minus_native": 0.09679136092407756,
+          "native_gain": 1.054710030817181,
+          "locked_gain": 0.7236522109968415
+        },
+        {
+          "model": "timesfm",
+          "source": "syn:4951003",
+          "domain": "synthetic",
+          "period": 19.2,
+          "amplitude": 0.1,
+          "native_nmse": 0.046929584986177504,
+          "locked_nmse": 0.11505037460569732,
+          "locked_minus_native": 0.06812078961951981,
+          "native_gain": 1.0792234346533374,
+          "locked_gain": 1.0470619774617629
+        },
+        {
+          "model": "timesfm",
+          "source": "syn:4951003",
+          "domain": "synthetic",
+          "period": 19.2,
+          "amplitude": 0.5,
+          "native_nmse": 0.023077043997373287,
+          "locked_nmse": 0.1507107225418419,
+          "locked_minus_native": 0.1276336785444686,
+          "native_gain": 0.9332250816313364,
+          "locked_gain": 0.6565343688144671
+        },
+        {
+          "model": "timesfm",
+          "source": "syn:4951003",
+          "domain": "synthetic",
+          "period": 19.2,
+          "amplitude": 2.0,
+          "native_nmse": 0.06462215805559392,
+          "locked_nmse": 0.018404431302946233,
+          "locked_minus_native": -0.04621772675264768,
+          "native_gain": 0.9068234007123489,
+          "locked_gain": 0.9796844618661606
+        },
+        {
+          "model": "timesfm",
+          "source": "monash_electricity_hourly:T000221",
+          "domain": "monash_electricity_hourly",
+          "period": 24.0,
+          "amplitude": 0.1,
+          "native_nmse": 0.6973573082545317,
+          "locked_nmse": 2.3514749090625053,
+          "locked_minus_native": 1.6541176008079737,
+          "native_gain": 0.9257521288017336,
+          "locked_gain": 1.05329943778935
+        },
+        {
+          "model": "timesfm",
+          "source": "monash_electricity_hourly:T000221",
+          "domain": "monash_electricity_hourly",
+          "period": 24.0,
+          "amplitude": 0.5,
+          "native_nmse": 0.6777829800221938,
+          "locked_nmse": 0.9843316773567133,
+          "locked_minus_native": 0.3065486973345195,
+          "native_gain": 1.1770569080740705,
+          "locked_gain": 0.8984949908688851
+        },
+        {
+          "model": "timesfm",
+          "source": "monash_electricity_hourly:T000221",
+          "domain": "monash_electricity_hourly",
+          "period": 24.0,
+          "amplitude": 2.0,
+          "native_nmse": 0.041988959640742334,
+          "locked_nmse": 0.4078554537278329,
+          "locked_minus_native": 0.36586649408709054,
+          "native_gain": 0.9863572159715505,
+          "locked_gain": 1.3536660754646808
+        },
+        {
+          "model": "timesfm",
+          "source": "monash_electricity_hourly:T000221",
+          "domain": "monash_electricity_hourly",
+          "period": 19.2,
+          "amplitude": 0.1,
+          "native_nmse": 3.0045082480223226,
+          "locked_nmse": 3.3478275241000035,
+          "locked_minus_native": 0.34331927607768087,
+          "native_gain": -0.584175476206286,
+          "locked_gain": -0.6441722598198436
+        },
+        {
+          "model": "timesfm",
+          "source": "monash_electricity_hourly:T000221",
+          "domain": "monash_electricity_hourly",
+          "period": 19.2,
+          "amplitude": 0.5,
+          "native_nmse": 6.362005210067772,
+          "locked_nmse": 5.74530274034414,
+          "locked_minus_native": -0.6167024697236316,
+          "native_gain": -0.632162378724928,
+          "locked_gain": -0.5438881500802205
+        },
+        {
+          "model": "timesfm",
+          "source": "monash_electricity_hourly:T000221",
+          "domain": "monash_electricity_hourly",
+          "period": 19.2,
+          "amplitude": 2.0,
+          "native_nmse": 0.3286998290078785,
+          "locked_nmse": 0.5211938545087011,
+          "locked_minus_native": 0.19249402550082267,
+          "native_gain": 0.9034957393618908,
+          "locked_gain": 0.7036199104632226
+        },
+        {
+          "model": "timesfm",
+          "source": "m4_hourly:T000172",
+          "domain": "m4_hourly",
+          "period": 24.0,
+          "amplitude": 0.1,
+          "native_nmse": 0.001625654780169459,
+          "locked_nmse": 0.10073244626146995,
+          "locked_minus_native": 0.09910679148130049,
+          "native_gain": 0.984990883215538,
+          "locked_gain": 0.7857394554693826
+        },
+        {
+          "model": "timesfm",
+          "source": "m4_hourly:T000172",
+          "domain": "m4_hourly",
+          "period": 24.0,
+          "amplitude": 0.5,
+          "native_nmse": 0.0012996365765077747,
+          "locked_nmse": 0.035309818281356556,
+          "locked_minus_native": 0.034010181704848784,
+          "native_gain": 0.9877290066573878,
+          "locked_gain": 1.1190951858274407
+        },
+        {
+          "model": "timesfm",
+          "source": "m4_hourly:T000172",
+          "domain": "m4_hourly",
+          "period": 24.0,
+          "amplitude": 2.0,
+          "native_nmse": 0.0010692114829016876,
+          "locked_nmse": 0.017102531026039213,
+          "locked_minus_native": 0.016033319543137525,
+          "native_gain": 0.9911149694022413,
+          "locked_gain": 0.9774263864730152
+        },
+        {
+          "model": "timesfm",
+          "source": "m4_hourly:T000172",
+          "domain": "m4_hourly",
+          "period": 19.2,
+          "amplitude": 0.1,
+          "native_nmse": 1.5089727639671786,
+          "locked_nmse": 1.4928281470714577,
+          "locked_minus_native": -0.016144616895720887,
+          "native_gain": 0.7000585318518057,
+          "locked_gain": 0.7564625544667465
+        },
+        {
+          "model": "timesfm",
+          "source": "m4_hourly:T000172",
+          "domain": "m4_hourly",
+          "period": 19.2,
+          "amplitude": 0.5,
+          "native_nmse": 0.06010054786491814,
+          "locked_nmse": 0.1108477617402953,
+          "locked_minus_native": 0.05074721387537716,
+          "native_gain": 1.0502681983933226,
+          "locked_gain": 0.7891926716701697
+        },
+        {
+          "model": "timesfm",
+          "source": "m4_hourly:T000172",
+          "domain": "m4_hourly",
+          "period": 19.2,
+          "amplitude": 2.0,
+          "native_nmse": 0.010456317966434536,
+          "locked_nmse": 0.08685873093505553,
+          "locked_minus_native": 0.07640241296862099,
+          "native_gain": 0.9962080496430524,
+          "locked_gain": 1.039226713128076
+        },
+        {
+          "model": "timesfm",
+          "source": "monash_pedestrian_counts:T000028",
+          "domain": "monash_pedestrian_counts",
+          "period": 24.0,
+          "amplitude": 0.1,
+          "native_nmse": 0.08388252730581718,
+          "locked_nmse": 0.1527576909642871,
+          "locked_minus_native": 0.06887516365846992,
+          "native_gain": 0.78566678484853,
+          "locked_gain": 0.7762352206762044
+        },
+        {
+          "model": "timesfm",
+          "source": "monash_pedestrian_counts:T000028",
+          "domain": "monash_pedestrian_counts",
+          "period": 24.0,
+          "amplitude": 0.5,
+          "native_nmse": 0.06451923062601354,
+          "locked_nmse": 0.7344837939647362,
+          "locked_minus_native": 0.6699645633387227,
+          "native_gain": 0.7759969781260919,
+          "locked_gain": 0.34836473345967417
+        },
+        {
+          "model": "timesfm",
+          "source": "monash_pedestrian_counts:T000028",
+          "domain": "monash_pedestrian_counts",
+          "period": 24.0,
+          "amplitude": 2.0,
+          "native_nmse": 0.17281336727157828,
+          "locked_nmse": 0.072097413029815,
+          "locked_minus_native": -0.10071595424176329,
+          "native_gain": 0.7026553326180558,
+          "locked_gain": 0.8426474925156922
+        },
+        {
+          "model": "timesfm",
+          "source": "monash_pedestrian_counts:T000028",
+          "domain": "monash_pedestrian_counts",
+          "period": 19.2,
+          "amplitude": 0.1,
+          "native_nmse": 1.792717750169477,
+          "locked_nmse": 1.7889988906193717,
+          "locked_minus_native": -0.0037188595501054245,
+          "native_gain": -0.19502036190394229,
+          "locked_gain": -0.19671822778318818
+        },
+        {
+          "model": "timesfm",
+          "source": "monash_pedestrian_counts:T000028",
+          "domain": "monash_pedestrian_counts",
+          "period": 19.2,
+          "amplitude": 0.5,
+          "native_nmse": 1.743112075872884,
+          "locked_nmse": 1.688735528811147,
+          "locked_minus_native": -0.054376547061737,
+          "native_gain": -0.11888036810168127,
+          "locked_gain": -0.15328744772976927
+        },
+        {
+          "model": "timesfm",
+          "source": "monash_pedestrian_counts:T000028",
+          "domain": "monash_pedestrian_counts",
+          "period": 19.2,
+          "amplitude": 2.0,
+          "native_nmse": 0.4528820829049409,
+          "locked_nmse": 0.5969571351167163,
+          "locked_minus_native": 0.1440750522117754,
+          "native_gain": 0.3955388857700965,
+          "locked_gain": 0.35073910660994256
+        },
+        {
+          "model": "timesfm",
+          "source": "monash_traffic:T000099",
+          "domain": "monash_traffic",
+          "period": 24.0,
+          "amplitude": 0.1,
+          "native_nmse": 0.0306908529598452,
+          "locked_nmse": 0.04645119894483256,
+          "locked_minus_native": 0.015760345984987358,
+          "native_gain": 1.0242784032818009,
+          "locked_gain": 1.0368381980342845
+        },
+        {
+          "model": "timesfm",
+          "source": "monash_traffic:T000099",
+          "domain": "monash_traffic",
+          "period": 24.0,
+          "amplitude": 0.5,
+          "native_nmse": 0.01249751396958031,
+          "locked_nmse": 0.017435427401566127,
+          "locked_minus_native": 0.004937913431985817,
+          "native_gain": 1.020747246499783,
+          "locked_gain": 1.0247131220786758
+        },
+        {
+          "model": "timesfm",
+          "source": "monash_traffic:T000099",
+          "domain": "monash_traffic",
+          "period": 24.0,
+          "amplitude": 2.0,
+          "native_nmse": 0.0033076977811465715,
+          "locked_nmse": 0.006473298379534115,
+          "locked_minus_native": 0.0031656005983875433,
+          "native_gain": 0.9726355102623404,
+          "locked_gain": 1.004531371897368
+        },
+        {
+          "model": "timesfm",
+          "source": "monash_traffic:T000099",
+          "domain": "monash_traffic",
+          "period": 19.2,
+          "amplitude": 0.1,
+          "native_nmse": 1.4954850984573618,
+          "locked_nmse": 1.4117118862943572,
+          "locked_minus_native": -0.0837732121630046,
+          "native_gain": -0.10560953650678317,
+          "locked_gain": -0.10887342752227801
+        },
+        {
+          "model": "timesfm",
+          "source": "monash_traffic:T000099",
+          "domain": "monash_traffic",
+          "period": 19.2,
+          "amplitude": 0.5,
+          "native_nmse": 1.597365692607226,
+          "locked_nmse": 1.6472453435058054,
+          "locked_minus_native": 0.049879650898579486,
+          "native_gain": 0.004175467724281831,
+          "locked_gain": -0.11584213934365872
+        },
+        {
+          "model": "timesfm",
+          "source": "monash_traffic:T000099",
+          "domain": "monash_traffic",
+          "period": 19.2,
+          "amplitude": 2.0,
+          "native_nmse": 0.061904491603346316,
+          "locked_nmse": 0.12452797080369074,
+          "locked_minus_native": 0.06262347920034442,
+          "native_gain": 0.8525784505192019,
+          "locked_gain": 1.2431184695183524
+        }
+      ]
+    },
+    {
+      "claim": "Locking background normalization changes signal response and can harm it; it does not remove mixture interaction. Hidden and forecast interactions are distinct.",
+      "evidence_class": "Within-model normalizer control and descriptive four-point effects",
+      "exact_equal_amplitude_interactions": [
+        {
+          "model": "bolt",
+          "policy": "native",
+          "cut": "forecast",
+          "amplitude_each": 0.1,
+          "sources": 8,
+          "relative_sum_median": 0.0404166606894201,
+          "source_values": {
+            "syn:4951000": 0.017785306783722137,
+            "syn:4951001": 0.07816627026320505,
+            "syn:4951002": 0.11579492941397002,
+            "syn:4951003": 0.049359257070088786,
+            "monash_electricity_hourly:T000221": 0.029390787692498643,
+            "m4_hourly:T000172": 0.02433245396583535,
+            "monash_pedestrian_counts:T000028": 0.13223991612877245,
+            "monash_traffic:T000099": 0.03147406430875141
+          }
+        },
+        {
+          "model": "bolt",
+          "policy": "native",
+          "cut": "forecast",
+          "amplitude_each": 0.5,
+          "sources": 8,
+          "relative_sum_median": 0.13175965312577465,
+          "source_values": {
+            "syn:4951000": 0.09020309113074339,
+            "syn:4951001": 0.1321758026680977,
+            "syn:4951002": 0.3036364810566593,
+            "syn:4951003": 0.18523808008505194,
+            "monash_electricity_hourly:T000221": 0.32923585693741875,
+            "m4_hourly:T000172": 0.13134350358345157,
+            "monash_pedestrian_counts:T000028": 0.12966802646917916,
+            "monash_traffic:T000099": 0.12282333024311297
+          }
+        },
+        {
+          "model": "bolt",
+          "policy": "native",
+          "cut": "forecast",
+          "amplitude_each": 2.0,
+          "sources": 8,
+          "relative_sum_median": 0.30719116043042216,
+          "source_values": {
+            "syn:4951000": 0.4001444892904201,
+            "syn:4951001": 0.2648965258602543,
+            "syn:4951002": 0.24720224026534143,
+            "syn:4951003": 0.264581384715518,
+            "monash_electricity_hourly:T000221": 0.8328356076431068,
+            "m4_hourly:T000172": 0.5511301480712428,
+            "monash_pedestrian_counts:T000028": 0.2769980916155203,
+            "monash_traffic:T000099": 0.3373842292453241
+          }
+        },
+        {
+          "model": "bolt",
+          "policy": "native",
+          "cut": "0",
+          "amplitude_each": 0.1,
+          "sources": 8,
+          "relative_sum_median": 0.04820520885874026,
+          "source_values": {
+            "syn:4951000": 0.03711772487687552,
+            "syn:4951001": 0.043298288783480104,
+            "syn:4951002": 0.0541501446765994,
+            "syn:4951003": 0.05311212893400041,
+            "monash_electricity_hourly:T000221": 0.03779153270982195,
+            "m4_hourly:T000172": 0.059843523630265696,
+            "monash_pedestrian_counts:T000028": 0.054677078787992696,
+            "monash_traffic:T000099": 0.039234390334918386
+          }
+        },
+        {
+          "model": "bolt",
+          "policy": "native",
+          "cut": "0",
+          "amplitude_each": 0.5,
+          "sources": 8,
+          "relative_sum_median": 0.1541201410761205,
+          "source_values": {
+            "syn:4951000": 0.13186890945296756,
+            "syn:4951001": 0.12864909747124967,
+            "syn:4951002": 0.17249183044813968,
+            "syn:4951003": 0.17975792998361478,
+            "monash_electricity_hourly:T000221": 0.1357484517041013,
+            "m4_hourly:T000172": 0.18042964756430704,
+            "monash_pedestrian_counts:T000028": 0.25836568688226985,
+            "monash_traffic:T000099": 0.11336515084055383
+          }
+        },
+        {
+          "model": "bolt",
+          "policy": "native",
+          "cut": "0",
+          "amplitude_each": 2.0,
+          "sources": 8,
+          "relative_sum_median": 0.3192432683745561,
+          "source_values": {
+            "syn:4951000": 0.2730229300715128,
+            "syn:4951001": 0.30414859696153096,
+            "syn:4951002": 0.3377031204110053,
+            "syn:4951003": 0.34278466484693887,
+            "monash_electricity_hourly:T000221": 0.3087526437942708,
+            "m4_hourly:T000172": 0.32766094612420976,
+            "monash_pedestrian_counts:T000028": 0.365988376351549,
+            "monash_traffic:T000099": 0.31082559062490234
+          }
+        },
+        {
+          "model": "bolt",
+          "policy": "locked",
+          "cut": "forecast",
+          "amplitude_each": 0.1,
+          "sources": 8,
+          "relative_sum_median": 0.06972087506910603,
+          "source_values": {
+            "syn:4951000": 0.05956558788463328,
+            "syn:4951001": 0.07987616225357877,
+            "syn:4951002": 0.12842830669576263,
+            "syn:4951003": 0.04846280752746467,
+            "monash_electricity_hourly:T000221": 0.1141612510765819,
+            "m4_hourly:T000172": 0.04686029390063102,
+            "monash_pedestrian_counts:T000028": 0.12931197779767128,
+            "monash_traffic:T000099": 0.028757574980538898
+          }
+        },
+        {
+          "model": "bolt",
+          "policy": "locked",
+          "cut": "forecast",
+          "amplitude_each": 0.5,
+          "sources": 8,
+          "relative_sum_median": 0.21114279139830952,
+          "source_values": {
+            "syn:4951000": 0.23526400486836269,
+            "syn:4951001": 0.12647221481714657,
+            "syn:4951002": 0.3958401370061985,
+            "syn:4951003": 0.2352874498289762,
+            "monash_electricity_hourly:T000221": 0.5251538442949488,
+            "m4_hourly:T000172": 0.14388503748962772,
+            "monash_pedestrian_counts:T000028": 0.18702157792825636,
+            "monash_traffic:T000099": 0.1381411208399353
+          }
+        },
+        {
+          "model": "bolt",
+          "policy": "locked",
+          "cut": "forecast",
+          "amplitude_each": 2.0,
+          "sources": 8,
+          "relative_sum_median": 0.3565223140119107,
+          "source_values": {
+            "syn:4951000": 0.36180658122377396,
+            "syn:4951001": 0.4291120942352345,
+            "syn:4951002": 0.2889720899469756,
+            "syn:4951003": 0.35080512082491067,
+            "monash_electricity_hourly:T000221": 0.4806283981300657,
+            "m4_hourly:T000172": 0.5185633804509152,
+            "monash_pedestrian_counts:T000028": 0.25932233859841536,
+            "monash_traffic:T000099": 0.35123804680004744
+          }
+        },
+        {
+          "model": "bolt",
+          "policy": "locked",
+          "cut": "0",
+          "amplitude_each": 0.1,
+          "sources": 8,
+          "relative_sum_median": 0.040260400087076834,
+          "source_values": {
+            "syn:4951000": 0.03154806402807085,
+            "syn:4951001": 0.03942064915607699,
+            "syn:4951002": 0.04110015101807669,
+            "syn:4951003": 0.044090522234226714,
+            "monash_electricity_hourly:T000221": 0.0364592567580618,
+            "m4_hourly:T000172": 0.05416835728677691,
+            "monash_pedestrian_counts:T000028": 0.05095203273704062,
+            "monash_traffic:T000099": 0.0374905020962324
+          }
+        },
+        {
+          "model": "bolt",
+          "policy": "locked",
+          "cut": "0",
+          "amplitude_each": 0.5,
+          "sources": 8,
+          "relative_sum_median": 0.12748837242736866,
+          "source_values": {
+            "syn:4951000": 0.11757721304823349,
+            "syn:4951001": 0.12346477156242193,
+            "syn:4951002": 0.14410313728271873,
+            "syn:4951003": 0.1273436630821747,
+            "monash_electricity_hourly:T000221": 0.12763308177256263,
+            "m4_hourly:T000172": 0.16090825094086328,
+            "monash_pedestrian_counts:T000028": 0.2269213807002235,
+            "monash_traffic:T000099": 0.11352622377599957
+          }
+        },
+        {
+          "model": "bolt",
+          "policy": "locked",
+          "cut": "0",
+          "amplitude_each": 2.0,
+          "sources": 8,
+          "relative_sum_median": 0.26729966160306134,
+          "source_values": {
+            "syn:4951000": 0.24773165365428818,
+            "syn:4951001": 0.3407387567362443,
+            "syn:4951002": 0.26934477399464324,
+            "syn:4951003": 0.26009082891886337,
+            "monash_electricity_hourly:T000221": 0.26525454921147945,
+            "m4_hourly:T000172": 0.24849809747129487,
+            "monash_pedestrian_counts:T000028": 0.33406235262058975,
+            "monash_traffic:T000099": 0.3934479398581695
+          }
+        },
+        {
+          "model": "timesfm",
+          "policy": "native",
+          "cut": "forecast",
+          "amplitude_each": 0.1,
+          "sources": 8,
+          "relative_sum_median": 0.05574293670046264,
+          "source_values": {
+            "syn:4951000": 0.03997817698375475,
+            "syn:4951001": 0.43319793107994825,
+            "syn:4951002": 0.04331435704841142,
+            "syn:4951003": 0.17586765202475535,
+            "monash_electricity_hourly:T000221": 0.15212642127819706,
+            "m4_hourly:T000172": 0.028978100938727536,
+            "monash_pedestrian_counts:T000028": 0.06817151635251387,
+            "monash_traffic:T000099": 0.03174729675378155
+          }
+        },
+        {
+          "model": "timesfm",
+          "policy": "native",
+          "cut": "forecast",
+          "amplitude_each": 0.5,
+          "sources": 8,
+          "relative_sum_median": 0.15356217305034112,
+          "source_values": {
+            "syn:4951000": 0.17441764925107617,
+            "syn:4951001": 0.23194420768624222,
+            "syn:4951002": 0.19677192378359304,
+            "syn:4951003": 0.26988503265818503,
+            "monash_electricity_hourly:T000221": 0.12347981724574031,
+            "m4_hourly:T000172": 0.0255464500093004,
+            "monash_pedestrian_counts:T000028": 0.13270669684960607,
+            "monash_traffic:T000099": 0.08486817471727588
+          }
+        },
+        {
+          "model": "timesfm",
+          "policy": "native",
+          "cut": "forecast",
+          "amplitude_each": 2.0,
+          "sources": 8,
+          "relative_sum_median": 0.153663702135497,
+          "source_values": {
+            "syn:4951000": 0.1532792862018753,
+            "syn:4951001": 0.20428410760412927,
+            "syn:4951002": 0.15404811806911867,
+            "syn:4951003": 0.14972343349382275,
+            "monash_electricity_hourly:T000221": 0.07378337024526462,
+            "m4_hourly:T000172": 0.04189334219143201,
+            "monash_pedestrian_counts:T000028": 0.37271247502384913,
+            "monash_traffic:T000099": 0.33225932951346365
+          }
+        },
+        {
+          "model": "timesfm",
+          "policy": "native",
+          "cut": "0",
+          "amplitude_each": 0.1,
+          "sources": 8,
+          "relative_sum_median": 0.04776082291779536,
+          "source_values": {
+            "syn:4951000": 0.03666438924983569,
+            "syn:4951001": 0.03955682877246457,
+            "syn:4951002": 0.07638720249435003,
+            "syn:4951003": 0.04238513144190811,
+            "monash_electricity_hourly:T000221": 0.05665657139280677,
+            "m4_hourly:T000172": 0.05267717549068425,
+            "monash_pedestrian_counts:T000028": 0.04284447034490647,
+            "monash_traffic:T000099": 0.066994374725334
+          }
+        },
+        {
+          "model": "timesfm",
+          "policy": "native",
+          "cut": "0",
+          "amplitude_each": 0.5,
+          "sources": 8,
+          "relative_sum_median": 0.1561404111434072,
+          "source_values": {
+            "syn:4951000": 0.150282178745895,
+            "syn:4951001": 0.1339781204380248,
+            "syn:4951002": 0.24724554942080904,
+            "syn:4951003": 0.16212700093694044,
+            "monash_electricity_hourly:T000221": 0.15351770512306154,
+            "m4_hourly:T000172": 0.17870931442471047,
+            "monash_pedestrian_counts:T000028": 0.14928851131224044,
+            "monash_traffic:T000099": 0.1587631171637529
+          }
+        },
+        {
+          "model": "timesfm",
+          "policy": "native",
+          "cut": "0",
+          "amplitude_each": 2.0,
+          "sources": 8,
+          "relative_sum_median": 0.31444328928247584,
+          "source_values": {
+            "syn:4951000": 0.3248415881756111,
+            "syn:4951001": 0.2963342501167726,
+            "syn:4951002": 0.3987372852882618,
+            "syn:4951003": 0.32126386645987354,
+            "monash_electricity_hourly:T000221": 0.2971551152638994,
+            "m4_hourly:T000172": 0.3385705875631417,
+            "monash_pedestrian_counts:T000028": 0.30762271210507813,
+            "monash_traffic:T000099": 0.30314392389716455
+          }
+        },
+        {
+          "model": "timesfm",
+          "policy": "locked",
+          "cut": "forecast",
+          "amplitude_each": 0.1,
+          "sources": 8,
+          "relative_sum_median": 0.14922592430293966,
+          "source_values": {
+            "syn:4951000": 0.11803173069984428,
+            "syn:4951001": 0.4297138382545687,
+            "syn:4951002": 0.09120562903743724,
+            "syn:4951003": 0.18042011790603502,
+            "monash_electricity_hourly:T000221": 0.49522300319729834,
+            "m4_hourly:T000172": 0.3401669904357824,
+            "monash_pedestrian_counts:T000028": 0.0460399790981464,
+            "monash_traffic:T000099": 0.06389870394619726
+          }
+        },
+        {
+          "model": "timesfm",
+          "policy": "locked",
+          "cut": "forecast",
+          "amplitude_each": 0.5,
+          "sources": 8,
+          "relative_sum_median": 0.32789782880472873,
+          "source_values": {
+            "syn:4951000": 0.210274735945093,
+            "syn:4951001": 0.20770680103025038,
+            "syn:4951002": 0.4212070106003058,
+            "syn:4951003": 0.3484878276610072,
+            "monash_electricity_hourly:T000221": 0.3073078299484503,
+            "m4_hourly:T000172": 0.4715802225067272,
+            "monash_pedestrian_counts:T000028": 0.35699502674160893,
+            "monash_traffic:T000099": 0.09471356214271796
+          }
+        },
+        {
+          "model": "timesfm",
+          "policy": "locked",
+          "cut": "forecast",
+          "amplitude_each": 2.0,
+          "sources": 8,
+          "relative_sum_median": 0.317490817663017,
+          "source_values": {
+            "syn:4951000": 0.22846955030414334,
+            "syn:4951001": 0.2285534072739247,
+            "syn:4951002": 0.34770619147566423,
+            "syn:4951003": 0.44388691678449216,
+            "monash_electricity_hourly:T000221": 0.3039980901410027,
+            "m4_hourly:T000172": 0.3474006098208096,
+            "monash_pedestrian_counts:T000028": 0.3309835451850313,
+            "monash_traffic:T000099": 0.25185582338417967
+          }
+        },
+        {
+          "model": "timesfm",
+          "policy": "locked",
+          "cut": "0",
+          "amplitude_each": 0.1,
+          "sources": 8,
+          "relative_sum_median": 0.036954272211224125,
+          "source_values": {
+            "syn:4951000": 0.02295463578028377,
+            "syn:4951001": 0.03786451241084319,
+            "syn:4951002": 0.05382652661556735,
+            "syn:4951003": 0.03604403201160506,
+            "monash_electricity_hourly:T000221": 0.045454122924757916,
+            "m4_hourly:T000172": 0.031032711868441365,
+            "monash_pedestrian_counts:T000028": 0.03214262950869234,
+            "monash_traffic:T000099": 0.0534054432004736
+          }
+        },
+        {
+          "model": "timesfm",
+          "policy": "locked",
+          "cut": "0",
+          "amplitude_each": 0.5,
+          "sources": 8,
+          "relative_sum_median": 0.10923677794996675,
+          "source_values": {
+            "syn:4951000": 0.10449118464103536,
+            "syn:4951001": 0.11022235356013736,
+            "syn:4951002": 0.1492932945725052,
+            "syn:4951003": 0.10124611275007964,
+            "monash_electricity_hourly:T000221": 0.12095496684182502,
+            "m4_hourly:T000172": 0.10825120233979614,
+            "monash_pedestrian_counts:T000028": 0.10298039435026202,
+            "monash_traffic:T000099": 0.12986474595067893
+          }
+        },
+        {
+          "model": "timesfm",
+          "policy": "locked",
+          "cut": "0",
+          "amplitude_each": 2.0,
+          "sources": 8,
+          "relative_sum_median": 0.19667999092182836,
+          "source_values": {
+            "syn:4951000": 0.19640207699406084,
+            "syn:4951001": 0.2147348741219594,
+            "syn:4951002": 0.18820642971926874,
+            "syn:4951003": 0.19390985918984743,
+            "monash_electricity_hourly:T000221": 0.19695790484959588,
+            "m4_hourly:T000172": 0.17728202059064788,
+            "monash_pedestrian_counts:T000028": 0.20459129487093705,
+            "monash_traffic:T000099": 0.21954227002450177
+          }
+        }
+      ]
+    },
+    {
+      "claim": "Fourier coefficients are much easier for this fixed linear decoder to recover from locked first-block effects than native effects, but raw input is much better than either. This is neither absent-information evidence nor training attribution.",
+      "evidence_class": "Exploratory leave-one-source-out linear decodability",
+      "exact": [
+        {
+          "model": "input",
+          "policy": "physical",
+          "cut": "input",
+          "nmse": 2.9406281795183107e-07,
+          "shuffled_nmse": 1.0155472720088832
+        },
+        {
+          "model": "bolt",
+          "policy": "native",
+          "cut": "0",
+          "nmse": 0.4996478849685851,
+          "shuffled_nmse": 2.213125034629269
+        },
+        {
+          "model": "bolt",
+          "policy": "native",
+          "cut": "1",
+          "nmse": 0.5054645055713305,
+          "shuffled_nmse": 2.5816816530614872
+        },
+        {
+          "model": "bolt",
+          "policy": "native",
+          "cut": "3",
+          "nmse": 0.5615066028095304,
+          "shuffled_nmse": 2.990464616532546
+        },
+        {
+          "model": "bolt",
+          "policy": "locked",
+          "cut": "0",
+          "nmse": 0.012752598094436797,
+          "shuffled_nmse": 2.165544424652392
+        },
+        {
+          "model": "bolt",
+          "policy": "locked",
+          "cut": "1",
+          "nmse": 0.01971535690418715,
+          "shuffled_nmse": 2.138774590288518
+        },
+        {
+          "model": "bolt",
+          "policy": "locked",
+          "cut": "3",
+          "nmse": 0.02832953324430318,
+          "shuffled_nmse": 2.331703377227755
+        },
+        {
+          "model": "timesfm",
+          "policy": "native",
+          "cut": "0",
+          "nmse": 0.4723127043833158,
+          "shuffled_nmse": 1.947867887364113
+        },
+        {
+          "model": "timesfm",
+          "policy": "native",
+          "cut": "5",
+          "nmse": 0.4130878669307329,
+          "shuffled_nmse": 2.39355174335876
+        },
+        {
+          "model": "timesfm",
+          "policy": "native",
+          "cut": "10",
+          "nmse": 0.4639085310242172,
+          "shuffled_nmse": 2.106962284874986
+        },
+        {
+          "model": "timesfm",
+          "policy": "locked",
+          "cut": "0",
+          "nmse": 0.01359228639593964,
+          "shuffled_nmse": 1.5978735281761802
+        },
+        {
+          "model": "timesfm",
+          "policy": "locked",
+          "cut": "5",
+          "nmse": 0.04837906276982305,
+          "shuffled_nmse": 2.301776630222273
+        },
+        {
+          "model": "timesfm",
+          "policy": "locked",
+          "cut": "10",
+          "nmse": 0.1257656939541552,
+          "shuffled_nmse": 2.22608265326931
+        }
+      ]
+    },
+    {
+      "claim": "Substantial finite-radius forecast curvature remains in some contexts, especially high amplitudes. Small parameter changes are not uniformly tiny in input distance.",
+      "evidence_class": "Descriptive boundary for refinement",
+      "smallest_frequency_step_input_radius_range": [
+        0.007565338870052484,
+        0.15738654989214845
+      ],
+      "exact_worst_native_forecast_rows": [
+        {
+          "model": "bolt",
+          "policy": "native",
+          "cut": "forecast",
+          "source": "syn:4951003",
+          "domain": "synthetic",
+          "base": 318,
+          "axis": "frequency",
+          "center": 6.666666666666667,
+          "amplitude": 2.0,
+          "step": 0.03,
+          "relative_step": 0.03,
+          "minus": 401,
+          "zero": 402,
+          "plus": 403,
+          "midpoint": 406,
+          "scale": 0.9999999985190533,
+          "input_radius": 0.15671699706945483,
+          "input_left": 0.15687247639419466,
+          "input_right": 0.15733358598486077,
+          "input_path_bend": 0.022018028429798747,
+          "derivative_rms": 0.44726371034637674,
+          "parameter_second_rms": 8.922966118813143,
+          "distance_sensitivity": 0.08561873671204068,
+          "chord_curvature_per_distance2": 0.4658803189034038,
+          "path_second_rms": 0.008030669506931829,
+          "chord_second_rms": 0.01144212180771426,
+          "chord_relative": 0.39221351319551007,
+          "individual_effect_sum": 0.029173196289161527,
+          "chord_input_rounding": 1.292825565394598e-07
+        },
+        {
+          "model": "timesfm",
+          "policy": "native",
+          "cut": "forecast",
+          "source": "syn:4951002",
+          "domain": "synthetic",
+          "base": 212,
+          "axis": "frequency",
+          "center": 6.666666666666667,
+          "amplitude": 2.0,
+          "step": 0.03,
+          "relative_step": 0.03,
+          "minus": 295,
+          "zero": 296,
+          "plus": 297,
+          "midpoint": 300,
+          "scale": 1.0000000009568835,
+          "input_radius": 0.1569496279450104,
+          "input_left": 0.15745313249808154,
+          "input_right": 0.15721389239154845,
+          "input_path_bend": 0.02196931815989783,
+          "derivative_rms": 1.8299505278750063,
+          "parameter_second_rms": 63.06869132576732,
+          "distance_sensitivity": 0.34978430057498877,
+          "chord_curvature_per_distance2": 2.713167847059148,
+          "path_second_rms": 0.056761822193190585,
+          "chord_second_rms": 0.06683396744464465,
+          "chord_relative": 0.572397863311153,
+          "individual_effect_sum": 0.11676138526798445,
+          "chord_input_rounding": 8.622240750091871e-08
+        }
+      ]
+    }
+  ],
+  "controls": {
+    "native_gates": {
+      "bolt": {
+        "repeat_forecast": 0.0,
+        "repeat_hidden": 0.0,
+        "normalizer_forecast": 0.0,
+        "normalizer_hidden": 0.0,
+        "self_patch": 0.0
+      },
+      "timesfm": {
+        "repeat_forecast": 0.0,
+        "repeat_hidden": 0.0,
+        "normalizer_forecast": 0.0,
+        "normalizer_hidden": 0.0,
+        "self_patch": 0.0
+      }
+    },
+    "batch_replay_exact": {
+      "bolt": true,
+      "timesfm": true
+    },
+    "arithmetic_replay": {
+      "checks": 21600,
+      "maximum_absolute_replay_difference": 2.8421709430404007e-13,
+      "passed": true,
+      "audit_source_sha256": "6c5033221ba4351f539e2adc09b6de9b51ef2fe9c91ccb3410c63e1c68d45f77"
+    },
+    "focused_tests_passed": 7,
+    "planted_regressions": [
+      {
+        "plant": "curved_path_confounded",
+        "test": "test_curved_input_path_does_not_imply_nonlinear_model",
+        "detected": true
+      },
+      {
+        "plant": "parameter_step_instead_of_input_distance",
+        "test": "test_centered_derivative_distance_and_quadratic_curvature",
+        "detected": true
+      },
+      {
+        "plant": "four_point_missing_offset",
+        "test": "test_four_point_interaction_uses_offset_and_individual_effects",
+        "detected": true
+      },
+      {
+        "plant": "frequency_changes_phase",
+        "test": "test_phase_distance_and_chord_design_are_bound_to_same_background",
+        "detected": true
+      },
+      {
+        "plant": "fp32_before_subtraction",
+        "test": "test_saved_arithmetic_promotes_before_subtraction_and_semantics_are_separate",
+        "detected": true
+      },
+      {
+        "plant": "conditions_count_as_sources",
+        "test": "test_grouped_summary_does_not_count_conditions_as_independent_sources",
+        "detected": true
+      },
+      {
+        "plant": "decoder_test_source_leak",
+        "test": "test_decoder_withholds_sources_and_training_scaler_and_beats_shuffled_floor",
+        "detected": true
+      }
+    ],
+    "known_signal_reference": "NMSE1 is zero incremental response; true futures of real sources were never loaded.",
+    "input_distance": "Every local/adjacent difference records actual RMS history distance divided by background SD.",
+    "curvature": "Independent chord midpoint removes input frequency-path acceleration; exact FP32 midpoint rounding retained.",
+    "interaction": "Four-point residual divided by each marginal effect and by their sum; raw effect RMS and input-distance products saved.",
+    "decoding": "Leave whole source out; train-only scaling; fixed alpha=.01; raw input, training mean and shuffled-label controls;120 rows from8 source groups."
+  },
+  "limitations": [
+    "One phase per background confounds phase with context; no phase-generalization claim. Locked normalization is a counterfactual control, potentially off native manifold at high amplitude. Hidden curvature is not causal semantics.",
+    "Descriptive source-grouped summaries only; 4 synthetic seed groups and1 real FIT source per domain. No population, confirmation or general interpretability verdict.",
+    "The two narrow frequency windows do not cover the gap between24h and19.2h. Largest smallest-step input radius is about0.157 background SD; this is a finite-radius pilot, not an infinitesimal smoothness proof.",
+    "The fixed8-source interaction medians are descriptive panel summaries, not pooled-domain generalization; per-source values are preserved.",
+    "One phase per source confounds phase and context. Add a crossed phase design before attributing differences uniquely to background.",
+    "No random-initialization decoder or native-normalization-metadata-augmented decoder was run. Locked improvements must not be interpreted as learned information absent in native hidden states.",
+    "No phase-held-out or fresh-source confirmation; no causal claim about pretrained training priors.",
+    "Synthetic injection phase equals the existing5.35-cycle component phase because both use the first uniform draw from the same source seed. Near24h additions are consequently approximately phase-aligned with that background tone. This further limits any attribution of the24h-versus19.2h contrast to an intrinsic model frequency prior; use independent crossed phases and pure-tone/background controls in expansion."
+  ],
+  "evidence_class": [
+    "behavioral known-signal counterfactual response",
+    "L1 descriptive hidden geometry",
+    "within-model normalization intervention",
+    "exploratory source-held-out linear decodability"
+  ],
+  "failed_instrumentation_runs": [],
+  "instrumentation_notes": [
+    "All native workers and analysis/audit completed on first attempt. Matplotlib used a temporary cache because the default config directory was read-only; plotted artifacts were written successfully."
+  ],
+  "execution": {
+    "bolt": {
+      "valid": true,
+      "returncode": 0,
+      "failure": null,
+      "seconds": 35.83567283593584,
+      "peak_rss": 1160499200
+    },
+    "timesfm": {
+      "valid": true,
+      "returncode": 0,
+      "failure": null,
+      "seconds": 169.5613895469578,
+      "peak_rss": 1744179200
+    }
+  },
+  "native_high_water_rss": {
+    "bolt": 1160646656,
+    "timesfm": 1744183296
+  },
+  "native_sessions": {
+    "bolt": 1675,
+    "timesfm": 95800
+  },
+  "next_decision": {
+    "state": "Stop; native slot2 released, no expansion launched.",
+    "priority": "First shrink actual input radii at worst-response boundaries, cross phase with context, and test native normalizer metadata in the decoder.",
+    "suggested_informative_expansions": [
+      "Break synthetic phase alignment explicitly: cross independent injection phases with the same frozen backgrounds; include pure-tone and matched near/far background frequencies before labeling frequency differences intrinsic priors.",
+      "Use fixed measured RMS radii .002/.005/.01 across amplitudes and half-step convergence at the recorded worst cases, retaining chord-midpoint and FP32-floor controls.",
+      "Cross a common phase grid with each background and fresh sources; interpolate nearby backgrounds at fixed tone to directly test smooth context dependence.",
+      "Augment native hidden decoding with actual normalizer location/scale; compare raw-input and random-initialization baselines to distinguish scale accessibility from learned semantics.",
+      "Cross the same phase grid with all backgrounds, then add fresh sources; current phase and context are confounded.",
+      "Use three smaller measured input radii and half-step convergence at the worst source/cut. Compare raw path curvature with chord-corrected curvature and FP32 floors.",
+      "Bridge the24h-to19.2h frequency gap continuously, matching RMS history distances across amplitudes, with pure-tone and balanced/dominant-background controls.",
+      "Interpolate nearby backgrounds at fixed injected tone and phase to test smooth context dependence directly, then test local Jacobian transport.",
+      "Separate background-locked from locally locked normalization; test whether high-amplitude off-manifold lock artifacts explain changes.",
+      "Decode on fresh source-phase combinations against raw-input and random-initialization baselines before attributing accessibility to learned semantics."
+    ]
+  },
+  "artifacts": {
+    "protocol": "protocol.json",
+    "raw": "*_native/locked_forecast.npy and *_native/locked_hidden_<cut>.npy",
+    "report": "report.html",
+    "analysis": "analysis.json",
+    "replay": "*_arithmetic.npz",
+    "handoff": "handoff.json",
+    "tests": "focused_tests.log",
+    "plants": "plants.json"
+  },
+  "reproduce": [
+    "python -m experiments.feature_search.response_surface_study prepare --out runs/NEW_RUN",
+    "python -m experiments.feature_search.response_surface_study run --out runs/NEW_RUN --model bolt",
+    "python -m experiments.feature_search.response_surface_study run --out runs/NEW_RUN --model timesfm",
+    "OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 python -m experiments.feature_search.response_surface_analysis --out runs/NEW_RUN",
+    "OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 python -m experiments.feature_search.response_surface_audit --out runs/NEW_RUN"
+  ]
+}

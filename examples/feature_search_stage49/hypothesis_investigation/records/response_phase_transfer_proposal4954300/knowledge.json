@@ -1,0 +1,139 @@
+{
+  "status": "proposal_only_no_native",
+  "question": "Does the old shared phase-response matrix predict fresh-source responses, and is nearby-frequency variation more consistent with a fixed coefficient map or a fixed output delay?",
+  "design": {
+    "status": "PROPOSAL_ONLY_NO_CAPTURE",
+    "question": "Does the old shared phase-response matrix predict fresh-source responses, and is nearby-frequency variation more consistent with a fixed coefficient map or a fixed output delay?",
+    "recommended_stage": "First validate frozen shared H on16 fresh backgrounds at the same2 centers. Optional nearby-frequency control is separately declared and not required for the first-stage decision.",
+    "proposed_sources": [
+      4954300,
+      4954301,
+      4954302,
+      4954303,
+      4954304,
+      4954305,
+      4954306,
+      4954307,
+      4954308,
+      4954309,
+      4954310,
+      4954311,
+      4954312,
+      4954313,
+      4954314,
+      4954315
+    ],
+    "source_design": "16 fresh independent seeds,4 per the same balanced/far,dominant/far,balanced/near,dominant/near mixture types; context128 and horizon32; all4 common phases crossed independently of background phases.",
+    "same_centers": {
+      "periods": [
+        24.0,
+        19.2
+      ],
+      "phase_radians": [
+        0.0,
+        1.5707963267948966,
+        3.141592653589793,
+        4.71238898038469
+      ],
+      "amplitude_peak_background_sd": 0.1,
+      "backgrounds": 16,
+      "nodes": 144,
+      "policies": [
+        "native",
+        "background_locked"
+      ],
+      "forecasts_only": true
+    },
+    "immutable_predictor": "Use all16 old source matrices to form one frozen arithmetic-mean H per model/policy/frequency, saved in frozen_H.json now. Do not refit any predictive H on the fresh sources. Fresh per-source H may be estimated only as an explicitly optimistic diagnostic ceiling.",
+    "frozen_H_sha256": "557c8200fb0b5b344a2e6de700be5623c2dd668da0bd0ecb0d78a1a5c1e64bce",
+    "primary_contrasts": "Phase-energy-pooled waveform NMSE: identity versus old frozen H on each fresh source;16 paired source differences, source win counts, source-stratified4096 bootstrap draws; retain all backgrounds and type summaries. Native and locked separate. No confirmatory p-values.",
+    "secondary": "Complex-linear and symmetric-traceless decomposition, singular values, DC-adjusted sensitivity, exact off-band/even closure; compare predicted systematic structure with fresh conditional variation.",
+    "optional_nearby_control": {
+      "offset_cycles_per128": [
+        -0.12,
+        0.0,
+        0.12
+      ],
+      "total_nodes_including_centers": 400,
+      "candidate1": "Hold H fixed at its nearest trained center.",
+      "candidate2": "Freeze principal tau=-arg(q+i*r)/omega_center from old mean H. At nearby omega use H_delay(omega)=R(-(omega-omega_center)*tau) @ H_center, rotating the entire output map; it matches H_center exactly at the trained frequency.",
+      "interpretation": "Tests a frequency-phase law, not an identified patch mechanism. Principal tau is modulo-period ambiguous. Large off-band response can make projected phase misleading; report DC and off-band controls."
+    },
+    "anchoring_followup_proposal": "Before extra native variants, separately preregister a reuse-only fit on forecast windows0:16,16:32 and0:32 using their original absolute future timestamps, plus DC-adjusted fits. Horizon-varying apparent lag argues against a single pure delay but does not identify patch causality. An information-preserving masked-prefix padding test would require its own validated parity gates; ordinary history shifts change context and are confounded.",
+    "resource_estimate": {
+      "same_centers": {
+        "bolt": {
+          "nodes": 144,
+          "conservative_seconds": 27.21297799576307,
+          "formula": "1.1*(20s startup allowance + focused whole-runtime * nodes/2640)"
+        },
+        "timesfm": {
+          "nodes": 144,
+          "conservative_seconds": 51.76166093326174,
+          "formula": "1.1*(20s startup allowance + focused whole-runtime * nodes/2640)"
+        }
+      },
+      "with_nearby_frequency_control": {
+        "bolt": {
+          "nodes": 400,
+          "conservative_seconds": 36.48049443267519,
+          "formula": "1.1*(20s startup allowance + focused whole-runtime * nodes/2640)"
+        },
+        "timesfm": {
+          "nodes": 400,
+          "conservative_seconds": 104.6712803701715,
+          "formula": "1.1*(20s startup allowance + focused whole-runtime * nodes/2640)"
+        }
+      }
+    },
+    "prospective_caps": {
+      "cpu_threads": 1,
+      "worker_cap_bytes": 3221225472,
+      "seconds_per_model": 600,
+      "serial_native": true
+    },
+    "gates": "Exact repeat/normalizer self identity; source/checkpoint/bank hashes; nominal and antipodal input checks; no failed or outcome-replaced source. Persist raw forecasts and knowledge after every execution.",
+    "execution_state": "No input bank generated, no capture driver launched, no native slot requested or occupied. Coordinator slot grant and a frozen capture protocol/addendum are required before any execution.",
+    "broad_grid": "Closed; original full grid remains unlaunched.",
+    "preparation_bindings": {
+      "old_results_sha256": "c86b93679a72622b38fc5c676bdf1b93902973eb2f3dc1f81e75e7fd5ef41bb9",
+      "old_audit_sha256": "f428f4e70da8e02040442e28b9e50d915b69617b9299ba5d2f8eb07e22b39c2c",
+      "old_matrix_rows_sha256": "1e7218397bd59727e11582d58516cdedb7f9a47a66b65913acc8fd9d544d694d"
+    }
+  },
+  "exact_findings": {
+    "frozen_old_H_artifact": "frozen_H.json",
+    "fresh_source_results": null,
+    "resource_estimate": {
+      "same_centers": {
+        "bolt": {
+          "nodes": 144,
+          "conservative_seconds": 27.21297799576307,
+          "formula": "1.1*(20s startup allowance + focused whole-runtime * nodes/2640)"
+        },
+        "timesfm": {
+          "nodes": 144,
+          "conservative_seconds": 51.76166093326174,
+          "formula": "1.1*(20s startup allowance + focused whole-runtime * nodes/2640)"
+        }
+      },
+      "with_nearby_frequency_control": {
+        "bolt": {
+          "nodes": 400,
+          "conservative_seconds": 36.48049443267519,
+          "formula": "1.1*(20s startup allowance + focused whole-runtime * nodes/2640)"
+        },
+        "timesfm": {
+          "nodes": 400,
+          "conservative_seconds": 104.6712803701715,
+          "formula": "1.1*(20s startup allowance + focused whole-runtime * nodes/2640)"
+        }
+      }
+    }
+  },
+  "controls": "Exact repeat/normalizer self identity; source/checkpoint/bank hashes; nominal and antipodal input checks; no failed or outcome-replaced source. Persist raw forecasts and knowledge after every execution.",
+  "limitations": "Only a proposal. Repeated phases are not independent sources. Fixed-delay transport is a conditional diagnostic, not proof of time invariance or patch anchoring.",
+  "evidence_class": "Prospective design with frozen old-data predictors; no fresh-model evidence",
+  "failed_instrumentation_runs": [],
+  "next_decision": "Coordinator reviews same-center first-stage proposal and optional discriminator. No native slot granted or used."
+}

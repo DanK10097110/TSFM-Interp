@@ -1,0 +1,88 @@
+{
+  "seed_base": 1437000,
+  "n_seeds": 64,
+  "context": 128,
+  "horizon": 32,
+  "periods": [
+    32,
+    16
+  ],
+  "noise": 0,
+  "slope": 0,
+  "conditions": [
+    [
+      "base",
+      null,
+      0,
+      0.0
+    ],
+    [
+      "phi_1_0.01",
+      "phi",
+      1,
+      0.01
+    ],
+    [
+      "phi_-1_0.01",
+      "phi",
+      -1,
+      0.01
+    ],
+    [
+      "psi_1_0.01",
+      "psi",
+      1,
+      0.01
+    ],
+    [
+      "psi_-1_0.01",
+      "psi",
+      -1,
+      0.01
+    ],
+    [
+      "phi_1_0.02",
+      "phi",
+      1,
+      0.02
+    ],
+    [
+      "phi_-1_0.02",
+      "phi",
+      -1,
+      0.02
+    ],
+    [
+      "psi_1_0.02",
+      "psi",
+      1,
+      0.02
+    ],
+    [
+      "psi_-1_0.02",
+      "psi",
+      -1,
+      0.02
+    ]
+  ],
+  "primary_delta": 0.01,
+  "convergence_delta": 0.02,
+  "frozen_probe": "feature_search_20261111_native_head_readout_fp64;no refit",
+  "cutpoints": {
+    "bolt": "output_patch_embedding full[B,1,512] input",
+    "timesfm": "output_projection_point full[B,4,1280] input"
+  },
+  "intervention": "base head input +/-delta*centered natural phase derivative;existing input_slice_ablate whole feature slice,all positions",
+  "gates": {
+    "hook_identity_max_abs": 0,
+    "self_patch_max_abs": 0,
+    "delta_relative_RMS": 0.05,
+    "internal_to_actual_relative_RMS": 0.05,
+    "probe_target_relative_RMS": 0.1,
+    "probe_offtarget_relative_RMS": 0.1
+  },
+  "metric": "sum off-target normalized coefficient derivative energy / sum analytic own-target derivative strength\u00b2",
+  "inference": "paired seed bootstrap numerator+denominator jointly;signflip numerator;Holm4 native-minus-probe;separate Holm2 crossmodel",
+  "missingness": "keep all64seeds;gatefailures remain with reason,never exclude hard seeds",
+  "evidence": "local task-tangent causal route;supervised retained-feature diagnostic;not global uniqueness or neuron labeling"
+}

@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "experiments": [
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "parked": [
+    1,
+    7,
+    8
+  ],
+  "seed": 492306,
+  "per_dataset": 8,
+  "offset": 0,
+  "history": 128,
+  "long_history": 256,
+  "horizon": 32,
+  "amplitude": "0.5 times past128 source SD; relative-amplitude only; sources past-standardized",
+  "components": {
+    "a": {
+      "period": 24,
+      "phase": 0.3
+    },
+    "b": {
+      "period": 40,
+      "phase": -0.7
+    }
+  },
+  "polarities": [
+    -1,
+    1
+  ],
+  "transforms": [
+    [
+      0.1,
+      0.0
+    ],
+    [
+      10.0,
+      0.0
+    ],
+    [
+      1.0,
+      -5.0
+    ],
+    [
+      1.0,
+      5.0
+    ]
+  ],
+  "site": "last transformer block output before final normalization/head; all tokens including Bolt REG",
+  "fit": "first half of each dataset, source IDs never overlap evaluation; no future fitting except ID2 supervised target on fit rows",
+  "scope": "Exploratory effect-size screens, no p-values or model ranking; dependent datasets retained separately",
+  "gates": {
+    "2": "heldout squared-error prediction >=20% better than input ridge, input RBF, and training mean in EVERY dataset; mean harmful interaction >=.05",
+    "3": "natural response error<=.5, oracle patch closure<=.05, transfer improves no-edit>=.1 and geometry random>=.05 in every dataset; all random geometry valid",
+    "4": "worst fixed transform forecast/response RMS>=.1 in every dataset; classical RMS<1e-5",
+    "5": "short and irrelevant response losses exceed informative long by>=.1 in every dataset; all prefix step-energy ratios<=2",
+    "6": "all three heldout SAE recon and delta NMSE<=.25; causal response error<=.1; aligned support overlap<=.5; pairwise decoded forecast disagreement<=.1"
+  },
+  "sae": {
+    "seeds": [
+      491,
+      492,
+      493
+    ],
+    "dict_size": 64,
+    "k": 8,
+    "steps": 150,
+    "lr": 0.003,
+    "batch": 64
+  },
+  "budget": {
+    "cpu_threads": 1,
+    "model_seconds": 900,
+    "resident_bytes": 3221225472,
+    "gpu": false,
+    "model_batch": 4
+  },
+  "source_sha256": "c88868ab339608f52afa8041d89cf3b48aa4260e87fb497b64fa7bf058b3eda6",
+  "corpus_sha256": "da1b2ae642ba6f2c4e995ca5eff897db107453e68a40dfdd2a1d4494d7c064be",
+  "metadata_sha256": "9eecad1c45cd61f788756bf2237a955755443dfb0a5fd7db28f3766f5f3f0bda",
+  "checkpoints": {
+    "bolt": {
+      "repo": "amazon/chronos-bolt-small",
+      "revision": "772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+      "hashes": {
+        "model.safetensors": "06a6a19bbe74bc10a9cd193bd4bf2bf638ae07f7e0d51653ae7ab8ea968a21dd"
+      }
+    },
+    "timesfm": {
+      "repo": "google/timesfm-2.5-200m-pytorch",
+      "revision": "1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+      "hashes": {
+        "model.safetensors": "2f776efe6245e42b24bc4153ffdf61810140210e4bd3b01fb21f7aa779ab6ce8"
+      }
+    }
+  },
+  "exclusions": []
+}

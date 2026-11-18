@@ -1,0 +1,242 @@
+{
+  "status": "prepared_native_capture_held",
+  "question": "Does response curvature converge at matched small input radii after crossing phase with context, and do local two-tone interactions persist?",
+  "design": {
+    "stage": "prepared_capture_held",
+    "question": "Does response curvature converge at matched small input radii after crossing phase with context, and do local two-tone interactions persist?",
+    "source_count": 32,
+    "seeds": [
+      4954000,
+      4954001,
+      4954002,
+      4954003,
+      4954004,
+      4954005,
+      4954006,
+      4954007,
+      4954008,
+      4954009,
+      4954010,
+      4954011,
+      4954012,
+      4954013,
+      4954014,
+      4954015,
+      4954016,
+      4954017,
+      4954018,
+      4954019,
+      4954020,
+      4954021,
+      4954022,
+      4954023,
+      4954024,
+      4954025,
+      4954026,
+      4954027,
+      4954028,
+      4954029,
+      4954030,
+      4954031
+    ],
+    "phases": [
+      0.0,
+      1.5707963267948966,
+      3.141592653589793,
+      4.71238898038469
+    ],
+    "centers": [
+      5.333333333333333,
+      6.666666666666667
+    ],
+    "amplitudes": [
+      0.1,
+      0.5,
+      2.0
+    ],
+    "radii": [
+      0.002,
+      0.005,
+      0.01
+    ],
+    "nodes": 16928,
+    "local_paths": 4608,
+    "interaction_quartets": 1536,
+    "context": 128,
+    "horizon": 32,
+    "design": "32 independent synthetic backgrounds,8 per mixture type; every source crosses4 injection phases,2 frequency centers,3 amplitudes,2 local axes and3 measured RMS radii. Interaction crosses all4x4 phase pairs at each radius.",
+    "phase": "Injection grid0/pi/2/pi/3pi/2 is common across backgrounds and independent of random background phases; source grouping includes every phase/path.",
+    "frequency_steps": "Continuous root solve for RMS half-chord radius divided by fixed background SD; FP32 quantized input distance gate<=1e-7 absolute.",
+    "amplitude_steps": "Peak amplitude increment chosen for same actual RMS radius; positive and negative endpoints preserve the same128-step background.",
+    "interaction": "Four-point response on background x with two RMS-matched additions at24h/19.2h; report absolute mixed effect, each marginal denominator, sum denominator and input-distance product. Saved input-closure residual calibrates FP32 arithmetic contamination.",
+    "normalization": "Matched native and actual background-locked normalizer/inverse on exactly the same saved inputs. Save full-token first/quarter/half hidden states and32-step forecasts.",
+    "gates": "Exact repeats, background native/locked identity for both forecasts and hidden states, exact self-patch; finite arrays, source/checkpoint hashes, FP32 input radius/closure gates; no output-dependent source replacement.",
+    "primary": "Per-source averages over dependent phase/amplitude cells: chord-relative curvature shrinkage at.01/.005/.002 RMS; input-normalized sensitivity convergence; native-versus-locked interaction and known-signal response. Preserve worst-source and phase curves.",
+    "inference": "Exploratory fresh synthetic expansion, not sealed confirmation; resampling unit source seed, never phases or rows. No real-source generalization or model-training attribution.",
+    "analysis": "Reuse FP64 response_surface_metrics arithmetic after capture; raw forecasts/states remain the authority. Persist knowledge.json after each execution including failures.",
+    "capture_hold": true,
+    "capture_status": "NOT STARTED. Native slots reserved for natural-data and comparability. This driver is prepare-only.",
+    "prospective_execution": "After explicit release: serial bounded shards of4 background sources;1CPU thread,3GiB and600 seconds per model/shard. Freeze capture-driver source in an addendum before its first launch; do not mutate this protocol.",
+    "expected_shards": [
+      {
+        "shard": 0,
+        "source_ids": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "shard": 1,
+        "source_ids": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "shard": 2,
+        "source_ids": [
+          8,
+          9,
+          10,
+          11
+        ]
+      },
+      {
+        "shard": 3,
+        "source_ids": [
+          12,
+          13,
+          14,
+          15
+        ]
+      },
+      {
+        "shard": 4,
+        "source_ids": [
+          16,
+          17,
+          18,
+          19
+        ]
+      },
+      {
+        "shard": 5,
+        "source_ids": [
+          20,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "shard": 6,
+        "source_ids": [
+          24,
+          25,
+          26,
+          27
+        ]
+      },
+      {
+        "shard": 7,
+        "source_ids": [
+          28,
+          29,
+          30,
+          31
+        ]
+      }
+    ],
+    "checkpoints": {
+      "bolt": {
+        "repo": "amazon/chronos-bolt-small",
+        "path": "/common/home/djk255/.cache/huggingface/hub/models--amazon--chronos-bolt-small/snapshots/772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "revision": "772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+        "weights": {
+          "model.safetensors": "06a6a19bbe74bc10a9cd193bd4bf2bf638ae07f7e0d51653ae7ab8ea968a21dd"
+        }
+      },
+      "timesfm": {
+        "repo": "google/timesfm-2.5-200m-pytorch",
+        "path": "/common/home/djk255/.cache/huggingface/hub/models--google--timesfm-2.5-200m-pytorch/snapshots/1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+        "revision": "1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+        "weights": {
+          "model.safetensors": "2f776efe6245e42b24bc4153ffdf61810140210e4bd3b01fb21f7aa779ab6ce8"
+        }
+      }
+    },
+    "source_hashes": {
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_surface_crossed.py": "4882c7aeda3269bb48bc6675196fbd984f6db12b98617d2a8f2fba2b6979d41d",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/tests/test_response_surface_crossed.py": "46b1c860c34eafbff47b70c77bbe5a74483a9bd31d552b13040f7f511d9eea57",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/selective_study.py": "d87ed477e46d72604fa6824fcc5b146880142a730fc52f0f70bf933b652604eb",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/coherence_study.py": "e9bd4dc10d57cfbc30cb4b01cfafe96789cccb6d34fe85616699ecfef799aec7",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/real_background_poc.py": "c88868ab339608f52afa8041d89cf3b48aa4260e87fb497b64fa7bf058b3eda6",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/homogeneous_normalizer.py": "2670effb2dfc0b631d368a69cab4263a8d2a90eb1208acc93d246a5c0ef55051",
+      "/common/home/djk255/Desktop/TSFM Interp/tsfm_lens/experiments/feature_search/response_surface_metrics.py": "5230db512b998595a29667635a250eef257f29e6c9d500b09e8d11502ed68158"
+    },
+    "hashes": {
+      "inputs.npy": "d692c0e0caa2dd8068ddc6c9e11d3688c7fed4cb995487aeea9da64386b01883",
+      "nodes.json": "0d9514729544282d45978803c3bc8a48cc0cdfbf588bf1bb40ee22cecca6a99d",
+      "paths.json": "1abc6bb3d9db2d6787317081172b4e2e7e7c5c594e5685ae48195a79ce8f0e6e",
+      "interactions.json": "83f016b6075b8680c70fee6c58d68d177d76f207d6abdd6d284d2ee80e4140f6",
+      "sources.json": "e87be9c2b911bd61eaf3b349bae35acc7dd423120b570655200e8e1463bd367e"
+    }
+  },
+  "exact_findings": {
+    "preparation_gates": {
+      "actual_local_radius_error_max": 1.869521967269583e-08,
+      "chord_rounding_max": 1.5251100311525246e-07,
+      "interaction_closure_max": 5.756712650625753e-08,
+      "actual_interaction_radius_error_max": 1.4076264569749808e-08
+    },
+    "counts": {
+      "backgrounds": 32,
+      "phases": 4,
+      "nodes": 16928,
+      "paths": 4608,
+      "interaction_quartets": 1536
+    },
+    "model_findings": null
+  },
+  "controls": "Exact repeats, background native/locked identity for both forecasts and hidden states, exact self-patch; finite arrays, source/checkpoint hashes, FP32 input radius/closure gates; no output-dependent source replacement.",
+  "limitations": "Exploratory fresh synthetic expansion, not sealed confirmation; resampling unit source seed, never phases or rows. No real-source generalization or model-training attribution.",
+  "evidence_class": "Frozen prospective design only; no model results",
+  "failed_instrumentation_runs": [],
+  "next_decision": "HOLD native capture. Current native slots belong to dictionary/comparability; no native process has been started by this followup.",
+  "independent_audit": {
+    "passed": true,
+    "paths_verified": 4608,
+    "interaction_quartets_verified": 1536,
+    "sources": 32,
+    "max_radius_error": 1.869521967269583e-08,
+    "max_interaction_radius_error": 1.4076264570183489e-08,
+    "capture_started": false,
+    "source_hashes_verified": true,
+    "audit_source_sha256": "716e126e616365b73a9c6007f7cf0e5fa696c511d1780e9fe4cd0b545216495e"
+  },
+  "verification": {
+    "focused_tests_passed": 2,
+    "combined_test_log": "focused_tests.log",
+    "planted_regressions_detected": 2,
+    "plants": [
+      {
+        "plant": "frequency_distance_ignores_amplitude",
+        "test": "test_actual_radius_is_matched_across_frequency_amplitude_and_phase",
+        "detected": true,
+        "error_type": "ValueError"
+      },
+      {
+        "plant": "only_one_phase_per_source",
+        "test": "test_all_phases_are_crossed_with_each_source_and_interaction_pair",
+        "detected": true,
+        "error_type": "AssertionError"
+      }
+    ],
+    "independent_audit": "audit.json",
+    "prior_frozen_sources_edited": false
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "arguments": {
+    "model": "timesfm",
+    "profiles": "runs/dynamic_d08_timesfm_full/profiles",
+    "out": "runs/dynamic_d17_timesfm_real",
+    "source": "runs/real_background_poc492306"
+  },
+  "selected_indices": [
+    4,
+    5,
+    6,
+    7,
+    12,
+    13,
+    14,
+    15,
+    20,
+    21,
+    22,
+    23
+  ],
+  "context_slice": [
+    128,
+    256
+  ],
+  "corpus_sha256": "da1b2ae642ba6f2c4e995ca5eff897db107453e68a40dfdd2a1d4494d7c064be",
+  "profile_sha256": "554343496dd0f85594c678f912fa08635e8133537a99226f45fd11f31f4f5c4e",
+  "fit": "none: restore frozen synthetic profiles; normal per-input refinement remains enabled",
+  "scope": "external-validity check on reused public sources; not sealed confirmation; pretraining overlap unknown"
+}

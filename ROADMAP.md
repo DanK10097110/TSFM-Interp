@@ -40221,3 +40221,4344 @@ Motivation: a reviewer reading the findings paper would ask whether the shared g
 - Residualizing each layer on the input window (per-position ridge, 5-fold cross-fitted by series, λ = 1e-3·n_train) and recomputing CKA: 21/21 pairs above a 200-permutation whole-series null p95 (each p = 0.004975124378109453, the floor). Median peak CKA 0.6206148514354821 → 0.39933235386171145; median retained fraction 0.7420791857700478; pairs with Chronos-T5-Base or TimesFM `stacked_xf.0` retain 0.374–0.631; Chronos-2/Sundial/Chronos-Bolt first-layer peaks 0.9259–0.9422 → 0.6962–0.8197; seven Timer/Time-MoE pairs retain ≥ 0.957 (Sundial/Time-MoE 0.7404 → 0.7413).
 - Reading: shared geometry is not only shared input, but the headline peak values are partly input encoding. The control is linear and window-local, so residual CKA is an upper bound on input-free sharing.
 - FINDINGS SH-24. Paper (findings version) §5.2 and its new geometry figure report both numbers.
+
+## 48. Feature-space research restart (2026-11-11)
+
+### 48.1 Prospective design and compute policy
+
+User request: useful, statistically defensible shared/unique TSFM feature comparisons,
+with task-performance explanations; small proofs of concept before scaling. Sol
+implementation agents report to the orchestrator. Maximum three simultaneous
+implementation agents in this environment, one model-compute worker, one idle GPU
+(initially device 3), batches of eight, two compute threads plus at most one thread
+per lightweight helper. Existing runs and private corpora remain untouched. Fresh
+outputs live in new workspace run directories. GPU access requires the normal
+outside-sandbox execution mechanism; it was verified after the user's clarification.
+
+Prior negatives constrain the design: SH-19 rules out interpreting raw unit matching
+without real-activation rotation controls; MN-17 rules out another unguided SAE knob
+response search; MN-28 discourages another broad failure-prediction bake-off; MN-31's
+single-feature repair/blame design remains closed. Better reconstruction alone does
+not establish better interpretation (MN-34).
+
+**Question A: task-defined activation subspaces.** Compare TimesFM 2.5 and
+Chronos-Bolt-small on 192 fresh generating seeds, each with seasonality absent/present,
+context 128 and horizon 32. Periods 16/24/32/48 are balanced; phase, amplitude, slope,
+and noise vary independently. All variants of a seed stay together: 96 training,
+48 validation, 48 exploratory evaluation seeds. Record exact latent/noisy future,
+metadata, forecasts, and shallow/middle/final context activations. Compare native
+single coordinates, rotated coordinates, PCA-16, and ridge directions against
+input waveform/spectrum controls. Select layer and ridge penalty on validation
+only. Decodability is correlational and is not evidence of unique information:
+activations are deterministic functions of the input. A model failing to decode
+a concept is not evidence of its absence.
+
+Advance to within-model donor subspace swaps only after deterministic-repeat,
+self-patch, nonself reach, and alignment checks. The desired outcome is recovery
+of the donor's forecast response to the controlled feature, with off-target and
+matched-random-subspace controls. Whole-layer donor swaps provide a ceiling, not
+a concept-specific explanation. Compare model-by-feature performance interactions
+using paired generating seeds; never transplant activations between models. New
+seed ranges are required for replication of any adaptively selected finding.
+
+**Question B: hierarchy earns its cost.** Test a frozen-decoder SAE++-inspired
+second dictionary against cosine agglomeration with the same parent count,
+size-matched random groupings, and uncompressed codes. The actual SAE++ paper
+jointly trains both levels; this cheaper experiment is explicitly an ablation,
+not a reproduction. Fit hierarchy and prediction choices without evaluation
+labels. Pre-fixed exploratory promotion: mean coarse balanced-accuracy gain at
+least 0.02, fine accuracy loss no worse than 0.02, and cross-seed hierarchy ARI
+at least 0.8, with paired uncertainty and random controls reported. Otherwise
+stop the complex method rather than scaling it. Semantic hierarchy must not be
+inferred from generator provenance alone.
+
+**Statistics.** The generating seed is the split/resampling unit. Use paired
+cluster confidence intervals and plus-one permutation p-values with assumptions
+stated; Holm across the predeclared claim family. Distinguish detectable sharing,
+bounded equivalence, and insufficient evidence. Evaluation-set reuse makes a
+result exploratory; it does not become a sealed-private confirmation. Validate
+statistics and interpretation on planted shared, rotated, private and confounded
+concepts before interpreting real TSFM effects. Record negative screens as such;
+change a design only for an identified measurement defect or a distinct question.
+
+Primary starting references: SAE++ https://arxiv.org/abs/2606.16193;
+distributed alignment search https://arxiv.org/abs/2303.02536;
+PatchTST superposition study https://arxiv.org/abs/2605.05151. The last studies
+PatchTST FFN representations and does not establish that all TSFMs have
+monosemantic neurons. No experimental-design skill was installed in the available
+skill catalog; the explicit protocol above serves that role.
+
+### 48.2 Findings — frozen decoder hierarchy screen closes negative
+
+Artifact: `tsfm_lens/runs/feature_search_20261111_hierarchy/results.json`;
+driver `experiments/feature_search/hierarchy_poc.py`. Historical Bolt-small
+`encoder.block.3` SAE from `runs/panel7_v3_ablcheck`, applied to the fresh paired
+corpus. Correct historical pooling is encode 32-step window means, then average
+codes across windows; an initial token-level encoding attempt was corrected
+before the recorded result. Historical context/horizon 480/64 versus fresh
+128/32 is an explicit transfer limitation. This is frozen-level-one inference,
+not SAE++ joint training or a test of every hierarchy method.
+
+Of 1465 train-active atoms, select 256 by training firing frequency, covering
+0.6938634399308558 of total activation frequency. Four parents; three level-two
+seeds, 100 full-batch CPU training steps, fixed logistic probes. On 48 held-out
+generating seeds, coarse balanced accuracy: cosine 0.9166666666666666, its
+size-matched random grouping 0.9166666666666666; decoder seeds 0.90625,
+0.8229166666666666, 0.9895833333333334. Fine period classification on seasonal
+rows: cosine 0.7708333333333334, random 0.9375; decoder seeds
+0.7916666666666666, 0.625, 0.7083333333333334. Uncompressed codes score 1.0 on
+both tasks. Pairwise seed ARIs 0.09744900235251616, 0.022057249581602746,
+0.10284922591492561. All three promotion conditions fail; no further training.
+Loss decreases and flattens, all atoms assigned; results are not an optimization
+crash. Five helper tests pass; six isolated source mutations fail assertions.
+FINDINGS MN-39. Evidence: exploratory descriptive/predictive method screen.
+
+### 48.3 Exploration — strong input controls and a phase-error lead
+
+Fresh dataset `experiments/feature_search/activation_poc_20261111_retry`:
+TimesFM layers 0/10/19, Bolt 0/3/5; all empirical alignment gates pass, repeat
+and whole-raw-state self patches exactly zero. Context-only patch reach must
+be checked independently because raw Bolt states include a special token.
+
+Train/validation-selected ridge presence NMSE: TimesFM 0.0058616722044140465,
+Bolt 0.017275360201343435, original waveform/spectrum input 0.252800780220848.
+An exploratory stronger detrended, normalized spectral/autocorrelation input
+control removes the apparent advantage: RBF input NMSE 0.0062400905817109305.
+For period on present rows: TimesFM 0.003478311498451378, Bolt
+0.01024601268219765, stronger RBF input 0.004381589673473038. Native single
+coordinates do not consistently beat randomly rotated coordinates. Do not
+market easy concept decoding as information beyond the input or practical
+value; all hidden states are functions of the input. Artifacts:
+`probe_analysis.json`, `input_robustness.json`, `probe_uncertainty.json`.
+
+Behavioral lead (exploratory, not a frozen claim): TimesFM-minus-Bolt scaled
+clean-future MSE difference is -0.00042746885193907253 without seasonality and
+-0.05216992300691906 with it. Their model-by-dose interaction is
+-0.05174245415497999, seed-bootstrap CI
+[-0.07816085655314929, -0.0285393374644778]. Period 32 has the largest observed
+gap: Bolt 0.22183093496996242 versus TimesFM 0.043690733739842176, 12 test
+seeds. This selection motivates a fresh-seed nearby-period replication, not
+a causal attribution to patch size. `behavior.json` records all periods and
+harmonic diagnostics. Prior work already studies Bolt frequency/periodicity
+bias (https://arxiv.org/abs/2510.19236); the proposed contribution is systematic
+comparison of represented concepts with their causal use, not rediscovering
+patch-related biases.
+
+### 48.4 Prospective phase replication
+
+Before inference: 32 fresh seed bundles starting at 882000, each crossed with
+periods 24/28/30/32/34/36/40/48 and clean/noise/trend/noise+trend regimes.
+1024 contexts, but only 32 independent bundles; all uncertainty resamples the
+bundle. Context 128, horizon 32, amplitude/phase shared across a bundle.
+Predeclare three primary contrasts in amplitude-normalized clean-future MSE:
+Bolt-minus-TimesFM gap at 32; excess gap at 32 over mean of 30/34; model-by-trend
+interaction averaged across periods/noise conditions. Holm across three,
+plus-one two-sided sign flips with exchangeability/symmetry assumption stated.
+Report every period/regime descriptively. Harmonic phase/amplitude/offset/slope
+diagnostics carry conditioning and low-amplitude guards. Only a replicated
+behavioral lead advances to the phase-subspace causal-use experiment.
+
+### 48.5 Findings — phase failure replicates; an isolated period-32 resonance does not
+
+`runs/feature_search_20261111_phase_replication882000/results.json`: the
+three predeclared contrasts, with 32 independent bundles, are gap32
+0.18809307996960592 [0.1747459011208615, 0.2016589770183286], excess32 over
+30/34 -0.1055939113882801 [-0.12671282433075498, -0.08363461949668786], and
+model-by-trend 0.01829112530145216 [-0.009108565330083418,
+0.04533521227213482]. Holm p-values respectively 0.00030000000000000003,
+0.00030000000000000003, 0.2028. Thus the model gap replicates, the proposed
+isolated resonance is contradicted, and the trend interaction is unresolved.
+Clean stationary sine already suffices: at period32, Bolt scaled MSE
+0.20047032256304864 versus TimesFM 0.0015802568354707277; fitted phase errors
+0.6338950523185359 versus 0.03005515157720332 radians. No architecture-cause
+claim follows. Three instrument tests and six source mutations validate the
+phase sweep; future sweeps must use fresh seed ranges.
+
+### 48.6 Findings — represented phase is not a privileged causal direction
+
+Fresh phase pairs, seeds 993000–993191, period32, no noise, matched amplitude
+and offset, context128/horizon32: each 32-step patch contains complete periods,
+so input phase swaps preserve the native normalization statistics to floating
+precision. `runs/feature_search_20261111_phase_features993000/` contains the
+prospective protocol, raw context and special-token states, frozen choices,
+controls, and results. Both models decode phase extremely well; native forecast
+phase errors remain Bolt 0.6330235566988164 versus TimesFM
+0.028728735788036225. Matching both probes to the last32 physical steps gives
+errors 0.00019144482516774146 and 2.3482026682448694e-05 radians. The input
+closed-form harmonic estimator is essentially exact, as it should be.
+
+Rank4 paired-response subspaces transfer phase accurately, but all four
+predeclared specialization gates fail: principal-component controls work about
+as well and random-control advantages are below the required 0.1 radians.
+Phase-decoder rowspaces are not effective causal intervention directions.
+No noise replication or claim of unique/isolated phase features follows.
+This is an encoded-versus-output dissociation, not evidence that an early
+phase representation is missing. Hidden amplitude decoding failure is expected
+from explicit normalization and must not be called absent amplitude information.
+
+### 48.7 Findings — normalization is a measurable side channel in donor swaps
+
+`experiments/feature_search/normalization_audit.py` uses installed native
+normalization helpers without fitting parameters. For the original presence
+interchange, it predicts a donor output in receiver units as
+`(donor_forecast - donor_mean) / donor_scale * receiver_scale + receiver_mean`.
+This explains TimesFM's large raw donor discrepancy to residual MSE at most
+1.23e-14 and 99.76–99.99% of Bolt's discrepancy (exact values in
+`experiments/feature_search/normalization_audit_poc_20261111/results.json`).
+The remaining Bolt discrepancy may include unpatched special-token/downstream
+paths; no unique attribution is made. A full hidden-state swap is therefore
+not automatically a full computation swap. This is known architecture behavior
+made explicit for measurement coverage, not a novelty claim. Three tests and
+three source mutations verify the native statistics, units and refusal cases.
+
+### 48.8 Window-size steering and prospective robustness audit
+
+The user explicitly questioned activation concatenation and comparisons across
+window sizes. Test mean, native concatenation, common physical-grid concatenation,
+and temporal-DCT pooling over identical series and physical extent. Preserve
+all windows and paired variants inside the resampling unit; fit PCA on training
+series only. Separate raw geometry, fixed-rank geometry, effective dimension,
+and held-out task information. Whole-context concatenation must be exactly
+invariant to its arbitrary partition into windows; window-row CKA asks a
+different question. Native token resolution limits admissible windows.
+
+Initial middle-layer presence screen: mean pooling can raise CKA while reducing
+phase decodability at rank8. Fresh phase-pair replication reverses the geometry
+ranking: native concat CKA at W32/64/128 is 0.9821294153204881 /
+0.9807111430230121 / 0.9945116041754536; mean is 0.17983902859573905 /
+0.3063544553110772 / 0.553869988887963. At W32, Bolt rank8 phase-vector MSE
+mean-minus-concat is 0.43163991774494487 [0.40522112183278375,
+0.4581688715844688], Holm p=0.0004. Increasing PCA rank substantially closes
+this difference, so it is **not literal absence of phase information** and
+not proof of a universally best pooling method. Artifacts and PNG/PDF:
+`runs/feature_search_20261111_window_phase993000/`.
+
+Next prospective cached-dev audit: 128 family-stratified common series from
+`panel7_v3_concat`, fixed middle layers TimesFM10 / Bolt3 / Chronos-2 block6,
+64 train and 64 test, identical explicit trailing384-step crop [96,480).
+W32/64/128, mean/native/common-grid, PCA8/32, whole-series permutation nulls.
+999 draws are descriptive because a 54-test Holm family cannot reject at that
+floor; do not report corrected significance from it. Target resolution must
+be supplied and checked, since a stored fine-position count alone cannot
+identify a model's native resolution. This will inform a read-only, opt-in
+window-robustness CLI rather than changing existing report defaults.
+
+**Findings — cached geometry depends on the representation budget.** The
+fixed-layer, common-series cached audit completed. At W128, TimesFM/Bolt raw
+CKA mean→native-concat is0.30325622517858053→0.34915321043261105; at PCA8
+it reverses to0.2331308306660635→0.1338747277636627, and at PCA32 it is
+0.26600981566893317→0.22532351841408854. Whole-sequence concatenation is
+partition-invariant with maximum difference0.0. All displayed null p-values
+remain descriptive across the expanded grid. Equal rank does not equalize
+spectra or make window-row observations identical. A one-window sensitivity
+would change coverage or require a prespecified position-selection rule; it
+is not silently substituted for this full-crop estimand. No universal pooling
+winner is inferred. The portable report/results/protocol are in
+`examples/window_robustness/`; the opt-in driver is
+`tsfm_lens/run_window_robustness.py`. FINDINGS MP-12 records the result and
+MN-38 now has a dated scope correction without changing its historical
+held-out numbers or pipeline defaults.
+
+### 48.9 Two-feature selectivity screen and interference diagnostic
+
+Distinct question from the closed one-feature/noise extension: vary two actual
+features independently so the control subspaces have a genuine distractor.
+192 fresh seeds starting1104000, four phase cells per seed, additive period32
+and period16 sinusoids with independent phases/amplitudes and a shared offset.
+Both periods tile each32-step patch, keeping native normalizer states fixed.
+Group all four cells per seed; 96/48/48 train/validation/test. Compare
+conditional encoding patterns, Haufe patterns, decoder rowspace, and paired
+contrast SVD2/4 against top-PC and 16 equal-energy covariance controls.
+
+Predeclared selectivity requires at least50% target phase restoration,
+untouched-phase change<=0.1 radians, amplitude changes<=0.1, normalized offset
+change<=0.1, and>=0.1-radian advantage with paired evidence over both control
+families. All four model-by-target gates fail: active edits change nuisance
+forecasts; eligible decoder-rowspace edits barely change the target. Frozen
+frames and hashes were saved before evaluation in
+`runs/feature_search_20261111_mixture_use1104000/`. No further scaling of this
+direction search. Unmodified forecasts are now being audited separately for
+cross-frequency interference: a real input change to one phase may itself
+change the other predicted component despite unchanged ground truth. That
+diagnostic must distinguish endogenous coupling from an intervention failure.
+
+### 48.10 Findings — fresh feature-composition replication reverses model ranking
+
+Prospective 128 fresh generating bundles beginning1215000, eight cells per
+bundle (four mixtures, two pure period32, two pure period16), context128 and
+horizon32. All losses use the SAME theoretical mixture variance `(a²+b²)/2`,
+including the pure arms. All four frozen contrasts pass the practical, positive
+bootstrap-CI and Holm4 gates (adjusted p=0.002): TimesFM-minus-Bolt untouched
+phase changes when phi changes 0.3279038512503415
+[0.24031824798550505, 0.4230899215990888]; when psi changes
+0.4534599782467891 [0.38325726931122517, 0.5251240350920741]; native
+mixed-loss gap 0.146831872030236 [0.11511752415202106, 0.1790967268823472];
+model-by-composition interaction 0.25178730121876025
+[0.21538921012423637, 0.2885231015590052]. Artifacts:
+`runs/feature_search_20261111_mixture_replication1215000/`.
+
+TimesFM's mixed loss is 0.3512594243442453 versus Bolt's
+0.2044275523140093, despite much better TimesFM pure-component forecasts.
+The secondary oracle sum `f(pure_phi)+f(pure_psi)-exact_known_offset`
+reduces TimesFM loss to 0.0030202935401052824: fraction removed
+0.9914015302344021 [0.9902879922367146, 0.9923149662433601]. Bolt's
+sum loss is 0.20775653781839337, with no supported improvement.
+This uses the known input decomposition and the exact offset, NOT `f(offset)`;
+it is a diagnostic, not a deployable forecasting improvement. See
+`runs/feature_search_20261111_mixture_composition1215000/` and
+`experiments/feature_search/mixture_composition_audit.py`.
+Separate exact sign sensitivity tests use a directional estimand, not a more
+precise estimate of the primary mean sign-flip p-value. No sealed private
+benchmark was read. FINDINGS PM-18 records the behavioral result.
+
+### 48.11 Findings — context extension and a third model delimit composition failure
+
+Prospective64 fresh seeds beginning1326000, contexts128/256/512, eight cells
+per context, same horizon32 and same theoretical mixture-variance denominator.
+Add cached Chronos-2 with independent series group IDs. All six frozen primary
+contrasts pass Holm6 p=0.003. TimesFM component-sum gains are
+0.34645032517234897 / 0.3464503219837711 / 0.34645025064269463;
+TimesFM-minus-Bolt composition interactions are 0.24208769937305374 /
+0.2626965998147584 / 0.3249051559965136. Native mixed losses:
+
+| Model | Context128 | Context256 | Context512 |
+|---|---|---|---|
+| TimesFM | 0.349466573709151 | 0.34946656956483124 | 0.34946649909290317 |
+| Bolt | 0.21823886495623107 | 0.13606338388518485 | 0.041825578693870505 |
+| Chronos-2 | 0.0009742264718476344 | 0.0006608511550697683 | 0.0005744582875454149 |
+
+TimesFM receives repeated identical32-step patches in this exact construction;
+these results cannot establish generic context insensitivity. Chronos-2's
+deterministic repeat error is0 and independent grouping is verified.
+Reproduce with `experiments/feature_search/mixture_context_expansion.py`;
+artifact `runs/feature_search_20261111_mixture_context1326000/`. PM-18 updated.
+
+### 48.12 Findings — shared task information survives to actual forecast-head inputs
+
+Capture Bolt's `output_patch_embedding` INPUT (decoder query `[B,1,512]`),
+and TimesFM's `output_projection_point` INPUT (`[B,4,1280]`, last read
+position). Bolt's REG encoder token alone is NOT its full forecast input:
+the decoder query attends to the full encoder sequence. Installed-source
+hashes and hook/no-hook exact equality validate the cutpoints. Training and
+validation use old mixture seeds only, then freeze a float64 ridge readout
+of four normalized Fourier coefficients before fresh1215000 evaluation.
+
+Fresh128-bundle head-probe scaled MSE: Bolt 0.0005480985483314407
+[0.00040073265909734875, 0.0007349060599206458]; TimesFM
+0.0006623374741218504 [0.0004980500019688435, 0.0008819125012721511].
+Native losses remain 0.2044275523140093 / 0.3512594243442453. The known
+input harmonic estimator is essentially exact (1.9461857184381744e-16).
+Thus the native errors do not imply that these spectral features are absent
+from the head inputs. The probe receives extra supervised labels, a known
+harmonic basis, and external normalization statistics; this is predictive
+recoverability, NOT a causal repair or fair zero-shot forecasting comparison.
+The earlier float32 probe artifact is superseded after an ill-conditioning
+warning; final results are `runs/feature_search_20261111_native_head_readout_fp64/`.
+Driver `experiments/feature_search/head_readout.py`; FINDINGS SH-25.
+
+### 48.13 Findings — local head effects replicate, but the retained-feature comparison fails
+
+Prototype64 seeds1437000 uses actual input phase perturbations at±0.01 and
+±0.02 radians, capturing centered head-input tangents and injecting them at
+the verified native cutpoint. Self patches and hook identities are exactly0;
+internal versus actual output derivatives agree closely. Freeze the existing
+head probe, with no new fitting. Period16 passes both models' prototype
+retention gates; period32 fails the own-feature gate and is not advanced.
+
+Fresh128 seeds1659000 replicate ONLY the frozen period16 test. The
+native-minus-probe off-target energy ratios are Bolt 0.05987707943785135
+[0.04375830966984287, 0.0802239206957035], TimesFM
+0.4939784532781031 [0.325254252594046, 0.7167902722611047], with
+cross-model difference 0.4341013738402517
+[0.269918309536019, 0.6470654426926147]. All three Holm p-values=0.0015.
+However, TimesFM's frozen-probe off-target relative RMS is
+0.11326241938620228, above the prerequired0.10 gate. Bolt is
+0.09855118286690241. **The full cross-model retained-feature comparison
+fails replication**, despite significant energy contrasts. No threshold
+retuning, exclusions, or further rescue experiments. These are aggregate
+energy ratios with joint numerator/denominator seed bootstrap, not a mean
+of unstable per-seed ratios. Artifacts and plots:
+`runs/feature_search_20261111_local_tangent_replication1659000/`; driver
+`experiments/feature_search/local_tangent.py`. FINDINGS CA-13.
+
+### 48.14 Findings — a repeated-patch boundary predicts when extra context helps
+
+Installed TimesFM source uses positional RoPE in Q/K, with shared token
+projection for V and pointwise residual/MLP/RMSNorm operations. With identical
+normalized input patches and masks, all V vectors coincide; any attention
+weights give the same weighted value. This explains why duplicating patches
+cannot add distinguishing information, but does not explain the mixture
+forecast error itself: pure period32 patches are homogeneous and forecast well.
+Raw period32+16 patches have exactly0 variance; measured residual token
+variance fractions are approximately1e-14–1e-13. Numerical forecast invariance
+is approximate. Audit: `runs/feature_search_20261111_patch_homogeneity/`.
+
+Prospective nearby-period challenge:32 fresh seeds1548000, periods31/32/33
+plus16, contexts128/512, eight cells, horizon32. Define time relative to
+forecast origin0 so the short context is an exact suffix of the long context
+and futures match. Harmonic diagnostics use the FULL Gram matrix for
+nonorthogonal periods; direct full-window forecast loss is primary. TimesFM's
+neighbor-average context benefit minus period32 benefit is
+0.17250893269492243 [0.1367600676769811, 0.21923424793946084], p=0.0005,
+passing the frozen0.05 practical threshold. Period31 mixed loss falls
+0.13002088179741342 → 0.003840171334537932; period32 remains
+0.37043001525656616 → 0.3704300549180914. Period33 also improves strongly.
+All six hook/no-hook checks equal0. Non32 periods alter input normalization,
+frequency preference and finite-window spectral structure too, so this is a
+conditional behavioral prediction, not sole-cause attribution to patching.
+Reproduce `experiments/feature_search/patch_context_challenge.py`;
+`runs/feature_search_20261111_patch_context1548000/`; FINDINGS PM-19.
+
+### 48.15 Findings — composition failure survives shared white background noise
+
+Prospective 64 fresh seeds1770000, context512/horizon32, periods32/16,
+noise RMS0 or0.1 times the clean mixture RMS. One Gaussian context-noise
+realization per seed is shared across all nine cells (four mixed, two of each
+pure component, and background alone). Future truth is the clean conditional
+mean. Unlike the earlier exact-offset diagnostic, use actual native forecasts:
+`f(A+background)+f(B+background)-f(background)`. This cancels double-counted
+background and affine biases; known component inputs remain oracle information.
+All 18 cells stay together in every seed bootstrap/sign flip. The common clean
+mixture variance denominator remains fixed across noise levels and conditions.
+
+All four frozen primary claims pass Holm4 p=0.002 and the0.05 practical
+threshold. TimesFM native-minus-component-sum gains: clean
+0.30747472513524876 [0.2584089959608819, 0.3592458119652109]; noisy
+0.565583824301698 [0.4789526340549909, 0.6539884940384483]. TimesFM-minus-Bolt
+native mixed-loss gaps: clean0.2676194099465057
+[0.2165770452932304, 0.3206768613396805]; noisy0.523860819463454
+[0.4332454357804728, 0.6155645624105813]. Native deterministic repeats
+are exactly0. Noise changes within-bundle native normalization scales, so these
+behavioral effects do not establish hidden-feature interference. The surprising
+noisy-minus-clean TimesFM loss increase is exploratory only; no new directional
+claim or further replication is promoted from that observation.
+
+Three known-answer tests pass and three isolated source mutations fail: wrong
+background subtraction, contaminated future targets, omitted Holm correction.
+Reproduce `experiments/feature_search/mixture_noise_background.py`; protocol
+`experiments/feature_search/mixture_noise_protocol.json`; artifacts
+`runs/feature_search_20261111_mixture_noise1770000/`. PM-18 extended.
+
+### 48.16 Prospective discovery screen — trend and seasonality
+
+Broaden the positive composition diagnostic to a different pair of concepts,
+without assuming the same models win. Before inference: 64 fresh seeds starting
+1881000, context192, horizon48, periods24 and48. Time is relative to forecast
+origin0. Each seed draws seasonal amplitude `a~U(.5,2)`, phase uniformly,
+offset `U(-2,2)`, and slope magnitude `a*U(.5,2)/48`. Nine cells per period:
+four trend-sign×seasonal-phase mixtures, two pure trends, two pure seasonal
+signals, and constant background. The identical generating seed links both
+periods. Forecasts use TimesFM, Bolt, and Chronos-2 with independent group IDs.
+
+Every condition uses the same denominator `a²/2+slope²*(H²-1)/12`, the sum
+of theoretical component future variances, NOT realized mixture variance.
+Component forecasting subtracts the actual model background forecast.
+Fix the model order TimesFM/Bolt/Chronos-2; all contrasts are later-minus-earlier.
+The family has 12 two-sided tests: three model pairs × two periods × native
+mixed-loss gap or difference in native-minus-component-sum error gains.
+The latter is explicitly distinct from the earlier mixed-minus-pure contrast.
+Advance only effects with absolute magnitude≥0.05, a seed-bootstrap interval
+excluding0, and Holm12 p<0.05 (3999 sign flips, 2000 bootstraps). This is a
+discovery screen: any selected contrast needs independent fresh replication.
+
+Fit the full joint `[t/H,1,sin,cos]` design for descriptive forecast diagnostics;
+retain full Gram cross terms and phase-identifiability guards. Include an exact
+input harmonic-plus-linear baseline. No hidden-feature capture or unique-feature
+claims at this stage. CPU2, batch8, FP32, offline cached models, GPU3 only after
+an idle check, one worker,6GB allocator cap, ten-minute runtime cap. No automatic
+expansion after results.
+
+**Findings — closed without promotion.** All 12 contrasts fail the absolute
+practical threshold0.05. Eleven pass Holm12 p=0.003, demonstrating why
+statistical significance alone is not an advancement gate. The largest
+native gap is Bolt-minus-TimesFM at period48, 0.032891776989840735
+[0.028450752459306894, 0.0377026899694327]. At period24, TimesFM native mixed
+MSE is0.0032415266684128687 and Bolt is0.016850267849793904. TimesFM is
+accurate on this distinct controlled composition, so the earlier two-frequency
+failure is not a universal composition deficit. Native repeats and Chronos-2
+batch-permutation checks are exactly0. The known input OLS estimator is
+essentially exact; full-Gram reconstruction checks pass. No replication,
+hidden capture, or tuning follows. Three tests and three source plants validate
+the instrument. Artifacts `runs/feature_search_20261111_trend_seasonality1881000/`;
+driver `experiments/feature_search/trend_seasonality.py`; FINDINGS PM-20.
+
+### 48.17 Literature boundary and prospective native-head branch attribution
+
+Literature checked on2026-11-11: concept probing, vector arithmetic and
+composition interference in TSFMs already appear in Pandey et al.,
+*On the Internal Semantics of Time-Series Foundation Models*
+(https://arxiv.org/abs/2511.15324), including sequence-length comparisons.
+Bao et al., *Universal Redundancies in Time Series Foundation Models*
+(https://proceedings.mlr.press/v306/bao26c.html), already provide component
+ablations and residual-stream attribution for TSFMs. Therefore neither
+"composition matters" nor "LLM tools work on TSFMs" is a novelty claim here.
+The intended contribution is a reproducible comparative diagnostic linking
+controlled task behavior, actual-head information retention, prospective
+replication, normalization coverage and window-estimand controls. Uniqueness
+or completeness of that combination is not established by this limited search.
+
+The "no strong superposition" result in Yildirim's PatchTST study
+(https://arxiv.org/abs/2605.05151) concerns specific post-GELU FFN settings;
+it does not license assuming monosemantic residual units in every TSFM.
+Our direct-neuron/rotated-neuron controls likewise did not privilege native
+coordinates. SAE++-inspired frozen-dictionary hierarchy screening is a limited
+ablation, not a full reproduction or a general refutation of SAE++ (§48.2).
+
+Approve a distinct CPU-only computation audit after source inspection: replay
+the actual forecast heads on every cached local-tangent replication input
+(seeds1659000), loading only head tensors from cached safetensors. Both heads
+have a linear skip plus nonlinear branch. TimesFM uses SiLU; Bolt uses ReLU
+and has no enabled head layer normalization in this checkpoint. Respect native
+forecast-channel indexing and apply native affine normalization once. Require
+normalized forecast RMS error≤1e-5 and off-frequency derivative relative RMS
+error≤0.01 before attributing anything. Use delta0.01 as primary and0.02 for
+sensitivity, with no probe refitting or reliance on the failed retention gate.
+
+For each branch report the signed projection onto the total off-target
+derivative, `sum(dot(total,branch))/sum(norm(total)^2)`, raw branch energies,
+their cross term and normalization residual, with whole-seed bootstrap CIs.
+Negative or above-one shares indicate cancellation and are not percentages
+of causal blame. This is descriptive attribution along observed natural
+tangents, not a representation-isolation or repair claim. No GPU inference,
+full-model load, new gate tuning, or automatic expansion. Save protocol before
+replay and verify known-answer cancellation and isolated source mutations.
+
+**Findings — replay passes; the linear skip carries most local crosstalk.**
+CPU replay on all128 cached generating bundles passes both frozen accuracy
+gates. Normalized forecast RMS mismatch is Bolt1.1616196852667529e-07,
+TimesFM1.5304380828017896e-07; all off-frequency derivative relative RMS
+mismatches are≤1.2618991727190243e-05. At primary delta0.01, signed skip
+projection shares are Bolt0.8688605152258402
+[0.8304050378746096, 0.9088376396896608] and TimesFM0.9572140281831615
+[0.9377662236464296, 0.9745467932949905]. Nonlinear shares are
+0.1311390609148922 / 0.042786387793319745. These are signed projections,
+not error-removal fractions or independent energy percentages. TimesFM's
+skip/nonlinear cross-energy is0.03674215798892091
+[0.017256681638754722, 0.059404885926451656], reinforcing the total response;
+Bolt's corresponding interval includes0. Numerical and normalization residual
+shares are tiny and all energy/coefficient closures hold to floating precision.
+
+The measured response is therefore not chiefly created by the head's nonlinear
+branch. A linear readout can still expose nonlinear mixing already present in
+the incoming states; this decomposition does not isolate the origin of that
+mixing or prove an interpretable feature is cleanly encoded. No learned probe
+or failed probe gate was used. Four tests pass and four isolated plants fail
+(wrong output channel, missing skip bias, unsigned attribution, wrong count).
+Artifacts `runs/feature_search_20261111_head_branch_audit1659000/`;
+FINDINGS PM-21.
+
+### 48.18 Statistical review and bounded calibration
+
+Review confirms seed-level aggregation and complete Holm families. Two API
+guards are being added: statistics helpers must refuse2-D arrays rather than
+flattening rows into pseudo-seeds, and infinities must not silently become
+missing observations. Explicit NaN phase exclusions remain supported. A
+per-model marginal phase mean uses its own identifiable subset; subtracting
+those means need not equal the paired comparison on their joint subset.
+Pointwise bootstrap intervals are not simultaneous family intervals. The
+context study's primary Holm6 and secondary Holm9 families have separate
+control, not a combined Holm15 guarantee. Practical advancement thresholds
+apply to point estimates plus statistical evidence; they are not equivalence
+tests or confidence bounds proving the practical margin itself is exceeded.
+
+An actual-function CPU calibration, master seed1992000, uses128 replicates
+per scenario,64 independent seed contrasts per family, four correlated tests,
+999 sign flips and199 bootstrap draws. A separate runtime-only pilot fixed
+the full count before main outcomes were read. Under a symmetric Gaussian
+null, Holm family rejection is8/128 =0.0625, exact binomial95% interval
+[0.027366684886370826, 0.11943678339385401]; without correction it is17/128.
+This is a coarse gross-failure check, not certification of exact5% calibration.
+Under the deliberately skewed mean-zero law `exp(1.5*Z-1.5²/2)-1`, Holm
+rejects44/128 =0.34375. Symmetry is violated: **mean zero alone does not
+justify the sign-flip test**. This is not a bug under its stated assumptions,
+but the assumption must be prominent and a different inferential question
+should be available when symmetry is not justified.
+
+Strong-effect and all-zero known controls behave as intended. A moderate
+contrast has raw p=0.028 but Holm p=0.112; an omitted-Holm mutation fails the
+guard. Runtime22.631006709008943 seconds, CPU1, no models or GPU. Artifacts
+`runs/feature_search_20261111_statistics_calibration1992000/`, including
+function snapshots, hashes, pilot and every replicate. An exact two-sided
+sign-probability comparison is under review as a separate prospective
+estimand; it must never be mislabeled as an assumption-free mean test or
+retrospectively substituted for registered mean claims.
+
+**Prospective inference update.** Preserve the legacy mean endpoint, but let
+new protocols explicitly choose `inference.primary_estimand: sign_probability`.
+For D = later-listed metric minus earlier-listed metric, test
+`q=P(D>0 | D!=0, jointly identifiable) != .5` with an exact two-sided binomial
+test and complete global Holm family. Report positive/negative/tied/missing
+counts and a pointwise exact binomial interval. Only the declared primary
+family controls primary statistical status; secondary mean evidence cannot
+rescue a failed sign endpoint. Exact signs still require independent fair signs
+under the null; they do not prove expected-MSE superiority, practical relevance,
+or equivalence. Their attainable p-value depends on nonzero seed count, not on
+the Monte Carlo permutation budget. Historical mean protocols remain mean
+protocols, including the new native CLI verification at seeds1992000.
+
+**Exact-sign check.** A separate128-family simulation, seed2114000, uses
+independent fair signs with asymmetric exponential magnitudes: q=.5 while
+the population mean is−1. The actual exact-sign helper with Holm4 rejects
+0/128 families; unadjusted tests reject7/128. This is NOT evidence of zero
+error. The independent fair-sign law permits an analytical check: at n=64,
+the first Holm rejection requires at least43 positive or at most21 positive
+signs. Its raw probability is0.008146902228698568, giving exact family
+rejection probability0.03219153531930352 and probability
+0.015172085364807403 of observing zero in128 families. The observed zero
+is an unusually low Monte Carlo draw; retain it without choosing another seed.
+The analytical audit is separately labeled post hoc. Artifacts:
+`runs/feature_search_20261111_sign_null_calibration2114000/`.
+Independent toy reports also verify that a significant mean cannot rescue a
+sign-primary result and vice versa; an opposing mean/majority is displayed.
+
+### 48.19 Prospective accurate-comparator head analysis — Chronos-2
+
+Chronos-2 is accurate on the same two-frequency task, making it a useful
+positive comparator for the verified head diagnostic. Inspecting its cached
+configuration reveals `use_arcsinh=true`: unlike the two affine cases, native
+postprocessing applies `sinh` to the SUM of skip and nonlinear outputs. Do
+not apply the inverse separately to branches. Freeze before capture: use all
+640 existing inputs from the128-seed1659000 tangent corpus, both deltas,
+primary0.01; capture two forecast-placeholder positions `[B,2,768]`, retain
+quantile-major `[21,16]` layout and native median selection.
+
+Allocate the finite response using the common secant factor
+`J=cosh((z_plus+z_minus)/2)*sinh((z_plus-z_minus)/2)/((z_plus-z_minus)/2)`
+with its continuous limit. Multiply each branch difference by the SAME J and
+base affine scale, then retain normalization and numerical residuals. This is
+an explicitly chosen exact secant allocation through the shared inverse,
+not a unique attribution. Compare all three models using absolute branch
+and cross energies divided by the same summed analytic true target-phase
+strength; bootstrap whole seeds including numerator and denominator. Suppress
+projection shares when total off-target energy/analytic strength<1e-4.
+
+Frozen descriptive labels: weak branch mixing if both branch energy ratios
+are<0.02; cancellation if both are>0.05, total<0.02, and the negative cross
+term offsets≥50% of their summed energy; otherwise mixed/unresolved. Show
+intervals and do not turn point-estimate labels into hypothesis-test claims.
+Native repeat, hook identity and batch permutation must be exactly0, with
+independent series group IDs. Replay normalized RMS≤1e-5; derivative replay
+relative RMS≤0.01 OR absolute mismatch RMS/analytic true derivative RMS≤1e-5
+for near-zero responses, reporting both measures. No probes, learned fits,
+or changes to the failed retained-feature gate. GPU3 capture only after the
+public CLI releases it and another idle check; one worker, CPU2/batch8,
+FP32/offline,6GB cap and ten-minute timeout. Existing Bolt/TimesFM captures
+are reused; no unnecessary model reruns.
+
+**Findings — accurate comparator has weak absolute branch mixing.** All four
+Chronos-2 native controls are exactly0 and both replay deltas pass. On the
+identical128 seeds and common analytic-strength denominator, total off-target
+energy ratios at delta0.01 are Bolt0.069589415082317, TimesFM
+0.5068068289233191, and0.0009365699279938675
+[0.0007697780421198571, 0.0011184857798916235] for Chronos-2. Its skip and
+nonlinear branch ratios are0.0009901870057601352 and0.0004963239142425883,
+both below0.02, yielding the frozen descriptive
+label "weak branch mixing", not large-branch cancellation. The affine models
+remain mixed/unresolved under the same label rules. Actual exact values and
+pointwise seed-bootstrap intervals are in
+`runs/feature_search_20261111_chronos2_head_audit1659000/results.json`.
+Five CPU tests pass and five source plants fail, covering quantile layout,
+common inverse allocation, weak-response guards, replay's absolute alternative
+and retaining both forecast placeholders. No probe or retained-feature gate
+is involved. Advance this positive comparative diagnostic once to fresh seeds.
+
+### 48.20 Prospective fresh three-model native-head replication
+
+Freeze128 fresh bundles beginning2225000, same period32+16/context128/horizon32
+distribution and five natural phase conditions (base,±0.01,±0.02 for period16).
+Capture native head inputs and forecasts only: no probes or hidden interventions.
+Reuse the verified branch calculations, common Chronos-2 sinh secant allocation,
+native controls and replay thresholds. Primary delta0.01;0.02 is sensitivity.
+Two fixed comparisons: TimesFM-minus-Chronos-2 and Bolt-minus-Chronos-2 aggregate
+off-target energy ratios, with minimum point effects0.10 and0.02. Require
+paired seed-bootstrap95% lower>0 and majority direction positive, plus exact
+two-sided sign tests on the paired seed ENERGY NUMERATOR differences, global
+Holm2<0.05. The sign test establishes a conditional majority, not an
+assumption-free expected-energy difference; ratio intervals are approximate.
+Show q, exact binomial intervals, ties and exclusions. Branch ratios, shares
+and fixed weak-mixing/cancellation labels remain descriptive.
+
+Protocol/corpus/source binding precedes capture. GPU3 only after an idle check,
+one worker, CPU2/batch8, FP32/offline,6GB cap, ten-minute limit. This replicates
+a positive native-computation diagnostic across three models, not the closed
+failed probe/intervention experiment. Stop if genuinely negative; no automatic
+expansion afterward.
+
+**Findings — both fresh three-model comparisons pass.** All native capture
+controls are exactly0 and every model/delta passes the replay gate. At the
+primary delta0.01, absolute off-target energy ratios are TimesFM
+0.5261452802980068, Bolt0.06792029434615932, Chronos-2
+0.0010493469166017904. TimesFM-minus-Chronos-2 difference is
+0.5250959333814048, approximate paired95% interval
+[0.3280945788163841, 0.7723828712240296]; Bolt-minus-Chronos-2 is
+0.06687094742955753 [0.052205034722263094, 0.08340006809074582]. Both
+clear their frozen practical point thresholds. Each paired numerator has
+126 positive,2 negative and0 tied bundles: q=0.984375, exact pointwise
+Clopper-Pearson95% interval [0.944697409977551, 0.9981021068782607].
+Two-sided exact p=4.853028427369814e-35 for each, global Holm2
+p=9.706056854739628e-35. This is a strong conditional-majority result;
+it is not an assumption-free test of the mean ratio. The ratio intervals
+remain approximate seed bootstraps.
+
+Chronos-2 retains the fixed descriptive weak-branch-mixing label at both
+deltas, with both branch energy ratios below0.02. The other two models remain
+mixed/unresolved by the fixed label rule; their native skip paths carry most
+of the observed response. No probe, hidden-state intervention, refit, or
+retuning of the old failed gate occurred. Nine focused tests pass, and five
+new source plants fail for reused seeds, averaging per-seed ratios instead
+of an aggregate ratio, confusing mean with majority, one-sided testing and
+omitted Holm. Stop native experimentation here. Artifacts:
+`runs/feature_search_20261111_native_head_replication2225000/`; PM-21 updated.
+
+### 48.21 Reusable diagnostics and native CLI verification
+
+The research now has two opt-in public commands, separate from the existing
+pipeline and sealed-private confirmation stage. `run_window_robustness.py`
+compares mean pooling, native concatenation and common physical grids with
+fixed source series/extent, training-only PCA controls and whole-series nulls.
+Its report explicitly distinguishes the changing window-row estimand from
+complete-sequence partition invariance. The portable legacy example records
+an effective 32-step grid; its original grid request is unrecorded, so the
+derived native-width LCM is labeled separately rather than invented as provenance.
+
+`run_feature_interference.py` prepares a fresh factorial before inference,
+binds every forecast to exact corpus bytes and ordered IDs, and analyzes
+paired seed bundles. The original eight-cell design remains reproducible;
+the new example enables a ninth native background forecast. Native component
+addition subtracts that forecast rather than an oracle offset. One fixed
+family contains every model pair and all four endpoints. The primary mean
+and exact two-sided sign-probability estimands are separately corrected and
+explicitly selected; a secondary result never rescues primary status.
+
+**Native public-command check.** The registered mean protocol at 64 fresh
+seeds beginning 1992000 ran Chronos-Bolt-small and TimesFM 2.5-200M through
+the public CLI, with context 128, horizon 32 and periods 32 and 16. TimesFM
+minus Bolt untouched-phase contrasts are 0.5098689647604115
+[0.3623666605673508, 0.6772230946119816] and 0.5838576459338851
+[0.4554102686748092, 0.7228409918407116]. The mixed scaled-MSE contrast is
+0.2217243680507084 [0.16972132498973808, 0.2826811918597245], and the
+mixed-minus-pure model interaction is 0.34035556794488353
+[0.28028057386564675, 0.4096761100086342]. Each conditional mean sign-flip
+p is 0.0005 and Holm4 p is 0.002; symmetry/exchangeability is required and
+intervals are pointwise seed bootstraps. These numbers verify the public
+workflow on another seed range, with the same scientific scope as PM-18.
+
+The portable `examples/feature_interference/` includes exact synthetic corpus
+and prediction bytes, original protocol and producer provenance, plus a later
+mean-preserving report. Added sign comparisons remain secondary; this package
+is not retroactively a sign-primary study. It requires no checkpoints for
+saved-forecast analysis. `examples/window_robustness/` needs no activation
+cache for rendering. The publication figures in
+`examples/feature_search_20261111/` rebuild from their portable source JSON.
+
+The next reusable layer, `run_feature_search_plan.py`, registers an explicit
+complete catalog before its result-reading step, screens one global
+case-by-pair-by-endpoint family, and freezes qualifying comparisons for a
+new disjoint generating-seed range. Practical point-mean thresholds and
+direction agreement are required in addition to the selected statistical
+endpoint. Missing claims remain p=1; a closed screen emits no model jobs.
+This CPU-only planner writes configurations and commands, never schedules
+inference. Content hashes provide an auditable declaration, not proof that
+a human never inspected outcomes beforehand. Fresh synthetic replication
+does not consume or replace the project's sealed private benchmark.
+
+### 48.22 Final review, portability and resource audit
+
+The planner's actual CPU mock walkthrough registered two cases before
+forecasting, retained all 8 discovery claims, selected 6, then analyzed only
+those 6 on the frozen fresh range. All 6 mock claims passed; this verifies
+workflow mechanics, not a scientific finding. Its three tests pass, and
+six isolated source plants fail the intended assertions: casewise instead
+of global Holm and omission of the practical gate fail the complete-screen
+test; dropping frozen direction or including unselected replication claims
+fails the frozen-family test; permitting reused generating IDs or dropping
+predictor-declaration checks fails the provenance/seed test. See
+`runs/feature_search_planner_mock_poc/validation.json` and
+`source_mutations.log`. Independent read-only review found no blocker.
+The planner checks freshness against its registered discovery catalog;
+there is no global ledger of earlier inspected replication seed ranges.
+
+Root verification passed 71 checks across the closed experimental branches,
+13 existing window-concatenation and pipeline smoke checks, and a final
+40-check batch covering public feature/window diagnostics, both native-head
+audits, fresh native replication and statistical calibrations. The planner's
+three tests also passed at root. The later direct producer-provenance test
+passed, and the final changed scope (that test plus the selected-primary
+renderer test) passed after collapsing the report's provenance block.
+The original smoke run reports its existing PytestReturnNotNoneWarning.
+Stage-document and glossary consistency checks pass; `git diff --check`
+passes. These are relevant targeted checks, not a claim that the entire
+repository test suite was run.
+
+The direct provenance test accepts the unchanged original plan, labels a
+changed resampling plan as reanalysis, and refuses legal-but-wrong original
+protocol bytes and a mismatched forecast hash. Three isolated plants
+(forced false plan-preservation status, missing protocol check, missing
+forecast check) fail. Root also independently checked that all portable
+native input/forecast hashes bind both producer and later analysis records,
+and that every historical mean effect, interval and p value is unchanged.
+The independent native-head audit passed 175 invariant checks. Recorded
+native/window freeze hashes still match current scientific sources and
+portable data. Presentation-only native HTML regeneration has its own
+`report_render_provenance.json`; it preserves historical analysis provenance.
+
+`examples/feature_search_20261111/index.html` links the full evidence, figures,
+closed negatives and both offline diagnostic reports. It can be regenerated
+from its portable summary and neighboring PNGs without any model/run store.
+The documented rebuild copies those images and resolves the sibling reports;
+an arbitrary output location visibly disables unavailable local links.
+The whole examples tree is the portable unit. Rendered screenshots were
+inspected. The native example is 5,126,414 bytes and contains no weights or
+activation cache. Novelty, real-data generality and a model-exclusive causal
+feature remain unestablished; the positive outcome is a replicated controlled
+comparison plus a reusable workflow with explicit evidence boundaries.
+
+A read-only resource snapshot found 433,665,278 apparent bytes across the
+scoped research/native/mock run directories (413.58 MiB), plus 41,585,485
+bytes of early ignored proof-of-concept artifacts. Later planner and report
+packaging outputs are not included in that snapshot. Persisted per-experiment
+timings are partial; no session-wide GPU duration or measured peak-memory
+telemetry is available, so the configured caps are not reported as measured
+peaks. Native work used one GPU worker at a time, GPU 3, small batches and
+bounded CPU threads. At the audit, GPU 3 had 1 MiB allocated, 0% utilization
+and no compute processes; no task-owned model scripts remained. No accidental
+checkpoint or cache files appeared among new source/example files. Three Sol
+implementation agents were used; no private benchmark was opened and no
+commit, publication or upload was performed.
+
+## 49. Deeper feature-mechanism research (2026-11-12 UTC)
+
+### 49.1 Continuation mandate and prospective experiments
+
+The user explicitly requested deeper research after the bounded §48 session.
+This authorizes new experiments beyond that session's stopping point; it does
+not reopen its failed selective-feature gate or reinterpret its historical
+mean protocols. Three Sol agents implement independent branches; root designs,
+reviews and records outcomes. No agent may start a GPU job until root allocates
+the single worker. GPU 3 was idle at the new preflight; all eight A5000s showed
+1 MiB and zero utilization. Available RAM was 243059 MiB and home usage was
+14517 MiB of a 51200 MiB quota. Use offline cached models, batch at most eight,
+CPU two for native inference and one for other analysis, a six-GiB allocator
+cap and bounded job time. Never overwrite the earlier scientific runs.
+
+**A: localize a native perturbation response.** TimesFM only for the first
+pilot, 16 fresh generating seeds beginning 3100000, context 128, horizon 32,
+periods 32 and 16, base and second-feature phase perturbations ±0.01 and
+±0.02. Four fixed transformer sites [0,9,15,19]. Cache baseline block input
+and output with detached clones. During a perturbed forward, use
+`y_base + (x_live - x_base)`, preserving the live tuple/cache tail and the
+live residual input. This suppresses the composite block's phase-dependent
+update; it is not an isolated semantic-feature intervention. The anchored
+order gives exact baseline identity. Use every native token position, no
+cross-model concatenation or dimensional alignment. H32 is one prefill with
+no autoregressive decode step for this checkpoint.
+
+Require native repeat, hook identity, permutation, baseline-clamp and
+same-condition-clamp controls; distinguish full-output baseline replacement
+as a ceiling that suppresses both intended and unintended response. Include
+a fixed random-direction control matched to the actual per-seed edit energy.
+Track signed spectral derivative changes, off-frequency energy, intended
+derivative fidelity, edit norms and native MSE. A site advances only with
+at least 25% relative and 0.05 absolute off-energy reduction, intended relative
+derivative RMS-error worsening at most 0.05, and the same direction at both
+deltas. Primary delta is 0.01. One Holm8 family contains four exact two-sided
+seed-sign tests versus native and four versus matched random edits; both
+comparisons must have positive direction and corrected p<0.05. These are
+exploratory selection gates. Any positive site must be frozen and retested
+on fresh seeds. Effects need not add across layers; baseline identity means
+this intervention is not evidence of improved unperturbed forecasting.
+
+**B: does native mixing predict individual failures?** CPU-only exploratory
+analysis of already inspected 128-seed cohorts 1659000 (fit/calibration) and
+2225000 (fixed evaluation). Include all three models; Chronos-2's discovery
+capture lives in its separate native-head audit and binds the same earlier
+corpus. The outcome is each seed's unperturbed normalized forecasting MSE.
+Per-model input-only ridge uses amplitude ratio, scale, normalized offset,
+individual phases and invariant relative phase ψ−2φ, with a fixed quadratic
+expansion. Five discovery-seed folds choose regularization from
+[0.1,1,10,100,1000], fitting all scaling within each training fold. Add
+log1p(off-frequency derivative energy / analytic target strength); the second
+augmentation additionally uses intended-target derivative error. True target
+derivatives use the finite-difference secant factor sin(delta)/delta.
+
+Freeze six model-by-augmentation comparisons before inspecting associations.
+Report paired evaluation prediction-loss gains, pointwise bootstrap intervals,
+exact sign/Holm6 results, mean-predictor performance, 32 independently shuffled
+feature controls and delta0.02 sensitivity. Practical promotion requires at
+least 5% relative evaluation prediction-MSE improvement, positive sign evidence
+after Holm, and a gain above the shuffled-control 95th percentile. This tests
+incremental prediction relative to a specified input model; it is not causation
+or complete adjustment for all input information. Prior cohort inspection
+keeps all results exploratory even when the fit/evaluation split is honored.
+
+**C: broader frequency/context screen.** Three native models, 16 fresh shared
+seeds beginning 3200000, pairs (32,16), (31,16), (33,16), (24,12), (48,24),
+(40,20), contexts 128 and 512, horizon 64, baseline and second-phase ±0.02.
+Time is right-aligned: short contexts are exact suffixes and futures match.
+H64 avoids Bolt's additional autoregressive rollout at H96; native call counts
+must be checked. The full joint harmonic design has condition numbers between
+1.4142 and 1.7170, so nontiling periods are identifiable without orthogonality.
+Do not change the production audit's stricter orthogonal design contract.
+
+All 12 cases × 3 model pairs × 3 endpoints form one exact two-sided sign/Holm108
+family: native normalized MSE, off-target derivative energy and intended-target
+derivative reconstruction error. Practical point-mean thresholds are 0.05,
+0.02 and 0.05 respectively, with mean/majority direction agreement. Derivative
+truth uses the exact known secant. Isolated-component energies use actual
+time-domain/full-Gram waveforms; cross energies, DC and residuals remain visible.
+The theoretical b²/2 denominator is labeled as a reference, not assumed to be
+the realized finite-window energy. Native and empirical normalization statistics
+are recorded; normalizers are not secretly held fixed. Broad promotion requires
+the same model-pair endpoint in at least two distinct period pairs, including
+one outside the entire 31/16–32/16–33/16 neighborhood. Retain all negatives.
+This first screen is 576 inputs per model plus controls, under 20 MB of working
+arrays and a ten-minute native-job limit. Root decides any fresh replication.
+
+Recent primary literature adds an explicit novelty boundary: spectral effects
+of tokenization are studied in https://arxiv.org/abs/2610.28997 and patch,
+context and horizon interactions in https://arxiv.org/abs/2611.02750. Alongside
+the composition prior art in §48.17, these prevent treating a frequency or
+patch effect alone as a new mechanistic contribution. The new question is
+which native computations mediate a controlled feature response, how that
+response relates to failures, and which comparisons survive broader tasks.
+
+### 49.2 Findings — a stronger input model erases the failure-prediction lead
+
+All three input-only quadratic ridge baselines beat their discovery-mean
+predictor on the fixed 128-seed evaluation cohort. Adding off-frequency
+energy alone improves Bolt prediction loss by 0.03720503471188224, below
+the frozen 0.05 relative threshold; it worsens TimesFM by
+0.01267781593977677 and Chronos-2 by 0.00992846492383131. None advances.
+Bolt's joint off-energy/on-target-error augmentation initially improves
+prediction loss by 0.3068546604934841: paired gain 0.005358978909542601,
+pointwise bootstrap interval [0.00249203430223256,0.008660856059469924],
+83/128 positive gains, exploratory Holm6 sign p=0.004979984371356317.
+The same fixed fit at delta0.02 gives gain 0.005404273051750365.
+The other two models' joint augmentations do not pass.
+
+Before spending native compute on this positive Bolt candidate, freeze one
+stronger input-control challenge: discovery-only RBF kernel ridge on the same
+nine physical/periodic descriptors, fold-only scaling and median distance,
+lengthscale multipliers [0.5,1,2] and the same five ridge penalties. Joint
+augmentation is primary robustness; on-target-only is secondary and cannot
+rescue it. Keep the same inspected evaluation cohort and explicitly exploratory
+status. Require at least 5% improvement, positive pointwise gain lower bound,
+and a gain above the 95th percentile of 32 shuffled-feature controls.
+
+**Findings.** Input-only RBF prediction MSE is 0.00793532001987993, versus
+0.00922707377887333 with both derivative features and 0.010098940806783127
+with on-target error only. Joint gain is -0.001291753758993399
+[-0.003004891461113323,0.00026984535158859103], relative
+-0.16278533893494376; delta0.02 gain is -0.0012817030745311197. The
+input-only RBF also beats the original input ridge's 0.01746422524893148
+and mean predictor's 0.032157959502951076. Slight discovery OOF improvement
+does not transfer: input0.009286471068967787 versus joint0.008956211004936578.
+Close the predictor branch; do not spend the reserved3300000 native cohort.
+This rejects this incremental-prediction claim relative to the tested input
+models, not a causal role for interference or all possible internal features.
+
+Artifacts: `runs/feature_search_20261111_stage49_failure_prediction_v3/` and
+`runs/feature_search_20261111_stage49_rbf_challenge/`. Three tests and four
+isolated plants verify the first analysis; three tests and three plants verify
+the RBF challenge. An early pre-fit cache check caught cos/sin versus sin/cos
+coordinate ordering; the aborted directory is preserved and no association
+outcomes preceded the fix. These energy features are invariant to that swap.
+
+### 49.3 Findings — native residual-update localization does not advance
+
+The anchored update-clamp pilot passes all native/identity controls exactly,
+and all four output-clamp ceilings suppress the derivative. No site clears
+the complete gate. At final block19, native off-energy ratio
+0.1303457303564841 becomes 0.08028764842129353, a relative reduction
+0.38404082587351435. Absolute benefit is 0.05005808193519057,
+pointwise bootstrap [0.020704622499279263,0.08356942842119078]; intended
+relative-RMS error improves by 0.017882898460587382. Nevertheless only13/16
+paired signs favor the clamp against native and against random: raw exact
+p=0.021270751953125, Holm8 p=0.170166015625. Block9 also fails the full
+gate; blocks0 and15 fail practical criteria. Delta0.02 is directionally
+consistent. No larger sample or retuned threshold is authorized for this branch.
+
+Native versus final-block clamped all-condition MSE is
+0.30075443735853646 versus0.3007761068835905; the unperturbed base is
+identical. Thus this is not forecast repair. The random edit norm relative
+mismatch is at most1.63e-6. Six known-answer tests and six isolated source
+plants pass their checks, including symlink path provenance. A pre-inference
+checkpoint-path failure was retained before an identical protocol retry;
+no model outputs preceded that plumbing correction. Final artifacts:
+`runs/stage49_timesfm_residual_update3100000_retry1/`. Inference6.289s,
+total/load9.207s, peak allocated947331584B/reserved1019215872B; GPU released.
+
+### 49.4 Findings — broader screen reveals a frequency-dependent reversal
+
+The frozen screen retains all108 claims;39 satisfy the exact-sign/point-mean
+gates. Six model-pair/endpoint patterns recur beyond the32 neighborhood.
+These are recurring differences, not uniform superiority: their signs may
+reverse across period pairs. At context128, normalized MSE on32/16 is
+Bolt0.3820556874818121, TimesFM0.5869264504828446 and
+Chronos-2 0.0010072802166847731. On40/20 it is Bolt0.9985357819308737,
+TimesFM0.00045863979466698586 and Chronos-2 0.000867662034843415.
+At context512 on40/20, Bolt remains0.4748967708490257 while TimesFM is
+4.763951575016e-05 and Chronos-2 is0.0005000873729892579. On32/16,
+TimesFM remains0.5869260384076027 while Bolt improves to0.06911852831973236.
+The24/12 and48/24 conditions are low-error negatives for all three models.
+This screen alone cannot distinguish pure-frequency bias from composition harm.
+
+Off-response and task error correlate descriptively across the12 dependent
+cases, but no p-value or individual-failure prediction follows from that
+correspondence (§49.2 is a separate negative test). Screen energies are means
+of per-seed normalized quantities, not the earlier ratio of aggregate energies;
+do not equate their numerical estimands. All native repeat/permutation checks
+are exactly0. An independent CPU review passes396 row/metric/oracle checks,
+with normalized full-Gram closure residual at most1.34e-6 from FP32 arithmetic.
+Six tests and seven source plants validate the screen. Native runtime16.81s;
+peak reserved GPU memory1,046,478,848B; GPU released. Artifacts:
+`runs/feature_search_stage49_frequency3200000/` and its prepared sibling.
+
+### 49.5 Prospective replication — pure weakness versus composition harm
+
+Freeze64 fresh shared generating seeds3400000–3400063, pairs32/16 and40/20,
+H64, context128 primary and512 fixed sensitivity, three models. Six cells
+per pair/context: mixed baseline and ψ±0.02, pureφ, pureψ, actual constant
+background. Shared latent parameters, right-aligned time, no added noise.
+Compute native mixed loss L and actual component-sum loss S from the waveform
+`f(pureφ)+f(pureψ)−f(background)` before taking squared error. All losses use
+the same theoretical mixed-energy denominator. Define G=L−S.
+
+One global22 exact-sign family contains11 contrasts at each context:
+native TF-minus-Bolt gaps g32,g40 and g40−g32; component-gain differences
+C32,C40 and C40−C32, where C=G_TF−G_Bolt; off-response gaps o32,o40 and
+o40−o32; G_TF,32 and G_Bolt,40. Point-mean thresholds are0.05 for loss/gain
+contrasts and0.02 for off-response, with matching mean/majority directions.
+Ranking-flip status requires g32>0, g40<0 and negative crossover, all passing.
+Generic C/o rows are two-sided differences, not automatically a predicted
+mechanism replication. Positive composition harm needs positive passing G;
+negative G means the component sum is worse. Context512 cannot rescue128.
+Intervals are descriptive/pointwise; significance concerns conditional signs.
+
+Mixed-minus-average-pure interaction remains descriptive ONLY: an additive
+frequency-biased forecaster can have nonzero such interaction while G=0.
+Test this exact counterexample, affine bias with actual-background subtraction,
+full-Gram reconstruction, hashes/row identity, complete family and same-sign
+non-crossover decoys. Report S/L as a ratio of means with paired bootstrap,
+flagging unstable denominators rather than flooring them silently. A
+nonsignificant G does not prove absence or a pure-only mechanism. This
+privileged component comparator is a diagnostic, not a deployable repair.
+Budget4608 native forecast rows plus controls, one serialized GPU worker.
+
+### 49.6 Prospective phase-orbit features: separate harmonics from joint use
+
+If the crossover survives its fresh replication, implement a forecast-only
+phase-orbit screen before spending on hidden activations. This asks a different
+question from the failed two-by-two interaction screen: characterize the full
+independent (φ,ψ) response, where a two-by-two difference aliases frequencies
+and can cancel them. It is established harmonic analysis applied to controlled
+comparative TSFM behavior, not new Fourier theory or a full SAE-like method.
+
+Use context128/horizon64 and both period pairs. Eight fixed amplitude-ratio/
+scale bundles (ratios0.5,0.8,1.25,2 crossed scales0.8,1.4), offsets from fresh
+seed range3500000, and an8×8 phase grid give3072 rows across three models.
+Native normalizer and normalized-input phase spectra are retained, particularly
+for nontiling40/20; preprocessing effects must not be attributed to transformer
+computations. Full temporal Gram fitting yields complex amplitude
+`z = c_sin + i*c_cos`. The correct first component is phase mode(+1,0), and
+the correct second component is(0,+1). Negative/conjugate fundamental modes
+are not pooled into the correct feature. Known conjugation and high-frequency
+alias decoys (including exp(i9φ) on the8-grid) must expose this distinction.
+
+Freeze low-order modes |k|+|l|≤3. Separate correct-feature gain/rotation,
+wrong-axis and higher-harmonic response, and genuine joint(k,l) dependence.
+For the harmonic frequency ratio2, physical time-shift equivariance permits
+k+2l=1 in the first output and k+2l=2 in the second. Thus first-output(-1,1)
+is joint but time-equivariant; second-output(2,0) is a wrong-feature harmonic
+but also time-equivariant. This distinguishes feature mixing from temporal
+phase preference without identifying internal neurons or isolated causal units.
+
+Exploratory pilot promotion: wrong-phase low-order output energy at least0.05
+of the true component amplitude squared in at least6/8 fixed bundles, with a
+cross-model difference at least0.02 in the same direction in6/8. These fixed
+bundles are a deterministic parameter grid, not independent population samples.
+Promotion only earns mandatory validation: a nested16×16 grid on four fixed
+balanced bundles and16 fixed off-grid phase points per bundle. The refined
+subset is chosen before outcomes, covering all ratios and balanced scales.
+
+Two separate validation statuses are predeclared. Stable low-order modes need
+8-versus16 complex-coefficient relative L2 error≤0.05 AND absolute RMS/true
+amplitude≤0.02 on all four refinement bundles. Adequate whole-response
+explanation additionally requires residual energy beyond order3≤0.05 true
+amplitude², off-grid coefficient RMS≤0.05 true amplitude and waveform RMS≤0.05
+shared scale in at least7/8 bundles. If only mode stability passes, report
+partial coverage and unmodeled energy; do not claim complete explanation or
+promote hidden captures. If stability fails, label the modes unresolved/aliased
+and stop. No adaptive Fourier-order or grid refinement after those checks.
+The pilot cannot itself rule out unresolved higher harmonics.
+
+### 49.7 Findings — different failure patterns, with an explicit ranking boundary
+
+The fresh64-seed replication retains all22 claims and native controls are
+exactly zero. The primary context128 accuracy ranking-flip gate FAILS:
+g32 has mean0.11874371544743115 but q=0.5625 and Holm p=1.0; g40 is
+-1.0060395215956244 and g40−g32 is -1.1247832370430557, both q=0 and
+Holm p=2.3852447794681098e-18. The context512 sensitivity passes its own
+ranking-flip rule but cannot rescue the primary context. A positive empirical
+mean and a majority-win claim are different quantities.
+
+The separately predeclared PRIMARY off-response reversal does replicate:
+o32=0.4341239800184107, q=0.78125, Holm p=4.948641279781975e-05;
+o40=-0.1813287680828609, q=0.015625, Holm p=1.0570971181733668e-16;
+o40−o32=-0.6154527481012717, q=0.078125,
+Holm p=9.90309863193456e-12. This comparative feature-response result,
+and the independent positive TimesFM composition gain below, justify the
+distinct phase-orbit question. They do not rescue the accuracy-ranking or
+residual-update localization claims.
+
+TimesFM32 native loss L=0.48522450106353, actual component-sum loss
+S=0.0032918348518368463, gain G=0.4819326662116931. Every seed's gain
+is positive; Holm p=2.3852447794681098e-18. Residual fraction S/L is
+0.006784148048216241, pointwise paired ratio-bootstrap interval
+[0.005734700793525599,0.00837327135483489]. By contrast Bolt40 has
+L=1.0064865160504577, pureφ loss0.5266942240516733, pureψ
+loss0.31118882961609595 and S=0.8557949267176199. Its S/L is
+0.8502795746095388 [0.7679059716968856,0.9382502269311893]. Mean
+G=0.15069158933283772 but q=0.5625/Holm1: the positive-gain test is not
+detected; this is not proof of no composition effect. At context512, Bolt40
+G=-0.08791768331268007, q=0.328125/Holm0.04888141337219141, a detected
+NEGATIVE gain; S/L=1.1452997500012323 [1.0088706772680758,1.30571570309269].
+The actual component comparator is worse there. The evidence distinguishes
+large TimesFM mixture-specific harm from substantial Bolt pure-frequency
+weakness, without declaring an exclusive or internal causal mechanism.
+
+C32=0.3880386561813179 passes; C40=-0.1504579461036926 does not;
+C40−C32=-0.5384966022850105 passes. These are native-function gain
+differences and include preprocessing. Nine CPU tests and seven source plants
+validate the new driver; root's combined stage49 batch passes27 tests.
+Native run22.78s, peak reserved1,046,478,848B, GPU released. Source/data:
+`experiments/feature_search/frequency_crossover_replication.py` and
+`runs/feature_search_stage49_crossover3400000/` with prepared sibling.
+
+### 49.8 Pre-inference phase-orbit mathematical refinement
+
+Independent review found a confound before any orbit model inference: full
+Gram fitting of only the included temporal frequencies cannot remove leakage
+from omitted harmonics on a nontiling window. A true time-compatible3ω
+waveform can project into the fittedω coefficient at40/20,H64. Thus the
+earlier target-coefficient labels alone could falsely suggest a temporal
+symmetry violation. Preserve the earlier prepared drafts, add this exact
+counterexample, and amend the primary analysis before outputs are observed.
+
+Take the two-dimensional phase DFT of the ENTIRE native forecast waveform,
+F[k,l,t], and of truth. E=DFT(prediction−truth) gives exact phase/time MSE
+Parseval, including offset, all temporal harmonics and out-of-basis residuals.
+Separate expected phase-axis error at ±(1,0),±(0,1), higher-axis error, joint
+error (both indices nonzero), and phase-DC error. For each full waveform mode,
+use the Hermitian projection onto exp(iω(k+2l)t) to separate coherent physical
+time character from residual. True3ω at(3,0) is then compatible. A conjugated
+sin(ωt−φ) lies at expected phase INDEX ±1 but has the wrong time CHARACTER.
+The earlier +1-only convention applies to complex target z, which remains
+secondary and conditional on temporal-span adequacy.
+
+Call this physical time-character compatibility, not an architectural
+translation-equivariance diagnosis: a persistence forecast fails the former
+without having any absolute-time input. All character labels remain provisional
+until phase-alias validation; full waveforms remove the omitted-temporal-basis
+confound but cannot remove finite phase-grid aliasing.
+
+The amended prospective pilot diagnostic D is low-order higher-axis/joint
+forecast energy plus expected-axis temporal-character residual energy, divided
+by common theoretical mixed energy. These disjoint phase groups avoid double
+counting. Pure correct-character gain/rotation error remains a separate output,
+and phase DC is excluded from D. The previously intended wrong-frequency use
+is therefore retained even when it stays on expected phase axes. Freeze all
+three model pairs × two period pairs (six comparisons), with D≥0.05 and a
+cross-model difference≥0.02 in6/8 fixed bundles. No population p-value is
+attached to this deterministic screen. Stability and whole-response gates
+apply to primary full-waveform coefficients; target-z diagnostics are secondary.
+Off-grid reconstruction uses the coarse8-grid low-order coefficients for ALL
+eight bundles, never a post-hoc choice between coarse and refined fits.
+
+This also connects to the user's suggested transformer-mechanistic-interp
+starting point: Fourier-space circuit analysis has prior precedent in the
+modular-addition study https://arxiv.org/abs/2301.05217. Here the proposed
+measurement is a controlled phase-response/error decomposition; no analogous
+internal circuit has yet been identified or validated in these TSFMs.
+
+### 49.9 Phase-orbit pilot control failures and precision replay
+
+The original3072-forecast pilot completed but FAILED its global controls.
+Its artifacts remain immutable at
+`runs/feature_search_stage49_phase_orbit3500000/`; no alias refinement or
+hidden capture was promoted. Repeat and batch-permutation controls were
+exactly0, but Chronos-2 singleton-versus-eight-row predictions differed by
+7.152557373046875e-07. This is an unresolved batch-shape numerical discrepancy,
+not by itself evidence that other series affect the prediction.
+
+Separately, the installed NumPy FFT preserves single precision, making the
+original Parseval arithmetic fail the frozen1e-10 tolerance. A CPU-only replay
+casts the unchanged saved forecasts and analytic truth to double precision.
+The replay binds all forecast hashes and row identities, preserves all six
+candidate comparisons, and achieves maximum closure4.440892098500626e-16
+without changing the mathematical tolerance. It is a corrected secondary
+measurement analysis, not a retroactive pilot pass. Artifact:
+`runs/feature_search_stage49_phase_orbit3500000_fp64_replay/`; new driver
+`experiments/feature_search/phase_orbit_fp64.py`. Two tests pass and both
+isolated source mutations are detected. Candidate counts remain descriptive
+only and unchanged: TF-minus-Bolt32 passes its magnitude/direction rule in
+4/8 bundles (fails6/8); Bolt-minus-TF40, TF-minus-C2,32 and Bolt-minus-C2
+at both pairs do so in8/8; TF-versus-C2,40 does so in0/8.
+
+Independent installed-source review finds unique default Chronos-2 group IDs
+and an equality-ID group-attention mask, supporting mathematical cross-series
+isolation. A prospective diagnostic will hold batch size8, target context,
+target position, dtype, lengths and masks fixed, replacing only the other
+seven contexts; exact target equality is the independence criterion. It must
+cover every target position, compare default with explicit unique IDs, and
+detect a deliberately shared-group positive control. This design separates
+neighbor dependence from changing the batch shape. It does not explain away
+the singleton failure. Any subsequent alias experiment needs a newly recorded
+protocol with separate independence and batch-shape consistency statuses; the
+original pilot remains failed. After reviewing the frozen source/checkpoint
+protocol and known-answer tests, root authorized only the fixed-batch control
+diagnostic:88 eight-row forwards (704 contexts), including four shared-group
+positive-control forwards, GPU3, CPU2, six GiB cap,180s timeout, offline cached
+checkpoint, and a fresh idle-device check. No alias or hidden inference is
+included in this authorization.
+
+The pilot used18.209014706982998s total wall time and at most1,017,118,720B reserved GPU
+memory; its worker released GPU3. CPU precision replay requires no model load.
+
+The separately authorized fixed-batch diagnostic PASSES all its new guards.
+Across both pairs,32 target/neighbor-bank comparisons are exactly0, all
+default-versus-explicit-unique-ID comparisons are exactly0,14 inverse-aligned
+cyclic permutations are exactly0, and repeats are exactly0. The deliberately
+shared-group positive control changes target0 by0.015233278274536133 at32/16
+and0.020481348037719727 at40/20. Thus the assay can detect real group coupling
+and finds none under the tested fixed-shape default configuration. This does
+not identify the arithmetic origin of the original singleton discrepancy.
+Artifact:`runs/feature_search_stage49_c2_batch_diagnosis3500000/results.json`.
+Exactly88 eight-row calls used7.638161686016247s, peak reserved505,413,632B;
+GPU3 was released. The native runner is
+`experiments/feature_search/chronos2_batch_control_native.py`. Two known-answer
+tests and two source mutations validate the control construction/mask decoy.
+
+### 49.10 Prospective amended phase-resolution follow-up
+
+Register a NEW follow-up, not a repaired status for the original pilot.
+Use double-precision measurement arithmetic and fixed-eight-row independence
+controls; preserve the original exact-singleton failure as a distinct numerical
+consistency limitation. The preceding diagnostic provides evidence for the
+fixed-batch estimand, not for all batching configurations. All six original
+model/period comparisons and their failed exploratory gates remain visible.
+
+Retain the previously fixed refinement design:16×16 phases on bundles0,3,4,7,
+plus16 off-grid phases on each of all eight bundles, both period pairs and
+three models. Reuse coarse predictions only through verified saved hashes and
+ordered corpus identities. This is resolution validation of deterministic
+functions already screened, not new population replication. The four
+candidate comparisons may earn interpretation only if both participating
+model/period responses satisfy the original stability and coverage rules.
+The two failed candidate comparisons cannot be promoted by this follow-up.
+
+For each model/period, all four fine bundles must have low-order relative
+coefficient error≤0.05 and absolute RMS/shared-scale error≤0.02. Separately,
+beyond-order3 energy must be≤0.05 common energy on all four fine bundles,
+and coarse-only low-order off-grid waveform RMS/shared-scale≤0.05 on at
+least7/8 bundles. Report these checks separately. If stability fails, stop
+mode interpretation as unresolved/aliased; if coverage alone fails, retain
+only partial low-order patterns with unexplained energy and no hidden capture.
+No adaptive order, bundle selection or second resolution increase is allowed.
+The approved design budget is6912 forecast rows plus separately declared
+controls, one serialized cached-model worker, GPU3/CPU2/batch8/six GiB/600s.
+Implementation and planted-control review must precede launch authorization.
+
+Launch review: the nested fine grid contains256 already-evaluated points per
+model/period. Root verified their regenerated contexts AND truths are bitwise
+identical to the saved coarse corpus for every selected bundle and both pairs.
+Reusing those forecasts reduces new primary rows from6912 to5376. The frozen
+runner adds128 control rows, totaling5504 contexts in688 fixed-eight-row
+calls. Seven CPU tests pass, nine source plants are detected, and independent
+aggregation review passes. Root authorized precisely this smaller run after
+a fresh idle-GPU3 check, retaining the original resource caps. Source:
+`experiments/feature_search/phase_orbit_alias.py`; frozen protocol/requests:
+`runs/feature_search_stage49_phase_alias3500000/`. No hidden capture or further
+resolution increase is authorized.
+
+### 49.11 Prospective cheap discriminators of information and normalization
+
+Two CPU-only branches complement the phase-resolution follow-up. Neither
+reopens the failed residual-clamp, retained-feature or failure-prediction gate.
+The proposed pure-operating-point head-Jacobian transport was parked: matching
+pure head captures are absent, the linear head skip already carries most
+measured crosstalk, and transporting a mixed tangent to a pure state would be
+off that state's natural manifold. Its likely interpretation would be
+counterfactual capacity rather than the mechanism of the observed failure.
+
+**Forecast information versus forecast accuracy.** Use cached native
+forecasts as inputs to a four-coefficient linear readout, matching SH-25's
+old96/48 train/validation split, preprocessing, labels, ridge selection and
+horizon. Freeze that readout before evaluating the same128-bundle cohort as
+the frozen head-input readout. Both cohorts have been inspected for other
+purposes, so this is exploratory. The two-model practical screen requires
+output-decoder scaled waveform MSE≤0.01 and excess over the head decoder≤0.01;
+paired intervals are descriptive, not a new confirmation test. Invertible
+frequency mixing must preserve recoverability, while dropping a component
+must fail it. Save the protocol before fitting and bind row identities and
+forecast hashes. No nonlinear fallback, training of the TSFM, new capture or
+GPU inference. A positive result means useful semantic information remains
+linearly recoverable from the forecast; a negative only means lower linear
+recoverability, not destruction of the concept. This is supervised diagnostic
+recalibration, not a zero-shot forecasting improvement. CPU1/180s cap.
+
+**Homogeneous TimesFM replay and fixed-normalizer composition.** Exact32/16
+patches yield identical values at every position; changing QK attention
+routing cannot distinguish identical V vectors. Source-exact one-token
+replay can therefore expose the pointwise computation cheaply. First calibrate
+one existing bundle against native mixed/pure/background64-step forecasts,
+requiring waveform RMS/common-scale≤1e-5. CPU1,60s cap, inspect available RAM
+before loading the cached checkpoint. Only if that passes, evaluate16 fixed
+existing IDs3400000+4j under a separately recorded protocol, CPU1/180s cap.
+
+Let s be the mixture's RMS and u,v its two normalized components. Compare
+the native composition residual with s[F(u+v)−F(u)−F(v)+F(0)], applying one
+common normalization/output scale. Retain the exact radial remainder, cross
+term and signed projection shares; they can be negative or exceed one and
+are not fractions of causal blame. Pure common-normalizer inputs have lower
+than native RMS: this is an explicitly off-manifold counterfactual. An affine
+map with nonzero bias must have zero common-normalizer additivity residual
+even when native scale changes yield a residual; a bilinear feature map must
+retain one. A heterogeneous-patch decoy must invalidate one-token collapse.
+These controls must pass, with real source mutations, before model replay.
+Large residual under a common normalizer rules out a solely affine radial-bias
+account for that counterfactual, not normalization's involvement generally.
+No new statistical confirmation or deployable repair follows from this small
+inspected cohort. A proposed physical-response/window JVP test is parked
+until these cheaper discriminators finish.
+
+### 49.12 Findings — low-order phase features have a measured coverage limit
+
+The amended resolution follow-up completed with all its native controls
+exactly0, but NO eligible comparison passes the complete stability/coverage
+gate. The original pilot failure remains unchanged. TimesFM32 has0/4 stable
+refinement bundles: absolute low-order coefficient errors range from
+0.04087207583835706 to0.07266768507846333, exceeding0.02. Its off-grid
+reconstruction passes0/8, RMS/shared-scale ranging0.11621762715645811 to
+0.19760051499921633. Bolt32 has2/4 stable bundles and0/8 off-grid passes,
+with off-grid range0.06868438067960078–0.1081651712858844. Their individual
+mode identities remain unresolved/aliased under this budget.
+
+Bolt40 has4/4 stable low-order bundles and4/4 beyond-order3 energy passes,
+but0/8 off-grid passes: RMS/shared-scale0.06061027936225086–0.14363814021190519,
+above the frozen0.05 threshold. Its low-order pattern can be reported as
+partial, not a complete explanation. TimesFM40 and Chronos-2 at both pairs
+pass4/4 stability and energy checks and8/8 off-grid checks. Both models must
+pass for a comparative explanation: TF-minus-C2,32 and Bolt-minus-C2,32
+remain unresolved; TF-minus-Bolt,40 and Bolt-minus-C2,40 have partial coverage;
+the two original pilot-negative comparisons remain closed.
+
+This is a deterministic amplitude-grid validation, not a population test.
+The finite phase grid and finite forecast window pose separate problems:
+full-waveform phase DFT avoids omitted temporal-harmonic projection leakage,
+while the nested/off-grid controls reveal unresolved phase complexity. Do not
+repair either by merely renaming fitted target coefficients as features.
+No higher order, finer grid, hidden capture or retuned cutoff follows. A
+CPU-only summary of the stable40/20 partial patterns is permitted, preserving
+all energy and coverage limitations and native-normalization spectra.
+
+Artifacts:`runs/feature_search_stage49_phase_alias3500000/`; source
+`experiments/feature_search/phase_orbit_alias.py`. Seven tests and nine isolated
+source mutations validate the runner's bundle scopes, both-model conjunction,
+alias/partial distinction and prediction binding; root independently passes
+the same seven tests. Exactly688 fixed-eight-row calls (5504 contexts) used
+23.73877306599752s, peak reserved1,017,118,720B; GPU3 released. FINDINGS MN-43.
+
+**Stable partial40/20 description.** Bolt's coarse-grid native normalized
+MSE is0.9937586478672578. Expected phase-axis error contributes
+0.9436013883016936:0.7026315836996115 correct-time-character gain/rotation
+error plus0.2409698046020821 wrong-time-character residual. All-order joint
+error is0.02573335521746873, higher-axis0.006465607537749711 and
+phase-DC0.017958296810345935. These full error-budget terms close to native
+loss; the separate low-order D is0.26494455961141045, comprising
+0.2409698046020821 expected-axis wrong character,0.006225426217601188
+higher-axis and0.017749328791727186 joint energy. The wrong-character term
+dominates D, NOT the entire native error. Matched-four coarse/fine summaries
+preserve this partial pattern. TimesFM40 D is0.0002428950745219303 and
+Chronos-2 D is0.00039338308545337135; their native MSEs are
+0.0004447595831057965 and0.0008712958892724461. This descriptive evidence
+fits the previously observed pure-frequency weakness of Bolt40; it does not
+establish an internal cause. Phase-dependent native normalization remains a
+possible contributor. Off-grid reconstruction error concerns other phases
+and is not an extra additive part of this native error budget.
+
+All25 low-order modes for all three40/20 responses, the full3×2 status matrix,
+partial-coverage figure/HTML and bound source data are portable in
+`examples/feature_search_stage49/phase_orbit/`. Two tests and two source plants
+validate the summary; JSON-only rebuilding is byte-identical. No32/16 mode
+identity is interpreted and no additional native experiment follows. PM-22
+is amended with this limited follow-up, preserving MN-43's closed full gate.
+
+### 49.13 Findings — forecast recovery and homogeneous computation
+
+**Near-equivalent linear recovery from forecasts fails.** The cached
+forecast-output readout uses SH-25's same scaler/ridge specification, old96/48
+split, labels and horizon, with weights frozen before128-bundle evaluation.
+Bolt output-decoder scaled future MSE is0.022370863219791523
+[0.02027640067441522,0.02458582347643575], versus frozen head-input decoder
+0.0005480985483314407. Paired excess is0.02182276467146008
+[0.01975334769485844,0.023993157166713287]. TimesFM output-decoder MSE is
+0.07411271997270756 [0.06522413884405089,0.08377973040945567], versus
+0.0006623374741218504 at the head input; excess0.07345038249858571
+[0.06463308883673971,0.08314720863694158]. Both predeclared0.01 gates fail
+for both models. Native MSE reproduces0.2044275523140093 /0.3512594243442453.
+
+Intervals are pointwise approximate seed bootstraps, averaging four cells
+inside each seed. Both cohorts were previously inspected; no new confirmation
+or information-destruction claim follows. Finite-sample linear fitting and
+different representation dimensions remain limitations. Legacy captures have
+no embedded row IDs: physical rows, split identities, saved predictions and
+archive loss means are verified, but current hashing does not establish
+original execution provenance. No nonlinear fallback or fresh replication.
+Three tests and four source mutations validate the analysis. Artifacts:
+`runs/feature_search_stage49_forecast_recoverability/`; driver
+`experiments/feature_search/forecast_recoverability.py`. FINDINGS MN-44.
+
+**Source-exact homogeneous replay succeeds; common normalization does not
+remove map nonadditivity.** On16 fixed inspected seeds, a one-token TimesFM
+replay reproduces all six native64-step conditions with maximum
+waveform RMS/common-scale5.3707417253144065e-06, below1e-5. Identical patches
+make attention routing incapable of distinguishing their identical values;
+the source-exact computation reduces to the shared pointwise sequence of
+normalizations, value/output maps and MLPs. This constrains QK-routing-only
+explanations for the exact homogeneous regime, not nearby periods/noisy data.
+
+Mean normalized composition-residual energy is0.5526366314127467. Under a
+fixed mixture normalizer, it remains0.6739155886423474; the radial remainder
+has energy0.5285770016700883 and their cross-energy is-0.6498545646648604.
+The source-replay residual energy is6.0939813659003955e-12. Signed projection
+shares are0.6314958456955388 fixed-normalizer,0.368505415737974 radial, and
+-1.2614335127120702e-06 replay. They are not causal percentages: substantial
+cancellation makes separate component energies exceed the total. Vector and
+energy closure errors are6.661338147750939e-16 /4.440892098500626e-16; no
+small-denominator cases are hidden. Common-normalizer component branches have
+lower-than-native RMS and are off-manifold. A solely affine radial-bias account
+does not explain this counterfactual's nonadditivity; normalization is still
+material and no particular value/MLP layer has been identified.
+
+Five known-answer tests and five source mutations validate the replay,
+normalizer algebra, output channel and homogeneous/heterogeneous distinction.
+Root's joint batch for these two studies passes8 tests. CPU1 runtime is
+17.163381693011615s, peak RSS1,356,333,056B; no GPU was used. Artifacts:
+`runs/feature_search_stage49_homogeneous_pilot/` and calibration sibling;
+driver`experiments/feature_search/homogeneous_normalizer.py`. FINDINGS PM-23.
+
+### 49.14 Prospective anchored internal-composition restoration
+
+The successful source replay motivates a distinct causal question: can an
+explicit amplitude-weighted composition of natural component states survive
+the remaining model computation and improve the actual mixture forecast?
+This is not the closed local-derivative clamp: it changes the baseline mixed
+forecast itself. Use four predeclared candidate cuts: tokenizer output and
+after5/10/15 blocks. After20 blocks is a late-state control, not an eligible
+discovery; raw normalized input is a reconstruction negative anchor.
+
+At each cut define h*=h0+(σA/σM)(hA−h0)+(σB/σM)(hB−h0), using faithfully
+propagated NATURAL pure/background states and live mixed output normalization.
+The coefficients sum to1, so the construction is equivariant under a shared
+affine reparameterization of the hidden coordinates. Naive raw scale-weighted
+state sums lack this property and are rejected. This is an amplitude-weighted
+composition HYPOTHESIS, not a canonical true feature state. It can be off the
+native mixed-state manifold.
+
+Actual native component sum S=f(A)+f(B)−f(background) is the privileged output
+comparator. A final-head-input substitution is not guaranteed to equal S,
+because the head is nonlinear. Retain the cut-invariant affine/background
+term B=(σM−σA−σB+σ0)F(h0)+μM−μA−μB+μ0. Then patched forecast−S−B is the
+remaining suffix's affine-composition residual. The background coefficient
+can be negative: this is not a convex Jensen inequality or a signed blame
+measure. At raw normalized input, explicitly account for mean-chart mismatch
+and require reconstruction of the original mixture/native forecast.
+
+Counterfactual success will mean an earliest TESTED restoration-compatible
+suffix, not the location where harmful features uniquely originate. An
+invertible nonlinear encoder followed by its exact inverse is a required
+decoy: hidden addition can fail while the overall forecast is correct.
+Affine maps with bias must satisfy the remainder formula exactly. Natural
+pure/background transport and A+0−0 identities test implementation, not
+feature selectivity. No output pseudoinverse, probe fitting or tuned direction.
+
+Discovery uses16 fresh seeds3600000–3600015, periods32/16, context128/horizon64.
+One global Holm8 exact two-sided sign family contains native-minus-patched
+loss and mean-two-random-controls-minus-patched loss for each of four cuts.
+Both must have positive conditional majority direction. Point-mean practical
+gates require native gain≥0.1 and random advantage≥0.05 common mixed energy,
+mean suffix-residual energy≤0.05, and recovery≥75% of the aggregate native
+to-S loss gap. Require aggregate gap≥0.1 and retain all16 seeds even when
+individual gaps are zero/negative. Random controls are two fixed draws per
+seed, matching edit energy AND radial dot product with hM, hence final state
+norm; they estimate only this declared comparator mean. Sign-reversed and
+unweighted composition controls are descriptive. Report all eight adjusted
+p-values and all gate failures. Only the earliest fully qualifying candidate
+may nominate a separately frozen fresh replication (reserve3700000); selected
+effect sizes remain optimistic. Practical gates do not establish population
+equivalence or effect-size margins.
+
+Important calibration barrier: a constant background can have nearly zero
+output scale, hiding unstable hidden states behind an unchanged forecast.
+Therefore use actual full four-token CPU states/continuations rather than
+inferring h0 from successful one-token OUTPUT replay. Before any fresh pilot,
+two old seeds3400000/3400004 must pass native/self-patch replay, raw-input
+reconstruction, all pure/background suffix transport and B invariance.
+Compare actual-background with canonical-zero-input anchor interventions;
+waveform RMS/common-scale must stay≤0.01 at every candidate and late cut.
+If this fails, stop before fresh inference; do not replace the anchor after
+observing outcomes. Calibration suppresses scientific gain/selection outputs.
+Known-answer tests and source plants precede calibration. CPU1/60s calibration,
+then separately reviewed CPU1/180s pilot, approximately1.5GiB resident cap;
+no GPU is authorized. A full native pilot has not yet been authorized.
+
+Pre-calibration control refinement: native RMSNorm acts per token, so matching
+only the flattened four-token norm is insufficient. Independent per-token
+randomization would also break the repeated-token structure of the main edit.
+Use a shared channel-space isometry of edit components orthogonal to the
+receiver-token span, keeping parallel projections fixed. A small basis of
+the at-most-four edit directions avoids a dense hidden-dimension rotation.
+This preserves per-token energy/radial products and cross-token edit Gram
+structure. Save degeneracy flags; an unidentifiable orthogonal edit cannot
+qualify via that control. Include repeated-token and heterogeneous-token
+known answers. This is fixed before native calibration or pilot outcomes.
+
+Window-operator proposal remains DESIGN ONLY: full-future response to a
+tokenizer tangent inside a common physical bin would remove concatenation and
+arbitrary partition artifacts, but redundant inputs can give arbitrary bin
+allocations even when native functions agree (uniform averaging versus
+last-patch copying). Moving to nearby periods removes exact redundancy but
+does not make localized off-manifold tangents semantic-feature identities.
+An informative future normalization-path study would have to stop statistic
+derivatives both inside tokenization and at output rescaling; merely
+subtracting an external μ/σ derivative would miss a path. Current evidence
+does not justify a native run for this proposal. The existing matched-extent,
+training-rank window audit remains the supported diagnostic.
+
+Prior-art boundary: Pandey et al.,
+[On the Internal Semantics of Time-Series Foundation Models](https://arxiv.org/html/2511.15324v1),
+already test atomic-embedding addition using cosine similarity/relative
+distance and vary sequence length. Hidden-state addition itself is therefore
+not a novelty claim. This prospective experiment asks about native continuation
+and actual forecast loss under a stated normalization/coordinate convention,
+with numerical-anchor, matched-edit and fresh-replication controls. Its
+scientific outcome remains unknown.
+
+Old-two-seed calibration passes before fresh-pilot authorization. Maximum
+actual-versus-canonical anchor sensitivity is4.879546196721115e-07, below0.01;
+all physical AND normalized-head suffix transports, raw-input reconstruction,
+B invariance and composition closure pass. Output-scale-zero background
+transport is therefore checked before rescaling as well. Ten tests pass and
+eight isolated source plants are detected. Calibration runtime
+6.1233418339979835s, peak RSS1,535,557,632B, within1.5GiB. Root independently
+verifies both old input corpora match the archived crossover inputs exactly.
+No scientific gains/selection were reported for calibration. Artifact:
+`runs/feature_search_stage49_restoration_calibration/`.
+
+After frozen-source and selection review, root authorizes exactly the16-seed
+fresh pilot in`runs/feature_search_stage49_restoration3600000/`, CPU1,
+CUDA hidden, offline,180s timeout, unchanged1.5GiB resident gate. All fresh
+numerical checks run before gains. No replication or GPU work is authorized
+by this launch; the four-cut catalog, Holm8 and all stopping rules stay fixed.
+
+### 49.15 Restoration discovery: resource failure and a constrained correction
+
+The first fresh16 run completes but FAILS its overall resource gate:
+peak RSS1,649,991,680B exceeds1.5GiB. Runtime18.08784061699407s. All
+numerical/anchor checks themselves pass (maximum anchor sensitivity
+7.089621848491055e-06), but the top-level decision is STOP and no cut advances.
+The immutable artifact is`runs/feature_search_stage49_restoration3600000/`.
+
+Conditional scientific results are retained, not promoted. Cuts0 and5 fail
+their corrected tests. Cut10 has native gain0.4182464044720061 but its random
+control fails actual FP32 geometry for seed indices10,12,14; the random
+contrast remains untestable with p=1 in Holm8, and no seeds are dropped.
+Cut15 has native gain0.4258408541021809 and mean-two-controls advantage
+0.3304840836496432, both16/16 positive, raw p3.0517578125e-05 and
+Holm8 p0.000244140625. Its suffix-residual energy0.03119729414172619 and
+aggregate-gap recovery0.9274894544128434 meet the scientific point gates.
+The aggregate native-to-component-sum loss gap is0.4591328257977486. Late
+cut20 remains outside selection; recovery can exceed1 because the native
+component sum is a privileged reference, not an optimal mathematical bound.
+None of these numbers overrides the failed resource gate.
+
+Independent cached replay confirms every saved loss, all eight raw/adjusted
+p-values and all cut gates, while keeping formal advancement false:
+`runs/feature_search_stage49_restoration3600000_independent_stats/replay.json`.
+A model-free import probe identifies110,862,336B of additional RSS when
+`qualify()` imports the package entry point and its pipeline/data/plotting
+dependencies. This occurs while the model is still resident; the earlier
+native-phase resource check had passed. Diagnosis and a hash-matching copy
+of the original producer are in
+`runs/feature_search_stage49_restoration_memory_diagnosis/`.
+
+Authorize a resource-only source correction: preserve every native forecast,
+edit, random draw, dtype, batch shape and scientific expression; save forecast
+arrays, release model and state bundle, then run the unchanged statistics.
+Record current and high-water RSS at every boundary; releasing memory must
+not erase a previous overrun. Check AST/scientific-helper equivalence and
+replay all old arrays/statistics exactly before proposing native execution.
+Any retry uses the SAME16 seeds and must be bitwise equal for all waveform
+arrays, B/residuals, descriptive arms, geometry flags and all eight statistics.
+It is execution validation, never independent scientific replication. Keep
+cut10's failure and the original run's resource failure. Only an unchanged,
+under-cap discovery execution could nominate15 for a separately frozen
+new-seed replication. No tolerance, memory cap or scientific gate is relaxed.
+
+**Corrected execution validation passes.** The old-two recalibration passes,
+then the SAME16 rerun at
+`runs/feature_search_stage49_restoration3600000_memorysafe/` passes numerical
+and resource gates. All29 saved arrays are bitwise identical and the entire
+scientific result dictionary is exactly equal to the failed original. An AST
+comparison preserves15 scientific helpers and all native forecast expressions;
+only the statistics/lifetime boundary changes. Thirteen tests and two
+additional source mutations validate release-before-statistics and effective
+selection overrides. Runtime18.424637966993032s, peak RSS1,558,306,816B.
+Current RSS falls from1,558,306,816 to625,512,448B after model/state release,
+then reaches709,574,656B after statistics; the high-water mark is never reset.
+The old resource failure remains recorded. This is corrected execution of
+one discovery sample, not an independent second scientific sample.
+
+The effective earliest discovery candidate is after15 of20 transformer blocks
+(zero-based block index14), not after block index15. Mean normalized native
+MSE is0.4625987461492669, actual component-sum reference0.003465920351518298,
+anchored intervention0.036757892047086 and matched-random mean0.36724197569672923.
+Descriptive sign-reversed and unweighted losses are1.2875432508295108 and
+0.21253493594592598. Cut10 remains ineligible, cuts0/5 remain negative and
+after20 remains a late control. The selected effect is exploratory and subject
+to selection optimism; fresh replication must freeze this one cut. CA-14.
+
+### 49.16 Prospective selected-cut restoration replication
+
+Freeze64 fresh seeds3700000–3700063, same generator, periods32/16,
+context128/horizon64, native TimesFM checkpoint and full four-token states.
+Only after15 of20 blocks is a scientific candidate. After20 and raw normalized
+input are controls; do not repeat the scientific search at0/5/10. Keep the
+anchored formula, actual background, numerical/geometry thresholds, all
+point-effect/suffix/recovery thresholds and all-seed denominators unchanged.
+New random controls are two draws per seed/cut, keyed by
+SeedSequence([3700173,generator_seed,cut]); shard order/restarts cannot change
+them. This changes the random realization, not the declared control distribution.
+
+One global Holm2 exact two-sided sign family tests native-minus-anchored loss
+and mean-two-random-controls-minus-anchored loss. Both need positive majority.
+Apply the same empirical native gain≥0.1, random advantage≥0.05,
+suffix-residual energy≤0.05, aggregate reference gap≥0.1 and recovery≥0.75
+gates. Recovery is unclipped; a component-sum reference is not an optimal
+bound. Paired-seed bootstrap intervals are pointwise/descriptive, not
+simultaneous population-margin conclusions. No per-seed positivity filtering.
+
+Four serial16-seed workers cap live-state memory; no worker overlaps another
+or a model-bearing statistics process. Save only the selected/late cut states
+and necessary raw/head controls. Bind corrected discovery, failed original,
+source/helper/checkpoint, shard seed membership and forecast/corpus/protocol
+identities. CPU1, CUDA hidden, offline,≤180s and≤1.5GiB per worker, then one
+model-free pooled analysis across all64. Release model before importing
+statistics. No shard-level effect tests, significance or selection.
+
+After each shard inspect ONLY numerical/geometry/resource validity. Any
+failure stops the remaining shards and fails the full replication gate; no
+confirmatory p-values may be claimed from an incomplete sample. No dropping,
+replacement or random-control retuning. If every validity check passes,
+analyze all64 once. Implementation/planted-control review and separate launch
+authorization are required; no fresh inference is authorized by this plan.
+
+**Pre-outcome control-scope clarification.** Random-control geometry validity
+applies only to the primary cut15, matching the discovery candidate rule.
+Generate two random controls and descriptive reverse/unweighted arms there.
+After20 has no random, reverse or unweighted arms: retain its anchored state,
+native physical/normalized transport, B invariance and anchor-stability checks
+as global numerical controls. A late numerical failure still stops the study;
+an unrequested late random-control gate is not introduced. This clarification
+was accepted before any fresh model inference.
+
+**Frozen launch review.** Seven model-free tests pass and seven isolated
+source mutations are detected. Two independent read-only reviews clear the
+native cut indexing, exact64 membership, full-control gate, serial execution,
+model-free Holm2 and authoritative resource override. Prepared corpus has no
+model outputs. Runner SHA256
+`bc9292fb0e53bfb96279f523e5985998e1c7b4ec2d125c4030a8b1d8c641dd0d`;
+protocol SHA256
+`0136c8049cbb108bd246b2abc14188dbbee30ec3304e686bee4c211486530d6c`.
+Root authorizes the frozen CPU-only controller at
+`runs/feature_search_stage49_restoration3700000/`, with an additional
+conservative180s whole-study deadline and controller-plus-worker memory cap.
+No concurrent model/statistics/rendering jobs; any failed shard ends the run.
+
+### 49.17 Fresh64 selected-cut restoration: positive replication
+
+**Findings (producer complete; independent audit passed).** All four serial
+workers pass required native numerical, primary15 random geometry, identity,
+resource and source/membership checks. No seed is dropped. The frozen cut15
+intervention qualifies on all64 fresh seeds3700000–3700063. Mean normalized
+MSE: native0.463167541269782, anchored0.03884115741909176,
+mean-two-random0.4001224368955292, actual component-sum reference
+0.0037141944288743354. Native gain0.4243263838506902 is positive61/64,
+Holm2 p4.742842403537839e-15; random advantage0.3612812794764374 is
+positive64/64, Holm2 p2.168404344971009e-19. These are conditional-majority
+tests, not tests of the expected mean improvement. Their pointwise95% exact
+q intervals are[0.8690642627585942,0.9902269250455434] and
+[0.9439909106133635,1.0], respectively. Practical mean gates are empirical.
+
+Mean suffix-residual energy0.03340652363661104 passes the frozen0.05 cap;
+aggregate reference gap0.45945334684090766 and unclipped recovery
+0.9235461810611629 pass the frozen0.1/0.75 gates. Descriptive losses:
+late20 anchor0.0035754573313165694, raw-input control0.46316687519096944,
+cut15 reverse1.2196465202632465, unweighted0.1945240319585354. These
+controls do not add selection arms or rescue the primary. All three native
+gain exceptions are retained, rather than filtering seeds by positive gaps.
+
+Run `runs/feature_search_stage49_restoration3700000/` completes in
+41.62072799602174s. Maximum simultaneous controller+child RSS1,570,320,384B;
+largest worker HWM1,550,540,800B, final controller HWM22,876,160B;
+their conservative sum is below1.5GiB. Pooled statistics use680,951,808B
+after all workers exit. CPU1, no GPU. The original16-seed memory failure
+and exact same-data correction remain separate from this independent sample.
+
+This replicates an off-manifold, oracle-component-based causal restoration
+after15 of20 blocks (index14). It supports a compatible late suffix for
+composing natural component representations. It does not identify the layer
+where the native error originated, a canonical isolated feature, or a
+deployable repair for arbitrary real series. CA-14 is updated accordingly.
+Precisely,15 is the earliest TESTED cut clearing every discovery gate; the
+earlier unscorable10 does not establish incompatibility at that cut.
+
+Independent model-free audit at
+`runs/feature_search_stage49_restoration3700000_independent_audit/audit.json`
+reconstructs all64 losses, integer-binomial exact p-values and manual Holm2;
+the p-values and scientific point summaries are bit-exact. Exact membership,
+disjointness, source/checkpoint/data hashes and authoritative resources pass.
+One independently computed CP bound differs by1.1e-16 from the producer.
+Maximum native normalized transport error6.274858416642366e-7, physical
+transport6.310000078181804e-7, identity closure3.616326859223465e-7,
+raw waveform6.544101968344147e-6 and anchor sensitivity
+3.780814176033111e-7 all satisfy their frozen limits. Maximum injected
+FP32 radial diagnostic9.071216278774354e-7 passes1e-5. The audit checks
+saved geometry diagnostics and keyed-draw hashes; it does not regenerate
+hidden-state Grams, since those states were not retained. Conservative
+worker-plus-final-controller HWM is1,573,416,960B. Two random draws per
+seed define the specified comparator, not a calibrated broad-direction null.
+
+Descriptive exception table is saved separately as
+`runs/feature_search_stage49_restoration3700000_independent_audit/descriptive_exceptions.json`.
+All three negative-gain seeds already have relatively small native losses:
+3700015 changes0.04894316330054451→0.06784561317577735;
+3700049 changes0.02442606275912304→0.050174989112846395;
+3700062 changes0.0341940018539934→0.08462329773531871.
+Their actual component references are0.0022594582350832448,
+0.0023445400982907453 and0.0021734266013328243. No subgroup test,
+fitted predictor, seed filtering or follow-up inference is performed.
+
+### 49.18 Prospective tiny compactness screen (implementation only)
+
+Fresh64 restoration qualifies, so test whether its full-state correction can
+be compressed before allocating more native samples. Reuse ONLY the16 already
+inspected discovery seeds3600000–3600015. This is exploratory method selection,
+not another replication. Two fixed folds: even seed IDs train/odd evaluate,
+then reverse. Fit uncentered SVD to training anchored-minus-mixed deltas at
+after15 only, pooling four tokens into channel-space rows but keeping the
+generating seed as the sampling unit. Freeze ranks1/2/4 and apply the same
+channel projector to all four tokens. No labels, future values or forecast
+loss enter fitting. The held-out seed's original delta still uses separated
+components; this is compression of an oracle edit, not mixture-only repair.
+
+Controls: native, full anchored edit, training-fold mean delta broadcast over
+tokens, and two geometry-matched random edits for each projected edit, keyed
+by SeedSequence([3800173,seed,rank]). Use the unchanged shared-isometry helper
+to preserve per-token norms/radial dots and inter-token Gram. These random
+controls assess direction specificity; they do not assert matched global
+learned-subspace capacity. No new cut search. Validate reproduced full/native
+waveforms against original discovery within normalized RMS1e-5, correct
+cut15/index14, and all existing geometry tolerances. Invalid rank controls
+make that entire rank unscorable, with all16 seeds retained.
+
+A rank passes this cheap screen only if its empirical mean loss≤0.06,
+recovery of the full-edit mean improvement≥0.8, mean advantage over its
+two random controls≥0.05 and over the mean-only edit≥0.05. No p-values on this
+reused sample. Report all fixed ranks and nominate the smallest passing one
+for a separately frozen fresh check. If none passes, close this screen; do
+not raise ranks or broaden the search to rescue it.
+
+CPU1, CUDA hidden, offline, at most1.5GiB and180s for authorized native work.
+Separate capture, model-free fit, suffix and model-free summary processes as
+needed to keep model and statistics lifetimes apart. Save small states,
+projectors, full bindings and resource measurements. No frozen prior helper
+may change. Implementation and tests are authorized; native execution awaits
+source/control/resource review. No unique or canonical feature claim follows
+from compactness alone, especially for repeated identical signal patches.
+
+Pre-outcome implementation clarification: folds use generating-seed parity,
+not row order. Fit in FP64 and determine numerical nonzero rank using the
+standard max(matrix shape)×machine-epsilon64×largest-singular-value threshold.
+A requested rank beyond this limit is unscorable; never pad with arbitrary
+null vectors. This is numerical rank, not semantic identifiability or evidence
+of subspace stability. No extra control family or rank is added.
+
+**Frozen launch review.** Six tests pass and six isolated source mutations
+are detected (row-order folds, held-out leakage, accidental centering,
+ignored geometry, ignored mean-only control and resource override). Root and
+independent statistics review find no fitting/gate blocker. Source SHA256
+`4b0f68d06770b26746bf503eb07d31671827bec50623f8682b2e0ec3f55ee0c8`;
+protocol SHA256
+`a807f4e5c59e8bbc194086f76a7b9aeb20939acbf5e4436c30fcf5bb348559b1`.
+No model outputs exist at freeze. Root authorizes the single CPU-only
+controller in `runs/feature_search_stage49_compactness3600000/` with four
+serial phases,180s whole-screen deadline and1.5GiB controller-plus-worker
+cap. Other agents pause rendering/tests until it exits. Any required
+execution failure masks the selected rank; no conditional result can advance.
+
+### 49.19 Compactness screen: negative, closed
+
+**Findings.** The fixed rank1/2/4 uncentered cross-fit screen completes with
+all16 seeds valid at all three ranks. Native and full-edit forecasts reproduce
+the original discovery bitwise (both normalized RMS errors0). The full edit's
+mean improvement is0.4258408541021809; training-fold mean-only edit loss is
+0.28334704675684225. Results, retaining every prespecified rank:
+
+| Rank | Mean normalized loss | Recovery of full-edit improvement | Advantage vs random mean | Advantage vs mean-only |
+|---|---:|---:|---:|---:|
+|1|0.29508030518868866|0.39338273758107306|0.11234093405117283|-0.011733258431846435|
+|2|0.1952377910849517|0.6278424263167613|0.1775108330567401|0.08810925567189057|
+|4|0.1385365731017681|0.7609936198600142|0.23509182549852548|0.14481047365507416|
+
+No rank passes. All fail loss≤0.06 and recovery≥0.8; rank1 additionally
+fails the mean-only advantage. Random advantage passes its0.05 point gate
+but cannot rescue the other failures. No p-values are computed on this reused
+discovery sample. The method branch is **closed**: no larger rank, fresh
+cohort or nonlinear rescue is authorized. This rejects only this tiny fixed
+uncentered linear compression recipe, not every low-dimensional or nonlinear
+description and not the independently replicated full-state intervention.
+
+Run `runs/feature_search_stage49_compactness3600000/` completes in
+14.950945419986965s, CPU1/no GPU. Maximum observed controller+worker
+RSS1,555,922,944B; conservative peak sum1,557,913,600B, below1.5GiB.
+Capture, fitting, suffix evaluation and summary are separate serial processes.
+Fitting never reads future targets or forecast errors. All state/projector/
+waveform bindings are retained for independent model-free replay. MN-45.
+
+Independent audit at
+`runs/feature_search_stage49_compactness3600000_independent_audit/audit.json`
+passes: both opposite-parity SVDs, all held-out projected arrays and mean-only
+edits recompute exactly (maximum projection error0). All96 keyed random edits
+reproduce bitwise; geometry is independently recomputed from the persisted
+hidden states and edit arrays. Maximum FP64 diagnostic3.273374522575701e-15
+and injected-FP32 diagnostic7.382556173212253e-7 pass their frozen limits.
+Every loss, point gate and resource decision agrees; native/full forecasts
+are bitwise equal to the original discovery. No native inference is repeated
+by the audit. The all-negative screen remains closed.
+
+### 49.20 Final research report and verification
+
+`examples/feature_search_stage49/index.html` now leads with the independently
+audited fresh64 restoration result and its scope, links the standalone
+restoration figure/report, and retains the failed accuracy-ranking claim,
+partial Fourier result, closed predictors/localization/output-recovery
+branches and negative compactness screen. Discovery16, its failed resource
+execution/corrected replay, and independent fresh64 remain separate. The
+caption says earliest qualifying TESTED cut, not earliest possible compatible
+layer. Both independent restoration and compactness audits are packaged.
+
+Prior public snapshots and renderer source remain archived. The final report
+rebuilds from portable JSON with run/cache reads denied:25 assets are
+byte-identical, all26 local links resolve, and original crossover producer
+JSON/PNG/PDF remain unchanged. CPU1 Chrome with GPU disabled renders the final
+report successfully; root visually reviewed both the restoration page and
+main report. Evidence:
+`runs/feature_search_stage49_report_final20261112/validation.json` and
+`report.png`. Ten renderer tests pass2.69s. Root's final combined batch of
+replication, compactness, restoration-report and main-report tests passes
+**23 tests in6.19s**; `git diff --check` is clean. Scientific sources remain
+frozen and no model job remains running. No higher-rank or negative-branch
+expansion is planned. README links the new causal diagnostic and its limits.
+
+### 49.21 Future direction: controlled additions to real backgrounds
+
+**Proposed, not executed.** Add the same known signal s to multiple real
+histories x, with matched forecast targets y+s_future. This avoids needing to
+decompose x. Fit preprocessing and select perturbation parameters using past
+data only. Begin with paired +/- amplitudes, fixed physical phase/frequency,
+identical history/horizon/sampling rate and declared absolute versus relative
+amplitude conditions. Small amplitudes reduce distribution shift; report
+whether the injected component is distinguishable from background variability.
+Keep unmodified real-series forecasting performance as an anchor.
+
+Compare f(x+s)-f(x) with s_future, measuring amplitude/phase fidelity and
+off-target changes. This is a controlled response test, not an assertion that
+every optimal real-series predictor must be additive: finite-history
+ambiguity, uncertainty and signal detectability can justify shrinkage.
+Compare classical seasonal/trend and Fourier extrapolation baselines under the
+same observed-history information, plus separately forecast-and-sum controls.
+Our existing oracle output-sum baseline already beats internal restoration;
+future practical claims must outperform relevant simple alternatives.
+
+The user's decomposition hypothesis is testable but unproven. Distinguish:
+(a) features not robustly extractable from mixed inputs, (b) task information
+recoverable but poorly used downstream, and (c) context-dependent internal
+codes supporting correct forecasts. Individual SAE activation mismatch alone
+cannot discriminate these. Compare paired activation differences
+h_l(x+s)-h_l(x), subspaces and decoded causal effects, not just active SAE IDs.
+Include SAE refit/rotation and duplicated-feature controls where relevant.
+Train probes or alignments on discovery backgrounds only; evaluate transfer
+to entirely new source series. Probe failure is not proof of information
+absence. Test patches/ablations with magnitude, normalization, self-patch and
+random controls; quantify edit validity and whether they predict/repair error.
+
+Fairness: first vary background within one frozen checkpoint and fixed input
+length. Next compare checkpoints sharing architecture/tokenizer, size and
+history/horizon where available; training differences remain possible causes.
+For architectural causal claims, train small matched models with controlled
+data/objective/budget and independent seeds. Equal sample length across native
+models does not equalize tokenization or physical receptive fields; keep
+cross-architecture comparisons explicitly descriptive and report those axes.
+
+Discovery may ask whether representation-response instability predicts
+forecast failure beyond input descriptors and simple baselines. Freeze that
+hypothesis and any selected intervention before fresh backgrounds. Source
+series, not overlapping windows or tokens, are the independent evaluation
+units; pair perturbations within series, account for dataset dependence,
+correct the full tested family and specify useful effect sizes. Stop failed
+screens; do not reopen the closed rank1/2/4 or prediction branches by relabeling
+their old results as confirmation.
+
+Useful outcomes include stable causal response features despite unstable SAE
+labels; a reproducible regime where response transfer breaks and forecasts
+degrade; or a tested intervention/training change improving that regime while
+preserving clean performance. Broad claims that TSFMs do not decompose signals,
+guess arbitrarily or generally perform poorly do not follow from current data.
+The targeted question is when a known component is handled consistently
+across backgrounds and whether any failure has a predictive, causal mechanism.
+Existing prior art already studies concepts, compositions and latent steering:
+https://arxiv.org/abs/2511.15324 and https://arxiv.org/abs/2409.12915.
+Novelty would need assessment around controlled real-background transfer and
+causal prediction/repair of failure, not composition difficulty alone.
+No new inference is authorized or launched by recording this future direction.
+
+### 49.22 Potential next experiment: transfer of component responses across backgrounds
+
+**Proposed, not executed.** A focused mechanistic experiment following §49.21:
+does the same controlled input change recruit different internal features
+across backgrounds, and does that variation explain forecasting failures?
+The decomposition-failure account is a hypothesis to distinguish from
+downstream interference, flexible contextual coding and SAE measurement
+instability. Different active features alone cannot decide between them.
+
+**Minimal pilot.** Use one frozen checkpoint, one history length, one horizon
+and one sampling rate. Add an identical phase-aligned seasonal component to
+a small, diverse set of real backgrounds. Include unmodified inputs and paired
+positive/negative additions at predeclared amplitudes. Declare whether the
+amplitude is absolute or relative to background scale; analyze those settings
+separately. Define selection, layers, response metrics and practical gates
+before inspecting outcomes. Begin with existing cached outputs or small
+bounded batches; no SAE training is required for the first screen.
+
+For each background x and known addition s, measure both
+`delta_h_l(x) = h_l(x+s) - h_l(x)` and
+`delta_f(x) = f(x+s) - f(x)`.
+Compare activation-response directions/subspaces and forecast-response
+amplitude, phase and off-target energy. Use physical temporal alignment;
+avoid concatenating unequal numbers of activation windows. Track native
+normalization effects, perturbation detectability and original forecasting
+accuracy. The expected added future is known without decomposing x, but weak
+or ambiguous signals may appropriately receive attenuated responses.
+
+**Discriminating outcomes.**
+
+| Observation | Supported interpretation / next check |
+|---|---|
+| Internal or SAE responses vary, forecasts respond accurately | Context-dependent coding or measurement instability; activation overlap alone is a poor semantic criterion. |
+| A frozen probe recovers component information from mixtures, but native forecasts fail | Information is accessible under that probe; investigate downstream use with controlled interventions. |
+| Probe transfer fails across backgrounds | Limited evidence for poor extractability under the tested probe; insufficient to prove information absence or arbitrary prediction. |
+| Response instability predicts errors on unseen backgrounds beyond input-only baselines | Candidate diagnostic of interference; test whether the relationship is causal. |
+| A frozen state intervention improves the predicted failure cases on new backgrounds | Evidence for a useful causal mechanism, conditional on edit-validity and matched-control checks. |
+
+Fit any alignment/probe only on discovery source series. If SAE responses are
+examined, compare refits and appropriate coordinate/duplication controls to
+separate dictionary instability from model behavior. Direct activation and
+forecast response measurements remain the primary starting point.
+
+**Fairness and confirmation.** First compare backgrounds within the same
+checkpoint. Subsequently compare checkpoints sharing architecture,
+tokenization, size and input length where available; document remaining
+training differences. Cross-architecture results remain descriptive unless
+small matched models control training data, objective, budget and seeds.
+Use source-series splits, with dataset dependence accounted for; do not treat
+overlapping windows, tokens or multiple perturbations of one series as
+independent samples. Compare seasonal/trend and Fourier baselines using the
+same past-only information. Register the full comparison family, effect-size
+gates and uncertainty procedure before execution. Advance only a positive
+pilot to fresh backgrounds and then matched causal interventions; close
+negative screens without expanding the search to rescue them.
+
+**Potential contribution.** Establish a reproducible boundary for component
+response transfer and determine whether internal instability predicts or
+causally explains failure. A positive result could inform model selection,
+targeted evaluation or a tested training/repair intervention. Stable output
+effects despite unstable SAE features would instead improve interpretation
+of cross-model feature comparisons. Neither outcome warrants a blanket claim
+that TSFMs generally fail or do not learn structure. This entry records a
+candidate next experiment only; no implementation or inference is launched.
+
+### 49.23 Potential next steps: prioritized comparative experiments
+
+**User preferences; proposed, not executed.** Preserve the brainstorming
+numbers below. Experiments2/3/4/5/6 are preferred. Experiments1/7/8 remain
+tentative, with the user on the fence. This is a research backlog, not a
+commitment to execute every idea or reopen previously closed studies.
+
+| ID | Preference | Experiment | Question and useful outcome |
+|---|---|---|---|
+|2|Preferred|Four-input interaction test|For each real background x, evaluate x, x+a, x+b and x+a+b. Measure forecast interaction f(x+a+b)-f(x+a)-f(x+b)+f(x), and analogous layer interactions. Test whether internal interaction predicts harmful forecast interaction on unseen backgrounds; nonzero interaction alone is not failure.|
+|3|Preferred|Transfer component effects between backgrounds|Extract the activation change caused by adding s to x_A, apply it to the corresponding state for x_B, and compare with natural x_B+s. Determine whether component effects transfer globally, only between similar backgrounds, or fail despite accurate natural forecasts. Include self-patch, random, magnitude and normalization controls and assess off-manifold edit validity.|
+|4|Preferred|Units and scaling consistency|Apply offsets and positive scales to the same history and its target, transform forecasts back, and compare native forecasts and responses to added components. Determine whether apparent feature instability reflects scaling/preprocessing rather than structural differences. Distinguish this real-input study from the completed synthetic normalization audit.|
+|5|Preferred|Useful history versus irrelevant history|Hold the forecast target fixed while increasing informative history; compare equally long irrelevant-history controls with appropriate boundary/distribution checks. Test whether component-response accuracy and representation transfer improve with available evidence. Track physical history, sampling rate, patch alignment and token count separately.|
+|6|Preferred|Audit SAE measurement stability|Fit multiple SAEs to the same frozen activations and compare active feature identities, reconstructed activation changes and controlled forecast effects. Determine whether unstable dictionary entries coexist with stable functional effects. Use matched fitting budgets and held-out examples; do not infer model instability from feature-label mismatch alone.|
+|1|Tentative|Component interference map|Fix a target oscillation and vary a distractor's frequency, phase and amplitude, including harmonic and patch-boundary relationships. Look for reproducible failure regions while checking that components are identifiable from the available history with suitable classical estimators.|
+|7|Tentative|Controlled training on held-out combinations|Train small matched models with individual components represented in training but selected combinations withheld. Control architecture, history, data volume and compute; compare combination coverage and independent training seeds to distinguish training effects from architectural differences.|
+|8|Tentative|Practical model-selection diagnostic|Test whether a past-only perturbation diagnostic predicts which model forecasts the unmodified future better. Compare with strong input-only selectors and always selecting the strongest model; freeze selection rules before new-series evaluation. Attempt only after robust diagnostic signal, without treating the earlier closed predictor as a positive precedent.|
+
+**Multiple-model requirement applies to every experiment.** An inexpensive
+single-model pilot may check feasibility, but each pursued idea must then be
+tested on multiple models to determine whether the result repeats, differs in
+magnitude or direction, or fails for particular models. Use the same source
+series, controlled perturbations, physical history/horizon, sampling rate and
+evaluation protocol wherever supported. Compare architecture/tokenizer-matched
+checkpoints where possible, and report training, normalization, receptive-field
+and token-count differences. Match intervention sites by a declared functional
+role or other justified rule; layer index alone is not architectural matching.
+Keep unsupported capabilities explicit instead of silently substituting a
+different test. Report per-model outcomes and paired between-model contrasts;
+a significant effect in one model and a nonsignificant effect in another does
+not itself establish a difference between models. Account for the full
+model/condition comparison family and dependence within source series.
+
+**Potential automation path.** If a method yields reproducible, useful results
+on fresh backgrounds across models, promote it into an automated comparative
+diagnostic: shared inputs and perturbation catalog, declared adapter
+capabilities, bounded inference, common response/error metrics, paired
+uncertainty and multiplicity controls, and a report of per-model strengths,
+failure boundaries and unresolved/unsupported cases. Prefer functional effects
+and validated mechanisms over raw SAE feature IDs. Require evidence that the
+metric supports a meaningful comparison or decision before making it a model
+ranking or recommendation. Automating a descriptive diagnostic is distinct
+from establishing that it improves forecasting or model selection.
+
+Maintain the staged compute policy: tiny feasibility checks, stop negative
+screens, replicate qualifying effects with fresh series, then consider broader
+automation. No model runs or new SAE training are launched by this entry.
+
+### 49.24 Real-background proofs of concept for preferred IDs 2–6 (2026-11-13)
+
+The user now authorizes implementation and tiny native pilots, expanding only
+promising screens. IDs1/7/8 remain parked during these five experiments; revisit
+only after these are complete or unproductive and respect downstream prerequisites.
+This supersedes the earlier entries' design-only execution status, without
+reopening the closed synthetic compactness/predictor branches.
+
+**Prospective pilot.** `experiments/feature_search/real_background_poc.py` freezes
+24 cached hourly sources:8 each electricity, M4 hourly and pedestrian counts;
+4 discovery and4 evaluation sources per dataset, no overlapping windows or
+source IDs. Last256 hours plus32 future, standardized by recent128 past mean/SD.
+The additions are relative-amplitude0.5, periods24/40 hours, phases0.3/-0.7,
+paired positive/negative signs. Two cached deterministic checkpoints: Bolt-small
+and TimesFM2.5-200m, serial CPU1, CUDA hidden, offline,900s/3GiB per worker.
+No inference occurred at this protocol's preparation. Site is the last native
+transformer-block output before final normalization/head, retaining all tokens
+including Bolt REG; this is a declared functional interface, not equal-depth
+or architectural causal matching. Different native receptive fields and tokens
+are explicit. Real data remains outside the sealed benchmark.
+
+ID2 uses signed harmful interaction (joint forecast loss minus additive-output
+loss on the same background future plus known additions). A frozen ridge with
+internal interaction energies must reduce heldout squared error by20% against
+input ridge, input RBF and discovery-mean baselines in EACH dataset; heldout
+mean harmful interaction must be>=0.05. No inference from nonzero interaction
+alone. ID3 compares nearest/farthest discovery donors chosen by past-only
+features, full natural response, self-patch, oracle same-source delta, magnitude
+matching and two Gram/radial-matched random edits. Natural response error<=0.5,
+oracle forecast closure<=0.05, no-edit gain>=0.1 and random gain>=0.05 are
+required, with every geometry control valid. Errors normalize by known added
+future energy; native normalization mismatch can invalidate transfer.
+ID4 fixed scales0.1/10 and offsets-5/+5 must produce worst forecast/response
+RMS>=0.1 in EVERY dataset to nominate a scaling defect; classical alternatives
+must remain below1e-5. Near-equivariance is a useful negative, not expansion.
+ID5 compares128 recent hours against256 informative hours and256 hours with
+old32-hour patches permuted. The control preserves the prefix distribution,
+last old patch, recent128 and junction exactly. Both short-minus-long and
+irrelevant-minus-long response losses must exceed0.1 in each dataset; all
+prefix step-energy ratios must be<=2. ID6 fits three64-atom TopK8 SAEs for150
+steps each to the same discovery states, and evaluates heldout reconstruction,
+response reconstruction and decoded patches. All refits must achieve recon and
+delta NMSE<=0.25 and functional NMSE<=0.1 before unstable matched feature labels
+can support a measurement-instability interpretation; pairwise aligned support
+Jaccard<=0.5 and decoded-effect disagreement<=0.1. Permutation and duplicated
+feature decoding controls are included. This tiny budget can fail fidelity;
+that is not evidence of model instability.
+
+All gates are empirical compute-allocation criteria, **not significance tests**.
+The full5x2 experiment/model family is retained. Dataset-specific means avoid
+pooling away a failed dataset; only3 datasets cannot establish population-level
+independence. Fourier/trend and seasonal-naive use the same past; separate
+forecast-and-sum controls are reported. No pretrained-data leakage exclusion
+or model ranking is claimed. Prepare writes source/checkpoint/data bindings
+before worker execution. A failed resource/identity check cannot advance.
+A positive model-specific screen nominates a fresh-source check on both models;
+a negative screen closes this recipe without parameter/rank/search expansion.
+
+### 49.25 Results — five real-background pilot screens stop without expansion
+
+**Findings (exploratory, not confirmation).** Both models complete all five
+experiments with repeat/self-patch max error exactly0.0. No frozen gate passes.
+The worker times are23.361550770991016s Bolt and61.81072669301648s TimesFM;
+controller times25.226434530050028s and63.65477888402529s. Worker HWM is
+1,083,744,256B and1,788,325,888B; monitored RSS1,083,756,544B and1,788,338,176B,
+respectively. All within900s/3GiB, CPU1/no GPU. The GPU driver was unavailable;
+no GPU, downloads, larger SAE or broader sweep was attempted.
+
+- **ID2 interaction prediction: stop.** Relative heldout error improvement of
+  internal ridge over input ridge, ordered electricity/M4/pedestrians, is
+  Bolt[-0.013714983405299197,-0.0223503053880465,-0.08707886277272592] and
+  TimesFM[0.22453879846189062,0.3408372999915109,0.08219152002379826]. Neither
+  clears0.2 everywhere. Full RBF/mean comparisons remain in the artifacts.
+  Mean harmful interaction is Bolt[-0.5966934217141797,0.04538952974583188,
+  0.062035909960380206] and TimesFM[0.0721985129892312,-0.030118158225814505,
+  0.021708441254402282]. Negative values mean interaction improved the actual
+  augmented-future error, illustrating why nonadditivity alone is not failure.
+- **ID3 transfer: validity-limited, not a negative result about transfer.**
+  Nearest discovery donor beats no edit and the two geometry-matched draws in
+  every dataset/sign/model. Geometry passes. Nevertheless, replacing an
+  unmodified-input state with the exact natural augmented state does not
+  reproduce the natural augmented forecast: maximum positive-addition oracle
+  errors1.1971471230276187 Bolt and1.0607697886322227 TimesFM, against0.05.
+  Negative-addition maxima0.7685424213712967 and0.5541449057305898. Native
+  input normalization travels outside this patched interface; raw state
+  transfer is not normalization-complete. Natural-response gate also fails
+  Bolt positive (maximum0.8364049598661759) and TimesFM negative
+  (0.7890038978010159), against0.5. Do not promote the apparent donor gains
+  as semantic transfer. A future design must close the normalizer path before
+  testing the mechanism; no post-outcome normalization repair or new seeds
+  are used here to rescue this frozen screen.
+- **ID4 scaling: informative near-equivariance.** Worst-transform RMS averaged
+  by dataset is Bolt[5.488865236960517e-7,3.1393979675288033e-7,
+  3.227940600501552e-7] and TimesFM[2.280941964267713e-6,
+  1.4082511017083496e-6,7.435093066571062e-7], far below0.1. Classical maximum
+  error2.384185791015625e-7. These inputs do not expose a practical units
+  defect. No larger scaling run follows. PM-24.
+- **ID5 history: effect gates fail and control is imperfect.** Short-minus-long
+  response loss by dataset is Bolt[0.3258667547123744,0.0019404868397725694,
+  0.02706562586166135] and TimesFM[0.036628740029076685,-0.01787253721741365,
+  -0.32838507037094655]. Irrelevant-minus-long gains also fail the0.1 gates.
+  The maximum prefix step-energy ratio is2.219021515635908, above2. Retaining
+  the old/recent junction and exact prefix marginal distribution does not
+  guarantee equally smooth internal patch boundaries. This control cannot
+  isolate useful-history effects; it does not prove history never helps.
+- **ID6 SAE: global reconstruction is not response fidelity.** Bolt three-seed
+  state NMSE[0.05188297480344772,0.052068207412958145,0.05264982953667641]
+  versus response NMSE[0.6410754323005676,0.6525039076805115,
+  0.6279963850975037]. TimesFM state NMSE[0.1314772069454193,
+  0.13562437891960144,0.1317705512046814] versus response NMSE
+  [0.5753476023674011,0.5692651867866516,0.5553540587425232]. All fail the
+  response<=0.25 gate. Function errors also exceed0.1. Permutation/duplication
+  controls pass; their maximum decoding difference is7.62939453125e-6.
+  Label mismatch is uninterpretable as model instability under these fidelity
+  failures. This closes the150-step64-atom recipe, not the general SAE idea.
+  MN-46.
+
+Artifacts: `runs/real_background_poc492306/`; portable report at
+`examples/feature_search_stage49/real_background/index.html`. The model-free
+report/audit driver is `experiments/feature_search/real_background_report.py`.
+It independently replays short-history/transfer/scaling/SAE-functional losses,
+validates disjoint IDs, bindings, finite arrays, resources and all ten decision
+booleans. History gates use the saved per-source loss vectors because this
+pilot did not retain unmodified long/control forecast arrays. SAE reconstruction
+and random geometry diagnostics are read, not independently regenerated by this
+audit. These audit limits are stated in the portable report. Paired
+TimesFM-minus-Bolt contrasts are reported within each dataset, with descriptive
+source min/max rather than confidence intervals. No significance/no-significance
+comparison is substituted for a direct contrast.
+
+Verification:24 focused, geometry and end-to-end smoke tests pass in105.82s;
+the existing smoke test emits PytestReturnNotNoneWarning. Every new test's
+load-bearing assertion was challenged in an isolated source copy: zeroed
+response error, shifted physical time origin, identity history permutation,
+heldout donor leakage, any-dataset gate and supervised heldout-target leakage
+all produce the intended test failure (6/6). Matplotlib figure inspected;
+local HTML rendered in headless Chrome and inspected. Native data were written
+only to a new run directory; older §49 runs and model helpers are unchanged.
+
+**Allocation decision.** No screen qualifies for fresh-background replication,
+so native compute stops. The conditional opportunity to reconsider1/7/8 is now
+reached, but this does not supply their prerequisites:8 lacks a robust predictive
+diagnostic,7 lacks an isolated mechanism/regime justifying matched training,
+and1 would broaden the interference search without a qualifying preferred
+screen. All remain parked. The clearest future methodological needs are
+normalization-complete transfer and a smoother irrelevant-history control;
+those require a separately frozen design, not relabeling these results positive.
+
+### 49.26 Revised research objective: replicate informative failures (prospective)
+
+The user clarifies that negative model behavior can justify more evidence and
+compute. The objective is a reproducible finding about model capabilities and
+failure mechanisms, not necessarily a forecasting improvement. This supersedes
+the blanket future-allocation interpretation of §49.24–49.25; it does not change
+those frozen protocols, scores or historical gate outcomes. A failed repair or
+predictor does not close a valid behavioral failure. Instrument/control failure
+is distinct: normalization-incomplete patches and discontinuous history controls
+must be repaired and checked before mechanism claims. More data does not cure
+an invalid measurement. Dataset-specific effects and model differences can be
+interesting; require-every-dataset success is not a universal scientific gate.
+
+For future work, expand a direction when a valid, practically meaningful
+improvement OR degradation OR stable model contrast has a frozen fresh-source
+replication target. A precise invariance/near-zero claim can also merit an
+adequately powered equivalence test. Mere nonsignificance is not a negative
+finding. Nominate strata on discovery data, freeze them before replication,
+retain the complete tested family and use source/dataset dependence correctly.
+Do not condition behavioral-response analysis on accurate natural response:
+poor natural response is itself the outcome under investigation. That condition
+is appropriate only for narrower claims about transferring an already-correct
+component effect. No new inference is launched by this design entry.
+
+### 49.27 Proposed Fourier decomposition adapter and input-composition tree
+
+**User-proposed direction; design only.** Build a diagnostic wrapper around
+frozen models. Infer decomposition using observed context only, on real AND
+synthetic inputs. Synthetic generator parameters/true components are withheld
+from the adapter and available only to an evaluator. The existing
+`hierarchy.py` groups SAE decoder atoms; this input-component tree is distinct.
+
+Start with an exact additive decomposition: fit mean/trend on past only, split
+the residual real Fourier spectrum into conjugate-consistent frequency bands,
+invert each band, and retain EVERY residual/DC/Nyquist contribution exactly
+once. Require component sum equals original context numerically. Any peak-based
+or tapered method must retain its reconstruction residual; discarding energy
+would confound decomposition with denoising. No future FFT, future-fitted
+frequencies, component-count selection using test targets or oracle synthetic
+frequencies. Fourier endpoint periodicity, off-grid leakage and nonstationarity
+must have explicit stress cases and a second decomposition sensitivity check.
+
+Predict component histories with the same frozen model, then recombine POINT
+forecasts. Report raw sum and an affine-bias-corrected diagnostic:
+A_K(x)=F(0)+sum_j[F(c_j)-F(0)], with sum_j c_j=x. This makes K=1 identical to
+native and gives exact closure for an affine forecaster. It is a measurement
+control, not a declaration of the correct real-world forecast. Count trend and
+level once. Do not sum marginal quantiles as if they were sum quantiles.
+Record native component normalizers; externally rescaling inputs does not
+necessarily freeze a model's internal normalizer.
+
+Use fixed nested band partitions with K=1/2/4/8/16 (upper bound, not a commitment
+to execute all). At a split u+v, measure I=F(u+v)-F(u)-F(v)+F(0). Also replace
+that parent by its children inside the complete reconstructed forecast and
+measure the resulting total-future loss change. Nonzero I is nonadditivity,
+not failure. Cache node predictions, reuse identical histories across trees,
+and report model calls/tokens as well as runtime. Compare contiguous-frequency,
+harmonic-family and energy/count-matched random groupings, with grouping rules
+fixed before outcomes. A reconstruction-preserving identity tree and an affine
+forecaster are known-answer controls. Compare native forecast, Fourier/trend
+extrapolation, seasonal-naive and decomposition-plus-classical forecast.
+
+Three separate outcomes: (1) aggregate forecasting fidelity on real futures;
+(2) response fidelity to known paired +/- additions, whose future contribution
+is known even on real backgrounds; (3) where component interactions appear in
+validly captured/edited internal states. For synthetic data only, evaluator-held
+true components can further separate component errors from cancellation.
+Real-data latent component futures are unknown; do not fabricate them by
+filtering the entire history+future sequence.
+
+Report fidelity versus K and tree node, including nonmonotonic curves. A
+prespecified minimum K crossing a chosen fidelity threshold is a
+PROTOCOL-DEPENDENT decomposition requirement, not the number of semantic
+features or proof of interpretability. If no K passes, report not attained
+within tested budget, not infinity. Freeze threshold and grouping choices on
+discovery; evaluate replication separately. Equal-K cases must distinguish
+component count from spectral spacing, dynamic range, cycles observed and SNR.
+
+### 49.28 Tangential discriminators and staged evidence plan (prospective)
+
+Priorities to accompany the decomposition tree, not an unrestricted grid:
+
+1. **Same spectrum, different phase organization.** Preserve Fourier magnitudes
+   and history length while varying phases; include matched crest-factor controls
+   to separate phase relationships from peakiness. Does the required decomposition
+   change despite identical spectral energy? A difference would challenge a
+   frequency-count-only explanation, not by itself identify an internal cause.
+2. **A weak component in a strong background.** Hold target signal/SNR fixed,
+   vary distractor amplitude and distance in frequency, and monitor gain/phase of
+   the target response. Compare natural normalization with explicitly controlled
+   normalization paths after identity/closure validation. This separates candidate
+   scale competition from spectral proximity and generic difficulty.
+3. **Cancellation challenge.** Construct accurately forecastable components with
+   partial cancellation, contrast with equal-energy aligned mixtures, and evaluate
+   pure-component and aggregate errors. Decomposition can destroy beneficial
+   error cancellation or remove interference. In synthetic cases decompose sum
+   error into component energies plus cross-error terms; total error alone cannot
+   distinguish these explanations. Use absolute and relative error floors near
+   cancellation so denominators cannot manufacture large effects.
+4. **Matched complexity, different grouping.** Same leaves and identical root,
+   different partitions. Compare nearby frequencies, harmonics, distant bands
+   and matched random partitions. Establish whether particular combinations,
+   rather than simply more components or more model calls, drive the failure.
+5. **Coherence/evidence threshold.** Hold a component count fixed while changing
+   observed cycles, frequency separation and phase/frequency drift. Compare Fourier
+   with a past-only localized decomposition. Distinguish a model composition
+   limit from an unidentifiable or inappropriate decomposition. Classical
+   identifiability controls must themselves be evaluated out of sample.
+6. **Useful coupling.** Contrast independently generated components with
+   amplitude/phase-coupled processes at matched marginal spectra. Splitting may
+   remove useful predictive interactions. Native outperforming decomposed models
+   reproducibly in coupled cases would be as valuable as the opposite result on
+   independent mixtures. Avoid asserting coupling from real-series correlation.
+7. **Behavior-to-mechanism follow-up.** Only after a replicated failure boundary,
+   ask whether an internally recoverable component is lost, distorted or ignored
+   downstream. Reuse full-state response measurements before fitting new SAEs;
+   apply self/oracle/magnitude/random/normalizer controls and test heldout cases.
+   SAE response fidelity remains separate from global reconstruction fidelity.
+
+Suggested order: validated no-oracle adapter and exact reconstruction; tiny
+synthetic known-answer/nonstationary controls plus real additions on both cached
+models; freeze the most reproducible improvement/degradation/model contrast;
+then increase independent source count and domain diversity. Do not expand just
+because an exploratory subgroup looks interesting. Estimate replication size
+from discovery variability and a prespecified useful effect; cluster repeated
+origins within sources and account for dataset/site dependence. For a near-zero
+claim use equivalence bounds and power, rather than failure to reject a null.
+
+**Data provenance.** Existing cached M4/electricity/pedestrian series cannot be
+labeled unseen-pretraining data. Freeze exact checkpoint hashes. Strongest
+real-data tier: newly collected measurements with the complete history and
+future observed after an independently documented public release of those exact
+weights, ideally from newly installed/previously inaccessible sources. Keep
+measurement time separate from download/publication time, audit duplicates and
+record site/owner lineage. Post-release observations from old sensors exclude
+those future observations from training, but not source familiarity. Report
+unseen timestamps and unseen sources as separate claims. Private/inaccessible
+sources require authorized access and provenance, not an assumption of novelty.
+Use several domains/sites rather than treating many windows as independent data.
+Fresh seeded synthetic trajectories support controlled falsification but do not
+establish unfamiliar generating mechanisms or real-world generalization.
+
+**Prior-art boundary.** Decompose/forecast/sum is not claimed novel: the carbon
+market study below explicitly evaluates VMD components with Chronos-2 and
+emphasizes rolling-origin decomposition. Candidate contribution is the controlled
+cross-model hierarchy of composition failures, its dependence on phase/grouping/
+normalization, and validation on provenance-qualified real inputs. Further
+literature review is needed before a novelty claim.
+https://www.mdpi.com/1996-1073/19/20/4999
+
+This records hypotheses and a staged plan, not findings or executed adapter work.
+Historical IDs1/7/8 are preserved; matched training and practical model selection
+remain downstream of appropriate evidence. New controlled phase/grouping tests
+may selectively use ID1's machinery without claiming its prior outcomes confirm
+this new study.
+
+### 49.29 Bounded Fourier diagnostic launch (prospective)
+
+The user authorizes slightly more grounded proofs of concept, retaining later
+expansion as a separate step. New driver `fourier_poc.py`, input-only adapter
+`fourier_adapter.py`; no old helpers or prior results changed. The frozen run is
+`runs/fourier_poc4929000/`.40 independent sources:16 fresh synthetic seeds and24
+real sources (8 per cached dataset, eligible ranks8–15, disjoint from the prior
+pilot). Half of each group is discovery, half a fixed check; no selection will
+use check outcomes. Cached real data remain unknown-pretraining-overlap evidence.
+
+456 dependent condition rows map to2948 deduplicated128-step model contexts;
+horizon32. Model workers read only this bank, never futures or generator
+metadata. Both Bolt-small and TimesFM2.5 are frozen cached revisions. CPU1,
+CUDA hidden/offline,600s and3GiB per worker, serial models; no automatic expansion.
+
+Mean-removed real FFT is partitioned into8 fixed contiguous bands with bin edges
+[0,3,5,9,13,21,33,49,65]; mean retained once. Every coefficient including
+Nyquist is retained. Numerically negligible leaves are zeroed at1e-12 relative
+norm and their remainder restored to the first leaf. K1 uses exactly the raw
+input; K1/2/4/8 partitions form a tree. All raw and F(0)-corrected point sums are
+reported. No quantile addition. Grouping contrasts on synthetic stationary and
+unmodified real rows use contiguous versus interleaved versus random leaf order.
+Random order is selected among128 fixed draws to match normalized group energy
+at K2/K4; a max discrepancy above0.1 invalidates an energy-controlled claim but
+not the observed descriptive contrast. Linear detrending of the same contexts
+is a separate sensitivity arm. No claim of harmonic-family matching: these are
+frequency bands, not discovered semantic components.
+
+Synthetic families per seed: four on-grid sinusoids, coherent-phase counterpart,
+randomized-phase counterpart matched within3% crest factor from256 history-only
+candidates, off-grid frequencies, chirps, and amplitude-coupled signals. Equal
+spectrum/crest checks gate the corresponding phase interpretation. The adapter
+never receives true frequencies. Target additions have amplitude0.5, bin5/128,
+phase0.3. Real sources get +/- additions. Distractor tests hold the target/noise
+fixed, using distractor bins6/17 and amplitudes0.5/2/8 with signs0/-1/+1;
+these rows use K1/K4 only to constrain cost. No internal patch or SAE experiment
+is launched; normalization is a candidate explanation, not an established cause.
+
+Evaluate total-future source-normalized MSE, corrected/raw K curves, known-added
+response gain/phase/off-target error, and per-tree-node nonadditivity plus the
+actual loss change when replacing that parent in the current complete frontier.
+Nonadditivity alone is not failure. Compare seasonal24, a history-selected
+three-bin Fourier/trend fit, and decomposition-plus-classical forecasts.
+K4 is the primary fixed contrast; first K reaching error0.25 is a descriptive,
+protocol-dependent crossing, not interpretability and not a deployable selector.
+An unattained crossing is censored. Report all families and both splits, including
+nonmonotonicity. Signed gain>=0.10 in magnitude with the same discovery/check
+sign can nominate improvement OR degradation for future study. Bootstrap1999
+source-level draws gives conditional, unadjusted descriptive95% intervals, not
+multiplicity-controlled discovery claims. Sources, not windows/conditions, are
+the resampling unit; real datasets remain separate. No fresh replication or
+broader grid follows automatically from a nomination.
+
+### 49.30 Fourier pilot results: model-dependent distraction and diagnostic tradeoffs
+
+**Findings; exploratory proof of concept.** Both fixed workers complete:
+Bolt55.78287084196927s, TimesFM175.95231239998247s; controller57.05817373201717s
+and176.9723408590071s. Maximum monitored RSS1,063,428,096B and1,652,826,112B,
+below3GiB. CPU1/no GPU,2948 deduplicated node contexts per model. No larger
+run, additional seeds or training follows. Protocol, corpus, bank and source
+bindings remain in `runs/fourier_poc4929000/`; report under
+`examples/feature_search_stage49/fourier_poc/`.
+
+**1. Stronger distractors impair a fixed component response.** For TimesFM,
+check-set response NMSE at far bin17 with distractor amplitudes0.5/2/8 is
+[0.12283654886009954,0.5504058311228635,1.8385632140476604]. K4 is
+0.004979990196191095 at all three amplitudes. Signed response gain at amplitude8
+changes0.32687253551934425→0.9719886140091539. For Bolt the native errors are
+[1.1023462011450356,2.030500181193551,1.279860610934934], and separated error
+0.7478962472416841. Separation alone does not give Bolt accurate target forecasts.
+The target amplitude0.5, frequency5/128 and noise0.05 are fixed. Each number
+averages both signs within8 independent check seeds. Native TimesFM far-amplitude
+error increase from0.5 to8 has the same positive mean sign in discovery/check
+(2.1491621403145578/1.7157266651875611). PM-25.
+
+For nearby bin6, TimesFM native NMSE rises0.06072629835204976→
+0.25603244047689017→1.4235090872171847; K4 at amplitude8 is1.4456124856595713.
+Target/distractor share a group, so this split does not remove their interaction.
+The far target-group histories are identical across amplitudes, so K4 amplitude
+invariance is guaranteed by the linear partition/cache, not a new empirical
+law. Its achieved accuracy and the native sensitivity are the observations.
+Native internal normalization versus other computation remains unresolved.
+The fixed three-peak Fourier/trend baseline itself fails the strongest nearby
+case (response NMSE2.0840676873927553). Do not use that baseline to assert
+universal identifiability. Added AFTER outcomes, a model-free periodic128
+continuation control reproduces on-grid additions by construction (no oracle
+frequencies or future fitting); it diagnoses peak-selection limitations without
+changing native experiments or proving useful real-world forecasting.
+
+**2. Better controlled response can coexist with worse total forecast.**
+TimesFM check-set native→K4 response NMSE is electricity
+0.7354096312950661→0.23021885330862987; M4
+1.0377046973566122→0.42466986937702433; pedestrians
+0.6644351168534955→0.23514514961125638. Meanwhile unmodified total-future
+normalized loss increases electricity0.6073912219985821→1.425829712079506,
+M4 0.46466067377647213→2.2326152236165977, pedestrians
+0.12325481761696377→1.6635653671014523. Electricity and pedestrians each improve
+response on all4 check sources and all4 discovery sources. M4 discovery response
+gain is-0.11120125806886272, so M4 does not have the same split consistency.
+This is an instrument tradeoff, not a claim of improved forecasting. PM-26.
+
+Bolt check response instead changes electricity0.7356323719635418→
+0.9769994295733234; M4 1.3256093194624654→1.4601366368922475; pedestrians
+0.6810495039385699→2.108136046437345. Its total errors also worsen at K4 on
+all three check datasets. These are model-dependent responses under the same
+input protocol, not an architectural cause or a model ranking. Four check
+sources per real dataset is a small conditional sample; pretraining overlap
+remains unknown.
+
+**3. Splitting curves and control limitations.** Stationary synthetic check
+mean errors at K1/2/4/8: TimesFM[0.12364433553025567,0.11445641235023488,
+0.0982745720980811,0.09403218399515068], Bolt[0.9225145600990019,
+1.5359227524456702,1.2666520614828896,1.045624242003841]. All8 TimesFM seeds
+already cross the0.25 threshold at K1; none of the8 Bolt seeds crosses at any
+K tested. This is protocol-specific, not a semantic feature count. Off-grid
+and chirp cases generally worsen with decomposition in both models; Fourier
+boundary/leakage assumptions remain competing explanations. Mean-detrend versus
+linear-detrend differences are retained rather than selecting the winner.
+
+The matched-phase native-loss contrast is Bolt discovery0.06756110021559485 /
+check0.22570048073448573 and TimesFM discovery-0.07574482364133997 /
+check0.015822470631196073. This does not meet the frozen0.1/same-sign allocation
+criterion across halves for either model; no strong pure-phase conclusion.
+Coherent-phase effects are larger but also change peakiness. All16 matched
+phase controls preserve Fourier magnitudes and satisfy the3% crest gate.
+
+Random grouping energy mismatch passes in40/40 primary grouping contexts, but
+that alone does not establish an informative control. Sparse synthetic trees
+can merely move zero-energy leaves. The report now records effective group-input
+change and active-group count: equal nominal K is not equal active components.
+A near-identical random control cannot establish grouping specificity. Real
+interleaved effects and detrending effects are candidates, not causal localization.
+No estimate is labeled significant; source bootstraps are descriptive, unadjusted
+and conditional. Full source-paired contrasts remain available.
+
+**Audit and verification.** Maximum injected-input reconstruction relative
+error7.196043597709808e-8. Forecast split telescoping error Bolt
+2.220446049250313e-16 / TimesFM2.914335439641036e-16. K1/native identity and
+repeat forecasts are exact. Independent `fourier_audit.py` imports no producer
+metric/decomposition or model code and replays3456 raw/corrected losses plus576
+known-response scores per model, every split-loss change, threshold crossing
+and aggregate curve mean. Maximum loss disagreement Bolt1.4210854715202004e-14,
+TimesFM3.552713678800501e-15. All40 source identities/splits validate; new real
+sources are disjoint from the earlier pilot.
+
+18 focused/end-to-end tests pass in106.47s with the pre-existing
+PytestReturnNotNoneWarning. Seven isolated regressions are caught: Nyquist
+loss, duplicate tree leaves, missing affine-bias correction, disabled node
+cache, latest instead of first crossing, row-level pseudoreplication, and
+identity instead of changed matched phases. Numerical/report artifacts are
+retained; no original §49 helpers or runs are overwritten. Both positive and
+negative contrasts above nominate future work, but the user-requested compute
+boundary ends this turn at these proofs of concept.
+
+Final model-free control audit: matched-random group inputs change nontrivially
+in24/24 real contexts but0/16 stationary synthetic contexts (threshold1e-6
+source-normalized RMS after optimal group pairing). The synthetic random arm is
+therefore a degenerate specificity control, despite passing energy matching.
+All scalar results remain reported; no grouping-specific mechanism is inferred
+from that arm. An isolated +1 corruption of a saved K4 loss is rejected by the
+independent audit. Frozen inference-source hashes still match. Figures and the
+local HTML were rendered and visually inspected; documentation checks pass.
+
+### 49.31 Parked experiments and competing explanations: staged expansion
+
+The user explicitly authorizes parked IDs1/7/8, creative discriminators, then
+more comprehensive fresh evidence for promising results. Prior no-expansion
+boundaries remain historical, not a restriction on this new study. No old
+protocol is modified or relabeled. Native inference remains offline CPU1 per
+worker; fixed resource limits terminate failed jobs. New sources/seeds are
+separate from prior pilots. Real pretraining overlap remains unknown.
+
+**Stage A, prospective.** `coherence_study.py` pilot:8 synthetic seeds4931000–
+4931007; target bins3/5/9, distractor target+1 /2x /3.4x, amplitudes0.5/8,
+paired0/-/+ additions with randomized phase. For bin5 against6/17, also128/256
+history at the same forecast origin.32 new real sources (8 each electricity,
+M4, pedestrians, traffic), eligible ranks16–23. Context128/horizon32, past-only
+source scaling, target additions at5/128 and1/24. Real sources split4 fit/4 test
+per dataset. Parked ID1 is this frequency/amplitude interference map.
+
+Competing explanations are tested by: native normalization versus locking each
+pair to background-native statistics; an explicitly off-native-manifold common
+mean0/SD6 normalizer; original Fourier boundaries versus a predeclared shift
+separating bins5/6; an endpoint bridge before lossless Fourier decomposition;
+suppression of high-band FORECASTS (explicit denoising, not lossless input
+reconstruction); and longer physical history. Normalizer controls replace both
+normalization and the matching inverse. Every background self-replay must be
+exact. Shared-statistic responses subtract the corresponding shared-statistic
+background forecast, not the native one. Input components retain all energy;
+no future values enter model workers or decomposition.
+
+Parked ID7: separate `coverage_training.py` trains an MLP and a two-layer patch
+Transformer, each with3 paired initializations under withheld-pair versus covered
+training. Four frequencies3/5/9/17; both arms see identical singles, latent
+component realizations and exactly identical per-component exposure counts.
+Only pair co-occurrence changes (fixed cycle versus three balanced cycles).
+96 latent training blocks x8 examples,400 Adam steps, batch64, equal learning
+rate0.002. Fresh128 latent test blocks contain singles, seen and heldout pairs;
+independent training seeds, not test rows, govern training generalization claims.
+A ridge forecaster is a cheap capacity/reference control.10-minute/2GiB training
+cap. This cannot identify what pretrained TSFMs were trained on.
+
+Parked ID8: source-disjoint model selection on real data. Compare fixed ridge
+and RBF predictors using input-only descriptors versus input+past-only response
+diagnostics, against train-best global/per-domain constants and a past32-step
+hindcast winner. Model labels are clean-future errors from FIT sources only;
+TEST futures are scored after choices freeze. Report selection loss, regret,
+choice counts and direct paired differences, not classification accuracy alone.
+All options retained; no post-test selector choice.
+
+**Stage B, contingent on Stage A validity and informative effects.** Fresh64
+synthetic seeds4932000–4932063 and128 real sources (32 per dataset, ranks24–55,
+16 fit/16 test) replicate primary findings. Synthetic target5/5.35, nearby
+6/6.35 and far17/17.35, amplitudes0.5/8, paired signs.128/256 history and native
+normalizer interventions use a predeclared16-seed subset. Source-specific phases
+and noise are shared across paired conditions. The real off-grid addition,
+traffic extension and alternate decompositions test scope, not just repeat the
+original easy stimulus. Native caps900s/model pilot and1800s/model replication,
+3GiB each, serial models; no unbounded grid.
+
+Primary replication family is12 one-sided exact sign tests with Holm correction:
+per model, far on-grid high-minus-low native response harm, far high-amplitude
+native-minus-FFT response gain, and electricity/pedestrian FFT response gain plus
+clean forecasting harm on TEST sources. Each claim also needs empirical mean
+size>=0.1 in its declared units. These are directional-majority tests, not
+population-mean significance tests. Mean effects and source-bootstrap intervals
+are reported separately within datasets. All other mechanistic/selector contrasts
+remain labeled exploratory unless separately frozen. Between-model contrasts
+are paired; significant/non-significant outcomes are not a difference test.
+
+**49.31 training follow-up declaration (before execution).** The ID7 pilot
+finished in19.124154680990614s. Held-out combination NMSE in the transformer
+was0.6873906254768372/0.571661114692688/0.6937382221221924 without coverage,
+and0.01994921825826168/0.011918766424059868/0.025430016219615936 with coverage.
+The MLP repeats a smaller gap; ridge already generalizes without coverage.
+This motivates six fresh independently generated training corpora493900–493905,
+128 latent training blocks and256 test blocks each, paired initializations,
+MLP/transformer/ridge. Fixed400 AND800-step checkpoints distinguish persistent
+coverage sensitivity from insufficient optimization; no best-checkpoint choice.
+Same matched exposure design and optimizer, CPU1,600s/2GiB cap. Corpus plus
+initialization, not individual test examples, is the replication unit. This is
+an exploratory mechanistic follow-up, not evidence about TSFM pretraining.
+
+### 49.32 Pilot validity and launch of the grounded replication
+
+Stage A native runs passed deterministic repeat and exact normalizer self-identity
+(0.0 max change for both models). Bolt44.459220265969634s and
+TimesFM166.74374895100482s native worker time, peakRSS1064620032 and1657757696
+bytes.2,298 deduplicated contexts,688 condition rows,8 synthetic seeds and32 real
+sources. All four initial planted faults and five analysis faults were caught.
+Smoke plus focused tests:20 passed, one existing smoke return-value warning.
+
+High-amplitude target5/distractor17 response NMSE was1.3453784081921456 Bolt,
+5.127328432361708 TimesFM. FFT splitting gives0.7758059600315299 and
+0.0048729746194357045. For target5/distractor6 the original FFT grouping leaves
+both components together: TimesFM native1.7680793583113101, originalFFT
+1.7701311859332014, shifted boundary0.002298076716322745. A history-only
+frequency-fitting two-tone reference gets0.005429980409270369 near and
+0.0023343046139079012 far. It knows the two-tone structural assumption but not
+frequencies or generating components. Anchoring native normalization to the
+background does not remove the TimesFM failure: near1.8075320017044363 and
+far5.068811852274938. This addresses paired-statistic drift, not every possible
+normalization or relative-dynamic-range explanation.
+
+Pilot real TimesFM TEST response gains are0.2822378855092808 electricity and
+0.40161000162370464 pedestrians, while clean loss worsens1.3642036875985566 and
+1.4450278948687463. Four sources per domain are a screen, not grounded population
+evidence. The parked selector remains mixed; all fixed methods proceed to the
+already declared fresh-source check. Always-Bolt and always-TimesFM baselines
+are additionally displayed, alongside FIT-selected global/domain constants.
+
+These effects qualify Stage B under §49.31. Prepared64 fresh synthetic seeds,
+128 fresh real sources,2,368 rows and14,197 contexts,128 normalization queries.
+No prior source reused. Frozen12-test primary family unchanged. Mechanistic
+controls and selectors remain exploratory. Models run serially on CPU1, offline,
+within1800s/3GiB each; no larger model downloads or GPU jobs. Analysis and
+independent arithmetic audit do not read future labels during native inference.
+
+**Additional cheap control declared before execution.** The ridge reference in
+the training study used raw values whereas neural models normalize each history.
+To test this alternative explanation, fit ridge alpha0.01 on the same six
+replication corpora using exactly the neural past mean/population-SD transform
+and matching inverse. Score all groups with no tuning. This is explicitly a
+retrospective normalization control, not a new independent replication sample.
+
+### 49.33 Findings: matched coverage replication and normalization control
+
+Six independent training corpora493900–493905, paired initializations,128 latent
+training blocks (1,024 examples) and256 fresh test blocks per corpus. Matching
+preserves each component's latent realization/exposure count, total examples,
+initialization and optimization budget; only pair co-occurrence differs.
+
+Mean unseen-pair NMSE at400/800 steps:
+- MLP withheld0.013664067257195711/0.010820749215781689;
+  covered0.0021285591647028923/0.0018902896748234828.
+- Transformer withheld0.6374173760414124/0.6398251255353292;
+  covered0.015170028277983269/0.006212268335123857.
+- Raw ridge withheld0.001306674792431295;
+  covered0.0013063944061286747.
+
+All six corpora improve with coverage in both neural architectures at both
+checkpoints. Doubling optimization does not close the transformer gap within
+this budget. This is not a claim that arbitrarily longer training cannot help.
+A retrospective ridge control with the SAME past-only neural normalization
+also succeeds: per-corpus losses are in `coverage_normalization493900/results.json`.
+Thus per-history normalization alone does not make this task impossible for a
+linear predictor. The normalized ridge fits in transformed-loss space, whereas
+neural optimization minimizes original-unit MSE; this is not an optimizer-
+matched architecture isolation. The paired neural coverage contrast itself
+uses identical objectives and architecture within each pair.
+
+Training replication took66.29916899598902s, CPU1; all180 reported subgroup
+losses independently recomputed from saved predictions. Effective replication
+unit is corpus+initialization, n=6; test blocks are not independent training
+replications. Evidence is controlled training behavior on a fixed synthetic
+frequency family. It neither identifies TSFM training corpora nor proves
+architecture alone determines composition behavior. No test-selected checkpoint,
+hyperparameter search, pretrained fine-tuning or GPU compute was used.
+
+### 49.34 Findings: grounded coherence replication and its limits
+
+**Run and validity.** `runs/coherence_replication4932000`:64 new synthetic seeds,
+128 new real sources (32/domain;16 FIT/16 TEST),2,368 rows,14,197 unique past
+contexts. No source overlap with earlier preferred-experiment, Fourier, or
+coherence pilots. Native worker times: Bolt201.77048457897035s,
+TimesFM889.7531904319767s; peakRSS1077399552 and1662349312 bytes. Both exact
+repeat checks pass and native normalizer self-identity maximum is0.0. CPU1,
+offline, no GPU or model downloads. All source/input/checkpoint hashes match.
+The independent audit reproduces19,008 losses,13,440 responses,6,016 sign-symmetry
+scores, all12 primary tests, and1,152 selector row losses. Source-level means,
+not condition rows, determine n. The earlier20 smoke/focused tests passed; final
+expanded focused suite9 passed. Eleven isolated implementation regression plants
+and two false-saved-result plants were caught. Documentation checks pass.
+
+**Amplitude sensitivity and response type.** Target bin5/amplitude0.5 with far
+bin17 distractor: high-minus-low response error is0.10660935762772342 for Bolt
+(Holm p0.00027065769084504593;48/64 positive) and2.988698698384143 for TimesFM
+(Holm p6.505213034913027e-19;64/64). Both clear the declared0.1 point-mean gate,
+although Bolt's effect is small and its mean interval extends below0.1.
+At amplitude8, native→FFT response NMSE is1.1896707732805314→0.7964554190367035
+Bolt and3.079471319358797→0.004152199204811288 TimesFM. Both primary gains pass.
+Bolt native gain is0.017326338184030333, with gain-error0.9711089025047153 and
+orthogonal-error0.21856187077581612. TimesFM native gain is0.3246414171410168,
+with gain-error0.5142838912375804 and orthogonal-error2.565187428121216.
+Thus the mean error conceals suppression versus substantial waveform distortion.
+The orthogonal term includes phase and other-frequency changes; it does not
+identify a hidden cause. This error decomposition was exploratory, not a primary
+hypothesis added to the frozen family.
+
+**Same decomposition count, radically different fidelity.** Near target5/bin6,
+TimesFM native1.7357671960993133, original FFT1.7095258110167177, boundary-shifted
+four-band split0.0036124372813698823. Bolt1.2473517585591227→1.2436322967285935→
+0.7796561020209939. Moving the low-band boundary separates the components without
+changing K=4. The number of parts alone is not a sufficient interpretability
+threshold. This is an input-level intervention; isolated-group accuracy is not
+proof of additive interpretation of the original mixture.
+
+**Off-grid failure is substantial, not an ignorable negative.** At target5.35,
+near distractor6.35, TimesFM native1.975004373423026 becomes FFT29.435810463708094;
+far17.35 native4.165856284653323 becomes9.740471878910146. Bolt similarly worsens
+0.7629440549290456→2.1160326889856287 near and0.2595478264419536→1.9921691734865719
+far. Endpoint bridging is no general cure: TimesFM18.25271595618821 near and
+14.050219405730266 far. A history-only fitted two-tone estimator reaches
+0.008172170252036145 near and0.0031745014192145794 far, without supplied frequencies
+or components (but with a privileged two-tone structural assumption). Finite-
+window spectral leakage, isolated-group artifacts, frequency-specific model
+competence and normalized component dynamics remain competing explanations.
+These off-grid comparisons are exploratory; the fixed primary family did not
+include them. They falsify a broad claim that Fourier separation improves
+component response across this tested family.
+
+**Normalization and history alternatives.** On the declared16-seed subset,
+anchoring normalization to the background changes TimesFM response error by
+only0.03058794775165872 near and0.08489203152858513 far. It does not remove the
+failure. Shared mean0/SD6 has gains0.2762865916070487 and0.17164483717523077;
+this is an off-native-distribution intervention, not isolation of all scale
+mechanisms. Extending history128→256 at the same origin gives TimesFM gains
+1.2721358434430137 near and1.3955533379674643 far. Bolt gains0.5497079224980633
+near but LOSES0.49860975011450237 far, with all16 far cases worsening. More
+history is not uniformly beneficial. Token count changes with physical history;
+these comparisons alone do not distinguish tokenization from useful evidence.
+
+**Real response versus actual forecasting.** TimesFM pedestrian TEST response
+NMSE0.6834002141596086→0.16499201896090102, but clean loss0.16289278445396405→
+1.6260539730301482. All16 sources show each direction; both Holm p values
+0.0001373291015625. This replicates the response/forecast tradeoff in PM-26.
+Electricity response1.097244981272277→0.7917714532798799 has12/16 improvements,
+mean gain0.30547352799239713, bootstrap interval[-0.12700144198376273,
+0.6248026350943895], Holm p0.1152191162109375: response improvement DOES NOT pass.
+Its clean loss0.6330997569499227→1.8012958727795871 does worsen (Holm
+p0.012542724609375). Do not generalize the original two-domain pilot consistency.
+Bolt's pedestrian response worsens0.7210832771225903→2.4515692026859535, and its
+clean loss worsens0.16761615670860236→0.41932416929696664. Both models' clean
+forecast harm passes on electricity/pedestrians; Bolt response gains do not.
+
+Suppressing high-band forecasts recovers only0.0931650024591119 TimesFM clean
+loss on electricity and0.006212028283677725 on pedestrians, far below the total
+FFT penalties1.1681961158296645 and1.4631611885761842. Thus this particular
+high-band-noise explanation is insufficient. On Bolt, suppressing those
+forecasts worsens clean loss in every dataset. The report includes the exact
+MSE-change identity (error alignment plus forecast-change energy); it makes no
+claim to know the true future of real latent components.
+
+**Parked selector: no consistent incremental benefit.** Every choice is frozen
+using FIT futures only and unchanged when TEST labels are arbitrarily altered.
+Input-only versus diagnostic ridge TEST loss is0.5710651275237811→
+0.65187409462335 electricity,0.11545850429947696→0.12296266560858424 M4,
+0.15995633314817082→0.1651241191327528 pedestrians, equal on traffic. RBF changes
+0.5682144828262432→0.6051028298270087,0.10896690062005414→0.12153214010561125,
+equal0.16550652042904965 pedestrians, and39.515619591377636→39.49841991476112
+traffic. The traffic benefit comes from only2/16 sources; its exact sign p is0.25
+and conditional bootstrap interval includes0. No broad selector success or
+post-TEST choice among methods. Input-only selectors, constants, hindcast and
+per-source oracle regret all remain visible. This closes this fixed screen as
+unsupported for practical incremental diagnostic value, not an impossibility
+claim about all future perturbation diagnostics.
+
+Traffic is heavy-tailed: native TimesFM mean39.50708115527928, median
+0.26621329217472856. SourceT000617 contributes0.9282774700030147 of total loss,
+with standardized MSE586.7765334724229 and original pastSD0.009539660223902107.
+It remains included under frozen source membership. No pooled-domain model
+ranking is reported. Real sources may share temporal factors; source bootstrap
+and sign-test interpretations are conditional and do not prove independent
+population sampling. Pretraining overlap remains UNKNOWN, despite fresh sources.
+
+**Deliverables and interpretation.** Portable report
+`examples/feature_search_stage49/coherence_followup/index.html`, full-precision
+JSON, four scientific figures, reproduction commands, independent audits.
+Coherence has distinct axes: gain, waveform fidelity, compositional behavior,
+normalization/history stability, and actual future quality. The observed axes
+can disagree. Next discriminating studies, not launched here: adaptively fitted
+frequency groups versus fixed FFT bands on off-grid data; matched pretrained
+fine-tuning that changes combination coverage; multiple forecast origins with
+source/time-block inference; verified post-training real data. The completed
+controls already reject broad “more parts/more history/normalization fix solves
+it” explanations. They do not establish a universal mechanism of TSFM failure.
+
+### 49.35 Selective residual trees and internal composition: prospective stages
+
+The user clarifies that the target is internal decomposability, not a universal
+Fourier forecasting improvement. The prior fixed FFT trees did not implement
+selective pattern extraction. PM-28's off-grid failure motivates continuous-
+frequency fits; PM-23 and the restoration audits motivate common normalization,
+affine-baseline correction, exact self replacement and geometry-matched edits.
+PM-29/30 motivate separating hidden reconstruction, suffix fidelity and actual
+future quality, with all hyperparameter selection restricted to FIT sources.
+
+New `selective_tree.py` greedily peels a dominant continuous-frequency sinusoid
+from the residual, retaining DC and everything unexplained. Split requires
+past-half coefficient stability>=0.65, variance explained>=0.15 and spectral
+prominence>=8; maximum3 peels, frequencies2..48 per128 hours. The unbalanced tree
+is nested: extracted tones remain fixed, only the residual recurses. It can stop
+at zero. This deliberately conservative recipe is not oracle decomposition.
+
+Pilot:8 new synthetic seeds4941000–4941007, each on-grid far, off-grid far,
+off-grid near and chirped-target cases;8 real sources,2/domain, ranks54–55 reused
+from the previous run ONLY for instrumentation/exploration. Each source stays
+in FIT or TEST across conditions. Forecast horizon32/history128. Both Bolt and
+TimesFM; native full-token block outputs at first,quarter,half stack depth.
+Forecast controls: native, independently normalized component sum, full-context-
+normalizer-locked sum, and fitted-tone continuation plus native residual forecast.
+
+Hidden fusion uses h0 + sum w_i(hi-h0), with component states captured under the
+full context's native normalization; residual weight1. Weights either1 or past-
+only separability confidence; blend with native full state at0.5 or1. Run the
+actual remaining native network, no custom suffix approximation. Every fusion
+has a random-direction control preserving receiver/edit cross dots and token
+Gram geometry, inherited from composition_restoration.py. Degenerate controls
+are flagged, never treated as negative evidence. Exact self replacement,
+normalizer self identity, deterministic repeat and input reconstruction gate
+scientific claims. Off-manifold editing remains a limitation even after gates.
+
+Stability: symmetric RMS perturbations0.001/0.01/0.1 of pastSD, one fixed off-grid
+sinusoid and one seeded noise direction, both native and locked normalization.
+Measure centered activation secant sensitivity, relative second difference and
+forecast response. No cross-model raw-coordinate alignment assumption. Small
+finite perturbations cannot prove a discontinuity; smooth curvature and radius-
+dependent sensitivity are reported separately from “jaggedness.” Save states for
+independent geometric replay, and never read future files in native workers.
+
+Expand informative valid pilots to32 new seeds4942000–4942031 plus32 fresh real
+sources, ranks56–63,8/domain (4FIT/4TEST). All four synthetic cases retained.
+Additionally fit bounded two-weight hidden reconstruction on PILOT FIT sources
+only (tone sum versus residual, weights0..2, ridge toward1); freeze those weights
+before replication inference. This tests whether simple calibration restores
+composition without learning future targets. Retain equal/confidence controls.
+No post-TEST choice of method/depth/layer/blend. Report all depth curves and
+FIT-selected policies; TEST-best depth is explicitly an oracle ceiling.
+
+Caps: one CPU thread,3GiB/model,1200s/model pilot and2400s/model replication,
+serial isolated native workers, no training or downloads. Expansion is contingent
+on valid instrumentation plus an informative effect OR failure boundary. This
+is exploratory source-paired inference; synthetic cases average within seed,
+real domains remain separate, pretraining overlap is unknown.
+
+**Pre-replication extension, declared while the pilot is running.** Add balanced
+0.5+0.5 off-grid mixtures on the same32 replication seeds, retaining all original
+four cases, hence192 total anchor rows. This addresses trivial apparent closure
+when one component dominates. Score an explicit strongest-component-only hidden
+state at every sampled cut, using the same full-context normalizer, alongside
+multi-component fusion. The control is a bounded separate replay from saved
+states (300s/model), with no new tree fitting or future-label selection.
+
+### 49.36 Pilot findings and bounded fresh-data expansion
+
+Both native pilot workers pass exact repeat/self-patch/normalizer identities.
+Bolt completes in94.95314344496s, max FP32 reconstruction discrepancy
+1.1459835036475852e-07. Two of444 random controls are invalid/degenerate and
+remain flagged. Smoke plus selective tests:11 passed, one existing smoke
+return-value warning. Five decomposition/geometry plants and three selection/
+weight-fitting plants are caught. An early analysis attempt correctly refused
+while the second worker was still finishing; no partial scientific output was
+accepted.
+
+On four held-out synthetic seeds, FIT-selected hybrid forecast gains are
+1.136161877717357 Bolt and0.25889422566776515 TimesFM in past-variance units;
+FIT-selected hidden-fusion gains are only0.018475571840326357 and
+0.002602694157614364. These are pilot estimates, not final superiority claims.
+Real electricity/pedestrian histories are all rejected by the strict split
+criterion (zero changes), M4 accepts2/3 peels, traffic2/0. One TEST real source
+per domain cannot establish performance. The initial findings motivate fresh
+replication rather than a tuned real forecasting recommendation.
+
+Early-block native sinusoidal sensitivity is nearly radius-invariant: Bolt
+0.5387195884178752/0.5387285832856445/0.5334926490163395, TimesFM
+0.7148262010974038/0.7147372110342394/0.7065654561043527 at relative radii
+0.001/0.01/0.1. Curvature decreases with radius. This is preliminary evidence of
+local smoothness in these directions, not proof of global smoothness or absence
+of high sensitivity elsewhere. Native and locked normalizers remain separate.
+
+Expand under49.35:32 fresh seeds,32 fresh real sources, plus the already-declared
+balanced-mixture control. Before inference add one paired known oscillation to
+each real source (amplitude2 pastSD, period19.2, phase0.6; add to history AND
+future). This tests clearly recoverable components on genuinely uncertain real
+residuals, without changing the conservative acceptance threshold. Original
+real histories remain included. Total224 anchor rows but only64 independent
+sources. FIT policies use mean across original/injected contexts; report each
+context separately as well. Added contexts are never independent replications.
+All choices and weights are frozen before new-source scoring; no future labels
+enter extraction or native intervention. This additional controlled test follows
+from the pilot's frequent real-data early stopping, not from TEST optimization.
+
+Also diagnose adaptive-tree stability separately from network stability by
+rerunning past-only extraction at the same perturbation radii, matching tone
+branches before comparison to avoid confusing branch-order swaps with changes.
+This model-free diagnostic cannot establish activation instability by itself.
+
+**Execution-only amendment before replication workers start.** Run the two
+isolated model processes concurrently, still one CPU thread and3GiB maximum
+per model (at most2 CPU threads/6GiB combined). Evaluation count, source splits,
+weights and per-model2400s bounds are unchanged. This reduces wall time rather
+than buying a larger sweep. `selective_parallel.py` records and hashes the
+amendment before launching either worker. Pilot execution remains serial.
+
+**Additional mechanistic follow-up declared before its execution.** Reuse saved
+locked-normalizer sinusoidal perturbation states for within-model effect transfer
+between real backgrounds. TEST receivers, nearest/farthest FIT donor within the
+same dataset chosen from history only, radii0.01/0.1, all three cuts. Native
+counterfactual forecast is recomputed under the receiver's anchored normalizer;
+patch its actual counterfactual state as an oracle before interpreting donor
+transfer. Require oracle response NMSE<=1e-4 and nonzero response; a separate
+semantic gate requires native known-sinusoid response NMSE<=0.5. Failed gates
+remain visible and cannot support semantic-transfer claims. Compare no-edit
+(error1), donor edit and geometry-matched random edit. No actual future labels
+are read. This applies earlier ID3's oracle-normalizer lesson directly, and tests
+context dependence separately from local smoothness.300s/3GiB per model; no new
+model fitting. All variants remain exploratory, not a new primary test family.
+
+**Selection implementation clarification before replication scoring.** Exact
+FIT-loss ties now prefer native, then shallower interventions. The initial
+lexical tie rule could select a named fusion when FIT sources never split and
+all predictions were identical. That would imply unsupported complexity on TEST.
+This correction does not alter native runs or the frozen pilot-FIT geometry
+weights. Earlier pilot point-gain values remain valid; zero-gain tied policy
+names may change on rescoring. A planted-regression test covers native tie
+preference. Geometry-only policies exclude native blending, so trivial retention
+of the full state cannot win a hidden reconstruction contest by construction.
+
+**Frequency-specificity control declared after Bolt transfer, before these new
+runs.** The first transfer probe has period128/5.35 (near24 hours), potentially a
+familiar seasonal prior. Bolt passes192/192 oracle and semantic gates; early-cut
+radius0.1 donor-response NMSE is0.024698876363800082 near versus
+0.1678951031062752 far, with matched-random means0.15362723998259753 and
+0.20865497272461653 (one random row invalid in the full family). Those aggregate
+numbers are descriptive, and per-domain means remain separate. Test a fixed
+19.2-hour oscillation at radius0.1, SAME32 real histories and same source-disjoint
+donor choices, on both models. Re-capture common-normalizer effects and retain
+all native-accuracy/oracle/random gates. No frequency search, future targets or
+retraining.300s/3GiB per model. Failure of the semantic gate would limit the
+claim to transporting native behavior, not accurate component semantics.
+
+**Interpretation carried forward from the repository.** SH-25 establishes retained
+spectral information at actual head inputs in a different frequency regime,
+while MN-44 shows poorer output-side recovery. We do not rerun that closed probe
+or diagnose current forecasting failures as missing representations. Likewise,
+prior concept-sharing tests include sensitivity-limited and undecided outcomes;
+low cross-model transfer is not treated as established semantic disagreement.
+The present tests target within-model additive closure and causal effect
+transport. Pilot whole-state closure can be misleading: at early cut/depth1,
+off-grid-far Bolt mean closure0.002468002248072578 corresponds to error
+2.407987696229303 relative to the full-minus-dominant hidden contribution;
+TimesFM0.007836380329776151 corresponds to3.578356390589634. This motivates the
+predeclared balanced and dominant-only controls and the marginal normalization,
+not a claim that a particular true weak component has been isolated perfectly.
+Even pure state composition retains the full context's normalization metadata;
+it is not completely independent encoding of components.
+
+**Stronger-pattern feasibility control, declared before new inference.** On the
+fresh TEST sources, the strict tree accepts a split in13/16 original real
+histories but only3/16 amplitude2 injected histories. This is an extraction
+abstention boundary, not evidence that internal fusion fails in those13 untouched
+cases. Add a FIXED amplitude8/period19.2/phase0.6 oscillation to the same16 real
+TEST sources, with unchanged gates and no threshold search. Test requested depths
+1/3, first/half cuts, equal and frozen learned weights, full fusion and matched
+random edits, output sums and hybrid residual prediction. Compare each method
+against its own original-context counterpart, not a mismatched native baseline.
+No new independent sources, no TEST-tuned weights; explicitly exploratory.
+180s/3GiB per model. This also distinguishes weak-signal failure at19.2 hours
+from a broad claim that the model cannot represent that period at all.
+
+### 49.37 Selective residual trees and internal composition: grounded findings (2026-11-13)
+
+**Design and scope.** Completed the 40-context pilot before expanding to 224
+contexts from32 fresh synthetic seeds and32 fresh real sources (16/16 FIT/TEST
+in each source class; four TEST sources per real dataset). Synthetic cases share
+seeds and real original/injected contexts share source IDs. They never count as
+independent replications. Real ranks56–63 are disjoint from the preceding study;
+pretraining overlap remains unknown. Context128, horizon32, frozen Bolt-small and
+TimesFM2.5, CPU-only, one thread per native worker, at most two native workers.
+The adaptive tree peels up to three stable, prominent continuous-frequency tones
+and always retains DC and the full residual. No generator components are passed
+to extraction. Geometry weights use PILOT FIT states only; forecast policies use
+replication FIT futures only. TEST-future poisoning leaves choices unchanged.
+
+**Findings — conditional internal composition, not general reducibility.** Bolt's
+FIT-selected pure fusion (first block, requested depth2, frozen learned tone and
+residual weights) yields TEST synthetic loss1.0287751403415673, a native-relative
+gain0.04554777148291069 with conditional source-bootstrap interval
+[0.03945377595869312,0.05159511970435278]. Its matched-random advantage is
+0.014407703650315172, interval[0.004245768338847161,0.024284505373195226]. These
+are exploratory intervals, not multiplicity-corrected confirmation. TimesFM
+selects depth1/block5/equal weights with half the natural state retained; gain
+0.0027575090146978944 has interval[-0.009879762380357215,0.013874104216795776].
+Geometry-selected pure fusion instead gives Bolt gain0.006726989577419696
+(interval[-0.012799879512430746,0.02580267658466284]) and TimesFM gain
+-0.007938986098528698 (interval[-0.014037585629773879,-0.0017337445038410355]).
+The native suffix is genuinely intervened on; repeat, self-patch and anchored
+normalizer identity errors are exactly0.0. Full-context normalization metadata
+remain available even in pure fusion, so this is conditional composition.
+
+**Findings — dominant-state closure is not recovery of the weaker contribution.**
+At first block/depth1/equal weights, off-grid-far mean FP64 whole-state closure is
+0.0022665692188878588 for Bolt and0.00793706386934049 for TimesFM. Relative to
+full state minus dominant-branch state, the same squared error is
+2.2292954023482277 and3.685396283813229. This denominator is a measured remainder,
+not an oracle weak-component representation. In balanced mixtures, these
+remaining-relative errors become2.4911155737257302 and0.26719512599310846.
+TimesFM therefore composes more closely in that balanced test, but its future
+loss increases0.327477538734416→0.33736003512872703. Bolt's future loss decreases
+0.7459936128206015→0.6915583213036312 despite its poorer hidden closure. These
+16-seed descriptive comparisons separate reconstructibility from prediction;
+they are not cross-model activation alignment. Whole-state plots use the native
+FP32 denominator; the exact FP64 diagnostic means above differ at roundoff scale.
+
+**Findings — selective classical/model hybrid works in its intended regime.**
+FIT-selected synthetic hybrid requested depths are3 for Bolt and2 for TimesFM,
+with TEST normalized losses0.006031990799018737 and0.004931439430488167. The
+native-relative gains are1.0682909210254592 and0.23171231421643068, positive in
+all16 seed groups for each model. This includes off-grid, near/far, chirped weak
+components and balanced conditions, not arbitrary natural-data decompositions.
+The tree splits13/16 original TEST real contexts, but only3/16 amplitude2,
+period19.2 injected contexts. This abstention prevents attributing unchanged
+predictions to failed fusion. A declared fixed amplitude8 follow-up makes all16
+split without changing thresholds. At depth1, hybrid future loss in ORIGINAL
+history-variance units is0.3186258362659885 versus native15.135874660784449 for
+Bolt, and0.37227180446010033 versus1.4132528995863665 for TimesFM. Pure equal
+first-block fusion instead gives11.059142326415767 and1.5258219698428577.
+Requested depth3 hybrid losses are0.36046953460557996 and0.4211007133624285;
+more extraction is not automatically better. No best TEST depth was deployed.
+Known-addition response NMSE at amplitude8 is native/hybrid-depth1
+0.44304970846656244/0.005724763816948336 for Bolt and
+0.03153184616947545/0.005462119885071557 for TimesFM. Same16 sources, no new
+independent sample size, exploratory feasibility on real residuals rather than
+an unmodified-real forecasting benchmark.
+
+**Findings — smooth local response does not imply additive or correct response.**
+For TEST synthetic first-block/native-normalizer sinusoidal perturbations at
+radii0.001/0.01/0.1, Bolt sensitivity is0.5246727590065028/0.5243779804855171/
+0.5201747462844821 and curvature0.004714401170889309/0.019123495356920435/
+0.0964844831546138. TimesFM sensitivity is0.7031406556959651/
+0.7030663185533745/0.6959231112928421 and curvature0.0010348246926713016/
+0.009446888145482005/0.08701475546665703. These averages support local smoothness
+in sampled directions, not global smoothness; noise directions, individual tails,
+later cuts, locked normalization and tree-threshold changes remain reported.
+Bolt near-daily first-block/radius0.1 donor transfer has native-response NMSE
+0.024698876363800082 near versus0.1678951031062752 far. All192 repeated oracle
+and native-signal semantic gates pass in that family. At period19.2, all96 oracle
+gates pass but0/96 semantic gates pass. A transferable native response may be
+incorrect about the actual injected signal. Oracle validity, semantic accuracy,
+random-control validity and source-level pairing stay separate. This directly
+applies the earlier oracle-normalizer lesson; SH-25's retained spectral
+information also prevents interpreting poor forecasts as proof of missing
+features. No cross-model semantic-transfer conclusion is warranted.
+
+**Artifacts.** `tsfm_lens/runs/selective_pilot4941000/` and
+`tsfm_lens/runs/selective_replication4942000/`; portable report
+`examples/feature_search_stage49/selective_composition/index.html` and its
+README. New standalone `selective_*` modules leave the earlier fixed-band and
+coherence experiments intact. All follow-up choices and exploratory status are
+recorded in §49.35–49.36 before their corresponding inference runs.
+
+**Additional boundaries and verification.** At the same19.2-hour period and
+phase0.6, increasing real-context injection amplitude2→8 reduces native
+known-response NMSE0.7533850061551081→0.44304970846656244 for Bolt and
+0.22965478913847118→0.03153184616947545 for TimesFM. This is not categorical
+frequency blindness; amplitude also changes native normalization and relative
+mixture prominence. Near-daily TimesFM has192/192 valid oracle rows,168/192
+semantic rows, but only89/192 valid random controls. The19.2-hour family has
+96/96 oracle,12/96 semantic and69/96 random-valid rows. Invalid random geometry
+cannot support specificity claims. All576 transfer rows pass independent
+forecast/state arithmetic replay. Core replay checks7092 geometry,16128 hidden
+stability,28672 forecast-loss and672 selected-row measurements. Strong-control
+replay checks736 forecast scores and256 hidden closures; paired random validity
+requires both original and injected controls and excludes7 pairs. Core identity
+gates are exactly0.0; input closure max2.264507941163174e-07. Core random-invalid
+counts are20/3546 Bolt and64/3546 TimesFM. First-block/native radius0.001 maximum
+relative hidden changes across all TEST contexts and both directions are
+0.0009553752744149232 Bolt and0.002057936761339237 TimesFM; these sampled tails
+do not establish global smoothness.
+
+All12 planted faults were caught: frequency rounding, DC removal, forced noise
+splits, missing affine baseline, suppressed curvature, TEST-future leakage,
+TEST-state leakage, disabled weight fitting, complexity-favoring ties, false
+forecast loss, false hidden closure and false transfer response. The last three
+use isolated lightweight copies, bypass hash checks deliberately where necessary,
+and fail arithmetic assertions. Seven focused tests and the existing five smoke
+tests pass (the earlier smoke run retains its pre-existing return-value warning).
+A duplicate `period` keyword initially stopped the combined transfer summary;
+fixing summary metadata allowed full replay without changing native artifacts.
+Source hashes, unchanged pilot weights, supplemental source hashes and all audit
+artifacts are verified. README stage/glossary checks pass. Native-worker runtime
+sums3647.969339551928 seconds across pilot, replication and controls; maximum
+single-process peak2182365184 bytes, below3GiB. No GPU or neural training used.
+The report includes seven static figures, source-level tables, exact JSON values,
+reproduction commands and rendered Chrome verification. Its plots distinguish
+model-specific block indices and preserve failed eligibility counts.
+
+### 49.38 Prospective multi-hour investigation of persistence, comparability and interpretability (2026-11-16)
+
+User authorizes sustained hypothesis-driven work, low-compute pilots followed by
+informative expansion. Two broad claims are treated symmetrically: cross-model
+comparison has no useful information, and TSFM internals are uninterpretable.
+Finite failures cannot prove either universal claim. Counterexamples can refute
+specific operational versions. We distinguish behavioral prediction, geometric
+alignment, causal within-model effects, semantic accuracy, and training causality.
+No claim about training defects is licensed without a controlled training test.
+
+Initial independent tracks, declared before native inference:
+1. Identical histories with persistent, decaying, drifting or stopped future
+   tones. Predictions necessarily stay identical across unobserved alternatives;
+   this tests the continuation prior's risk, not detection of an unseen change.
+   Separately make change cues visible in histories to test evidence use.
+2. Source-held-out cross-model predictive comparison using existing states,
+   against input-only and shuffled-source controls, plus coordinate-invariance
+   checks. A difference in native coordinates is not itself failed comparability.
+   Improvement beyond a strong input baseline is the operational usefulness test.
+3. Fixed phase, amplitude/frequency response surfaces and four-point interaction
+   contrasts under native versus anchored normalization. Distinguish smooth
+   context dependence, normalizer effects and true sharp local instabilities;
+   quantify both hidden and forecast effects with raw replayable artifacts.
+4. Unmodified fresh real-source forecast validation with a past-only hindcast
+   selector for selective continuation. Test whether a stable-in-history tone
+   remains stable across forecast origins, and whether prior predictability can
+   identify when continuation helps. Source-disjoint selection; repeated origins
+   remain dependent. Do not substitute injected-series gains for natural gains.
+
+Pilot sizes are bounded (about8 synthetic seeds or8 real sources/domain), native
+CPU threads1, no GPU, at most two concurrent native processes, <=3GiB each and
+<=10 minutes/model for initial probes. Independent analysis reuses saved arrays.
+Expansion requires valid identity/normalization/leakage gates and either a
+reproducible effect, a useful negative boundary, or competing explanations that
+an additional controlled test can distinguish. Follow-ups are declared before
+execution; no post-hoc choice is presented as preregistered confirmation.
+All new runs and sources are separate from prior recorded artifacts. Initial
+real source ranks64 onward reserved for the new natural forecasting track;
+other pilots reuse old FIT sources only as explicitly labeled instrumentation.
+
+**Controlled training mechanism added before execution.** A fifth, tiny-model
+pilot holds histories, initialization, batches and optimization budget fixed,
+changing only the unobservable probability that a fitted tone persists versus
+stops. Under squared loss, the exact conditional mean is probability times the
+tone; marginal expected risk separates approximation error from irreducible
+future uncertainty. Train two small architectures at probabilities0/0.5/1 with
+two matched seeds,512 training histories and256 fresh evaluations,200 steps.
+Use exact conditional-mean labels (same expected gradients as two-branch loss)
+to remove label-sampling confounds. This can demonstrate a training-prior
+mechanism without falsely attributing that mechanism to pretrained TSFMs.
+CPU1 thread,2GiB,600s cap; wait for a native slot before training. Expansion must
+first establish fit adequacy and paired direction consistency; training seeds,
+not test histories, are the unit for a claim about training interventions.
+
+**Controlled-prior pilot result and follow-up decision.**
+`prior_training_pilot4951000` completes in9.546222973032854 seconds, peak674267136
+bytes. Both architectures pass the prespecified p1 adequacy gate. Across two
+seeds, p0.5 forecast gains are MLP0.49643564224243164/0.49768996238708496 and
+transformer0.49440494179725647/0.4973456859588623; p1 gains are
+0.9938386082649231/0.994098961353302 and0.994004487991333/0.996536910533905.
+The matched change in future distribution causes attenuation with adequate fit;
+this is a controlled small-model mechanism, not a TSFM training-data diagnosis.
+Exact risk replay passes. Two focused tests and two planted faults pass/caught.
+Supervised normalized-future ridge recovery at p0 is MLP0.016827709793355333/
+0.01536392071152469 versus transformer0.47648969898855154/0.5042714721036291;
+input ridge0.0026657713808921073. This motivates a RANDOM-INITIALIZATION control
+before treating recoverability as learned structure, and an expansion over fresh
+training histories/seeds and intermediate continuation probabilities. Source
+normalization is restored identically for hidden and input probes. No inference
+about a representation's absent information follows from a failed linear probe.
+
+**Initialization control closes an attribution trap in the tiny-model pilot.**
+With exactly the same fixed ridge decoder, initialization already permits
+normalized-future recovery MLP0.006750625085256504/0.006583728204450735 and
+transformer0.4061008965454886/0.45874250688843426. These are BETTER than the p0
+trained values in the preceding block. Thus residual recoverability at p0 is
+not evidence that the zero-survival objective learned a forecasting concept;
+architecture/initialization supplies a substantial baseline. This does not undo
+the matched-training result that future survival probability changes forecast
+gain. Saved predictions are in `prior_initial_control4951000`; same TEST sources,
+not an independent replication. Cross-model probes likewise require strong
+input and initialization/control comparisons before assigning semantic meaning.
+
+**Persistent handoff requirement (user instruction, 2026-11-16).** After EVERY
+completed experiment, distill its question, intervention/data, principal exact
+results, control failures, evidence class, limitations and next-step decision
+here; promote durable scientific knowledge to FINDINGS.md. Include negative,
+inconclusive and instrumentation-failed experiments. Do not defer knowledge
+capture until the end of a long session. Run artifacts and reproduction paths
+must accompany each entry so later sessions can verify rather than merely trust
+its conclusion. Exploratory interpretation and future plans are labeled separately.
+
+**Comparability pilot reviewed and expansion declared.** Existing-state analysis
+`comparability_pilot4951000` finds synthetic Bolt→TimesFM forecast surrogate
+loss input0.026855664954461247 versus input+Bolt-hidden0.01769764292154032
+(gain0.009158022032920928;16 TEST seeds). However input+Bolt-FORECAST is better
+still (reported in results.json); hidden access is not established as the most
+useful comparison. The reverse direction also improves versus input, and the
+TimesFM→Bolt fixed-fusion-response target improves by0.00032343869342284703
+(relative0.12972226294184855). Real-source and failure-prediction outcomes are
+mixed/negative; no general applicability claim follows. The binary failure target
+is constant in some strata and therefore supplies no evidence of discrimination.
+All outcomes and nulls remain in results.json. A roundoff-sensitive CV tie first
+failed rotation invariance: identical mathematical candidates selected differently
+at~1e-17 CV error differences. Declared stable-tie amendment before interpreting
+TEST losses; earlier failed log retained. This was a comparison-procedure issue,
+not evidence of TSFM semantic incoherence.
+
+Authorize fresh64-seed same-distribution replication, capturing only the halfdepth
+state, native forecast and fixed first-block/depth1 equal fusion. Freeze old FIT
+selection; no hyperparameter retuning on inspected TEST sources. Test both
+forecast directions and TimesFM→Bolt fusion-response prediction. Add a follow-up
+input+source-forecast+source-hidden arm to distinguish useful internal information
+from information already exposed in outputs. Compare input, input+forecast and
+same-model controls; source-disjoint evaluation. This remains predictive evidence,
+not cross-model activation transplantation or universal semantic equivalence.
+No native launch until a compute slot is available; <=15min/model,3GiB,CPU1.
+
+**Natural-source availability failure and prospective correction.** Preparation
+of `natural_validation_pilot4951000` found only66 eligible pedestrian series,
+so requested ranks64–71 cannot yield8 new sources. No native runs or future
+scores occurred. Existing hypotheses are not tested by this failure. Preserve
+that run's knowledge.json. Before new scoring, revise cohort in
+`natural_validation_pilot4951001`: eight fresh sources per available domain,
+only pedestrian ranks64–65 (one FIT/one TEST under the existing split), explicitly
+descriptive with no meaningful population interval. No replacement from already
+used sources and no outcome-based eligibility. This limits natural-data inference
+rather than manufacturing additional independent samples.
+
+### 49.39 Literature-informed direct-feature and modern-SAE extension (2026-11-16)
+
+User requests testing features without SAEs and robust newer SAE alternatives.
+Primary papers checked today; literature claims below are not our measurements:
+- Yıldırım, *Superposition Is Not Necessary* (May2026),
+  https://arxiv.org/abs/2605.05151 . The evidence concerns narrow PatchTST models'
+  post-GELU FFN activations on standard benchmarks. It does not establish that
+  pretrained Bolt/TimesFM residual coordinates are generally monosemantic.
+  Distinguish native FFN neurons, residual coordinates, and learned SAE latents.
+- Bussmann et al., *BatchTopK Sparse Autoencoders* (Dec2024),
+  https://arxiv.org/abs/2412.06410 . Batch-level sparsity allocation and a frozen
+  inference threshold motivate matching actual activity, not merely declared k.
+  Reconstruction gains need not imply downstream gains; inference must be
+  independent of which other samples happen to share a batch.
+- Bussmann et al., *Learning Multi-Level Features with Matryoshka Sparse
+  Autoencoders* (ICML2025), https://proceedings.mlr.press/v267/bussmann25a.html .
+  Nested dictionary reconstruction motivates coarse/fine feature comparisons and
+  checking absorption rather than assuming one dictionary scale is canonical.
+- Liu/Xie, *TSAE: Structured Sparse Autoencoders for Interpreting Time-Series
+  Forecasting Models* (Oct2026), https://arxiv.org/abs/2610.04925 . Shared/private
+  routing, detection/magnitude separation, conditional temporal continuity and
+  forecast consistency motivate a TS-specific pilot. Main controlled evidence is
+  PatchTST/ETT; multivariate routing is not directly applicable to our univariate
+  adapters. Any simplified variant must be labeled inspired-by, not a full
+  reproduction. Fidelity, stability and semantic calibration remain separate.
+- Mishra, *Dissecting Chronos* (Mar2026), https://arxiv.org/abs/2603.10071 .
+  TopK features and ablations in Chronos-T5-Large motivate depth controls; do not
+  transfer its architecture-specific conclusion to Bolt or infer semantics from
+  forecast sensitivity alone.
+- Pandey et al., *On the Internal Semantics of TSFMs* (Nov2025),
+  https://arxiv.org/abs/2511.15324 . Atomic-versus-composed concept probes motivate
+  controlled mixture tests; retained spectral information and native use must
+  still be separated, as already demonstrated by this repository's SH-25/MN-44.
+
+Prospective evaluation: native residual coordinates and, where exposed correctly,
+FFN neurons; PCA/orthogonal rotation controls; existing TopK; a bounded nested
+Matryoshka-style SAE and a temporally structured candidate if instrumentation
+supports it. Match actual active dimensions, train sources, data passes and
+parameter budgets; preserve signed native-coordinate information. Evaluate held-out
+reconstruction AND native forecast preservation, simple concept recovery,
+selectivity under nuisance changes, seed stability, and causally specific edits
+against matched random directions. Low sensitivity does not prove monosemanticity;
+sparsity and low reconstruction error do not prove useful interpretation.
+Phase-varying oscillations may require two-dimensional concept subspaces rather
+than one neuron/latent per concept; a grouped-plane follow-up is reserved if the
+pilot supports this explanation. Reuse saved activations first, then acquire only
+missing native hooks. No unbounded SAE training or wholesale pipeline replacement.
+
+**Persistence pilot, instrumentation failure, calibration and recovery distilled.**
+Original `persistence_pilot4951000` stopped at duplicate-batch bitwise identity.
+Calibration on4 Bolt histories found exact singleton/repeated-batch identity,
+but position changes differed by at most4.76837158203125e-06; changing batchmates
+at fixed positions was exactly invariant in all8 probes. This supports a stable
+batch-position arithmetic effect, not demonstrated semantic interference. Kernel
+cause remains unverified. Recovery fixes every call to singleton geometry while
+retaining EXACT gates; old artifacts remain unchanged in sibling subdirectories.
+
+`persistence_pilot4951000/singleton_geometry` completes with8 sources,4 TEST.
+Equal-prior TEST loss native/hybrid is Bolt0.7044685896391737/0.546102676503224
+and TimesFM0.4974279871980144/0.5385035414665008. For TimesFM the hybrid-native
+risk curves cross at persistence probability0.8058511886716185 when other three
+futures share remaining probability equally. This is NOT an estimate of model
+pretraining priors. Identical histories cannot predict their future branch.
+Visible decay and cessation cues improve native forecasts on4/4 TEST sources
+for each model; drift improves TimesFM4/4 but Bolt2/4. The selective tree accepts
+all8 cued decay/drift histories despite continuation being harmful; it abstains
+on all8 cued cessations. Thus a conservative extraction test is not a sufficient
+persistence test.11 tests and12 plants pass/caught; independent replay checks512
+losses,320 expected risks,256 cue gains and paired identities. Exact results,
+control failures and limits live in the three run knowledge.json files.
+Authorize64 freshseeds, cue leadtimes0/8/16/32/64 and fixed periods19.2/24;
+FIT-only recent-stability veto and recent-only refit control. Native launch queued.
+
+**Response-surface pilot distilled.** `response_surface_pilot4951000` uses8
+backgrounds,848 nodes; four synthetic and four reused real FIT sources, not fresh
+confirmation. Native forecast chord curvature decreases with shrinking frequency
+radius on48/48 Bolt and47/48 TimesFM paths. Paths are dependent within sources.
+For M4 T000172 at19.2 hours and amplitude0.1/0.5/2, known-response NMSE is Bolt
+1.5311312967619244/2.309598714782917/0.2214899345277517 and TimesFM
+1.5089727639671786/0.06010054786491814/0.010456317966434536. This is an example,
+not a population effect. First-block coefficient-decoding NMSE native→locked is
+Bolt0.4996478849685851→0.012752598094436797 and
+TimesFM0.4723127043833158→0.01359228639593964; input baseline
+2.9406281795183107e-07. Locking does not eliminate interactions. Potential omitted
+normalizer metadata prevents interpreting this as information disappearance.
+Seven tests/seven plants and21600 arithmetic checks pass; native identity gates
+are exact. Workers35.83567283593584/169.5613895469578 seconds. knowledge.json
+retains hypotheses, exact tables, limitations and decisions. Next: saved-array
+metadata-aware decoding, then fresh crossed-phase and actual-input-radius controls.
+
+**Attenuation-explanation follow-up declared before scoring.** Reuse the saved
+response-surface forecasts, with no new inference. Project each native known-tone
+response onto the exact added waveform: unrestricted scalar, scalar constrained
+to[0,1] (conservative continuation), and a same-frequency sine/cosine plane.
+Report phase/off-waveform residuals and whether best possible conservative
+attenuation can account for the response. Per-row fitted projections are
+explanatory upper bounds, not deployable prediction or training-prior estimates.
+Add leave-one-background-out scalar calibration per amplitude/frequency and
+source-level summaries. If even an optimistic scalar explanation fails, training
+conservatism alone is insufficient for that response; it still does not identify
+the actual pretrained training distribution. Keep normalization policies separate.
+
+**Attenuation-only explanation tested and limited.**
+`attenuation_explanation4951000` replays192 center-response rows and matches all
+original response NMSEs. One known-answer test and bounded-scalar regression plant
+pass/caught. At19.2h/amplitude0.1, native response NMSE averaged over8 backgrounds
+is Bolt3.390003549579674 and TimesFM2.1344526166056355. Even the BEST per-row
+conservative scalar leaves residual2.337825752154055 and0.9575308104404547 in
+known-signal energy units. Allowing arbitrary phase at that same frequency still
+leaves0.832073982853724 and0.40932874401172437 off-frequency error. At amplitude2,
+bounded scalar residual falls to0.40867184504571824 and0.10954368175736659.
+These are dependent-condition, heterogeneous-background pilot descriptions, not
+population estimates. The rowwise fit is an optimistic explanation ceiling, not
+TEST-trained prediction. Thus attenuation by a conservative continuation prior
+is a real possible mechanism (PM-35), but is not sufficient to account for these
+pretrained response waveforms. Phase changes, off-frequency changes, normalizer
+coupling and background interference remain distinct competing explanations.
+knowledge.json, rows.json, summary.json and verification.json preserve the full
+results and leave-one-background-out scalar control; no new native compute.
+
+### 49.40 Fresh natural-data validation and representation controls (2026-11-16)
+
+**Natural pilot completed; expansion decision.** The outcome-blind availability
+amendment in `natural_validation_pilot4951001` uses26 previously unused sources:
+eight each electricity/M4/traffic, two remaining pedestrian series. Half are FIT,
+half TEST; pedestrian n=1 per split is descriptive without an interval. The main
+origin is256, with two128-context/32-horizon hindcasts ending192 and224. Every
+origin has its own past-only normalization. The adapter never observes the main
+future. Depth selection on FIT is frozen before TEST scoring.
+
+Electricity depth1 TEST native→hybrid MSE is Bolt
+0.32830079848935756→0.3230221699359904 (2 wins,1 tie,1 loss), TimesFM
+0.6192148434100198→0.35038952478445495 (3 wins,1 tie). This is a much larger
+TimesFM pilot gain than Bolt's, but only four TEST sources. On traffic depth1
+worsens Bolt0.266875622142397→0.5146018681958637 and
+TimesFM0.2869937946993105→0.4171051966105375 (both0 wins,1 tie,3 losses).
+On M4, depth3 worsens Bolt0.06510924524516197→0.22656561487974405 and
+TimesFM0.13461324183592122→0.2734762923350076. Past-only selection can abstain
+usefully on traffic but rejects every TimesFM electricity hybrid, missing all
+three improvements. A short successful hindcast is therefore not a guaranteed
+continuation detector, and extracting a stable historical tone does not ensure
+its useful future continuation. Raw real-series pretraining overlap is unknown.
+`verification.json`:24 tests,8 new amendment plants detected; original19 plants
+remain recorded. Per-experiment `knowledge.json` and `distillation.json` retain
+all controls and negative results. No universal adapter deployment follows.
+
+**Prospective natural expansion.** Prepare `natural_validation_replication4955000`:
+64 fresh sources per electricity/M4/traffic domain, ranks72–135 in the unchanged
+source permutation, subject to outcome-blind availability. Pedestrian is exhausted.
+Freeze depth1 as the primary comparison against native, with seasonal-naive24
+and tone-plus-last-residual controls and the same two-hindcast selector. Report
+six model/domain source-paired comparisons with multiplicity-aware intervals;
+no TEST depth selection. Keep domains separate. Check whether past benefit
+predicts next benefit continuously without selecting TEST thresholds. A negative
+replication is informative. Native execution awaits a compute slot.
+
+**Architecture-boundary control proposed before capture.** The continuous-input
+Bolt/TimesFM results cannot establish that every TSFM is smooth. Chronos-T5 uses
+discrete quantization ([original paper](https://arxiv.org/abs/2403.07815)), so an
+arbitrarily small raw change can cross a token boundary. A small cached-model
+pilot will separate this known frontend discontinuity from encoder behavior:
+find neighboring FP32 contexts across a token boundary; compare exact same-token
+controls, learned embedding jumps, encoder changes, and deterministic first-step
+decoder probabilities. Also interpolate the two endpoint embeddings directly
+and compare decreasing-radius chord error. Use a matched random-initialization
+control to distinguish learned smoothing from unavoidable quantization. No
+sampled forecasts or claims about full multi-step forecast quality are needed.
+This is a measurement-control experiment, not a new proof that quantization
+exists or that a discontinuous tokenizer makes representations uninterpretable.
+Native execution is held behind the two-worker cap.
+
+
+**Metadata-aware decoder follow-up completed.**
+`response_surface_normalization4953000` reuses the eight-source pilot arrays;
+no checkpoints loaded or native inference. It replays actual FP32 Bolt whole-
+history and TimesFM cumulative-patch normalization. First-block hidden-difference
+physical-coefficient NMSE changes from0.4996478840717149 to0.009669252562936726
+(Bolt), and0.4723127042683171 to0.030581905688274888 (TimesFM), when predicting
+normalized coefficients and correctly restoring physical units. All8/8 sources
+improve for each model. This inverse uses observed background Fourier coefficients
+and native history statistics; it is NOT a hidden-only information claim.
+Matched input, metadata-only, shuffled-feature and inverse-only controls receive
+the same inverse information. The mean inverse-only control errors are
+0.8039847473064277/0.8448163768887251, so the inverse does not solve the task alone.
+
+The endpoint route avoids the explicit observed-background coefficient correction:
+its hidden errors0.1776317107733182/0.20469722023739187 compare with matched input
+0.2009918735389694/0.1998988078602276. Thus no blanket hidden-over-input dominance
+follows. Simply appending metadata to the original physical decoder gives
+0.32483113345536635/0.23754268896936429, less improvement than using a correct
+normalized target/inverse. Decoder parameterization, not just representation,
+can produce apparent failure. Eight tests/eight isolated plants and7920 independent
+arithmetic checks across144 fits pass; maximum inverse discrepancy
+3.9968028886505635e-15 and NMSE discrepancy2.6645352591003757e-15.
+The saved knowledge record retains this caveat and the phase/source confound.
+The crossed-phase native expansion is being reduced prospectively to the weak
+amplitude case and a balanced phase subset to limit compute; the full16928-node
+plan stays prepared, not executed.
+
+**Cross-model comparability freshly replicated.**
+`comparability_replication4952000`:64 fresh seed groups, five dependent conditions
+per seed; all320 rows TEST-only. Serialized predictors are fit on the original20
+FIT sources only. Input-only→input+other-model-hidden losses are
+Bolt→TimesFM forecast0.023864581292049478→0.015733820374062967,
+TimesFM→Bolt forecast0.01912109637372958→0.01604583723607949,
+TimesFM→Bolt fusion response0.002156430411168464→0.001852114482009267.
+Relative gains0.3407041095120863/0.16083069074821366/0.1411202177371923 all pass
+the prespecified5% effect, positive Bonferroni3 interval and alignment-shuffle
+screens. The respective primary gain intervals are
+[0.00704617610141445,0.009305134338331236],
+[0.0019915239544518277,0.0042241768371156525],
+[0.00023989155390869105,0.00036885185940382876].
+
+Exploratory hidden gains beyond input+source forecast are
+0.0011738879565609288/0.0008663409304243716/0.0001372677512059746, each with a
+positive source interval. This arm was declared after the pilot, selected only
+on old FIT and frozen before the new TEST. For ordinary forecast targets,
+input+source forecast alone still beats input+source hidden alone. A deterministic
+hidden state contains no new information beyond the exact input; these results
+measure useful predictive features under the declared finite-data readout family.
+They neither establish matching semantic concepts nor cross-model causal mediation.
+They are a counterexample to an unrestricted claim that cross-model analysis can
+never be useful, within these five synthetic conditions. Natural-real pilot
+negatives remain. Native exact gates passed, workers122.2403623140417 and444.4591948330635
+seconds,1thread, under3GiB. knowledge.json and report.md preserve all predictions,
+controls, and the earlier failed preflight. Further audit plants are being recorded.
+
+**Next discrimination before more native compute.** On saved arrays, compare
+matched-budget untrained nonlinear input features (random Fourier and random MLP)
+against source hidden states, holding input+source forecast fixed. Select all
+settings only on old FIT; evaluate three feature seeds without TEST-best selection.
+This tests generic feature enrichment as an alternative to learned cross-model
+structure. A later new-condition replication must be frozen separately.
+
+**Background-modulation explanation declared before scoring.** PM-39 left
+off-frequency response changes unexplained. Reuse those saved forecasts to ask
+whether the changes align with the model's unperturbed background forecast.
+Project onto nested waveform spaces: added-frequency sine/cosine; then constant
+and trend; then the unperturbed forecast. Report exact incremental energy, rank,
+conditioning and19 time-permuted background-template controls. Coefficients are
+fitted per observed response, so this is an optimistic descriptive explanation,
+not a prediction improvement or identified mechanism. Keep native and locked
+normalization separate; resampling conditions cannot create more than eight
+independent backgrounds. A negative result will close this simple template story.
+
+**Background-modulation projection completed.** `background_modulation4956100`
+replays192 rows. At19.2h/amplitude0.1, native off-tone error is
+0.832073982853724 (Bolt) and0.40932874401172425 (TimesFM). Removing a fitted
+constant/trend leaves0.6552187060614115/0.3314850043499922; adding the actual
+background-forecast template leaves0.3345255393285157/0.19192169094791175.
+That template's extra explained energy beats the95th percentile of19 time-
+permuted templates on6/8 Bolt and5/8 TimesFM backgrounds. Under locked
+normalization the residuals are0.32135854483142834/0.18529909782956655, and
+the corresponding counts6/8 and4/8. Thus some off-tone changes resemble
+background modulation even with normalization fixed, but this simple template
+does not account for all distortion. This is a fitted descriptive ceiling;
+correlated32-step waveform bases and projection order prevent causal attribution.
+One known-answer test, three detected plants, and192 independent row replays
+pass (maximum score discrepancy8.881784197001252e-16). knowledge.json and
+verification.json are persistent; no native inference was required.
+
+**Point-functional audit and next hypothesis.** The installed native APIs show
+that both studied point forecasts are medians. Chronos-Bolt's second return is
+named `mean` but explicitly selects quantile0.5; TimesFM uses `aridx=5`, also0.5.
+MSE comparisons of these chosen outputs remain valid, but the toy conditional-
+mean MSE experiment cannot identify their training objective or a survival prior.
+Prepare a small quantile-response pilot: compare all nine native quantile changes
+under known sinusoidal additions, with exact median replay, raw crossing rates,
+native/locked normalization, and simple central/interval summaries. If a weak
+component affects spread rather than location, median-only error may miss
+distributional response. Quantile differences are not a joint distribution over
+paths; no phase-coherent sample claim follows from marginal quantiles.
+
+**Persistence replication completed and independently replayed.**
+`persistence_replication4953000`:64 fresh seeds split32 FIT/32 TEST, periods19.2/24,
+cue lead0/8/16/32/64, four future regimes. FIT-only stability veto versus always
+native does not pass either model's primary screen: source wins19/32 Bolt and
+13/32 TimesFM. Against always hybrid it wins30/32 and32/32; mean paired gains
+0.024316141847413635/0.11701714686534168. The Bolt mean interval
+[-0.012248115026278854,0.05250180964470645] crosses zero despite the strong
+majority of wins; two losses are costly. The TimesFM interval is
+[0.0968216670785933,0.13666716367716314]. Primary inference is six Holm-adjusted
+one-sided source sign tests with a prespecified observed mean effect threshold;
+sign significance concerns source win probability, NOT the population mean.
+The six-test protocol and source influence table remain unchanged.
+
+Recent32-step refitting with zero future residual improves full-history-tone
+continuation on visible changing futures by0.12318180842823585 at19.2h and
+0.11615768959478193 at24h, with32/32 source wins each. This classical control
+shows that older stable cycles can impede continuation after a visible change.
+It does not attribute the native model's training distribution. Overall TEST
+native/hybrid/veto/recent-hybrid losses are Bolt
+0.7975724959262678/0.7716092902234937/0.7472931483760801/0.6020191756973894,
+TimesFM0.5677474183322653/0.6493832800106368/0.5323661331452951/0.6046294010530298.
+Thus better extraction recency is not a uniform native-model improvement.
+20 focused tests,9 new plants plus a score-arithmetic plant pass/catch; independent
+replay covers35840 scores,35840 cue comparisons,8960 risks,six primary means and
+134 finite arrays, maximum difference1.4210854715202004e-14. Exact native
+sentinels, singleton duplicates, self-patches and residual repeats pass.
+`REPORT.txt`, `source_influence.json`, `median_output_audit.json` and knowledge.json
+preserve the outcomes and inferential distinction. This branch stops broad
+expansion: neither a universal selector nor a diagnosed pretrained prior follows.
+
+**Generic nonlinear controls narrow the comparability claim.**
+`comparability_random4953000` is explicitly a post-hoc saved-array follow-up on
+the already evaluated64-source cohort. Old FIT alone selects matched supervised
+readout ranks/grids; three fixed random Fourier and random ReLU-MLP feature
+initializations are averaged as losses, not ensembled predictions or TEST-selected.
+Input+source-forecast+random features emulate TimesFM forecasts with losses
+0.012719115560900612/0.012726500254948755, better than adding Bolt's trained
+hidden states0.013207666764194471. In reverse, random ReLU loss
+0.008687850205800752 is similar to trained0.008878823501737656, while random
+Fourier gives0.009272760424568439. Much ordinary forecast-emulation gain is
+therefore available from generic feature enrichment.
+
+The fusion-response target retains trained-hidden advantage: TimesFM→Bolt loss
+0.0020740497112315586 versus random Fourier0.0022476849828418953 and random
+ReLU0.0022478083458015554. Paired advantages are
+0.00017363527161033654 [0.00012159902289319962,0.00022872251582742458] and
+0.00017375863456999644 [0.00013192962117077674,0.00021582226562030153].
+These are conditional feature-efficiency results, not equivalent semantics.
+Feature width/readout budgets match; architecture, pretraining compute and forward
+FLOPs do not. Eleven isolated plants and120 arithmetic replays pass. The original
+replication separately passes25 plants and60 independently replayed intervals,
+maximum discrepancy2.220446049250313e-16, in
+`comparability_replication_audit4952100`. Original frozen results remain intact.
+
+**New-condition follow-up prepared, not launched.** Authorize20 FIT/32 TEST fresh
+seed groups4962000–4962051, five conditions (old anchor, weaker dominant component,
+shifted frequencies, shifted+weaker, shifted+balanced),260 native rows. Keep
+original frozen-probe extrapolation separate from equal-budget local-FIT feature
+efficiency. Primary: TimesFM-hidden prediction of Bolt's fixed fusion response
+beats both random-feature families by>=5% and positive family2-adjusted paired
+source intervals; forecast targets are controls. Capture native forecasts,
+fixed first-block fusion and half-depth states only. No natural-data claim.
+Native capture remains queued behind the two-worker cap.
+
+**Natural gain-location follow-up declared before scoring.** Reuse the192-source
+natural replication's frozen forecasts. For each eligible context, use the
+frequency already fitted from its past to define a32-step sine/cosine subspace.
+Partition native-minus-hybrid squared-error improvement into this subspace and
+its orthogonal complement. Also partition the adapter's actual forecast update.
+The identities must close exactly in FP64. This asks whether a Fourier adapter
+helps by correcting the extracted-frequency forecast or through other changes
+to the residual forecast. Future values are used only to measure error, not to
+fit the frequency, choose an adapter, or select sources. The subspace is a
+diagnostic projection, not a ground-truth decomposition of natural futures.
+
+**Natural replication completed.** `natural_validation_replication4955000`
+contains192 new series,64 each electricity/M4/traffic, ranks72–135, all TEST-only.
+The primary depth1 rule and two-hindcast selector were frozen before these futures.
+TimesFM electricity improves0.5515747684009784→0.4676360158302627, paired gain
+0.08393875257071565 with six-comparison interval
+[0.015307078093565,0.1583223135327461];24 wins,35 exact abstention ties,5 losses.
+Bolt electricity changes0.5225855600238707→0.5262451862319218, gain
+-0.0036596262080511297, interval[-0.03424603365842612,0.03187324631868582].
+Traffic worsens in both: Bolt1.5773255469534484→1.7312596259818966,
+gain-0.1539340790284484 interval[-0.22611734188750848,-0.08989533872444354];
+TimesFM1.549905793868145→1.6845621992815496, gain-0.1346564054134044 interval
+[-0.2055502699616094,-0.07541349714872388]. M4 mean gains are negative with
+intervals crossing zero in both. This is one positive model/domain primary of six,
+not a universal forecasting improvement.
+
+Seasonal-naive24 electricity MSE0.3993750427653811 is lower than both hybrids;
+TimesFM hybrid-minus-seasonal mean loss0.06826097306488155 has a descriptive
+paired interval crossing zero, so superiority of either method is not established
+there. A post-primary paired model contrast gives larger TimesFM hybrid gain than
+Bolt by0.08759837877876678, exploratory family3 interval
+[0.026466648970839196,0.15661429284517894]. This directly tests the model
+difference rather than comparing two significance labels. Seventeen tests and21
+plants pass/catch. Independent original-MSE replay is exact0.0; selectors,
+source order, frozen rules, hashes, resources and common classical controls pass.
+Native workers24.17187630792614s Bolt and controller55.896777961053886s TimesFM;
+execution.json separates worker/controller timings. No new checkpoints or GPU.
+Pretraining overlap remains unknown. knowledge.json/audit.json preserve negatives.
+
+**Natural gain-location follow-up completed.** `natural_gain_location4956300`
+replays384 model/source rows (270 eligible). TimesFM electricity's total gain
+0.08393875257071565 partitions into0.03509242848460109 at the past-fitted tone
+frequency and0.04884632408611454 outside that plane. The actual forecast update
+has0.5168608174353616 of its energy outside the fitted tone plane. Thus its real-
+data benefit is not just replacing the predicted amplitude/phase of one tone;
+changes to the modelled residual contribute substantially. For traffic, tone-plane
+gains are negative: Bolt-0.13961662375115133, TimesFM-0.12706543331818337, with
+additional off-plane losses-0.014317455277297091/-0.0075909720952210494.
+These are descriptive exact error partitions on the already scored cohort, not
+causal decomposition of unknown natural futures. One known-answer test and three
+plants pass/catch; independent score discrepancy4.440892098500626e-16. No new
+native inference, future-chosen frequency or TEST-tuned blend. Persistent
+knowledge.json records the explanation and its limits.
+
+**Quantized-input architecture pilot completed.**
+`token_boundary_pilot4956000` uses cached Chronos-T5-tiny on eight fresh synthetic
+backgrounds. Bisection finds adjacent FP32 histories differing at exactly one
+token in8/8 cases, mean actual input RMS distance7.573261841801273e-09. Mean
+relative hidden jump is0.04599361338361545 at embeddings and
+0.02180104422917018 at the final normalized encoder output. First-decoder-step
+probability total variation is0.0028557732366607524. Different histories with
+identical full token bundles give exact identical states/probabilities; repeated
+and ID-versus-embedding forwards are exact. Thus the raw-input discontinuity has
+an explicit quantizer cause, not evidence of arbitrary semantic chaos.
+
+On the continuous off-manifold embedding chord, pretrained first-step probability
+curvature decreases0.18482274082093753→0.09444488192786246→0.05545576393044646→
+0.03314285486742809 as radius0.25→0.125→0.0625→0.03125. The random-initialized
+encoder has embedding/final relative jumps0.12549805997427055/0.12576905491275664;
+its probability response is almost uniform and all32 probability-curvature cells
+fail an eight-FP32-epsilon resolution guard. Do not interpret their raw ratios
+as nonsmoothness or their small output changes as better forecasts. Three
+known-answer tests/five isolated plants pass/catch, with720 independent saved-
+vector checks. Native total21.26535130792763s, peak994680832B. Audit knowledge.json
+preserves numerical-resolution exclusions separately from the original outputs.
+Replicate this measurement distinction on16 new paired backgrounds at cached
+tiny and small sizes, same fixed protocol; no sampled forecasts, no semantic
+feature or full-horizon accuracy claim. This inexpensive architecture control
+does not require a broad model sweep.
+
+**Crossed-phase local-surface expansion completed.**
+`response_surface_focused4954100` uses16 fresh synthetic backgrounds, four phases,
+two frequencies, amplitude0.1, actual input RMS radii0.01/0.005/0.002, native/locked
+normalization and first/half residual cuts. All16 source averages show shrinking
+chord curvature in every model/policy/axis/endpoint setting. Five individual
+dependent phase curves do not shrink and are retained, not averaged away silently.
+Median native forecast frequency curvature large→small is Bolt
+0.040190041464709246→0.01285684887688486 and TimesFM
+0.0873284666297234→0.01742486071070292. Sensitivity ratios are
+1.0000496566332502/1.001704210704456. This favors local continuity/converging
+directional behavior in sampled directions, not global smoothness.
+
+Semantic response remains separate:24h/19.2h known-signal response NMSEs are
+Bolt0.3890532047531183/1.398347641932045 and
+TimesFM1.0257426962594225/2.3657490304769673. Background-type slices can reverse
+frequency ordering. Small interactions persist when normalization is locked:
+at RMS0.002, relative-to-summed-marginal forecast interaction means
+0.006780177125277483/0.010438690019523335. Nonzero interaction is not itself
+failure. Seven tests/seven plants,45824 raw arithmetic checks and56 additional
+source-summary checks pass, with exact native identity gates. Controllers
+86.88296659605112/496.02768222102895s, RSS below3GiB. The16928-node full grid
+stays parked because this focused expansion answers the local-smoothness question.
+knowledge.json and leading_findings.json retain exceptions and scope. Next is a
+saved-array phase-response matrix analysis, not another native sweep.
+
+**Quantile-response pilot completed.** `quantile_response4956200` reuses eight
+pilot backgrounds, newly crosses four phases at both frequencies and three
+amplitudes, and captures all nine native quantiles under both normalization
+policies. Weak19.2h native median response NMSEs are
+2.5675212280679705/1.9717594022240545 (Bolt/TimesFM); central-nine-quantile average
+gives2.5120652628795126/1.9689040160935263. Even choosing the best quantile
+separately per response gives2.161041132950336/1.801664427855226. That last
+number is an optimistic descriptive ceiling, never a deployable choice. With
+normalization locked, oracle-best quantile errors remain
+2.0141060449313395/1.8573412859313922. Thus this weak-tone failure is not
+explained merely by inspecting the median rather than another native quantile.
+
+Strong19.2h amplitude2 median errors fall to0.8528435690482532/0.15116309852796067.
+Quantile widths do change; those changes alone do not establish coherent phase
+uncertainty or calibrated distributions. Native crossings remain unsorted and
+reported. Exact quantile-repeat/median-replay/background-normalizer gates pass;
+two tests/three plants and3072 independent score checks pass, maximum discrepancy
+2.2737367544323206e-13. Workers74.41377879795618/255.7766862519784s, peaks
+1061670912/1640177664B. The raw quantile bank, summary, verification and
+knowledge.json retain all endpoints. No broad quantile-decoder search follows
+this negative simple-location explanation.
+
+**Quantizer-control replication completed.** Fresh paired16-source runs
+`token_boundary_replication4961000_tiny` and `_small` reproduce the distinction.
+Mean FP32 input distance4.837472450240249e-09 crosses one token; relative
+embedding→final-encoder jumps are tiny0.05144760846520803→0.023675344465227722
+and small0.057650362909445155→0.02218872810943274. First-step probability TV
+is0.002784460601826859/0.0029375174143024202. Every pretrained source's
+continuous embedding-chord curvature decreases from radius0.25 to0.03125;
+full four-radius monotonicity holds13/16 tiny and15/16 small, not every curve.
+Mean probability curvature decreases0.4996469561732425→0.05965182867168371
+and0.18701398604038566→0.03884046666180174. All random-initialized probability
+curves remain precision-limited; their raw ratios are excluded from interpretation.
+Each run independently replays1440 arithmetic checks; exact native gates pass.
+Total times including both initializations44.01186058099847/98.1476906259777s,
+peak1085616128/1553367040B. The two model sizes strengthen this bounded frontend
+diagnosis; no broad size-scaling, global smoothness or forecast-quality claim.
+The branch closes after this inexpensive replication; no larger checkpoints.
+
+
+**Phase-response reuse completed (`response_phase4954200`).** Four cardinal
+phases at amplitude0.1 define a conditional2×2 sine/cosine response map H for
+each of16 backgrounds, model, policy and frequency. The exact waveform error
+partition separates in-band H error, odd off-frequency response and even
+response; finite-window DC sensitivity is retained. At native period19.2,
+identity→leave-one-source-out mean H NMSE is Bolt
+1.3906871921613242→0.5068692957225513 (16/16 source gains), TimesFM
+2.3537098800938168→1.999695124522527 (8/16 gains). The paired mean gains are
+0.883817896438773, descriptive95% interval[0.7367125200276745,
+1.0345996461054745], and0.3540147555712898,[0.25652539509187594,
+0.44407495812047193]. Source-fit optimistic floors are
+0.2314247904913106/0.9018266927220593. Native period24 Bolt improves only
+0.3889789795026971→0.3488437368323816, with a paired interval including zero.
+The period19.2 native mean q/r pairs are Bolt
+0.18606411662427574/−0.5048456681295121 and TimesFM
+0.4279219026505532/−0.39158091957652885. Both phase coordinates survive the
+relative-rank diagnostic on16/16 period19.2 sources for each model; thresholded
+rank is not a proof of information presence or absence. The operator predicts
+the model's response, not the true future, and is neither an LTI claim nor an
+inverse correction method. All phase/frequency rows remain dependent within
+source; bootstrap stratifies four background types. Independent audit checks
+4672 quantities across128 matrices, maximum discrepancy8.929789570134933e-15,
+energy closure1.7763568394002505e-15. No new inference. A fresh-source transfer
+pilot is the informative next step before any broader frequency-response claim.
+
+**Cross-model condition-shift test completed (`comparability_conditions4962000`).**
+Fresh seeds4962000..4962051 provide20 FIT/32 TEST sources and five conditions:
+the old anchor, weaker secondary contrast, shifted frequencies, shifted/weaker,
+and shifted/balanced. Exactly96 FIT rows preserve the earlier fitting budget;
+four balanced-condition FIT exclusions were frozen beforehand. The primary
+TimesFM-hidden→Bolt-fusion-response comparison conditions on full input and
+source forecast. Trained loss0.002255216479176824 beats RFF
+0.0029625792146836614 and ReLU0.002444654328383262: relative reductions
+0.23876584700280104/0.0774906484761468, both above frozen0.05. The paired
+source gains are0.0007073627355068375,97.5% interval
+[0.0005316431668598855,0.0008913284578756916], and
+0.00018943784920643812,[0.00009106597229230112,0.00029783215257174787].
+Both family-adjusted primary contrasts pass. Three random initializations are
+averaged as losses, not prediction ensembles. Old frozen probes have much
+larger shifted-distribution losses; local refitting and extrapolation are
+separate endpoints. Trained features need not win every condition (weaker
+versus ReLU is a small descriptive reversal). Predictability of fusion is
+separate from correctness: Bolt fusion helps in the aggregate but hurts the
+fresh anchor; TimesFM aggregate correctness gain is uncertain. All source
+variants are dependent; bootstrap conditions on the20-source FIT set and the
+three random initializations. No semantic-equivalence, information-creation,
+natural-data transfer or cross-model causal claim. Eleven prelaunch tests and
+29 isolated plants pass; independent arithmetic replays422 intervals and
+both primary decisions, max3.331e-16. Native repeat/normalization/self-patch
+gates are exact; TimesFM capture416.94767250993755s, peak1659674624B.
+The completed branch provides bounded comparative predictive value; no wider
+native grid is warranted before defining a distinct semantic or causal target.
+
+**Objective-functional control completed (`prior_objective_control4963000`).**
+Two tiny architectures, two initializations, three survival probabilities and
+two losses give24 paired400-step arms,512 FIT/256 TEST histories each. Histories,
+initialization and minibatches match across arms; expected two-future absolute
+loss is marginalized exactly. Atp0.25 MSE gains range
+0.24789963829063225–0.24967727238006154, absolute-loss gains
+0.0032150687063610115–0.004985426555465776. Atp0.75 they are
+0.7490467598869157–0.7529284809960199 and
+0.9777613686899456–0.9897283558827841. Atp0.5 every marginal point between
+zero and the surviving tone is a median: absolute-loss gains
+0.1109961110676092–0.2680873488456798 have normalized median-set distance
+0.0011455544752498963–0.001584336884339081. Nonzero residual optimization
+error is retained; no arm is discarded. Thus a partial median response does
+not uniquely reveal an attenuated survival expectation. This complements the
+toy MSE prior result and the native nine-quantile negative, without identifying
+the actual pretrained objective/distribution. Two analytic tests/two planted
+regressions and96 independent saved-array metric checks pass. Runtime
+31.286835529026575s, peak667529216B, one CPU thread; no pretrained inference.
+
+**Genuine FFN no-SAE pilot completed (`ffn_selectivity_pilot4961000`).**
+Captured actual post-activation down-projection inputs: Bolt first/half FFN
+width2048 (fourfold residual expansion), TimesFM width1280 (no expansion),
+alongside residuals. Sixteen fresh synthetic backgrounds8 FIT/8 TEST and eight
+reused real4/4 receive five equal-input-RMS0.1 perturbation types, fourteen
+phase/sign variants. FIT-only native coordinate selection, structured rotations
+and PCA are compared at single/few-feature budgets with mean/RMS pooling separate.
+Every variant/token remains grouped by source; native and background-locked
+base forecasts replay exactly, and both intervention sites pass reach gates.
+In the illustrative first-block RMS/k4 synthetic TEST slice, Bolt accuracy
+0.825 exceeds rotation-average0.525 and PCA0.5750000000000001; actual-input
+coordinates score0.925. TimesFM scores0.7 versus0.7833333333333333/0.75/0.925.
+Bolt native-minus-rotation paired descriptive95% interval is[0.2,0.4]; TimesFM
+is[−0.18333333333333335,0.02500000000000001]. This slice was highlighted after
+reviewing the registered table, not promoted to a confirmatory primary. Native
+axis selectivity varies by layer/view/model, and purity remains far from a
+general one-feature/one-concept claim. Structured rotations are not Haar, PCA
+candidate counts differ, and input coordinates already classify the intervention.
+Independent audit recomputes270 feature records and4680 source summaries, max
+metric error9.836575998178887e-14; eleven tests/16 plants pass. Native480
+cells/model take37.56228056701366/90.34575185202993s, peak
+1212018688/1698856960B. All exact/reach/resource gates pass. No SAE trained here.
+The bounded next question is causal relevance of FIT-selected early Bolt units
+relative to activity-matched controls on fresh backgrounds; preparation is
+separate from launch. Do not infer general monosemanticity from this pilot.
+
+**Chronological weather pilot completed (`postrelease_weather_pilot202610`).**
+Official GHCNh successor records supply the same eight preselected airports and
+October2026 dates after legacy ISD paths proved unavailable. Failed access
+attempts and the outcome-blind source amendment remain under
+`postrelease_weather_202610`; total downloads19,808,320bytes. Exact cached
+weight hashes match revisions dated2025-11-21(Bolt)/2025-10-02(TimesFM), before
+the observations. Three causal history fills retain32 histories; two incomplete
+JFK futures are never imputed/scored, leaving30 windows and eight station units.
+Fixed depth1 accepts18 windows, abstains on12. Equal-station native→hybrid
+normalized MSE is Bolt0.4729334720068331→0.6547303222032483 and
+TimesFM0.4503466537272577→0.5064548545682812; station wins1/8 and3/8.
+Paired descriptive95% gain intervals are[−0.4652814900347783,
+−0.01292937713999504] and[−0.15435815654050505,0.019018129665790105].
+Shared weather and n8 preclude calibrated population inference. Seasonal24
+scores0.6059731631636294, higher mean error than both native medians. The
+zero-residual tone-only baseline discards the physical temperature level and is
+not evidence that native residual modeling is essential; any level-restored
+follow-up is explicitly post-hoc and cannot rescue the frozen primary negative.
+Five preflight tests/11 plants plus an isolated saved-score corruption plant
+pass. Workers each predict49 bank inputs twice, with exact repeats,
+abstention/constant-history identity and denied target reads. Independent replay
+checks240 window losses,64 station losses andeight intervals. Native workers
+take16.78628524101805s(Bolt), controller18.514538735034876s, and TimesFM
+controller25.224370492971502s; RSS≈1.065/1.630GB. Knowledge records preserve
+protocol, station counts, download/source/weight hashes, failed access and all
+scores. This is a chronological-observation holdout, not a new-climate or
+real-time-vintage claim. Null quality flags indicate unflagged values, not
+proof that QC completed. No native/data expansion follows this negative pilot;
+a saved error partition can distinguish tone-plane from off-plane damage.
+
+**Weather saved-array interpretation completed (`postrelease_weather_posthoc202610`).**
+Post-hoc mean-residual+tone and last-residual+tone baselines preserve temperature
+level and score0.8649854790083853/1.1309893084967446 equal-station MSE, worse
+than native and hybrid. Orthogonal history-fitted tone-plane/off-plane gain
+partition gives Bolt−0.021876413106958606/−0.15992043708945658 and
+TimesFM−0.023748947453231563/−0.03235925338779193. Thus much weather harm
+is outside the peeled frequency, while the electricity positive also had
+substantial off-plane benefit. This exact geometric partition is not causal
+attribution to bad Fourier continuation. Three tests/four plants and independent
+replay pass without inference/downloads. A bounded same-weather normalization
+intervention is prepared to distinguish residual rescaling from other
+context-dependent effects; all data/rules remain frozen and it is a separate
+mechanism study, not a retrospective repair of the original negative.
+
+**Frozen phase-map validation completed (`response_phase_transfer4954300`).**
+Sixteen new independent seeds4954300..4954315, balanced four background types,
+four cardinal phases, two centers and offsets±0.12 cycles/128 produce400 inputs.
+All predictors are frozen from the old16 sources: zero, identity, waveform-
+optimal bounded/unbounded scalar, complex-linear qI+rJ and full2×2H. At native
+period19.2, scalar→fullH NMSE is Bolt0.7779709336359619→0.5306089803018366,
+TimesFM1.9283313395848056→1.7485319484160944. Paired gains0.2473619533341253
+and0.17979939116871133 have family4-adjusted98.75% intervals
+[0.1632782914560016,0.3182855976544267] and
+[0.125550594671179,0.23033485864196618], with14/16 and11/16 positive sources.
+Identity→fullH gains0.7904968404470195 and0.6197092384731631 also have
+positive adjusted intervals. Source bootstraps stratify the fixed balanced
+background types; these intervals do not describe arbitrary future mixtures.
+The complex-linear control scores0.5460455764202343/1.7445773331921237,
+showing that most incremental structure can be represented by gain plus phase;
+the full map is not uniformly superior to that smaller control. Zero-response
+scores0.8397102958771663/2.028619155529883. These predict a model's response,
+not the true future. At period24 fullH adds little over attenuation. Nearby
+delay-law and horizon-split diagnostics remain descriptive and do not identify
+patch causality or an LTI system. Exact native repeats, normalization identity,
+self-patch and same-batch replay pass; independent audit checks10860 quantities
+(max2.4424906541753444e-15), plus20 supplementary grouped/decision checks.
+Workers take26.825516281067394/106.10821969399694s with
+1060147200/1638686720B peak. This fresh result supports structured but imperfect
+response laws; no broad extra-frequency grid follows without a new mechanism.
+
+**Selected FFN causal pilot completed (`ffn_selectivity_causal4963000`).**
+Four FIT-selected first-FFN Bolt units[1925,909,108,901] are reset to background
+values under locked normalization. Eight reused TEST sources/k1,k4 are
+exploratory; eight fresh sources/k4 form the frozen primary. FIT-preferred
+target types are ramp/noise; three other types and orthogonal changes remain
+off-target diagnostics. One ofeight fixed activity-matched control sets is
+assigned per source, not eight independent controls/source. Fresh selected
+signed removal is0.006158264488730194,95% interval
+[−0.00486514095782705,0.017475451719261043]; matched mean is
+−0.006314812346017231. The paired advantage0.012473076834747427 has interval
+[0.0021393454858827585,0.022147086103784748]. This is a small relative effect,
+with selected absolute removal uncertain, not proof of strong semantic control.
+Actual selected edit norms/output reach are independently checked; full-FFN
+reach alone would be insufficient. Nine tests/15 plants and240 event/567
+source-summary audits pass. An initial secondary-energy audit failed because
+the frozen scorer used FP32 remaining-energy arithmetic and the auditor used
+FP64: maxenergy discrepancy6.470406876957213e-09, ratio1.3822831557153137e-07.
+The failed auditor and higher-precision values remain saved; primary signed
+removal/intervals used FP64 and are unaffected (max8.673617379884035e-19).
+No native rerun was used to repair the audit. Bolt384 cells take
+32.17311086098198s, peak1132720128B; parameters and patch support verify.
+A32-fresh-source replication crossing four fixed controls per source is
+prepared to distinguish a stable small effect from assigned-control variation.
+
+**Weather normalization intervention completed (`postrelease_weather_lock202610`).**
+Same30 windows, same18 accepted decompositions, no new data/fitting. Locking
+both forward and inverse normalization to the full history worsens Bolt hybrid
+MSE0.6547303222032483→0.8431448147928856, with0/8 improved station means;
+native remains0.4729334720068331. TimesFM changes
+0.5064548545682812→0.4763265507043724 versus native0.4503466537272577,
+but only2/8 stations improve and the paired descriptive gain interval
+[−0.1236936510859864,0.27233875618931475] crosses zero. One favorable station
+drives much of the mean; this is not a general normalization repair. Exact
+full/residual/ordinary-hybrid reference replay,30 locked-full identities,
+18 locked-residual repeats,30 restored-full identities and12 abstentions pass.
+Four tests/five plants plus independent180 window/48 station losses,1080
+partition scalars andsix contrasts pass (maxpartitionerror6.106226635438361e-16).
+Forward/inverse are manipulated together; no separate attribution or training
+diagnosis. The weather-native branch closes. A complementary same-cohort64-
+electricity control is prepared to examine the earlier positive rather than
+assuming that the weather mechanism generalizes to it.
+
+**Output-frequency explanation completed (`response_phase_frequency4954400`).**
+Saved native responses only; old16 sources select among fixed output periods
+[16,18,19.2,20,22,24,26,28,32] by source CV before reading the reused fresh16
+TEST bank. For period19.2 inputs, plain output-tone fits choose24(Bolt)/22(TF),
+improving same-frequencyH response NMSE0.5306089803018366→0.48412325715727056
+and1.748531948416094→1.726079453649708. Gains have two-primary descriptive
+adjusted intervals[0.018388450565124514,0.07555328900533036] and
+[0.0046856230816903965,0.043969545295262105]. Matched DC/trend fits change
+Bolt selection to22 and score0.5218874113150689→0.46578340158972487;
+TimesFM remains22 but its gain1.7310649292249531→1.724262539784375 is
+uncertain after nuisance adjustment. Old mean32×2 response waveforms score
+0.45748844616145007/1.6466122728733559, better than the small frequency maps
+with more fitted coefficients. Period24 controls select24 exactly. The32-step
+window, small CV runner-up gaps, nuisance sensitivity and background-type
+heterogeneity prevent a uniquely identified output oscillator or patch
+mechanism. This is prediction of the model's response, not corrected forecasting.
+Eight tests/nine plants and768 independent checks pass (max2.3314683517128287e-15).
+No native inference. The frequency grid closes; the separately prepared oblique-
+phase holdout tests whether the original map merely aliased cardinal phases.
+
+**Selected-neuron causal replication completed
+(`ffn_selectivity_causal_replication4964000`).**32 fresh sources4964000..4964031,
+the same first-FFN Bolt k4 units and FIT-defined ramp/noise target types, and
+the firstfour frozen activity-matched sets crossed with every source replace
+the small pilot's one assigned set/source. Selected absolute signed removal
+is0.0008338539038024147,95% interval[−0.00640342426749434,
+0.007862991279733313]. Mean-control removal is0.0005222319404212957;
+paired selected-minus-control0.0003116219633811186 has interval
+[−0.006925097142577513,0.007340577240027061]. The initial relative advantage
+does not replicate. Both selected and paired intervals lie within the predeclared
+descriptive±0.02 band; this practical bound does not rescue the failed primary
+or generalize to all neurons/budgets/contexts. Actual selected/control edits and
+output reach remain distinct from full-FFN reach; parameters and patch support
+are fixed. Independent audit replays800 events and392 source summaries, max
+errors3.3306690738754696e-16/6.938893903907228e-18. Native1088 cells finish
+58.40138135000598s, peak1248329728B. A saved down-projection-weight diagnostic
+shows that FIT activity matching does not ensure equal held-out FFN or projected
+residual edit energy. That qualifies comparator interpretation; the near-zero
+absolute effect remains measured. No new k/depth/dose search follows: classifier
+selectivity did not by itself produce a stable substantial forecast-response
+control in this chosen setting. The larger source/control grounding is a useful
+negative, not a proof of global monosemanticity or interpretability failure.
+
+**Position-conditioned mean control completed
+(`comparability_position_mean20261116`).** Same32 FIT/32 TEST sources and112
+rows per split as the dictionary study, first-block full-token states, source-
+weighted pooled global and per-position means fitted only on FIT. TEST error
+relative to global-FIT-mean error is Bolt0.19695331486428444 and
+TimesFM0.8989298433693919: reductions80.30466851357155%/10.107015663060814%.
+PCA adaptive top8/top16 coefficient reconstruction ratios are
+Bolt0.021846093615440033/0.009173964053706064 and
+TimesFM0.08610490644031232/0.04259929649012923. Static means explain much
+Bolt state variation but not all PCA gains; TimesFM's synthetic-only position
+baseline is worse than its global mean. Position-conditioned means have zero
+response to fixed-shape input perturbations and may encode shared content,
+normalization or token roles. No causal positional-embedding attribution.
+PCA stores a full fitted basis and selects sparse coefficients adaptively; k8
+is not a fixed eight-dimensional representation. Parameter counts and raw
+MSE/TEST-variance/global-mean-relative denominators remain separate. Five tests/
+five isolated plants and204 independent metric checks pass, max
+4.395839963453344e-16; old PCA-health discrepancy≤1.36e-9. No native inference,
+new dictionary fitting or changes to the running dictionary sources.
+
+**Electricity normalization-path control completed
+(`persistence_electricity_lock4957200`).** Same64 public electricity sources,
+same29 accepted decompositions and35 abstentions; no new data/fitting. Recomputed
+singleton native/ordinary/locked MSE is Bolt
+0.5225855223398538/0.526245173958001/0.5288967567472241 and TimesFM
+0.5515746288734042/0.46763592275247434/0.46956283460241544. TimesFM gains
+0.08393870612092993/0.08201179427098884 persist in ordinary/locked modes;
+locked-minus-ordinary improvement−0.0019269118499411078 has descriptive95%
+interval[−0.014366213855992654,0.011693876467599685]. This uncertain difference
+is not an equivalence finding. Locked TimesFM gain partitions into tone-plane
+0.03164886030512758 and off-plane0.050362933965861285. Bolt remains slightly
+negative in both modes. Forward/inverse are changed jointly; no isolated
+training or normalization-component attribution. Old batch4 and new singleton
+outputs are not bit-identical: maximum native/hybrid differences are Bolt
+1.6689300537109375e-06/1.30385160446167e-06, TimesFM
+2.7418136596679688e-06/2.7418136596679688e-06. Maximum relative-L∞ across arms
+is9.39371361948911e-07/2.2229639902063226e-06. Recorded algebraic loss-drift
+bounds hold, withzero source-gain sign changes; all within-worker identity
+checks are exact. Independent replay verifies384 losses,2304 partition values,
+six contrasts and256 drift bounds. The already-seen cohort makes this a
+descriptive path intervention; it strengthens the narrow positive without
+claiming new real-data confirmation. Native branch closed.
+
+**Oblique-phase validation completed (`response_phase_oblique4954500`).**
+Same16 fresh-transfer backgrounds, eight previously unused angles
+π/8+kπ/4, period19.2, old coefficients byte-identical and no fitting. Native
+old-scalar-minus-fullH gains are Bolt0.24816757777846288 and
+TimesFM0.18448195097911668; family4-adjusted intervals
+[0.16488455363199903,0.31861438122355634] and
+[0.1284197096030567,0.23487771838239072]. Oblique-minus-cardinal fullH error
+changes−0.0011263704039139958/0.014961578867542007 have intervals crossing
+zero; no equivalence claim. Four-cardinal-phase aliasing does not explain away
+the measured predictive advantage on these additional phases. Sources are
+reused, phases remain dependent, and the law is still conditional/finite-
+amplitude. Six tests/eight plants and5164 independent checks pass, maximum
+discrepancy1.7763568394002505e-15. Native144 inputs take
+21.820882684085518/60.65456954902038s, peaks1069305856/1639219200B. Exact
+background/cardinal parity and predictor identity gates pass. A Bolt-only
+direct64-step-head expansion is prepared to test whether the short32-step
+window and weak versus strong amplitude explain the output-frequency ambiguity;
+it must pass prefix parity and no-autoregression capability gates first.
+
+**Dictionary pilot and validity/response audits completed
+(`dictionary_pilot4951000/recovery_exit_monitor`).**44 fits and44 native stages
+cover native coordinates, three rotations, deterministic full-basis PCA, three
+TopK and three nested-inspired seeds at k8/16 in both models. Neural dictionaries
+use width=d,500steps,batch64; actual nonzero count matches8/16. Nested adds two
+prefix reconstruction losses with1.25× analytical dense forward matmul cost,
+so equal steps/parameters do not imply equal compute. PCA uses adaptive signed
+top-k coefficients from a full fitted basis, not a fixed low-rank subspace.
+At k16, state NMSE is PCA Bolt0.009173964124244276/TF0.042599296711000684;
+saved sinusoid-difference NMSE remains0.3008273079816649/0.41102390528013866.
+TopK response errors0.3720378072540668/0.40271957749287796 and nested
+0.3003756530838683/0.4071664697199135 do not establish a uniform advantage.
+Native point-forecast distortion over20 receivers (four per domain) is:
+
+| Model/k | PCA | TopK3-seed mean | Nested3-seed mean |
+|---|---:|---:|---:|
+| Bolt8 |0.030664641382501193|0.04454133173528539|0.04415211727790222|
+| Bolt16 |0.01136767773111914|0.030700513057854078|0.02371590996918259|
+| TimesFM8 |0.10808140090652474|0.06998571582496164|0.07307944191220492|
+| TimesFM16 |0.028067500051962135|0.044372852163313686|0.04549649605424792|
+
+Forecast distortion is relative to native behavior in history-variance units;
+it is not true-future forecast improvement. State/response audits weight32 TEST
+sources (16 synthetic/four each real domain); native preservation uses onlyfour
+synthetic receivers plusfour per real domain. Probe and decoder-direction
+stability do not establish monosemanticity. Post-hoc validity review finds
+2048/3520 response cells with invalid random geometry and1882 measured zero
+selected-response changes. The latter alone does not show zero activation edits.
+Exact saved-base replay confirms119/120 zero TimesFM TopK-k8 edits;478/480 zero
+cached paired edits remain proxies for unsaved native singleton perturbation
+states. Invalid controls are unscorable; independently sampled±controls are not
+calibrated smooth-response nulls. `interpretation_corrections.json` supersedes
+earlier conservative-null wording without altering frozen raw runs. Initial
+exit-monitor failure remains preserved in the parent run. Nineteen tests/19
+plants,8890 arithmetic checks and880 native identity gates pass; maxstage
+156.44872333400417s,2340925440B, one CPU thread. A bounded paired-response-
+aware Bolt TopK objective is authorized as a two-arm pilot, with unchanged
+architecture/data and no native expansion until its fidelity gate is reviewed.
+
+**Dictionary-induced geometry completed (`dictionary_smoothness4965000`).**
+Saved first-block states from16 focused sources,768 matched-radius paths,
+frozen seed4951000 PCA/TopK/nested k8/16, no fitting/native inference.
+Ratio of source-mean actual decoded chord RMS to source-mean raw chord RMS
+ranges76.2777–129.7457 for Bolt and105.7690–188.5190 for TimesFM native;
+locked ranges79.3791–120.5152/129.1624–230.9643. All24 sparse-arm means
+exceed raw-state means, without claiming every source/path does. Isolated
+dictionary curvature on straight activation chords remains large; identity
+and fixed-first-k linear PCA remain at roundoff (max1.5983290058905532e-15).
+Support changes coincide with resolved isolated curvature. These are
+off-manifold interpolation diagnostics, not a new native trajectory; native
+states also curve. FP64 dictionary arithmetic and floor sensitivity constrain
+precision explanations; they do not establish native FP64 accuracy. Compression
+error and changed secant response prevent a semantic-quality ranking. Six
+tests/six corrected plants,36-arm independent replay and6480 source-summary
+checks pass;90.85571182100102s,1667395584B peak. Initially ineffective mutant
+is preserved. PM-51 records the bounded methodological conclusion.
+
+**Response-aware objective pilot completed (`dictionary_response4965000`).**
+Bolt first-block TopK-k16, one new seed4965000, matched lambda0/lambda1 arms,
+same init/batches/500steps and computed branches. Added source-weighted,
+FIT-scaled central-difference loss reduces old TEST sine NMSE
+0.33706543732597316→0.08178803929115522 and noise
+0.6499851374406904→0.2761959152644845, improving all32 sources each.
+Focused held-out-direction bank error0.4779692525911392→0.1367897436126779
+improves all16 sources. Whole-state error worsens0.013896715445253071→
+0.02355438870740306. Frozen adaptive PCA global/sine/noise/focused errors
+0.009173964124244276/0.3008273079816649/0.6141906102951832/
+0.4472441056765901. Actual lambda1 L0=15.997569444444444. Six tests,
+323 independent arithmetic checks;22.251347199897282s,984236032B. This
+passes the frozen descriptive expansion gate, not a semantic or forecasting
+claim. A separately frozen bounded native preservation experiment is authorized
+on20 existing receivers with identity/restoration gates, <=400cells,180s,
+one thread/3GiB, no fitting or lambda grid. PM-52 distinguishes the stages.
+
+**Response-aware native stage completed (`dictionary_response_native4965000`).**
+Frozen dictionaries reinserted into actual first-block singleton states;
+20 existing baseline receivers and15 paired receivers (four/three per domain).
+lambda0/lambda1/PCA baseline history-variance-normalized distortion:
+0.027193170003341927/0.02480812127788782/0.011367679684409307.
+Source-mean sinusoid response NMSE0.14779665980988985/
+0.19236556912378608/0.14294983813373244; noise
+0.7082152774328037/0.8738374357450586/0.6469003467085652.
+Lambda1 improves12/15 sine and11/15 noise receivers, yet adverse tails
+reverse the primary means. All response denominators exceed the declared
+floor. Pooled noise energy ratio improves0.536958287827822→
+0.27442507632856705, demonstrating aggregation sensitivity without replacing
+the frozen source-average metric. Baseline mean improves with only3/20 source
+wins. Nine exact independent forecast replays, identity/restoration gates and
+792 arithmetic checks pass.399 cells,33.840527734020725s,1109876736B peak,
+one thread. These are native function-preservation errors, not future forecast
+accuracy. No additional fit/native expansion; a saved-array diagnostic retains
+per-domain energy, signed/orthogonal errors and tail influence rather than
+tuning away the negative result.
+
+**Response-aware tail diagnostic completed (`dictionary_response_influence4965000`).**
+Saved actual singleton hidden responses improve for all15 sources/direction,
+including adverse native-output cases. Two weak-response synthetic sources
+contribute96.62% of positive sine NMSE deterioration; two real sources
+(Electricity:T000129/pedestrian:T000034) contribute99.17% of positive noise
+deterioration. Noise error/history variance rises0.007429496410932423→
+0.014622474951728765; sine falls0.00420397959319133→0.0021108072573565806.
+Thus denominators emphasize some sine cases, but actual adverse noise-error
+increases remain.86.61%/94.09% of net source-mean deterioration lies orthogonal
+to native sine/noise response. Raw pooled energies weight measurement units;
+history-normalized noise pooling worsens0.5133076997963011→1.0102742592023026.
+Top1/top2 deletion sensitivities reverse means but do not change the frozen
+primary or authorize exclusions. No downstream Jacobian or causal mechanism
+is inferred. Four tests/600 FP64 identities,0.4633585709379986s, no native/fit.
+Objective and native branches remain closed; no optimization around the tail.
+
+**Fixed-support diagnostic completed (`dictionary_smoothness_fixed_support4965100`).**
+Same frozen weights/locked states, k16,16 sources and768 paths. Fixed central
+TopK membership removes99.30267936120813–99.79189754419264% of mean
+actual-path chord RMS across the six model/method cells. Live versus fixed
+central ReLU gives identical saved-path metrics, separating TopK membership
+changes from ReLU changes in this design. Isolated affine chord maximum is
+1.5923352663426e-15. Hidden perturbation-response RMS error falls
+61.58175495873619–82.36696240124773%, on all16 sources in every cell;
+mean state-reconstruction error slightly worsens five/six cells and improves
+TimesFM TopK. This is a path-local midpoint-selected diagnostic, not a global
+deployable encoder or improved forecasting method. The parent's support
+definition was nonzero active coordinates; its loose statement about unchanged
+support and possible ReLU curvature is corrected in this child, with frozen
+parent files/numbers preserved. Four tests/four plants,2898 source-summary
+checks,18-arm dense replay in both precisions;50.886826761998236s,
+1067810816B peak, no fitting/native calls. Geometry branch closed.
+
+**Direct64 horizon recovery completed (`response_phase_horizon_recovery4954700`).**
+The initial544-input run failed a historical comparator with changed batch
+membership/row positions, before scientific fitting/evaluation; failed deltas
+were not saved. A four-case preflight replays original query geometry exactly
+and reproduces a changed-geometry difference2.384185791015625e-07. The
+outcome-blind amendment retains exact same-query64/32 prefix parity and one
+forward per request, while treating historical rebatching differences as a
+measured diagnostic with algebraic bounds. Original failures stay preserved.
+One recovery uses the same544inputs,16 OLD FIT/16 reused TEST backgrounds,
+amplitudes0.1/2, periods19.2/24, no autoregression. Tone-only output selections
+for19.2 input at32steps are24/22; at64steps both select22, including DC/trend
+controls. All24 controls retain24. Same-frequency→selected64 NMSE is
+0.6671436361279975→0.4718520703236281 weak and
+0.8618611110237165→0.5910433543110412 strong; family4-adjusted gain
+intervals[0.14272620350980894,0.23566626897020315] and
+[0.2506674391046784,0.2928226919160863]. Strong-tone distortion and even
+responses prevent reducing the observation to weak-signal attenuation alone.
+Finite-grid, reused-source, nuisance and normalization dependence prevent
+oscillator/training-prior/patch attribution.1210 independent result checks and
+1544 roundoff checks pass, max measured rebatching NMSE change
+1.9054664079920514e-06 versus bound8.08821007460502e-06.42.844048619037494s,
+1048424448B peak, one thread. Native slot2 released; no further expansion.
+
+## 50. Selective internal forecast steering (2026-11-16)
+
+User-directed research: uncertainty width, seasonal priors, weighted SAE-feature
+cancellation, SAE-free alternatives, and modern sparse dictionaries. The durable
+experiment-by-experiment notebook is `tsfm_lens/docs/steering_research_log.md`;
+it records each completed experiment, failed attempt, decision and reproduce
+pointer. The portable report is `examples/steering/README.md`, with figures,
+raw row summaries, replication intervention arrays, independent audits and
+source/checkpoint provenance. Usage: `tsfm_lens/docs/steering.md`. Literature:
+`tsfm_lens/docs/steering_literature.md`. All new functionality is opt-in.
+Existing research files and runs were preserved; no default pipeline changed.
+
+### 50.1 Hypotheses, scope and implementation
+
+H1: jointly fitted SAE decoder atoms cancel collateral better than a single
+atom. H2: a modern dictionary improves steering rather than just reconstruction.
+H3: SAE-free response control can isolate requested effects. H4: repeated actual
+response checks overcome finite-step nonlinearity. H5: late-head success extends
+to the encoder output. Each began with a seconds-to-minutes proof; promising
+settings were frozen for fresh-seed and external-validity follow-ups.
+
+`tsfm_lens.steering.ForecastSteerer` operates at the native Bolt decoder-head
+input or TimesFM final-context-token point-head input. It supports ±fractional
+interval widths (full median protected), a supplied-period seasonal prior
+(all quantiles shifted equally), and one quantile channel (all others protected).
+Full quantile/time tensors enter the objective, including protected zeros.
+Interventions add to original states and preserve SAE reconstruction residuals.
+Signed SAE mixtures, raw residual coordinates and Gaussian dictionaries share
+a greedy selection/joint-refit interface. Dense control uses an exact linear
+L2 trust-region solution followed by actual-response backtracking and
+re-linearization. A full-rank SAE span does not confer a mathematical advantage
+over direct hidden control under the same hidden-norm penalty.
+
+Caveats: adaptive control is not a universal semantic vector, semantic
+monosemanticity, forecast-accuracy improvement, or calibrated uncertainty.
+`neurons_N` in the discovery driver denotes residual coordinates, not MLP-neuron
+analysis. Quantile crossings are reported, never sorted away. Local bounds
+certify the declared linearized problem only. No future labels enter steering.
+All synthetic evidence is exploratory/fresh-seed replication, not sealed private
+benchmark confirmation. The GPU driver was unavailable; all work used cached
+checkpoints, float32 CPU and two threads per worker.
+
+### 50.2 Findings — weighted cancellation, dictionary controls and fresh replication
+
+E01: eight-context Bolt pilot, mean full-output seasonal error fell from
+0.53648(single SAE atom) to0.07105(SAE32); dense no-SAE0.05531. The pilot supports
+weighted cancellation but is not a feature-semantics discovery claim.
+
+E02: matched train-mean initialization,512 training contexts,600 steps,512 atoms,
+k16,24 held-out contexts. Normalized reconstruction MSE TopK
+0.05970584973692894, AbsTopK0.05588775873184204, BatchTopK0.0515652634203434.
+Actual test L0 was16,16,21.25, so BatchTopK's reconstruction gain is not at matched
+realized test sparsity. At64-atom control and dose0.2, mean seasonal steering
+errors were0.06595,0.06934,0.06858: no consistent modern-variant advantage.
+These variants remain opt-in; one training seed does not settle architecture
+ranking. Their saved checkpoints restore encoder type and inference threshold.
+
+E03/E04 established cross-model head replay, then showed one-shot errors were
+partly optimizer/regularization problems. E04b selected radius0.2,ridge1e-5,
+six iterations,dose0.2 on eight discovery contexts before the following runs.
+
+E06:64 fresh paired contexts per model. Mean six-step full-output relative
+errors (widen,narrow,season,upper) are Bolt
+0.01906498080258097,0.011064170357698487,0.012995774410960347,
+0.07500547734918891; TimesFM0.0015741310043839983,0.0023598210753626066,
+0.0007871052444355581,0.03220862827694282. Threshold<0.1 passes64/64 for every
+width/season task, upper57/64 and63/64. One-step upper errors were
+0.24396599761651688 and0.6119284338938136. No SAE was used.
+
+E07:64 further paired contexts, off-grid periods13.7/21.3/47.1 and unchanged
+settings. Width/season again pass64/64 per task per model. Upper passes45/64
+Bolt and60/64 TimesFM; mean error0.09301025033495691 and0.03484842871917372.
+Bolt saturates the0.2 norm budget. No upper-only failure was removed or retuned.
+
+E08: twelve reused cached real evaluation sources (four each M4 hourly,
+electricity hourly,pedestrian); only context values used, source normalization
+undone, period24 explicitly supplied. Passes/12 (widen,narrow,season,upper):
+Bolt12,11,12,8; TimesFM12,12,12,12. Full public API verifies every native edit.
+This is small external-validity evidence; model pretraining overlap is unknown.
+
+E10 audit: all2,048 E06/E07 interventions replayed through full models. Metric
+recomputation discrepancy≤5.551115123125783e-17; normalized native discrepancy
+≤2.384185791015625e-06; float32 norm-budget overshoot≤9.5367431640625e-07.
+No leaked hooks. Result/array hashes bind each independent audit.
+
+### 50.3 Findings — upstream boundary and stopping rule
+
+E05: at Bolt final encoder output, radius0.05 and four iterations failed all
+four-context width/season/upper tests for REG-only and shared-token directions.
+E05b: radius0.2,ridge1e-5,six iterations plus independent control of all tokens
+recovers width/season on most discovery contexts, but upper-only remains0/4
+for each token scope. Full control's mean upper error0.2069713488530237 versus
+first-order norm-constrained bound0.19417224975469347. This is a restricted-site
+and budget negative, not an impossibility theorem. A fresh16-context replication
+with all three scopes was launched with those settings frozen; its completion
+is recorded below and in the per-experiment log.
+
+The implementation is ready as an opt-in research tool with explicit failure
+and collateral diagnostics. Do not replace the default SAE or claim calibrated
+uncertainty. Broader studies should prioritize upstream portability, fixed-vector
+transfer and forecasting utility under a justified prior, with source-disjoint
+training/evaluation and uncertainty-coverage measurements where applicable.
+
+
+### 50.4 Findings — upstream fresh16 replication and closure
+
+E09 finished in587.2643084526062 seconds. All sixteen fresh seeds5230000–5230015
+were retained. Widen/season/upper passes: REG15/15/0, shared14/16/0, full13/16/0
+(out of16 for each task). Mean upper-only errors0.2570767497950713,
+0.242367760175313,0.27089506942840846; first-order bound means
+0.4195139834384104,0.31967113879732045,0.21209865207669704. Full native checks
+on all nine first-context interventions were exactly0. Independent token
+control improves local feasibility but does not fix finite-step nonlinear
+upper-channel isolation. This closes the declared finite-budget branch as a
+replicated restricted negative while confirming width/season control upstream.
+Artifacts: `runs/steering_e09_upstream_fresh16`, portable copy and figure in
+`examples/steering/e09_upstream_fresh16` and `examples/steering/upstream.png`.
+No global impossibility, semantic-neuron or calibrated-uncertainty claim follows.
+
+## 51. Dynamic steering for unseen and proprietary predictors (2026-11-16)
+
+### 51.1 User request, implementation and boundaries
+
+The user requested one steering API with automatic location discovery, 10+
+behaviors, short/long forecast control, relevance of older/recent context, and
+trainable steering for new/proprietary models. Implemented `SteeringModel`,
+`SteeringRequest`, `DynamicSteerer` and `SearchConfig` under `steering/`.
+Registration owns the deterministic [B,C]→[B,H,Q] forecast contract and optional
+PyTorch module. No architecture or layer-name dispatch occurs in the engine.
+Nineteen requests compile complete output targets including protected coordinates.
+Finite differences work through ordinary no-grad predictors; exact standard
+Linear row spaces are used when they fit the rank budget. Otherwise complete
+or random orthonormal bases are measured. Site selection uses actual validation
+forecasts, with per-input measured corrections and bounded total edits.
+
+Discovery screens actual output effects, rejects inactive executed branches,
+and records repeated invocations and verified batch expansions. No-gradient
+input-only predictors are supported with explicit backend labels. Full-horizon
+context policies perform defined input relevance gating; partial-horizon
+policies remain learned interventions. Save/load verifies accessible weights,
+profile arrays and request semantics; new requests can reuse learned response
+maps with explicitly online selection. Budget exhaustion during refinement
+returns the best verified result and a failure/budget flag when appropriate.
+
+### 51.2 Findings and research decisions
+
+The persistent log `tsfm_lens/docs/dynamic_steering_research_log.md` records every
+pilot, failure and follow-up. Source artifacts and figures are portable under
+`examples/dynamic_steering/`. Representative results (success≤10% full-output
+relative error; direct input policies excluded from learned-control counts):
+
+| Study | Learned/additive successes | Main interpretation |
+|---|---:|---|
+| D07 Bolt H64, 8 fresh contexts |141/168|Moderate controls work; clipping/delay and selective width can exceed the budget.|
+| D08 TimesFM H64, 8 fresh contexts |156/168|Most controls work after screening inactive branches; large targets still fail.|
+| D16 Timer H96, 8 fresh contexts |103/112|Exact discovered Linear row space improves control without model-specific names.|
+| D11 Bolt H96, 2 fresh contexts |8/8|Joint repeated-input interventions handle the 1→9 quantile rollout expansion.|
+| D15b Bolt real-source transfer |60/72|Frozen synthetic profiles transfer with local refinement; selective width remains harder.|
+| D17b TimesFM real-source transfer |68/72|Same no-refit transfer protocol; four selective-width cases fail.|
+| D18→D19 partial-context control |5/28→12/28|Larger input span helps but does not solve large selective-context counterfactuals.|
+| D20 new request response reuse |8/12|No fresh site search; off-grid seasonal target still exceeds effective control capacity.|
+
+D13 Chronos2 pilot demonstrates generic registration and real interventions but
+only1/4 learned requests passes at its small search/rank budget. All completed
+forecasts replay exactly through native prediction. The larger suites also
+include explicit input relevance policies, counted separately. D09/D10 show
+exact invariance in all64 ignored/outside-window sensitivity cases; emphasizing
+inputs increases forecast sensitivity in27/32 cases, so monotonic emphasis is
+not claimed. Real datasets are reused and pretraining overlap is unknown.
+
+The focused regression suite passes57 tests. The custom-model example runs
+without a model download and verifies discovery, protection, replay and profile
+persistence. Early saved-profile integer/float request-key compatibility failed
+before real evaluation and was repaired with semantic comparison and a regression
+test; the failed artifacts were retained. The original native-head steering
+implementation and existing default SAE behavior remain available.
+
+### 51.3 Scope of the delivered feature
+
+This is a usable research API with automatic location selection and explicit
+capability/failure reporting. It is not guaranteed to steer every arbitrary
+predictor or request. Multivariate contracts and unverified batch layouts may
+need wrappers/extensions. Successful late-head control does not demonstrate
+semantic neurons, a fixed universal steering vector, better forecast accuracy
+or calibrated uncertainty. Local span/norm failures do not prove global TSFM
+impossibility. Further experiments should target a concrete unresolved boundary
+or forecast utility under a justified prior, using the durable log to avoid
+repeating already tested hypotheses.

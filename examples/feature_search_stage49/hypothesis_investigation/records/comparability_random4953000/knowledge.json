@@ -1,0 +1,1404 @@
+{
+  "question": "Does the trained hidden block provide feature efficiency beyond equally budgeted untrained nonlinear maps of full input?",
+  "design": {
+    "version": 1,
+    "question": "Does the trained hidden block provide feature efficiency beyond equally budgeted untrained nonlinear maps of full input?",
+    "evidence": "Post-hoc exploratory predictive follow-up on the already evaluated64-source cohort. Historical results cannot be made unseen by freezing this new analysis. No new native inference or new information beyond deterministic input transforms is claimed.",
+    "fit": "Exactly oldFIT20 source groups/96 rows. Same4 source-grouped folds, source weights, stable tie rule and FIT-only preprocessing as trained extension. No fresh64 target enters selection.",
+    "targets": [
+      {
+        "A": "bolt",
+        "B": "timesfm",
+        "endpoint": "forecast"
+      },
+      {
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "forecast"
+      },
+      {
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "fusion_response"
+      }
+    ],
+    "families": [
+      "rff",
+      "mlp_relu"
+    ],
+    "initialization_seeds": [
+      4953000,
+      4953001,
+      4953002
+    ],
+    "maps": {
+      "input": "All128 normalized history values plus history mean/SD and logSD;130 values recover full physical history. FIT-only coordinate standardization of input axes.",
+      "rff": "D cosine features, Gaussian projection variance2/FIT median squared distance (fixed gamma1), random uniform phase, sqrt(2/D) amplitude.",
+      "mlp_relu": "One untrained affine/ReLU hidden layer of widthD, Gaussian He weights and N(0,1) biases. No learned map weights or nonlinear-family tuning."
+    },
+    "budget": {
+      "widths": {
+        "bolt": 4608,
+        "timesfm": 5120
+      },
+      "PCA_ranks": [
+        8,
+        16
+      ],
+      "alpha_grid": [
+        0.001,
+        0.01,
+        0.1,
+        1.0
+      ],
+      "candidates_per_init": 8,
+      "initializations": 3,
+      "source_budget": 20,
+      "row_budget": 96,
+      "scope": "Matches flattened feature width, supervised readout rank/grid/folds/labels; does NOT match pretrained network architecture, parameter count, inference FLOPs or pretraining compute."
+    },
+    "base": "Freeze original input+Aforecast kernel separately for each target; retain its input and Aforecast blocks. Replace added trained-hidden kernel by random-feature PCA kernel. All3 blocks equal weight1/3. Random PCA rank/alpha selected per family/init using only oldFIT, same8 choices as trained extension.",
+    "report": "Report every initialization, no best seed or family. For each of2 families x3 targets, average squared loss across the3 fixed initializations (NOT prediction ensembling), then average cases within source. Report random-minus-trained loss and gain over input+Aforecast, paired source bootstrap4000 draws. Six trained-advantage intervals use99.16666666666667% coverage; individual-init intervals95%, all exploratory.",
+    "interpretation": "A trained advantage is conditional feature/readout efficiency under these recipes, not information-theoretic independence, causality or semantic equivalence. Random competitiveness is counterevidence to uniqueness; failure to reject difference is not equivalence.",
+    "frozen_arm_review": [
+      {
+        "key": "bolt_to_timesfm__forecast__input",
+        "A": "bolt",
+        "B": "timesfm",
+        "endpoint": "forecast",
+        "arm": "input",
+        "kernel": "rbf0.5",
+        "alpha": 0.001,
+        "cv_loss": 0.031718762251994895
+      },
+      {
+        "key": "bolt_to_timesfm__forecast__input+A_forecast",
+        "A": "bolt",
+        "B": "timesfm",
+        "endpoint": "forecast",
+        "arm": "input+A_forecast",
+        "kernel": "rbf2.0+pca16",
+        "alpha": 0.001,
+        "cv_loss": 0.018963286521288425
+      },
+      {
+        "key": "bolt_to_timesfm__forecast__input+A_forecast+A_hidden",
+        "A": "bolt",
+        "B": "timesfm",
+        "endpoint": "forecast",
+        "arm": "input+A_forecast+A_hidden",
+        "base_kernel": "rbf2.0+pca16",
+        "hidden_kernel": "pca16",
+        "alpha": 0.001,
+        "cv_loss": 0.016250358047626978,
+        "status": "exploratory old-FIT-only follow-up"
+      },
+      {
+        "key": "timesfm_to_bolt__forecast__input",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "forecast",
+        "arm": "input",
+        "kernel": "rbf0.5",
+        "alpha": 0.001,
+        "cv_loss": 0.02537509280177499
+      },
+      {
+        "key": "timesfm_to_bolt__forecast__input+A_forecast",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "forecast",
+        "arm": "input+A_forecast",
+        "kernel": "rbf2.0+pca16",
+        "alpha": 0.001,
+        "cv_loss": 0.013092730977671182
+      },
+      {
+        "key": "timesfm_to_bolt__forecast__input+A_forecast+A_hidden",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "forecast",
+        "arm": "input+A_forecast+A_hidden",
+        "base_kernel": "rbf2.0+pca16",
+        "hidden_kernel": "pca16",
+        "alpha": 0.001,
+        "cv_loss": 0.012277888495157313,
+        "status": "exploratory old-FIT-only follow-up"
+      },
+      {
+        "key": "timesfm_to_bolt__fusion_response__input",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "fusion_response",
+        "arm": "input",
+        "kernel": "rbf0.5",
+        "alpha": 0.001,
+        "cv_loss": 0.002453045729696738
+      },
+      {
+        "key": "timesfm_to_bolt__fusion_response__input+A_forecast",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "fusion_response",
+        "arm": "input+A_forecast",
+        "kernel": "rbf0.5+pca16",
+        "alpha": 0.001,
+        "cv_loss": 0.0025257951404711364
+      },
+      {
+        "key": "timesfm_to_bolt__fusion_response__input+A_forecast+A_hidden",
+        "A": "timesfm",
+        "B": "bolt",
+        "endpoint": "fusion_response",
+        "arm": "input+A_forecast+A_hidden",
+        "base_kernel": "rbf0.5+pca16",
+        "hidden_kernel": "pca16",
+        "alpha": 0.001,
+        "cv_loss": 0.0023974684059061917,
+        "status": "exploratory old-FIT-only follow-up"
+      }
+    ],
+    "constraints": {
+      "native_launch": "HOLD; no native entry point",
+      "cpu_threads": 1,
+      "address_space_bytes": 3221225472
+    },
+    "code_hashes": {
+      "experiments/feature_search/comparability_random_features.py": "45ccd621e286a7aef45176f09ec87b351a7f292d3f9beedb59c44ca60ef8763c",
+      "tests/test_comparability_random_features.py": "26f82f1baa361e61e84d43c1158142d056210efa7eb9147d1d75f04aa9589a25",
+      "experiments/feature_search/comparability_random_audit.py": "76f78c633633bd153206c13a7c95dbc5a4b5846c0a28be401d1ae3c0915a9e89",
+      "experiments/feature_search/comparability_core.py": "afd96282dd04520d53d6872b9b258800c3602a176e1cfbddf439d1a85d89e186",
+      "experiments/feature_search/comparability_pilot.py": "cda64ef12f4fd1100d4c04ad83c96c3923ac5218a2997d9c81f6c18537816b02"
+    },
+    "upstream_hashes": {
+      "protocol.json": "9c275b040420c3e6a1a0c590d72fc1e97ac16e2e086cf5cf333f5a5f1efa9c45",
+      "probe_specs.json": "6a434209c74e0c122f43928b1399288eb84c72bf43aeaaa0e174f16a589cf8d2",
+      "fit_rows.json": "d5a12d42e35290a783e8dc9cc96db31b6073c12921696772aed9678ea0c61f78",
+      "fit_support.npz": "933a0a4f49d0ac4837e0b21a8f7da371ce2e914c27c64cbcc878bde5dea2407c",
+      "inputs.npz": "c7d982037103c24c36126547d3f41dd7a26ccdcd995214bce990d214a7aa0f68",
+      "plans.json": "bbff6ff98f7cea734bc744e067596f6e50e60853ebcc534659da9129a80a2d31",
+      "rows.json": "2a0a13b2f7f156e2cf6a0cd5c362e6dba42c415b0f1ac285b9e92721ccc95d4f",
+      "bolt_native.npz": "065b67ec57e31da2b12acafd0789308c8002309a182e7495d3a0e116f5b09feb",
+      "timesfm_native.npz": "64e384e356cee7a8156e37765718edc447c5d569f31fcb99fc0ed65c10fdf44d",
+      "predictions.npz": "7855631a7eaad7b6b9f22f33157cacd6211f86ea0a7cef319de9ec75c2b54373",
+      "results.json": "789c6fa77f26b40c960e7b6fe36a57b7613c7e0a4472df72357cb46560511aec"
+    },
+    "audit_sha256": "8975a4f7965c45e771618938291043962a0972ed1f8193b046511ff23c3ac771"
+  },
+  "exact_findings": [
+    {
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "forecast",
+      "family": "rff",
+      "initializations": [
+        4953000,
+        4953001,
+        4953002
+      ],
+      "aggregation": "Mean squared loss across3 fixed initializations, then source mean; not an ensemble of predictions.",
+      "random_loss": {
+        "mean": 0.012719115560900612,
+        "low": 0.011255825241433013,
+        "high": 0.014389253427402321,
+        "n_sources": 64
+      },
+      "trained_loss": {
+        "mean": 0.013207666764194471,
+        "low": 0.011714059921916792,
+        "high": 0.014923313080701162,
+        "n_sources": 64
+      },
+      "base_loss": {
+        "mean": 0.0143815547207554,
+        "low": 0.012728474230810194,
+        "high": 0.01625095366505765,
+        "n_sources": 64
+      },
+      "trained_advantage": {
+        "mean": -0.0004885512032938597,
+        "low": -0.0008614034313990223,
+        "high": -0.00014672960475719556,
+        "n_sources": 64
+      },
+      "random_gain_over_base": {
+        "mean": 0.0016624391598547884,
+        "low": 0.0012536531982861956,
+        "high": 0.002119219613009393,
+        "n_sources": 64
+      }
+    },
+    {
+      "A": "bolt",
+      "B": "timesfm",
+      "endpoint": "forecast",
+      "family": "mlp_relu",
+      "initializations": [
+        4953000,
+        4953001,
+        4953002
+      ],
+      "aggregation": "Mean squared loss across3 fixed initializations, then source mean; not an ensemble of predictions.",
+      "random_loss": {
+        "mean": 0.012726500254948755,
+        "low": 0.011282285161037462,
+        "high": 0.014389545972546628,
+        "n_sources": 64
+      },
+      "trained_loss": {
+        "mean": 0.013207666764194471,
+        "low": 0.011714059921916792,
+        "high": 0.014923313080701162,
+        "n_sources": 64
+      },
+      "base_loss": {
+        "mean": 0.0143815547207554,
+        "low": 0.012728474230810194,
+        "high": 0.01625095366505765,
+        "n_sources": 64
+      },
+      "trained_advantage": {
+        "mean": -0.00048116650924571715,
+        "low": -0.0007293458318458445,
+        "high": -0.00024976856851231864,
+        "n_sources": 64
+      },
+      "random_gain_over_base": {
+        "mean": 0.0016550544658066458,
+        "low": 0.0012781300026282144,
+        "high": 0.002077766281614977,
+        "n_sources": 64
+      }
+    },
+    {
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "forecast",
+      "family": "rff",
+      "initializations": [
+        4953000,
+        4953001,
+        4953002
+      ],
+      "aggregation": "Mean squared loss across3 fixed initializations, then source mean; not an ensemble of predictions.",
+      "random_loss": {
+        "mean": 0.009272760424568439,
+        "low": 0.007839511827458812,
+        "high": 0.0107910943369984,
+        "n_sources": 64
+      },
+      "trained_loss": {
+        "mean": 0.008878823501737656,
+        "low": 0.007493483722819201,
+        "high": 0.010325342135712625,
+        "n_sources": 64
+      },
+      "base_loss": {
+        "mean": 0.009745164432162027,
+        "low": 0.008242719019521425,
+        "high": 0.01135504173234286,
+        "n_sources": 64
+      },
+      "trained_advantage": {
+        "mean": 0.0003939369228307836,
+        "low": 0.00010827812881463383,
+        "high": 0.0006866908127966764,
+        "n_sources": 64
+      },
+      "random_gain_over_base": {
+        "mean": 0.000472404007593588,
+        "low": 0.00028416313409738064,
+        "high": 0.0006723450860539695,
+        "n_sources": 64
+      }
+    },
+    {
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "forecast",
+      "family": "mlp_relu",
+      "initializations": [
+        4953000,
+        4953001,
+        4953002
+      ],
+      "aggregation": "Mean squared loss across3 fixed initializations, then source mean; not an ensemble of predictions.",
+      "random_loss": {
+        "mean": 0.008687850205800752,
+        "low": 0.0073911597948586845,
+        "high": 0.010059714942657621,
+        "n_sources": 64
+      },
+      "trained_loss": {
+        "mean": 0.008878823501737656,
+        "low": 0.007493483722819201,
+        "high": 0.010325342135712625,
+        "n_sources": 64
+      },
+      "base_loss": {
+        "mean": 0.009745164432162027,
+        "low": 0.008242719019521425,
+        "high": 0.01135504173234286,
+        "n_sources": 64
+      },
+      "trained_advantage": {
+        "mean": -0.00019097329593690518,
+        "low": -0.00043873583065671615,
+        "high": 3.3981635710600736e-05,
+        "n_sources": 64
+      },
+      "random_gain_over_base": {
+        "mean": 0.0010573142263612767,
+        "low": 0.0008023337509277137,
+        "high": 0.0013259487044253143,
+        "n_sources": 64
+      }
+    },
+    {
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "fusion_response",
+      "family": "rff",
+      "initializations": [
+        4953000,
+        4953001,
+        4953002
+      ],
+      "aggregation": "Mean squared loss across3 fixed initializations, then source mean; not an ensemble of predictions.",
+      "random_loss": {
+        "mean": 0.0022476849828418953,
+        "low": 0.0019563500819875877,
+        "high": 0.0025690868795583436,
+        "n_sources": 64
+      },
+      "trained_loss": {
+        "mean": 0.0020740497112315586,
+        "low": 0.0017896937235231465,
+        "high": 0.002386729774896007,
+        "n_sources": 64
+      },
+      "base_loss": {
+        "mean": 0.002211317462437533,
+        "low": 0.001930638231068082,
+        "high": 0.0025294137154913804,
+        "n_sources": 64
+      },
+      "trained_advantage": {
+        "mean": 0.00017363527161033654,
+        "low": 0.00012159902289319962,
+        "high": 0.00022872251582742458,
+        "n_sources": 64
+      },
+      "random_gain_over_base": {
+        "mean": -3.6367520404361937e-05,
+        "low": -6.71218751633767e-05,
+        "high": -5.3408191630001075e-06,
+        "n_sources": 64
+      }
+    },
+    {
+      "A": "timesfm",
+      "B": "bolt",
+      "endpoint": "fusion_response",
+      "family": "mlp_relu",
+      "initializations": [
+        4953000,
+        4953001,
+        4953002
+      ],
+      "aggregation": "Mean squared loss across3 fixed initializations, then source mean; not an ensemble of predictions.",
+      "random_loss": {
+        "mean": 0.0022478083458015554,
+        "low": 0.0019662087865754355,
+        "high": 0.0025694815435786307,
+        "n_sources": 64
+      },
+      "trained_loss": {
+        "mean": 0.0020740497112315586,
+        "low": 0.0017896937235231465,
+        "high": 0.002386729774896007,
+        "n_sources": 64
+      },
+      "base_loss": {
+        "mean": 0.002211317462437533,
+        "low": 0.001930638231068082,
+        "high": 0.0025294137154913804,
+        "n_sources": 64
+      },
+      "trained_advantage": {
+        "mean": 0.00017375863456999644,
+        "low": 0.00013192962117077674,
+        "high": 0.00021582226562030153,
+        "n_sources": 64
+      },
+      "random_gain_over_base": {
+        "mean": -3.6490883364021835e-05,
+        "low": -5.2545890952978826e-05,
+        "high": -1.927235410679655e-05,
+        "n_sources": 64
+      }
+    }
+  ],
+  "controls": {
+    "validation": {
+      "passed": true,
+      "returncode": 0
+    },
+    "plant_audit": {
+      "passed": true,
+      "planted": 11,
+      "detected": 11,
+      "originals_unchanged": true,
+      "records": [
+        {
+          "name": "missing_normalizer",
+          "test": "test_full_input_and_normalizer_complete",
+          "module": "comparability_random_features.py",
+          "original_text": "x[:,234:236]",
+          "mutated_text": "np.zeros_like(x[:,234:236])",
+          "mutant_sha256": "eb9de74883c9293c00a8c21ff64a326fad0d0a7806c0794b992e8b8471e030ee",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/missing_normalizer/pytest.log"
+        },
+        {
+          "name": "ignored_initialization",
+          "test": "test_seeded_nonlinear_maps[rff]",
+          "module": "comparability_random_features.py",
+          "original_text": "rng=np.random.default_rng(seed)",
+          "mutated_text": "rng=np.random.default_rng(0)",
+          "mutant_sha256": "6e770ca76e81b7455220846437c139f6772892cf17df5063b0e814961d3e887d",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/ignored_initialization/pytest.log"
+        },
+        {
+          "name": "nondeterministic_initialization",
+          "test": "test_seeded_nonlinear_maps[mlp_relu]",
+          "module": "comparability_random_features.py",
+          "original_text": "rng=np.random.default_rng(seed)",
+          "mutated_text": "rng=np.random.default_rng()",
+          "mutant_sha256": "b37952ce3e890a56812ac945a30d985b2fd1fe7c3b81aa599948e8248ba48e1c",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/nondeterministic_initialization/pytest.log"
+        },
+        {
+          "name": "linearized_mlp",
+          "test": "test_seeded_nonlinear_maps[mlp_relu]",
+          "module": "comparability_random_features.py",
+          "original_text": "feature=np.maximum(np.sqrt(2/z.shape[1])*(z@projection.T)+bias,0)",
+          "mutated_text": "feature=np.sqrt(2/z.shape[1])*(z@projection.T)+bias",
+          "mutant_sha256": "9d314a61f8436a3a6b9bdace19a766534516f82320a17ef8704145593d3e574d",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/linearized_mlp/pytest.log"
+        },
+        {
+          "name": "test_fitted_random_map",
+          "test": "test_random_map_fit_excludes_test[rff]",
+          "module": "comparability_random_features.py",
+          "original_text": "    xx=full_input(x);mean=",
+          "mutated_text": "    train=np.arange(len(x));w=np.ones(len(x))/len(x)\n    xx=full_input(x);mean=",
+          "mutant_sha256": "2c646fa59f165de79244d0d67a9415b103ec64a294455288fecd34566f426cf3",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/test_fitted_random_map/pytest.log"
+        },
+        {
+          "name": "test_fitted_mlp",
+          "test": "test_random_map_fit_excludes_test[mlp_relu]",
+          "module": "comparability_random_features.py",
+          "original_text": "    xx=full_input(x);mean=",
+          "mutated_text": "    train=np.arange(len(x));w=np.ones(len(x))/len(x)\n    xx=full_input(x);mean=",
+          "mutant_sha256": "2c646fa59f165de79244d0d67a9415b103ec64a294455288fecd34566f426cf3",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/test_fitted_mlp/pytest.log"
+        },
+        {
+          "name": "unbounded_pca_rank",
+          "test": "test_projection_rank_and_rotation",
+          "module": "comparability_core.py",
+          "original_text": "    keep = np.flatnonzero(vals > max(vals[-1] * 1e-10, 1e-14))[-rank:]",
+          "mutated_text": "    keep = np.flatnonzero(vals > max(vals[-1] * 1e-10, 1e-14))",
+          "mutant_sha256": "ca241567332ef3817899c0dfdc0e5084f8cfc87e43c6de02b86659016c3b5091",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/unbounded_pca_rank/pytest.log"
+        },
+        {
+          "name": "test_selected_alpha",
+          "test": "test_grouped_selection_signal_and_test_label_isolation",
+          "module": "comparability_random_features.py",
+          "original_text": "    picked=stable_argmin(scores)",
+          "mutated_text": "    picked=stable_argmin(scores)\n    if np.max(abs(y))>1e8: picked=(picked+1)%len(candidates)",
+          "mutant_sha256": "5c7460603d91dfcb4d804c02ba2a7f5d911003360117a1502b85c8ddf7d7af6f",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/test_selected_alpha/pytest.log"
+        },
+        {
+          "name": "rank_budget_changed",
+          "test": "test_prepared_budget_and_native_hold",
+          "module": "comparability_random_features.py",
+          "original_text": "PCA_ranks=[8,16]",
+          "mutated_text": "PCA_ranks=[8,32]",
+          "mutant_sha256": "749058c7e8e9f060a5b98f8f1328450d45ea8e70b9603c1c3da1a2e35285194d",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/rank_budget_changed/pytest.log"
+        },
+        {
+          "name": "seed_cherry_pick_budget",
+          "test": "test_prepared_budget_and_native_hold",
+          "module": "comparability_random_features.py",
+          "original_text": "initialization_seeds=list(SEEDS)",
+          "mutated_text": "initialization_seeds=list(SEEDS)[:1]",
+          "mutant_sha256": "505fd52c63bc270a00d4aa19df98bb387a7dff52c1357b9d0fcb275dbba8b474",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/seed_cherry_pick_budget/pytest.log"
+        },
+        {
+          "name": "native_hold_removed",
+          "test": "test_prepared_budget_and_native_hold",
+          "module": "comparability_random_features.py",
+          "original_text": "native_launch='HOLD; no native entry point'",
+          "mutated_text": "native_launch='launch'",
+          "mutant_sha256": "1fdffca072eeb840ebfdf393cf435cde03007501f795e8adb96cbe8c26d6b29f",
+          "counts": {
+            "tests": 1,
+            "failures": 1,
+            "errors": 0,
+            "skipped": 0
+          },
+          "returncode": 1,
+          "detected": true,
+          "log": "isolated_plants/native_hold_removed/pytest.log"
+        }
+      ]
+    },
+    "fit": {
+      "seconds": 1.6796382589964196,
+      "probes": 18,
+      "fit_sources": 20,
+      "fit_rows": 96,
+      "hashes": {
+        "frozen_random_probes.npz": "b240b47b0be1e0832f1f6de57fc6379b61a5335973e808ed73fb6e832c181624",
+        "probe_specs.json": "08fbacc99f054d2e8ee4d1d277d24acf9609c0ab0cac7fadaefda08b1a859e3d"
+      },
+      "fresh_test_values_opened": false
+    },
+    "max_frozen_train_kernel_replay_error": 0.0,
+    "upstream_audit": "runs/comparability_replication_audit4952100",
+    "independent_arithmetic_replay": {
+      "passed": true,
+      "intervals": 120,
+      "max_absolute_error": 3.469446951953614e-18,
+      "checks": [
+        {
+          "label": "bolt_to_timesfm__forecast__rff__4953000:random",
+          "max_error": 1.734723475976807e-18
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__rff__4953000:trained",
+          "max_error": 1.734723475976807e-18
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__rff__4953000:base",
+          "max_error": 3.469446951953614e-18
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__rff__4953000:gain",
+          "max_error": 2.168404344971009e-19
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__rff__4953000:advantage",
+          "max_error": 4.87890977618477e-19
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__rff__4953001:random",
+          "max_error": 0.0
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__rff__4953001:trained",
+          "max_error": 1.734723475976807e-18
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__rff__4953001:base",
+          "max_error": 3.469446951953614e-18
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__rff__4953001:gain",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__rff__4953001:advantage",
+          "max_error": 3.2526065174565133e-19
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__rff__4953002:random",
+          "max_error": 1.734723475976807e-18
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__rff__4953002:trained",
+          "max_error": 1.734723475976807e-18
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__rff__4953002:base",
+          "max_error": 3.469446951953614e-18
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__rff__4953002:gain",
+          "max_error": 6.505213034913027e-19
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__rff__4953002:advantage",
+          "max_error": 5.692061405548898e-19
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__mlp_relu__4953000:random",
+          "max_error": 0.0
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__mlp_relu__4953000:trained",
+          "max_error": 1.734723475976807e-18
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__mlp_relu__4953000:base",
+          "max_error": 3.469446951953614e-18
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__mlp_relu__4953000:gain",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__mlp_relu__4953000:advantage",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__mlp_relu__4953001:random",
+          "max_error": 1.734723475976807e-18
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__mlp_relu__4953001:trained",
+          "max_error": 1.734723475976807e-18
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__mlp_relu__4953001:base",
+          "max_error": 3.469446951953614e-18
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__mlp_relu__4953001:gain",
+          "max_error": 2.168404344971009e-19
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__mlp_relu__4953001:advantage",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__mlp_relu__4953002:random",
+          "max_error": 1.734723475976807e-18
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__mlp_relu__4953002:trained",
+          "max_error": 1.734723475976807e-18
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__mlp_relu__4953002:base",
+          "max_error": 3.469446951953614e-18
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__mlp_relu__4953002:gain",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__mlp_relu__4953002:advantage",
+          "max_error": 2.168404344971009e-19
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__rff__4953000:random",
+          "max_error": 1.734723475976807e-18
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__rff__4953000:trained",
+          "max_error": 8.673617379884035e-19
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__rff__4953000:base",
+          "max_error": 1.734723475976807e-18
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__rff__4953000:gain",
+          "max_error": 3.2526065174565133e-19
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__rff__4953000:advantage",
+          "max_error": 1.0842021724855044e-19
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__rff__4953000:random",
+          "max_error": 0.0
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__rff__4953000:trained",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__rff__4953000:base",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__rff__4953000:gain",
+          "max_error": 8.512681119905718e-20
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__rff__4953000:advantage",
+          "max_error": 5.421010862427522e-20
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__rff__4953001:random",
+          "max_error": 0.0
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__rff__4953001:trained",
+          "max_error": 8.673617379884035e-19
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__rff__4953001:base",
+          "max_error": 1.734723475976807e-18
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__rff__4953001:gain",
+          "max_error": 3.2526065174565133e-19
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__rff__4953001:advantage",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__rff__4953001:random",
+          "max_error": 0.0
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__rff__4953001:trained",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__rff__4953001:base",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__rff__4953001:gain",
+          "max_error": 5.675120746603812e-20
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__rff__4953001:advantage",
+          "max_error": 5.421010862427522e-20
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__rff__4953002:random",
+          "max_error": 0.0
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__rff__4953002:trained",
+          "max_error": 8.673617379884035e-19
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__rff__4953002:base",
+          "max_error": 1.734723475976807e-18
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__rff__4953002:gain",
+          "max_error": 3.2526065174565133e-19
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__rff__4953002:advantage",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__rff__4953002:random",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__rff__4953002:trained",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__rff__4953002:base",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__rff__4953002:gain",
+          "max_error": 9.486769009248164e-20
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__rff__4953002:advantage",
+          "max_error": 1.3552527156068805e-19
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__mlp_relu__4953000:random",
+          "max_error": 1.734723475976807e-18
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__mlp_relu__4953000:trained",
+          "max_error": 8.673617379884035e-19
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__mlp_relu__4953000:base",
+          "max_error": 1.734723475976807e-18
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__mlp_relu__4953000:gain",
+          "max_error": 2.168404344971009e-19
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__mlp_relu__4953000:advantage",
+          "max_error": 1.5585406229479126e-19
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__mlp_relu__4953000:random",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__mlp_relu__4953000:trained",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__mlp_relu__4953000:base",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__mlp_relu__4953000:gain",
+          "max_error": 3.3881317890172014e-20
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__mlp_relu__4953000:advantage",
+          "max_error": 8.131516293641283e-20
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__mlp_relu__4953001:random",
+          "max_error": 8.673617379884035e-19
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__mlp_relu__4953001:trained",
+          "max_error": 8.673617379884035e-19
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__mlp_relu__4953001:base",
+          "max_error": 1.734723475976807e-18
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__mlp_relu__4953001:gain",
+          "max_error": 5.421010862427522e-19
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__mlp_relu__4953001:advantage",
+          "max_error": 2.710505431213761e-19
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__mlp_relu__4953001:random",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__mlp_relu__4953001:trained",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__mlp_relu__4953001:base",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__mlp_relu__4953001:gain",
+          "max_error": 3.3881317890172014e-20
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__mlp_relu__4953001:advantage",
+          "max_error": 5.421010862427522e-20
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__mlp_relu__4953002:random",
+          "max_error": 1.734723475976807e-18
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__mlp_relu__4953002:trained",
+          "max_error": 8.673617379884035e-19
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__mlp_relu__4953002:base",
+          "max_error": 1.734723475976807e-18
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__mlp_relu__4953002:gain",
+          "max_error": 2.168404344971009e-19
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__mlp_relu__4953002:advantage",
+          "max_error": 3.8624702394796095e-19
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__mlp_relu__4953002:random",
+          "max_error": 0.0
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__mlp_relu__4953002:trained",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__mlp_relu__4953002:base",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__mlp_relu__4953002:gain",
+          "max_error": 1.3552527156068805e-20
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__mlp_relu__4953002:advantage",
+          "max_error": 5.421010862427522e-20
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__rff:random_loss",
+          "max_error": 0.0
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__rff:base_loss",
+          "max_error": 3.469446951953614e-18
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__rff:trained_loss",
+          "max_error": 1.734723475976807e-18
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__rff:advantage",
+          "max_error": 2.168404344971009e-19
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__rff:gain",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__mlp_relu:random_loss",
+          "max_error": 1.734723475976807e-18
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__mlp_relu:base_loss",
+          "max_error": 3.469446951953614e-18
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__mlp_relu:trained_loss",
+          "max_error": 1.734723475976807e-18
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__mlp_relu:advantage",
+          "max_error": 1.0842021724855044e-19
+        },
+        {
+          "label": "bolt_to_timesfm__forecast__mlp_relu:gain",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__rff:random_loss",
+          "max_error": 1.734723475976807e-18
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__rff:base_loss",
+          "max_error": 1.734723475976807e-18
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__rff:trained_loss",
+          "max_error": 8.673617379884035e-19
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__rff:advantage",
+          "max_error": 3.2526065174565133e-19
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__rff:gain",
+          "max_error": 7.589415207398531e-19
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__mlp_relu:random_loss",
+          "max_error": 1.734723475976807e-18
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__mlp_relu:base_loss",
+          "max_error": 1.734723475976807e-18
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__mlp_relu:trained_loss",
+          "max_error": 8.673617379884035e-19
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__mlp_relu:advantage",
+          "max_error": 2.710505431213761e-20
+        },
+        {
+          "label": "timesfm_to_bolt__forecast__mlp_relu:gain",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__rff:random_loss",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__rff:base_loss",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__rff:trained_loss",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__rff:advantage",
+          "max_error": 8.131516293641283e-20
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__rff:gain",
+          "max_error": 2.710505431213761e-20
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__mlp_relu:random_loss",
+          "max_error": 0.0
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__mlp_relu:base_loss",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__mlp_relu:trained_loss",
+          "max_error": 4.336808689942018e-19
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__mlp_relu:advantage",
+          "max_error": 5.421010862427522e-20
+        },
+        {
+          "label": "timesfm_to_bolt__fusion_response__mlp_relu:gain",
+          "max_error": 1.6940658945086007e-20
+        }
+      ],
+      "method": "Physical-unit inverse, squared residuals, independent source grouping/bootstrap/quantile code from the completed replication audit; no production metric helper."
+    },
+    "fit_target_provenance": {
+      "passed": true,
+      "original_pilot_protocol_sha256": "42d6273a1793c176bdc316dfd7cf0983db4d6e45d2245c18ae68e9f126f20f1d",
+      "original_amendment_sha256": "6e31e7d534c844af901c4de9722a0b0e431ba0ba5f173da7653243c7edd5db3f",
+      "bound_legacy_inputs_and_labels": {
+        "runs/selective_pilot4941000/rows.json": "91459f59b614a482e6000de3fac17c21be83b639c2b5615ab996fe5f70c658a6",
+        "runs/selective_pilot4941000/inputs.npz": "98fad6cdef10780353b594dda7c1328c36de6363e1a68c2c8d9edef2ae8edab1",
+        "runs/selective_pilot4941000/bolt_forecasts.json": "f10d153133bdf43d3f86176b04884148b381907afcdf2b30bd8e1ecaf6c14977",
+        "runs/selective_pilot4941000/timesfm_forecasts.json": "d9b7d77b9c9f6937912dccc30585f1ba25b0f10af6ad063884e918cd5453e83b",
+        "runs/selective_replication4942000/rows.json": "5d0e1ac6d82a3826a0054e7d7bb17f1df8f547a183eb9e9f01cc0e17625a43d2",
+        "runs/selective_replication4942000/inputs.npz": "bdf0c62ba740b96ecf912fbd0082dd9899c1fcf5c0fe3db72025d3e2a854684d",
+        "runs/selective_replication4942000/bolt_forecasts.json": "ae6de26d95f23fb73e2dc862664f607b274dde5a4326d819444e204d2d09a63f",
+        "runs/selective_replication4942000/timesfm_forecasts.json": "d01a653112c92d473d3ed4ec8f669020a6dd4d6c2a0cf59bf37dbc3846b0f1c0"
+      },
+      "note": "All original frozen pilot source hashes verified after oldFIT fitting and before fresh64 evaluation. No target source changed."
+    },
+    "execution": {
+      "evaluation_seconds": 1.8111430009594187,
+      "peak_rss_bytes": 186073088,
+      "native_calls": 0,
+      "cpu_threads": 1
+    }
+  },
+  "limitations": [
+    "Post-hoc exploratory predictive follow-up on the already evaluated64-source cohort. Historical results cannot be made unseen by freezing this new analysis. No new native inference or new information beyond deterministic input transforms is claimed.",
+    "Matches flattened feature width, supervised readout rank/grid/folds/labels; does NOT match pretrained network architecture, parameter count, inference FLOPs or pretraining compute.",
+    "Three fixed initializations do not quantify all random-feature families.",
+    "Source bootstrap conditions on original FIT and fixed initializations."
+  ],
+  "evidence_class": "Exploratory post-hoc predictive feature-efficiency comparison on previously evaluated cached sources.",
+  "next_decision": "Keep native HOLD. Review a limited new-condition study focused on fusion-response efficiency, with frozen-transfer and matched local-FIT axes, forecast targets as controls, and no pooled natural-data claim.",
+  "events": [
+    {
+      "unix_time": 1794853143.120862,
+      "experiment": "validation",
+      "passed": true,
+      "artifact": "validation.log"
+    },
+    {
+      "unix_time": 1794853217.388332,
+      "experiment": "oldFIT_random_probes",
+      "status": "complete",
+      "exact_findings": {
+        "seconds": 1.6796382589964196,
+        "probes": 18,
+        "fit_sources": 20,
+        "fit_rows": 96,
+        "hashes": {
+          "frozen_random_probes.npz": "b240b47b0be1e0832f1f6de57fc6379b61a5335973e808ed73fb6e832c181624",
+          "probe_specs.json": "08fbacc99f054d2e8ee4d1d277d24acf9609c0ab0cac7fadaefda08b1a859e3d"
+        },
+        "fresh_test_values_opened": false
+      },
+      "controls": {
+        "passed": true,
+        "planted": 11,
+        "detected": 11,
+        "originals_unchanged": true,
+        "records": [
+          {
+            "name": "missing_normalizer",
+            "test": "test_full_input_and_normalizer_complete",
+            "module": "comparability_random_features.py",
+            "original_text": "x[:,234:236]",
+            "mutated_text": "np.zeros_like(x[:,234:236])",
+            "mutant_sha256": "eb9de74883c9293c00a8c21ff64a326fad0d0a7806c0794b992e8b8471e030ee",
+            "counts": {
+              "tests": 1,
+              "failures": 1,
+              "errors": 0,
+              "skipped": 0
+            },
+            "returncode": 1,
+            "detected": true,
+            "log": "isolated_plants/missing_normalizer/pytest.log"
+          },
+          {
+            "name": "ignored_initialization",
+            "test": "test_seeded_nonlinear_maps[rff]",
+            "module": "comparability_random_features.py",
+            "original_text": "rng=np.random.default_rng(seed)",
+            "mutated_text": "rng=np.random.default_rng(0)",
+            "mutant_sha256": "6e770ca76e81b7455220846437c139f6772892cf17df5063b0e814961d3e887d",
+            "counts": {
+              "tests": 1,
+              "failures": 1,
+              "errors": 0,
+              "skipped": 0
+            },
+            "returncode": 1,
+            "detected": true,
+            "log": "isolated_plants/ignored_initialization/pytest.log"
+          },
+          {
+            "name": "nondeterministic_initialization",
+            "test": "test_seeded_nonlinear_maps[mlp_relu]",
+            "module": "comparability_random_features.py",
+            "original_text": "rng=np.random.default_rng(seed)",
+            "mutated_text": "rng=np.random.default_rng()",
+            "mutant_sha256": "b37952ce3e890a56812ac945a30d985b2fd1fe7c3b81aa599948e8248ba48e1c",
+            "counts": {
+              "tests": 1,
+              "failures": 1,
+              "errors": 0,
+              "skipped": 0
+            },
+            "returncode": 1,
+            "detected": true,
+            "log": "isolated_plants/nondeterministic_initialization/pytest.log"
+          },
+          {
+            "name": "linearized_mlp",
+            "test": "test_seeded_nonlinear_maps[mlp_relu]",
+            "module": "comparability_random_features.py",
+            "original_text": "feature=np.maximum(np.sqrt(2/z.shape[1])*(z@projection.T)+bias,0)",
+            "mutated_text": "feature=np.sqrt(2/z.shape[1])*(z@projection.T)+bias",
+            "mutant_sha256": "9d314a61f8436a3a6b9bdace19a766534516f82320a17ef8704145593d3e574d",
+            "counts": {
+              "tests": 1,
+              "failures": 1,
+              "errors": 0,
+              "skipped": 0
+            },
+            "returncode": 1,
+            "detected": true,
+            "log": "isolated_plants/linearized_mlp/pytest.log"
+          },
+          {
+            "name": "test_fitted_random_map",
+            "test": "test_random_map_fit_excludes_test[rff]",
+            "module": "comparability_random_features.py",
+            "original_text": "    xx=full_input(x);mean=",
+            "mutated_text": "    train=np.arange(len(x));w=np.ones(len(x))/len(x)\n    xx=full_input(x);mean=",
+            "mutant_sha256": "2c646fa59f165de79244d0d67a9415b103ec64a294455288fecd34566f426cf3",
+            "counts": {
+              "tests": 1,
+              "failures": 1,
+              "errors": 0,
+              "skipped": 0
+            },
+            "returncode": 1,
+            "detected": true,
+            "log": "isolated_plants/test_fitted_random_map/pytest.log"
+          },
+          {
+            "name": "test_fitted_mlp",
+            "test": "test_random_map_fit_excludes_test[mlp_relu]",
+            "module": "comparability_random_features.py",
+            "original_text": "    xx=full_input(x);mean=",
+            "mutated_text": "    train=np.arange(len(x));w=np.ones(len(x))/len(x)\n    xx=full_input(x);mean=",
+            "mutant_sha256": "2c646fa59f165de79244d0d67a9415b103ec64a294455288fecd34566f426cf3",
+            "counts": {
+              "tests": 1,
+              "failures": 1,
+              "errors": 0,
+              "skipped": 0
+            },
+            "returncode": 1,
+            "detected": true,
+            "log": "isolated_plants/test_fitted_mlp/pytest.log"
+          },
+          {
+            "name": "unbounded_pca_rank",
+            "test": "test_projection_rank_and_rotation",
+            "module": "comparability_core.py",
+            "original_text": "    keep = np.flatnonzero(vals > max(vals[-1] * 1e-10, 1e-14))[-rank:]",
+            "mutated_text": "    keep = np.flatnonzero(vals > max(vals[-1] * 1e-10, 1e-14))",
+            "mutant_sha256": "ca241567332ef3817899c0dfdc0e5084f8cfc87e43c6de02b86659016c3b5091",
+            "counts": {
+              "tests": 1,
+              "failures": 1,
+              "errors": 0,
+              "skipped": 0
+            },
+            "returncode": 1,
+            "detected": true,
+            "log": "isolated_plants/unbounded_pca_rank/pytest.log"
+          },
+          {
+            "name": "test_selected_alpha",
+            "test": "test_grouped_selection_signal_and_test_label_isolation",
+            "module": "comparability_random_features.py",
+            "original_text": "    picked=stable_argmin(scores)",
+            "mutated_text": "    picked=stable_argmin(scores)\n    if np.max(abs(y))>1e8: picked=(picked+1)%len(candidates)",
+            "mutant_sha256": "5c7460603d91dfcb4d804c02ba2a7f5d911003360117a1502b85c8ddf7d7af6f",
+            "counts": {
+              "tests": 1,
+              "failures": 1,
+              "errors": 0,
+              "skipped": 0
+            },
+            "returncode": 1,
+            "detected": true,
+            "log": "isolated_plants/test_selected_alpha/pytest.log"
+          },
+          {
+            "name": "rank_budget_changed",
+            "test": "test_prepared_budget_and_native_hold",
+            "module": "comparability_random_features.py",
+            "original_text": "PCA_ranks=[8,16]",
+            "mutated_text": "PCA_ranks=[8,32]",
+            "mutant_sha256": "749058c7e8e9f060a5b98f8f1328450d45ea8e70b9603c1c3da1a2e35285194d",
+            "counts": {
+              "tests": 1,
+              "failures": 1,
+              "errors": 0,
+              "skipped": 0
+            },
+            "returncode": 1,
+            "detected": true,
+            "log": "isolated_plants/rank_budget_changed/pytest.log"
+          },
+          {
+            "name": "seed_cherry_pick_budget",
+            "test": "test_prepared_budget_and_native_hold",
+            "module": "comparability_random_features.py",
+            "original_text": "initialization_seeds=list(SEEDS)",
+            "mutated_text": "initialization_seeds=list(SEEDS)[:1]",
+            "mutant_sha256": "505fd52c63bc270a00d4aa19df98bb387a7dff52c1357b9d0fcb275dbba8b474",
+            "counts": {
+              "tests": 1,
+              "failures": 1,
+              "errors": 0,
+              "skipped": 0
+            },
+            "returncode": 1,
+            "detected": true,
+            "log": "isolated_plants/seed_cherry_pick_budget/pytest.log"
+          },
+          {
+            "name": "native_hold_removed",
+            "test": "test_prepared_budget_and_native_hold",
+            "module": "comparability_random_features.py",
+            "original_text": "native_launch='HOLD; no native entry point'",
+            "mutated_text": "native_launch='launch'",
+            "mutant_sha256": "1fdffca072eeb840ebfdf393cf435cde03007501f795e8adb96cbe8c26d6b29f",
+            "counts": {
+              "tests": 1,
+              "failures": 1,
+              "errors": 0,
+              "skipped": 0
+            },
+            "returncode": 1,
+            "detected": true,
+            "log": "isolated_plants/native_hold_removed/pytest.log"
+          }
+        ]
+      },
+      "next_decision": "Cached TEST evaluation permitted; native remains HOLD."
+    }
+  ],
+  "status": "complete",
+  "per_initialization_artifact": "per_initialization.json",
+  "interpretation": {
+    "counterevidence": "Generic untrained nonlinear features reproduce or exceed forecast-emulation gains. There is no broad trained-hidden advantage across these two families.",
+    "bounded_support": "Trained TimesFM hidden retains a fusion-response prediction advantage over both random families under matched readout budgets; about7.7% lower loss.",
+    "information_statement": "Deterministic hidden features introduce no information beyond the complete input. These comparisons measure supervised finite-budget feature/readout efficiency.",
+    "scope": "Previously inspected synthetic TEST cohort; no causal, equivalent-semantic, universal-random-family or natural-data claim."
+  },
+  "failed_instrumentation_runs": [],
+  "report_source_sha256": "9904cbbafea4e2c83be69b98694c1628a9a18d80e0df4abfc19f58c2010baaf3"
+}

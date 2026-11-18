@@ -1,0 +1,16 @@
+{
+  "bolt": {
+    "valid": true,
+    "returncode": 0,
+    "failure": null,
+    "observed_peak": 1063428096,
+    "seconds": 57.05817373201717
+  },
+  "timesfm": {
+    "valid": true,
+    "returncode": 0,
+    "failure": null,
+    "observed_peak": 1652826112,
+    "seconds": 176.9723408590071
+  }
+}

@@ -1,0 +1,265 @@
+[
+  {
+    "request_index": 0,
+    "context_index": 0,
+    "kind": "level",
+    "window": "short",
+    "context_window": "recent",
+    "strength": 0.1,
+    "replay_max_abs": 0.0,
+    "gain": 1.0409173943758478,
+    "collateral": 0.037510043037961745,
+    "relative_error": 0.05550888659681813,
+    "achieved": true,
+    "protected_rms": 0.001100152644886201,
+    "protected_relative_error": 0.027121464483352495,
+    "coefficient_norm": 0.20000000000000007,
+    "radius": 0.2,
+    "site": {
+      "module": "output_patch_embedding.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        1,
+        512
+      ],
+      "mode": "shared",
+      "source": "module_input",
+      "module_type": "Linear"
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.044542971296127595,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.05550888659681814,
+        "coefficient_norm": 0.20000000000000007,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 1,
+    "context_index": 0,
+    "kind": "trend",
+    "window": "long",
+    "context_window": "recent",
+    "strength": 0.1,
+    "replay_max_abs": 0.0,
+    "gain": 1.0437726935201996,
+    "collateral": 6.293562249245666e-05,
+    "relative_error": 0.043772738764051494,
+    "achieved": true,
+    "protected_rms": 5.902126546366317e-07,
+    "protected_relative_error": 4.885209648974877e-05,
+    "coefficient_norm": 0.0609213031808589,
+    "radius": 0.2,
+    "site": {
+      "module": "output_patch_embedding.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        1,
+        512
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear"
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.027713124406755173,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.043772738764051494,
+        "coefficient_norm": 0.0609213031808589,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 2,
+    "context_index": 0,
+    "kind": "seasonality",
+    "window": "all",
+    "context_window": "recent",
+    "strength": 0.1,
+    "replay_max_abs": 0.0,
+    "gain": 1.043770773178935,
+    "collateral": 0.0002287577580375732,
+    "relative_error": 0.043771370949441904,
+    "achieved": true,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.1999999999999995,
+    "radius": 0.2,
+    "site": {
+      "module": "output_patch_embedding.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        1,
+        512
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear"
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.027715325832836812,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.0437713709494419,
+        "coefficient_norm": 0.1999999999999995,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  },
+  {
+    "request_index": 3,
+    "context_index": 0,
+    "kind": "context_ignore",
+    "window": "all",
+    "context_window": "recent",
+    "strength": 0.5,
+    "replay_max_abs": 0.0,
+    "gain": 0.4948877488414894,
+    "collateral": 0.19345616680711844,
+    "relative_error": 0.540891555439833,
+    "achieved": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.20000000000000004,
+    "radius": 0.2,
+    "site": {
+      "module": "__input__",
+      "path": [],
+      "occurrence": 0,
+      "shape": [
+        128
+      ],
+      "mode": "single",
+      "source": "input",
+      "module_type": "forecast_input"
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.7096156835216363,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.6073676215944854,
+        "coefficient_norm": 0.19999999999999998,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 0.5995655699389305,
+        "coefficient_norm": 0.20000000000000007,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "two signed interventions match singleton forecasts",
+          "probe_step": 0.005
+        }
+      },
+      {
+        "iteration": 2,
+        "accepted": true,
+        "relative_error": 0.540891555439833,
+        "coefficient_norm": 0.20000000000000004,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "two signed interventions match singleton forecasts",
+          "probe_step": 0.005
+        }
+      }
+    ],
+    "model_calls": 45,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": true
+  },
+  {
+    "request_index": 4,
+    "context_index": 0,
+    "kind": "uncertainty",
+    "window": "all",
+    "context_window": "recent",
+    "strength": 0.2,
+    "replay_max_abs": 0.0,
+    "gain": 1.0436889362539594,
+    "collateral": 0.003976286560661301,
+    "relative_error": 0.04386951111894251,
+    "achieved": true,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.19999999999999843,
+    "radius": 0.2,
+    "site": {
+      "module": "output_patch_embedding.residual_layer",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        1,
+        512
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear"
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.02770176494931768,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.04386951111894251,
+        "coefficient_norm": 0.19999999999999843,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": 0.0,
+    "baseline_crossing_fraction": 0.0,
+    "context_policy": false
+  }
+]

@@ -1,0 +1,358 @@
+{
+  "status": "complete",
+  "question": "Do raw-input discontinuities originate at quantization, and does learned processing smooth adjacent-token changes?",
+  "checkpoint": "amazon/chronos-t5-tiny",
+  "n_sources": 16,
+  "exact_findings": {
+    "boundary_means": [
+      {
+        "condition": "pretrained",
+        "raw_distance": 4.837472450240249e-09,
+        "probability_tv": 0.002784460601826859,
+        "relative_hidden_jump": {
+          "hidden_0": 0.05144760846520803,
+          "hidden_1": 0.03863811558814005,
+          "hidden_2": 0.02862353351164865,
+          "hidden_4": 0.023675344465227722
+        }
+      },
+      {
+        "condition": "random",
+        "raw_distance": 4.837472450240249e-09,
+        "probability_tv": 5.4383235692512244e-08,
+        "relative_hidden_jump": {
+          "hidden_0": 0.12615271623063873,
+          "hidden_1": 0.12614851965315405,
+          "hidden_2": 0.12614670973506917,
+          "hidden_4": 0.12650090804473535
+        }
+      }
+    ],
+    "curve_summary": [
+      {
+        "condition": "pretrained",
+        "surface": "hidden_0",
+        "radius": 0.25,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 3.00253644258638e-08
+      },
+      {
+        "condition": "pretrained",
+        "surface": "hidden_0",
+        "radius": 0.125,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 4.674102936193132e-08
+      },
+      {
+        "condition": "pretrained",
+        "surface": "hidden_0",
+        "radius": 0.0625,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 6.693120510309043e-08
+      },
+      {
+        "condition": "pretrained",
+        "surface": "hidden_0",
+        "radius": 0.03125,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 8.448955597254982e-08
+      },
+      {
+        "condition": "pretrained",
+        "surface": "hidden_1",
+        "radius": 0.25,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.1042747424063368
+      },
+      {
+        "condition": "pretrained",
+        "surface": "hidden_1",
+        "radius": 0.125,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.06142963263435747
+      },
+      {
+        "condition": "pretrained",
+        "surface": "hidden_1",
+        "radius": 0.0625,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.03664143791312228
+      },
+      {
+        "condition": "pretrained",
+        "surface": "hidden_1",
+        "radius": 0.03125,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.021474753893971306
+      },
+      {
+        "condition": "pretrained",
+        "surface": "hidden_2",
+        "radius": 0.25,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.12291244541089788
+      },
+      {
+        "condition": "pretrained",
+        "surface": "hidden_2",
+        "radius": 0.125,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.07066773618043677
+      },
+      {
+        "condition": "pretrained",
+        "surface": "hidden_2",
+        "radius": 0.0625,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.041313047352574926
+      },
+      {
+        "condition": "pretrained",
+        "surface": "hidden_2",
+        "radius": 0.03125,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.023892761296626944
+      },
+      {
+        "condition": "pretrained",
+        "surface": "hidden_4",
+        "radius": 0.25,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.15341802650291536
+      },
+      {
+        "condition": "pretrained",
+        "surface": "hidden_4",
+        "radius": 0.125,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.08549896117529329
+      },
+      {
+        "condition": "pretrained",
+        "surface": "hidden_4",
+        "radius": 0.0625,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.04876648603131105
+      },
+      {
+        "condition": "pretrained",
+        "surface": "hidden_4",
+        "radius": 0.03125,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.027320007394926286
+      },
+      {
+        "condition": "pretrained",
+        "surface": "probability",
+        "radius": 0.25,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.4996469561732425
+      },
+      {
+        "condition": "pretrained",
+        "surface": "probability",
+        "radius": 0.125,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.25009126829821915
+      },
+      {
+        "condition": "pretrained",
+        "surface": "probability",
+        "radius": 0.0625,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.10728698192988503
+      },
+      {
+        "condition": "pretrained",
+        "surface": "probability",
+        "radius": 0.03125,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.05965182867168371
+      },
+      {
+        "condition": "random",
+        "surface": "hidden_0",
+        "radius": 0.25,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 1.7566143446157515e-08
+      },
+      {
+        "condition": "random",
+        "surface": "hidden_0",
+        "radius": 0.125,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 2.2612199216766066e-08
+      },
+      {
+        "condition": "random",
+        "surface": "hidden_0",
+        "radius": 0.0625,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 3.436838122005515e-08
+      },
+      {
+        "condition": "random",
+        "surface": "hidden_0",
+        "radius": 0.03125,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 4.791868151295378e-08
+      },
+      {
+        "condition": "random",
+        "surface": "hidden_1",
+        "radius": 0.25,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.0004347556443978691
+      },
+      {
+        "condition": "random",
+        "surface": "hidden_1",
+        "radius": 0.125,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.0003221178017764804
+      },
+      {
+        "condition": "random",
+        "surface": "hidden_1",
+        "radius": 0.0625,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.00022335999149218608
+      },
+      {
+        "condition": "random",
+        "surface": "hidden_1",
+        "radius": 0.03125,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.00015384249668823742
+      },
+      {
+        "condition": "random",
+        "surface": "hidden_2",
+        "radius": 0.25,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.0006154653279261331
+      },
+      {
+        "condition": "random",
+        "surface": "hidden_2",
+        "radius": 0.125,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.0004561198316023606
+      },
+      {
+        "condition": "random",
+        "surface": "hidden_2",
+        "radius": 0.0625,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.00031418867528980803
+      },
+      {
+        "condition": "random",
+        "surface": "hidden_2",
+        "radius": 0.03125,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.0002143743402282191
+      },
+      {
+        "condition": "random",
+        "surface": "hidden_4",
+        "radius": 0.25,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.12234539009783016
+      },
+      {
+        "condition": "random",
+        "surface": "hidden_4",
+        "radius": 0.125,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.06405430777167384
+      },
+      {
+        "condition": "random",
+        "surface": "hidden_4",
+        "radius": 0.0625,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.032433814771064585
+      },
+      {
+        "condition": "random",
+        "surface": "hidden_4",
+        "radius": 0.03125,
+        "eligible_sources": 16,
+        "total_sources": 16,
+        "mean_ratio": 0.01627079649815196
+      },
+      {
+        "condition": "random",
+        "surface": "probability",
+        "radius": 0.25,
+        "eligible_sources": 0,
+        "total_sources": 16,
+        "mean_ratio": null
+      },
+      {
+        "condition": "random",
+        "surface": "probability",
+        "radius": 0.125,
+        "eligible_sources": 0,
+        "total_sources": 16,
+        "mean_ratio": null
+      },
+      {
+        "condition": "random",
+        "surface": "probability",
+        "radius": 0.0625,
+        "eligible_sources": 0,
+        "total_sources": 16,
+        "mean_ratio": null
+      },
+      {
+        "condition": "random",
+        "surface": "probability",
+        "radius": 0.03125,
+        "eligible_sources": 0,
+        "total_sources": 16,
+        "mean_ratio": null
+      }
+    ]
+  },
+  "controls": "Exact same-token/ID-embedding/native repeats; FP64 saved-vector replay; conservative8-FP32-epsilon chord-resolution guard",
+  "limitations": "Boundary-selected synthetic points; off-manifold embedding interpolation; one initialization per architecture; random probability ratios may be precision-limited; no multi-step forecasting claim",
+  "interpretation": "Raw-input discontinuity has a known tokenizer cause; smooth embedding-coordinate behavior and trained depth contraction are distinct questions. Small random probability changes are not evidence of better forecasting.",
+  "next_decision": "If the boundary/continuous-path distinction is clear, replicate on a second cached model size with fresh paired backgrounds."
+}

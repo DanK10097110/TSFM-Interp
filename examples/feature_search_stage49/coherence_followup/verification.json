@@ -1,0 +1,73 @@
+{
+  "smoke_and_initial_focused": "20 passed; one existing PytestReturnNotNoneWarning in smoke",
+  "final_focused": "9 passed",
+  "plants": [
+    {
+      "plant": "boundary",
+      "test": "test_shift_splits_nearby_pair_while_original_does_not",
+      "caught": true
+    },
+    {
+      "plant": "lost_high_band",
+      "test": "test_bridge_and_long_context_are_lossless_with_nyquist",
+      "caught": true
+    },
+    {
+      "plant": "length_alias",
+      "test": "test_bank_does_not_alias_different_lengths_or_values",
+      "caught": true
+    },
+    {
+      "plant": "no_coverage",
+      "test": "test_coverage_changes_pairs_but_exactly_matches_component_exposures_and_singles",
+      "caught": true
+    },
+    {
+      "plant": "holm_family",
+      "test": "test_holm_preserves_full_family_and_monotonicity",
+      "caught": true
+    },
+    {
+      "plant": "test_label_leak",
+      "test": "test_selector_choices_do_not_read_test_futures",
+      "caught": true
+    },
+    {
+      "plant": "baseline",
+      "test": "test_response_uses_intervention_baseline_and_composition_subtracts_zero",
+      "caught": true
+    },
+    {
+      "plant": "zero_count",
+      "test": "test_response_uses_intervention_baseline_and_composition_subtracts_zero",
+      "caught": true
+    },
+    {
+      "plant": "classical_zero",
+      "test": "test_classical_recovers_unknown_frequencies_with_large_distractor",
+      "caught": true
+    },
+    {
+      "plant": "gain_component",
+      "test": "test_response_distinguishes_gain_error_from_orthogonal_distortion",
+      "caught": true
+    },
+    {
+      "plant": "orthogonal_component",
+      "test": "test_response_distinguishes_gain_error_from_orthogonal_distortion",
+      "caught": true
+    },
+    {
+      "plant": "saved_mse",
+      "caught": true
+    },
+    {
+      "plant": "saved_response_nmse",
+      "caught": true
+    }
+  ],
+  "frozen_bindings_unchanged": true,
+  "rendered_report": "Chrome screenshot inspected;4 images,10 headings,all links exist",
+  "docs": "stage docs and glossary checks passed",
+  "note": "Initial naive NaN substring guard matched provenance; corrected to whole-token validation, which passed."
+}

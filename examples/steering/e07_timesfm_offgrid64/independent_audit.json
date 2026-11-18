@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "n_interventions": 512,
+  "metric_max_abs_error": 0.0,
+  "full_model_replay": true,
+  "normalized_replay_max_abs": 2.0265579223632812e-06,
+  "norm_budget_violation": 9.5367431640625e-07,
+  "results_sha256": "1636ef7b6ddc3917ca36c6b6391ba79a404d591b8e43ca19e7f9244a3815a3dd",
+  "arrays_sha256": "89d2fc39f86d7dc66d65d416e50d4b89fb5a22f8718713c496a1a8aab03d0e60"
+}

@@ -1,0 +1,1474 @@
+{
+  "{\"prediction_length\": 32, \"request\": {\"context_window\": \"recent\", \"delay\": 1.0, \"forecast_window\": \"short\", \"kind\": \"level\", \"lower\": null, \"outside_weight\": 0.2, \"period\": null, \"phase\": null, \"quantile\": 0.9, \"smoothing\": 2.0, \"strength\": 0.1, \"upper\": null, \"value\": null}}": {
+    "selection": "separate calibration/validation",
+    "calibration_indices": [
+      0
+    ],
+    "validation_indices": [
+      0
+    ],
+    "request": {
+      "kind": "level",
+      "strength": 0.1,
+      "forecast_window": "short",
+      "context_window": "recent",
+      "period": null,
+      "phase": null,
+      "value": null,
+      "lower": null,
+      "upper": null,
+      "quantile": 0.9,
+      "smoothing": 2.0,
+      "delay": 1.0,
+      "outside_weight": 0.2
+    },
+    "chosen": {
+      "site": "module_input:lm_heads.0:0:['args', 0]:last",
+      "error": 0.00046435009559521364,
+      "errors": [
+        0.00046435009559521364
+      ],
+      "mean_coefficient_norm": 0.08310165893514604,
+      "details": [
+        {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        }
+      ]
+    },
+    "rank": 128,
+    "observed_internal_sites": 150,
+    "searched_candidates": 4,
+    "candidate_scores": [
+      {
+        "site": "module_input:model.embed_layer.emb:0:['args', 0]:last",
+        "error": 0.5080931591968745,
+        "errors": [
+          0.5080931591968745
+        ],
+        "mean_coefficient_norm": 0.16504713525860437,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:lm_heads.0:0:['args', 0]:last",
+        "error": 0.00046435009559521364,
+        "errors": [
+          0.00046435009559521364
+        ],
+        "mean_coefficient_norm": 0.08310165893514604,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:lm_heads.0:0:['args', 0]:shared",
+        "error": 0.0059716104451417356,
+        "errors": [
+          0.0059716104451417356
+        ],
+        "mean_coefficient_norm": 0.08110584776691752,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "input:__input__:0:[]:single",
+        "error": 0.7356701726698962,
+        "errors": [
+          0.7356701726698962
+        ],
+        "mean_coefficient_norm": 0.10854175119836607,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      }
+    ],
+    "screening": [
+      {
+        "site": "module_input:model.embed_layer.emb:0:['args', 0]:last",
+        "normalized_signed_effect": 0.015933063162125945
+      },
+      {
+        "site": "module_input:model.layers.0.self_attn.q_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 3.5851157011884533e-06
+      },
+      {
+        "site": "module_input:model.layers.0.self_attn.v_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.003248268450819826
+      },
+      {
+        "site": "module_input:model.layers.0.norm1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.006609903597988271
+      },
+      {
+        "site": "module_input:model.layers.0.ffn_layer.up_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0024215910621518478
+      },
+      {
+        "site": "module_input:model.layers.0.norm2:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0084050709066954
+      },
+      {
+        "site": "module_input:model.layers.1.self_attn.k_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0002599401978054427
+      },
+      {
+        "site": "module_input:model.layers.1.self_attn.o_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0005962016880788758
+      },
+      {
+        "site": "module_input:model.layers.1.ffn_layer.gate_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0018326456046267542
+      },
+      {
+        "site": "module_input:model.layers.1.ffn_layer.up_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.001454839971128803
+      },
+      {
+        "site": "module_input:model.layers.1.norm2:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.005813633936313473
+      },
+      {
+        "site": "module_input:model.layers.2.self_attn.k_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 1.7498667047817584e-05
+      },
+      {
+        "site": "module_input:model.layers.2.self_attn.o_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.00044675179917020067
+      },
+      {
+        "site": "module_input:model.layers.2.ffn_layer.gate_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0019818272480795155
+      },
+      {
+        "site": "module_input:model.layers.2.ffn_layer.down_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.000907298376794749
+      },
+      {
+        "site": "module_input:model.layers.3.self_attn.q_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 6.63340494077809e-05
+      },
+      {
+        "site": "module_input:model.layers.3.self_attn.v_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0002934978136303033
+      },
+      {
+        "site": "module_input:model.layers.3.norm1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0053277673901365175
+      },
+      {
+        "site": "module_input:model.layers.3.ffn_layer.gate_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0018746253387675028
+      },
+      {
+        "site": "module_input:model.layers.3.ffn_layer.down_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.004145136941053116
+      },
+      {
+        "site": "module_input:model.layers.4.self_attn.q_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0001537732011544169
+      },
+      {
+        "site": "module_input:model.layers.4.self_attn.v_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0025348891973758754
+      },
+      {
+        "site": "module_input:model.layers.4.norm1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.011350353738585527
+      },
+      {
+        "site": "module_input:model.layers.4.ffn_layer.up_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0028888607349777163
+      },
+      {
+        "site": "module_input:model.layers.4.norm2:0:['args', 0]:last",
+        "normalized_signed_effect": 0.008869592983081943
+      },
+      {
+        "site": "module_input:model.layers.5.self_attn.k_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 4.7535969758738106e-05
+      },
+      {
+        "site": "module_input:model.layers.5.self_attn.o_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00016831054694256884
+      },
+      {
+        "site": "module_input:model.layers.5.norm1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.007083732345682529
+      },
+      {
+        "site": "module_input:model.layers.5.ffn_layer.up_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0012659231494254045
+      },
+      {
+        "site": "module_input:model.layers.5.norm2:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.012988632314858986
+      },
+      {
+        "site": "module_input:model.layers.6.self_attn.k_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.00012590045843326265
+      },
+      {
+        "site": "module_input:model.layers.6.self_attn.o_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0004303309023010607
+      },
+      {
+        "site": "module_input:model.layers.6.norm1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.002175847337406421
+      },
+      {
+        "site": "module_input:model.layers.6.norm1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.016205502564858518
+      },
+      {
+        "site": "module_input:model.layers.6.ffn_layer.gate_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0023666607748126568
+      },
+      {
+        "site": "module_input:model.layers.6.ffn_layer.gate_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002329456789741573
+      },
+      {
+        "site": "module_input:model.layers.6.ffn_layer.up_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0017742415746014764
+      },
+      {
+        "site": "module_input:model.layers.6.ffn_layer.up_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002050372634503814
+      },
+      {
+        "site": "module_input:model.layers.6.ffn_layer.down_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.002349295932246481
+      },
+      {
+        "site": "module_input:model.layers.6.ffn_layer.down_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0013899142633645844
+      },
+      {
+        "site": "module_input:model.layers.6.norm2:0:['args', 0]:last",
+        "normalized_signed_effect": 0.005405702076866953
+      },
+      {
+        "site": "module_input:model.layers.6.norm2:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.008451596242917385
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.q_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00041674023518982413
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.q_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0003946771394774816
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.k_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0005967648928950753
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.k_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 7.104836141783124e-05
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.v_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0026347875000715514
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.v_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.004607713150866185
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.o_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.003021036178499571
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.o_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0023318661807381156
+      },
+      {
+        "site": "module_input:model.layers.7.norm1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.005472118758908498
+      },
+      {
+        "site": "module_input:model.layers.7.norm1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.004539725430552812
+      },
+      {
+        "site": "module_input:model.layers.7.ffn_layer.gate_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.002593288519121031
+      },
+      {
+        "site": "module_input:model.layers.7.ffn_layer.gate_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002868056267528951
+      },
+      {
+        "site": "module_input:model.layers.7.ffn_layer.up_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.003124373172355925
+      },
+      {
+        "site": "module_input:model.layers.7.ffn_layer.up_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.004570504665169874
+      },
+      {
+        "site": "module_input:model.layers.7.ffn_layer.down_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.010147273619319266
+      },
+      {
+        "site": "module_input:model.layers.7.ffn_layer.down_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.009605587400152504
+      },
+      {
+        "site": "module_input:model.layers.7.norm2:0:['args', 0]:last",
+        "normalized_signed_effect": 0.007857775096446817
+      },
+      {
+        "site": "module_input:model.layers.7.norm2:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.011497667774405288
+      },
+      {
+        "site": "module_input:model.norm:0:['args', 0]:last",
+        "normalized_signed_effect": 0.025011540222395327
+      },
+      {
+        "site": "module_input:model.norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.02712714961792926
+      },
+      {
+        "site": "module_input:lm_heads.0:0:['args', 0]:last",
+        "normalized_signed_effect": 0.02099403859801011
+      },
+      {
+        "site": "module_input:lm_heads.0:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.023505078288272658
+      }
+    ],
+    "rejected_candidates": [],
+    "model_calls": 221,
+    "elapsed_seconds": 9.90418247692287,
+    "context_length": 256,
+    "prediction_length": 32,
+    "caveat": "bounded search; best observed validation score, not global optimality or semantic disentanglement"
+  },
+  "{\"prediction_length\": 32, \"request\": {\"context_window\": \"recent\", \"delay\": 1.0, \"forecast_window\": \"long\", \"kind\": \"trend\", \"lower\": null, \"outside_weight\": 0.2, \"period\": null, \"phase\": null, \"quantile\": 0.9, \"smoothing\": 2.0, \"strength\": 0.1, \"upper\": null, \"value\": null}}": {
+    "selection": "separate calibration/validation",
+    "calibration_indices": [
+      0
+    ],
+    "validation_indices": [
+      0
+    ],
+    "request": {
+      "kind": "trend",
+      "strength": 0.1,
+      "forecast_window": "long",
+      "context_window": "recent",
+      "period": null,
+      "phase": null,
+      "value": null,
+      "lower": null,
+      "upper": null,
+      "quantile": 0.9,
+      "smoothing": 2.0,
+      "delay": 1.0,
+      "outside_weight": 0.2
+    },
+    "chosen": {
+      "site": "module_input:lm_heads.0:0:['args', 0]:last",
+      "error": 0.0004600158374825261,
+      "errors": [
+        0.0004600158374825261
+      ],
+      "mean_coefficient_norm": 0.025876858555727706,
+      "details": [
+        {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        }
+      ]
+    },
+    "rank": 128,
+    "observed_internal_sites": 150,
+    "searched_candidates": 4,
+    "candidate_scores": [
+      {
+        "site": "module_input:model.embed_layer.emb:0:['args', 0]:last",
+        "error": 1.8308374586361016,
+        "errors": [
+          1.8308374586361016
+        ],
+        "mean_coefficient_norm": 0.0780001040785679,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:lm_heads.0:0:['args', 0]:last",
+        "error": 0.0004600158374825261,
+        "errors": [
+          0.0004600158374825261
+        ],
+        "mean_coefficient_norm": 0.025876858555727706,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:lm_heads.0:0:['args', 0]:shared",
+        "error": 0.0059589162101941345,
+        "errors": [
+          0.0059589162101941345
+        ],
+        "mean_coefficient_norm": 0.026965081279924315,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "input:__input__:0:[]:single",
+        "error": 1.834081300131897,
+        "errors": [
+          1.834081300131897
+        ],
+        "mean_coefficient_norm": 0.04420455919053582,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      }
+    ],
+    "screening": [
+      {
+        "site": "module_input:model.embed_layer.emb:0:['args', 0]:last",
+        "normalized_signed_effect": 0.015933063162125945
+      },
+      {
+        "site": "module_input:model.layers.0.self_attn.q_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 3.5851157011884533e-06
+      },
+      {
+        "site": "module_input:model.layers.0.self_attn.v_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.003248268450819826
+      },
+      {
+        "site": "module_input:model.layers.0.norm1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.006609903597988271
+      },
+      {
+        "site": "module_input:model.layers.0.ffn_layer.up_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0024215910621518478
+      },
+      {
+        "site": "module_input:model.layers.0.norm2:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0084050709066954
+      },
+      {
+        "site": "module_input:model.layers.1.self_attn.k_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0002599401978054427
+      },
+      {
+        "site": "module_input:model.layers.1.self_attn.o_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0005962016880788758
+      },
+      {
+        "site": "module_input:model.layers.1.ffn_layer.gate_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0018326456046267542
+      },
+      {
+        "site": "module_input:model.layers.1.ffn_layer.up_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.001454839971128803
+      },
+      {
+        "site": "module_input:model.layers.1.norm2:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.005813633936313473
+      },
+      {
+        "site": "module_input:model.layers.2.self_attn.k_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 1.7498667047817584e-05
+      },
+      {
+        "site": "module_input:model.layers.2.self_attn.o_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.00044675179917020067
+      },
+      {
+        "site": "module_input:model.layers.2.ffn_layer.gate_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0019818272480795155
+      },
+      {
+        "site": "module_input:model.layers.2.ffn_layer.down_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.000907298376794749
+      },
+      {
+        "site": "module_input:model.layers.3.self_attn.q_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 6.63340494077809e-05
+      },
+      {
+        "site": "module_input:model.layers.3.self_attn.v_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0002934978136303033
+      },
+      {
+        "site": "module_input:model.layers.3.norm1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0053277673901365175
+      },
+      {
+        "site": "module_input:model.layers.3.ffn_layer.gate_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0018746253387675028
+      },
+      {
+        "site": "module_input:model.layers.3.ffn_layer.down_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.004145136941053116
+      },
+      {
+        "site": "module_input:model.layers.4.self_attn.q_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0001537732011544169
+      },
+      {
+        "site": "module_input:model.layers.4.self_attn.v_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0025348891973758754
+      },
+      {
+        "site": "module_input:model.layers.4.norm1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.011350353738585527
+      },
+      {
+        "site": "module_input:model.layers.4.ffn_layer.up_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0028888607349777163
+      },
+      {
+        "site": "module_input:model.layers.4.norm2:0:['args', 0]:last",
+        "normalized_signed_effect": 0.008869592983081943
+      },
+      {
+        "site": "module_input:model.layers.5.self_attn.k_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 4.7535969758738106e-05
+      },
+      {
+        "site": "module_input:model.layers.5.self_attn.o_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00016831054694256884
+      },
+      {
+        "site": "module_input:model.layers.5.norm1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.007083732345682529
+      },
+      {
+        "site": "module_input:model.layers.5.ffn_layer.up_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0012659231494254045
+      },
+      {
+        "site": "module_input:model.layers.5.norm2:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.012988632314858986
+      },
+      {
+        "site": "module_input:model.layers.6.self_attn.k_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.00012590045843326265
+      },
+      {
+        "site": "module_input:model.layers.6.self_attn.o_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0004303309023010607
+      },
+      {
+        "site": "module_input:model.layers.6.norm1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.002175847337406421
+      },
+      {
+        "site": "module_input:model.layers.6.norm1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.016205502564858518
+      },
+      {
+        "site": "module_input:model.layers.6.ffn_layer.gate_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0023666607748126568
+      },
+      {
+        "site": "module_input:model.layers.6.ffn_layer.gate_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002329456789741573
+      },
+      {
+        "site": "module_input:model.layers.6.ffn_layer.up_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0017742415746014764
+      },
+      {
+        "site": "module_input:model.layers.6.ffn_layer.up_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002050372634503814
+      },
+      {
+        "site": "module_input:model.layers.6.ffn_layer.down_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.002349295932246481
+      },
+      {
+        "site": "module_input:model.layers.6.ffn_layer.down_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0013899142633645844
+      },
+      {
+        "site": "module_input:model.layers.6.norm2:0:['args', 0]:last",
+        "normalized_signed_effect": 0.005405702076866953
+      },
+      {
+        "site": "module_input:model.layers.6.norm2:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.008451596242917385
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.q_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00041674023518982413
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.q_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0003946771394774816
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.k_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0005967648928950753
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.k_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 7.104836141783124e-05
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.v_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0026347875000715514
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.v_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.004607713150866185
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.o_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.003021036178499571
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.o_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0023318661807381156
+      },
+      {
+        "site": "module_input:model.layers.7.norm1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.005472118758908498
+      },
+      {
+        "site": "module_input:model.layers.7.norm1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.004539725430552812
+      },
+      {
+        "site": "module_input:model.layers.7.ffn_layer.gate_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.002593288519121031
+      },
+      {
+        "site": "module_input:model.layers.7.ffn_layer.gate_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002868056267528951
+      },
+      {
+        "site": "module_input:model.layers.7.ffn_layer.up_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.003124373172355925
+      },
+      {
+        "site": "module_input:model.layers.7.ffn_layer.up_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.004570504665169874
+      },
+      {
+        "site": "module_input:model.layers.7.ffn_layer.down_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.010147273619319266
+      },
+      {
+        "site": "module_input:model.layers.7.ffn_layer.down_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.009605587400152504
+      },
+      {
+        "site": "module_input:model.layers.7.norm2:0:['args', 0]:last",
+        "normalized_signed_effect": 0.007857775096446817
+      },
+      {
+        "site": "module_input:model.layers.7.norm2:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.011497667774405288
+      },
+      {
+        "site": "module_input:model.norm:0:['args', 0]:last",
+        "normalized_signed_effect": 0.025011540222395327
+      },
+      {
+        "site": "module_input:model.norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.02712714961792926
+      },
+      {
+        "site": "module_input:lm_heads.0:0:['args', 0]:last",
+        "normalized_signed_effect": 0.02099403859801011
+      },
+      {
+        "site": "module_input:lm_heads.0:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.023505078288272658
+      }
+    ],
+    "rejected_candidates": [],
+    "model_calls": 225,
+    "elapsed_seconds": 10.046708941925317,
+    "context_length": 256,
+    "prediction_length": 32,
+    "caveat": "bounded search; best observed validation score, not global optimality or semantic disentanglement"
+  },
+  "{\"prediction_length\": 32, \"request\": {\"context_window\": \"recent\", \"delay\": 1.0, \"forecast_window\": \"all\", \"kind\": \"seasonality\", \"lower\": null, \"outside_weight\": 0.2, \"period\": 24, \"phase\": null, \"quantile\": 0.9, \"smoothing\": 2.0, \"strength\": 0.1, \"upper\": null, \"value\": null}}": {
+    "selection": "separate calibration/validation",
+    "calibration_indices": [
+      0
+    ],
+    "validation_indices": [
+      0
+    ],
+    "request": {
+      "kind": "seasonality",
+      "strength": 0.1,
+      "forecast_window": "all",
+      "context_window": "recent",
+      "period": 24,
+      "phase": null,
+      "value": null,
+      "lower": null,
+      "upper": null,
+      "quantile": 0.9,
+      "smoothing": 2.0,
+      "delay": 1.0,
+      "outside_weight": 0.2
+    },
+    "chosen": {
+      "site": "module_input:lm_heads.0:0:['args', 0]:last",
+      "error": 0.0004622502832006262,
+      "errors": [
+        0.0004622502832006262
+      ],
+      "mean_coefficient_norm": 0.09642137500258904,
+      "details": [
+        {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        }
+      ]
+    },
+    "rank": 128,
+    "observed_internal_sites": 150,
+    "searched_candidates": 4,
+    "candidate_scores": [
+      {
+        "site": "module_input:model.embed_layer.emb:0:['args', 0]:last",
+        "error": 0.44813592074183034,
+        "errors": [
+          0.44813592074183034
+        ],
+        "mean_coefficient_norm": 0.11453712046182217,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:lm_heads.0:0:['args', 0]:last",
+        "error": 0.0004622502832006262,
+        "errors": [
+          0.0004622502832006262
+        ],
+        "mean_coefficient_norm": 0.09642137500258904,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:lm_heads.0:0:['args', 0]:shared",
+        "error": 0.005960043701103473,
+        "errors": [
+          0.005960043701103473
+        ],
+        "mean_coefficient_norm": 0.10432929568396092,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "input:__input__:0:[]:single",
+        "error": 0.5141515958762409,
+        "errors": [
+          0.5141515958762409
+        ],
+        "mean_coefficient_norm": 0.07466867213729321,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      }
+    ],
+    "screening": [
+      {
+        "site": "module_input:model.embed_layer.emb:0:['args', 0]:last",
+        "normalized_signed_effect": 0.015933063162125945
+      },
+      {
+        "site": "module_input:model.layers.0.self_attn.q_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 3.5851157011884533e-06
+      },
+      {
+        "site": "module_input:model.layers.0.self_attn.v_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.003248268450819826
+      },
+      {
+        "site": "module_input:model.layers.0.norm1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.006609903597988271
+      },
+      {
+        "site": "module_input:model.layers.0.ffn_layer.up_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0024215910621518478
+      },
+      {
+        "site": "module_input:model.layers.0.norm2:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0084050709066954
+      },
+      {
+        "site": "module_input:model.layers.1.self_attn.k_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0002599401978054427
+      },
+      {
+        "site": "module_input:model.layers.1.self_attn.o_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0005962016880788758
+      },
+      {
+        "site": "module_input:model.layers.1.ffn_layer.gate_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0018326456046267542
+      },
+      {
+        "site": "module_input:model.layers.1.ffn_layer.up_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.001454839971128803
+      },
+      {
+        "site": "module_input:model.layers.1.norm2:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.005813633936313473
+      },
+      {
+        "site": "module_input:model.layers.2.self_attn.k_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 1.7498667047817584e-05
+      },
+      {
+        "site": "module_input:model.layers.2.self_attn.o_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.00044675179917020067
+      },
+      {
+        "site": "module_input:model.layers.2.ffn_layer.gate_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0019818272480795155
+      },
+      {
+        "site": "module_input:model.layers.2.ffn_layer.down_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.000907298376794749
+      },
+      {
+        "site": "module_input:model.layers.3.self_attn.q_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 6.63340494077809e-05
+      },
+      {
+        "site": "module_input:model.layers.3.self_attn.v_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0002934978136303033
+      },
+      {
+        "site": "module_input:model.layers.3.norm1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0053277673901365175
+      },
+      {
+        "site": "module_input:model.layers.3.ffn_layer.gate_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0018746253387675028
+      },
+      {
+        "site": "module_input:model.layers.3.ffn_layer.down_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.004145136941053116
+      },
+      {
+        "site": "module_input:model.layers.4.self_attn.q_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0001537732011544169
+      },
+      {
+        "site": "module_input:model.layers.4.self_attn.v_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0025348891973758754
+      },
+      {
+        "site": "module_input:model.layers.4.norm1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.011350353738585527
+      },
+      {
+        "site": "module_input:model.layers.4.ffn_layer.up_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0028888607349777163
+      },
+      {
+        "site": "module_input:model.layers.4.norm2:0:['args', 0]:last",
+        "normalized_signed_effect": 0.008869592983081943
+      },
+      {
+        "site": "module_input:model.layers.5.self_attn.k_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 4.7535969758738106e-05
+      },
+      {
+        "site": "module_input:model.layers.5.self_attn.o_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00016831054694256884
+      },
+      {
+        "site": "module_input:model.layers.5.norm1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.007083732345682529
+      },
+      {
+        "site": "module_input:model.layers.5.ffn_layer.up_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0012659231494254045
+      },
+      {
+        "site": "module_input:model.layers.5.norm2:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.012988632314858986
+      },
+      {
+        "site": "module_input:model.layers.6.self_attn.k_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.00012590045843326265
+      },
+      {
+        "site": "module_input:model.layers.6.self_attn.o_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0004303309023010607
+      },
+      {
+        "site": "module_input:model.layers.6.norm1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.002175847337406421
+      },
+      {
+        "site": "module_input:model.layers.6.norm1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.016205502564858518
+      },
+      {
+        "site": "module_input:model.layers.6.ffn_layer.gate_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0023666607748126568
+      },
+      {
+        "site": "module_input:model.layers.6.ffn_layer.gate_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002329456789741573
+      },
+      {
+        "site": "module_input:model.layers.6.ffn_layer.up_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0017742415746014764
+      },
+      {
+        "site": "module_input:model.layers.6.ffn_layer.up_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002050372634503814
+      },
+      {
+        "site": "module_input:model.layers.6.ffn_layer.down_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.002349295932246481
+      },
+      {
+        "site": "module_input:model.layers.6.ffn_layer.down_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0013899142633645844
+      },
+      {
+        "site": "module_input:model.layers.6.norm2:0:['args', 0]:last",
+        "normalized_signed_effect": 0.005405702076866953
+      },
+      {
+        "site": "module_input:model.layers.6.norm2:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.008451596242917385
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.q_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00041674023518982413
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.q_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0003946771394774816
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.k_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0005967648928950753
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.k_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 7.104836141783124e-05
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.v_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0026347875000715514
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.v_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.004607713150866185
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.o_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.003021036178499571
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.o_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0023318661807381156
+      },
+      {
+        "site": "module_input:model.layers.7.norm1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.005472118758908498
+      },
+      {
+        "site": "module_input:model.layers.7.norm1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.004539725430552812
+      },
+      {
+        "site": "module_input:model.layers.7.ffn_layer.gate_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.002593288519121031
+      },
+      {
+        "site": "module_input:model.layers.7.ffn_layer.gate_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002868056267528951
+      },
+      {
+        "site": "module_input:model.layers.7.ffn_layer.up_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.003124373172355925
+      },
+      {
+        "site": "module_input:model.layers.7.ffn_layer.up_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.004570504665169874
+      },
+      {
+        "site": "module_input:model.layers.7.ffn_layer.down_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.010147273619319266
+      },
+      {
+        "site": "module_input:model.layers.7.ffn_layer.down_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.009605587400152504
+      },
+      {
+        "site": "module_input:model.layers.7.norm2:0:['args', 0]:last",
+        "normalized_signed_effect": 0.007857775096446817
+      },
+      {
+        "site": "module_input:model.layers.7.norm2:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.011497667774405288
+      },
+      {
+        "site": "module_input:model.norm:0:['args', 0]:last",
+        "normalized_signed_effect": 0.025011540222395327
+      },
+      {
+        "site": "module_input:model.norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.02712714961792926
+      },
+      {
+        "site": "module_input:lm_heads.0:0:['args', 0]:last",
+        "normalized_signed_effect": 0.02099403859801011
+      },
+      {
+        "site": "module_input:lm_heads.0:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.023505078288272658
+      }
+    ],
+    "rejected_candidates": [],
+    "model_calls": 229,
+    "elapsed_seconds": 10.189908210886642,
+    "context_length": 256,
+    "prediction_length": 32,
+    "caveat": "bounded search; best observed validation score, not global optimality or semantic disentanglement"
+  },
+  "{\"prediction_length\": 32, \"request\": {\"context_window\": \"recent\", \"delay\": 1.0, \"forecast_window\": \"all\", \"kind\": \"context_ignore\", \"lower\": null, \"outside_weight\": 0.2, \"period\": null, \"phase\": null, \"quantile\": 0.9, \"smoothing\": 2.0, \"strength\": 0.5, \"upper\": null, \"value\": null}}": {
+    "selection": "separate calibration/validation",
+    "calibration_indices": [
+      0
+    ],
+    "validation_indices": [
+      0
+    ],
+    "request": {
+      "kind": "context_ignore",
+      "strength": 0.5,
+      "forecast_window": "all",
+      "context_window": "recent",
+      "period": null,
+      "phase": null,
+      "value": null,
+      "lower": null,
+      "upper": null,
+      "quantile": 0.9,
+      "smoothing": 2.0,
+      "delay": 1.0,
+      "outside_weight": 0.2
+    },
+    "chosen": {
+      "site": "module_input:model.embed_layer.emb:0:['args', 0]:last",
+      "error": 0.4818676062779444,
+      "errors": [
+        0.4818676062779444
+      ],
+      "mean_coefficient_norm": 0.19999999999999998,
+      "details": [
+        {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        }
+      ]
+    },
+    "rank": 96,
+    "observed_internal_sites": 150,
+    "searched_candidates": 4,
+    "candidate_scores": [
+      {
+        "site": "module_input:model.embed_layer.emb:0:['args', 0]:last",
+        "error": 0.4818676062779444,
+        "errors": [
+          0.4818676062779444
+        ],
+        "mean_coefficient_norm": 0.19999999999999998,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:lm_heads.0:0:['args', 0]:last",
+        "error": 0.6545318645632276,
+        "errors": [
+          0.6545318645632276
+        ],
+        "mean_coefficient_norm": 0.2,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:lm_heads.0:0:['args', 0]:shared",
+        "error": 0.6579363568331273,
+        "errors": [
+          0.6579363568331273
+        ],
+        "mean_coefficient_norm": 0.20000000000000004,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "input:__input__:0:[]:single",
+        "error": 0.5719059900998326,
+        "errors": [
+          0.5719059900998326
+        ],
+        "mean_coefficient_norm": 0.20000000000000007,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      }
+    ],
+    "screening": [
+      {
+        "site": "module_input:model.embed_layer.emb:0:['args', 0]:last",
+        "normalized_signed_effect": 0.015933063162125945
+      },
+      {
+        "site": "module_input:model.layers.0.self_attn.q_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 3.5851157011884533e-06
+      },
+      {
+        "site": "module_input:model.layers.0.self_attn.v_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.003248268450819826
+      },
+      {
+        "site": "module_input:model.layers.0.norm1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.006609903597988271
+      },
+      {
+        "site": "module_input:model.layers.0.ffn_layer.up_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0024215910621518478
+      },
+      {
+        "site": "module_input:model.layers.0.norm2:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0084050709066954
+      },
+      {
+        "site": "module_input:model.layers.1.self_attn.k_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0002599401978054427
+      },
+      {
+        "site": "module_input:model.layers.1.self_attn.o_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0005962016880788758
+      },
+      {
+        "site": "module_input:model.layers.1.ffn_layer.gate_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0018326456046267542
+      },
+      {
+        "site": "module_input:model.layers.1.ffn_layer.up_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.001454839971128803
+      },
+      {
+        "site": "module_input:model.layers.1.norm2:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.005813633936313473
+      },
+      {
+        "site": "module_input:model.layers.2.self_attn.k_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 1.7498667047817584e-05
+      },
+      {
+        "site": "module_input:model.layers.2.self_attn.o_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.00044675179917020067
+      },
+      {
+        "site": "module_input:model.layers.2.ffn_layer.gate_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0019818272480795155
+      },
+      {
+        "site": "module_input:model.layers.2.ffn_layer.down_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.000907298376794749
+      },
+      {
+        "site": "module_input:model.layers.3.self_attn.q_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 6.63340494077809e-05
+      },
+      {
+        "site": "module_input:model.layers.3.self_attn.v_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0002934978136303033
+      },
+      {
+        "site": "module_input:model.layers.3.norm1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0053277673901365175
+      },
+      {
+        "site": "module_input:model.layers.3.ffn_layer.gate_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0018746253387675028
+      },
+      {
+        "site": "module_input:model.layers.3.ffn_layer.down_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.004145136941053116
+      },
+      {
+        "site": "module_input:model.layers.4.self_attn.q_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0001537732011544169
+      },
+      {
+        "site": "module_input:model.layers.4.self_attn.v_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0025348891973758754
+      },
+      {
+        "site": "module_input:model.layers.4.norm1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.011350353738585527
+      },
+      {
+        "site": "module_input:model.layers.4.ffn_layer.up_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0028888607349777163
+      },
+      {
+        "site": "module_input:model.layers.4.norm2:0:['args', 0]:last",
+        "normalized_signed_effect": 0.008869592983081943
+      },
+      {
+        "site": "module_input:model.layers.5.self_attn.k_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 4.7535969758738106e-05
+      },
+      {
+        "site": "module_input:model.layers.5.self_attn.o_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00016831054694256884
+      },
+      {
+        "site": "module_input:model.layers.5.norm1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.007083732345682529
+      },
+      {
+        "site": "module_input:model.layers.5.ffn_layer.up_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0012659231494254045
+      },
+      {
+        "site": "module_input:model.layers.5.norm2:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.012988632314858986
+      },
+      {
+        "site": "module_input:model.layers.6.self_attn.k_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.00012590045843326265
+      },
+      {
+        "site": "module_input:model.layers.6.self_attn.o_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0004303309023010607
+      },
+      {
+        "site": "module_input:model.layers.6.norm1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.002175847337406421
+      },
+      {
+        "site": "module_input:model.layers.6.norm1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.016205502564858518
+      },
+      {
+        "site": "module_input:model.layers.6.ffn_layer.gate_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0023666607748126568
+      },
+      {
+        "site": "module_input:model.layers.6.ffn_layer.gate_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002329456789741573
+      },
+      {
+        "site": "module_input:model.layers.6.ffn_layer.up_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0017742415746014764
+      },
+      {
+        "site": "module_input:model.layers.6.ffn_layer.up_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002050372634503814
+      },
+      {
+        "site": "module_input:model.layers.6.ffn_layer.down_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.002349295932246481
+      },
+      {
+        "site": "module_input:model.layers.6.ffn_layer.down_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0013899142633645844
+      },
+      {
+        "site": "module_input:model.layers.6.norm2:0:['args', 0]:last",
+        "normalized_signed_effect": 0.005405702076866953
+      },
+      {
+        "site": "module_input:model.layers.6.norm2:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.008451596242917385
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.q_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00041674023518982413
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.q_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0003946771394774816
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.k_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0005967648928950753
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.k_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 7.104836141783124e-05
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.v_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0026347875000715514
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.v_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.004607713150866185
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.o_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.003021036178499571
+      },
+      {
+        "site": "module_input:model.layers.7.self_attn.o_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0023318661807381156
+      },
+      {
+        "site": "module_input:model.layers.7.norm1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.005472118758908498
+      },
+      {
+        "site": "module_input:model.layers.7.norm1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.004539725430552812
+      },
+      {
+        "site": "module_input:model.layers.7.ffn_layer.gate_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.002593288519121031
+      },
+      {
+        "site": "module_input:model.layers.7.ffn_layer.gate_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002868056267528951
+      },
+      {
+        "site": "module_input:model.layers.7.ffn_layer.up_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.003124373172355925
+      },
+      {
+        "site": "module_input:model.layers.7.ffn_layer.up_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.004570504665169874
+      },
+      {
+        "site": "module_input:model.layers.7.ffn_layer.down_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.010147273619319266
+      },
+      {
+        "site": "module_input:model.layers.7.ffn_layer.down_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.009605587400152504
+      },
+      {
+        "site": "module_input:model.layers.7.norm2:0:['args', 0]:last",
+        "normalized_signed_effect": 0.007857775096446817
+      },
+      {
+        "site": "module_input:model.layers.7.norm2:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.011497667774405288
+      },
+      {
+        "site": "module_input:model.norm:0:['args', 0]:last",
+        "normalized_signed_effect": 0.025011540222395327
+      },
+      {
+        "site": "module_input:model.norm:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.02712714961792926
+      },
+      {
+        "site": "module_input:lm_heads.0:0:['args', 0]:last",
+        "normalized_signed_effect": 0.02099403859801011
+      },
+      {
+        "site": "module_input:lm_heads.0:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.023505078288272658
+      }
+    ],
+    "rejected_candidates": [],
+    "model_calls": 233,
+    "elapsed_seconds": 10.334268520935439,
+    "context_length": 256,
+    "prediction_length": 32,
+    "caveat": "bounded search; best observed validation score, not global optimality or semantic disentanglement"
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "passed": true,
+  "checks": {
+    "bolt": {
+      "identity": {
+        "repeat_max_error": 0.0,
+        "self_patch_max_error": 0.0
+      },
+      "peak_rss_bytes": 1083744256,
+      "short_history_and_transfer_waveform_replay": true,
+      "finite_arrays": true,
+      "oracle_response_nmse": 0.16652092360873783
+    },
+    "timesfm": {
+      "identity": {
+        "repeat_max_error": 0.0,
+        "self_patch_max_error": 0.0
+      },
+      "peak_rss_bytes": 1788325888,
+      "short_history_and_transfer_waveform_replay": true,
+      "finite_arrays": true,
+      "oracle_response_nmse": 0.13422260337696232
+    }
+  },
+  "paired_timesfm_minus_bolt": {
+    "harm": {
+      "monash_electricity_hourly": {
+        "mean": 0.6688919317378691,
+        "source_min": 0.11936584821845586,
+        "source_max": 1.268191682010634
+      },
+      "m4_hourly": {
+        "mean": -0.07550769494756736,
+        "source_min": -0.24575038744237182,
+        "source_max": 0.012985641266526708
+      },
+      "monash_pedestrian_counts": {
+        "mean": -0.040327455401244106,
+        "source_min": -0.1326734584999648,
+        "source_max": 0.020464446354689983
+      }
+    },
+    "scaling_rms": {
+      "monash_electricity_hourly": {
+        "mean": 1.7349907218581539e-06,
+        "source_min": -4.970558078611777e-08,
+        "source_max": 3.17218954208704e-06
+      },
+      "m4_hourly": {
+        "mean": 1.094720781153116e-06,
+        "source_min": 5.786239953856847e-07,
+        "source_max": 2.3220524433911384e-06
+      },
+      "monash_pedestrian_counts": {
+        "mean": 4.1905733725176135e-07,
+        "source_min": 1.8764318623025248e-07,
+        "source_max": 5.399558298590844e-07
+      }
+    },
+    "history_gain": {
+      "monash_electricity_hourly": {
+        "mean": -0.2892380146832978,
+        "source_min": -0.7563732429601684,
+        "source_max": 0.009840880052542467
+      },
+      "m4_hourly": {
+        "mean": -0.019813024057186223,
+        "source_min": -0.07801288886956548,
+        "source_max": 0.001341995259150618
+      },
+      "monash_pedestrian_counts": {
+        "mean": -0.3554506962326079,
+        "source_min": -1.3529254933137929,
+        "source_max": -0.004757157319745554
+      }
+    }
+  },
+  "scope": "Independent model-free short-history/transfer/scaling/SAE-functional losses and all decision gates. History gates use stored per-source losses: long/control unmodified forecast arrays were not retained in this pilot. SAE reconstruction/geometry diagnostics are read, not independently regenerated. Source min/max are descriptive ranges, not confidence intervals"
+}

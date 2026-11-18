@@ -1,0 +1,143 @@
+{
+  "config": {
+    "seed_base": 3400000,
+    "n_seeds": 64,
+    "contexts": [
+      128,
+      512
+    ],
+    "pairs": [
+      [
+        32,
+        16
+      ],
+      [
+        40,
+        20
+      ]
+    ],
+    "horizon": 64,
+    "delta": 0.02,
+    "amplitudes": [
+      0.5,
+      2.0
+    ],
+    "offset": [
+      -2.0,
+      2.0
+    ],
+    "models": [
+      {
+        "name": "bolt",
+        "adapter": "chronos_bolt",
+        "checkpoint": "amazon/chronos-bolt-small"
+      },
+      {
+        "name": "timesfm",
+        "adapter": "timesfm",
+        "checkpoint": "google/timesfm-2.5-200m-pytorch"
+      },
+      {
+        "name": "chronos2",
+        "adapter": "chronos2",
+        "checkpoint": "amazon/chronos-2"
+      }
+    ],
+    "literature_primary_urls": [
+      "https://arxiv.org/abs/2510.19236",
+      "https://arxiv.org/abs/2511.15324",
+      "https://arxiv.org/abs/2502.06037",
+      "https://arxiv.org/abs/2511.05619",
+      "https://arxiv.org/abs/2610.28997",
+      "https://arxiv.org/abs/2611.02750"
+    ],
+    "novelty_boundary": "Prior work covers composition interference, spectral shift and patch/tokenization effects; this is a controlled comparative generalization diagnostic, not a new aliasing mechanism",
+    "primary_estimand": "sign_probability",
+    "alpha": 0.05,
+    "n_boot": 2000,
+    "bootstrap_seed": 3400017,
+    "minimum_absolute_mean": null,
+    "family_size": 22,
+    "maximum_basis_condition": 100.0,
+    "candidate_gate": "No further expansion without root review",
+    "scope": "forecast-only discovery screen; exact q concerns conditional non-tie majority, not mean superiority; no hidden-feature cause or aliasing diagnosis",
+    "time_origin": "context t=-C..-1, future t=0..H-1; identical future across contexts",
+    "normalization": "native mean/scale recorded, never frozen; empirical context statistics separately labeled",
+    "resource": {
+      "cpu_threads": 2,
+      "batch_size": 8,
+      "gpu_gib": 6,
+      "runtime_seconds": 300
+    },
+    "conditions": [
+      "baseline",
+      "minus",
+      "plus",
+      "pure_phi",
+      "pure_psi",
+      "background"
+    ],
+    "primary_context": 128,
+    "sensitivity_context": 512,
+    "units": "Every pure/mixed/background MSE uses common theoretical (a\u00b2+b\u00b2)/2, not realized finite-window variance; derivative energy uses b\u00b2/2",
+    "comparator_scope": "S uses oracle-separated component inputs and three native calls; not a deployable repair. G includes all native computation and input-dependent normalization, not specifically hidden interactions",
+    "effects": [
+      "g32",
+      "g40",
+      "g40_minus_g32",
+      "C32",
+      "C40",
+      "C40_minus_C32",
+      "o32",
+      "o40",
+      "o40_minus_o32",
+      "G_timesfm32",
+      "G_bolt40"
+    ],
+    "minimum_mse_effect": 0.05,
+    "minimum_off_energy_effect": 0.02,
+    "role": "fresh replication of the preselected crossover; both contexts globally corrected;512 cannot rescue128",
+    "composition": "G=L-S where S uses actual f(pure_phi)+f(pure_psi)-f(background); C=G_timesfm-G_bolt",
+    "legacy_interaction": "mixed-minus-average-pure J is descriptive only; separable frequency error can produce J!=0 at G=0",
+    "ratio": "sum of per-seed normalized S divided by sum of per-seed normalized L; paired whole-seed bootstrap, pointwise",
+    "ranking_flip": "requires passing g32>0,g40<0 AND g40-g32<0 at128;512 sensitivity does not rescue",
+    "nonadditivity": "positive passing G establishes a diagnostic error reduction; nonsignificant G does not establish absence"
+  },
+  "sources": {
+    "p32_16_c128": {
+      "corpus_sha256": "69360df451e91e53c5b07e7a9c11efc200345becce416cf63435c7c3c00d67fa",
+      "metadata_sha256": "4ce21c2e246e41812c5995a9b88ec66b05ba5aa31416ec0e6507592b2bfc4a6f",
+      "periods": [
+        32,
+        16
+      ]
+    },
+    "p32_16_c512": {
+      "corpus_sha256": "92b232f8a23c86684c4136f7594f7ea6b25115c818c3ab968ff94a9a4ab8f185",
+      "metadata_sha256": "4ce21c2e246e41812c5995a9b88ec66b05ba5aa31416ec0e6507592b2bfc4a6f",
+      "periods": [
+        32,
+        16
+      ]
+    },
+    "p40_20_c128": {
+      "corpus_sha256": "d870835be36a2205df2383f907f2afe0c663e25f95085666c40d520e3b7a204f",
+      "metadata_sha256": "4ce21c2e246e41812c5995a9b88ec66b05ba5aa31416ec0e6507592b2bfc4a6f",
+      "periods": [
+        40,
+        20
+      ]
+    },
+    "p40_20_c512": {
+      "corpus_sha256": "0eb26d4001fd41839c0605eb72474a95c01fcc0dd5bb29695d9538aedb6e8b8e",
+      "metadata_sha256": "4ce21c2e246e41812c5995a9b88ec66b05ba5aa31416ec0e6507592b2bfc4a6f",
+      "periods": [
+        40,
+        20
+      ]
+    }
+  },
+  "driver_sha256": "89779c662ebe0543a92b0007abc4c5576b206423403c3d1b44cf66a4b2bf5ef7",
+  "screen_helper_sha256": "f1b608eadcc2bcb8e1c4cd0d05b4eda2ec7f470fe7199e2ba2c43b96321cbe5c",
+  "prepared_before_inference": true
+}

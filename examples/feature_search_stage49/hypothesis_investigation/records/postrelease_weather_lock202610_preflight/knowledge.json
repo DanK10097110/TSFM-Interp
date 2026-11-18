@@ -1,0 +1,14 @@
+{
+  "question": "Can the mechanism instrument detect ignored locking, unmatched inverse, wrong full replay and unauthorized launch?",
+  "design": "Real coherence normalizer helper applied to two tiny known-answer nonlinear fake models; no weights, data downloads or native inference.",
+  "exact_findings": {
+    "tests_passed": 4,
+    "plants_completed": 5,
+    "plants_caught": 5,
+    "native_launched": false
+  },
+  "controls": "Full12, ordinary residual4, full-history-locked residual28; inverse and restoration independently checked; in-memory mutants never edit shared helper.",
+  "limitations": "Instrument unit tests do not establish native anchor identity; that remains an exact gate in the future authorized worker.",
+  "evidence_class": "software verification",
+  "next_decision": "Freeze same30-window mechanism protocol; HOLD native until slot grant."
+}

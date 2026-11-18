@@ -1,0 +1,98 @@
+{
+  "question": "Do denominator weighting or actual output errors explain mean reversal?",
+  "status": "complete_objective_closed",
+  "native_calls": 0,
+  "fit_steps": 0,
+  "exact_results": {
+    "source_table": "source_table.csv",
+    "domain_summary": "domain_summary.json",
+    "paired_contributions": "paired_contributions.json",
+    "influence": "influence.json",
+    "hidden_associations": "hidden_output_associations.json",
+    "audit": "energy_identity_audit.json",
+    "checks": 600,
+    "execution": {
+      "returncode": 0,
+      "seconds": 0.4633585709379986,
+      "reason": null,
+      "threads": 1,
+      "native_calls": 0,
+      "fit_steps": 0
+    },
+    "validation": "4 tests passed before execution;600 FP64 identity checks;90 source-method-direction rows",
+    "compact_findings": {
+      "sinusoid": {
+        "mean_nmse": [
+          0.14779665980988985,
+          0.19236556912378608
+        ],
+        "median_nmse": [
+          0.11164260549725116,
+          0.03049130331216129
+        ],
+        "mean_error_energy_history_variance": [
+          0.00420397959319133,
+          0.0021108072573565806
+        ],
+        "pooled_raw_energy_ratio": [
+          0.15977552750577015,
+          0.19809028167919582
+        ],
+        "pooled_history_normalized_energy_ratio": [
+          0.09962546990160744,
+          0.05002169021620697
+        ],
+        "net_mean_worsening_fraction_from_orthogonal_component": 0.866146307322382,
+        "hidden_nmse_improved_sources": 15,
+        "n_sources": 15
+      },
+      "noise": {
+        "mean_nmse": [
+          0.7082152774328037,
+          0.8738374357450586
+        ],
+        "median_nmse": [
+          0.5084825747188989,
+          0.2761538391405761
+        ],
+        "mean_error_energy_history_variance": [
+          0.007429496410932423,
+          0.014622474951728765
+        ],
+        "pooled_raw_energy_ratio": [
+          0.536958287827822,
+          0.2744250763285671
+        ],
+        "pooled_history_normalized_energy_ratio": [
+          0.5133076997963011,
+          1.0102742592023026
+        ],
+        "net_mean_worsening_fraction_from_orthogonal_component": 0.9408665844847379,
+        "hidden_nmse_improved_sources": 15,
+        "n_sources": 15
+      }
+    }
+  },
+  "controls": [
+    "all saved sources retained in primary",
+    "fixed same-source top1/top2 removal rule",
+    "parallel/orthogonal and energy identities checked",
+    "actual singleton hidden/reconstructed states, no cached proxies"
+  ],
+  "limitations": [
+    "single seed and previously inspected15 sources",
+    "top-removal results are influence diagnostics, not an improved result",
+    "finite response differences do not estimate a downstream Jacobian"
+  ],
+  "next_step": "Objective branch CLOSED; no optimization, fitting or native work.",
+  "interpretation": {
+    "primary_unchanged": "All15 source-mean lambda1 native sine/noise NMSE remains worse than lambda0. Median and deletion sensitivity do not replace the primary.",
+    "sinusoid": "syn:4942017 and syn:4942016 account for96.62% of positive paired NMSE deterioration. Their native response energy/history variance is3.54% and6.81% of the direction median (lowest2/15). Both also have genuine error-energy increases; not merely numerical-floor effects. Across all sources mean error/history variance decreases .00420398 to .00211081.",
+    "noise": "Electricity:T000129 and pedestrian:T000034 account for99.17% of positive paired NMSE deterioration. Electricity native energy/history variance is3.8616x median (rank13/15 ascending); error/history variance rises .0268935 to .1699058. Pedestrian rises .00207958 to .01345065. Actual adverse error increases drive this tail; all-source mean error/history variance rises .00742950 to .01462247.",
+    "decomposition": "Net source-mean NMSE worsening is86.61% orthogonal for sine and94.09% orthogonal for noise; this is an aggregate decomposition, not a universal per-source pattern. Electricity noise deterioration includes a large parallel component; pedestrian noise is predominantly orthogonal.",
+    "influence": "Predeclared removal of top1 or top2 paired deteriorations flips both directions to lower lambda1 means. These posthoc influence sensitivities retain the original primary and are not an exclusion rule.",
+    "unit_weighting": "Raw pooled energies and history-normalized pooled energies weight sources differently. Noise raw pooling improves .536958 to .274425 while normalized pooling worsens .513308 to1.010274; neither substitutes for source-average NMSE.",
+    "hidden_output": "Saved actual singleton hidden response NMSE improves for all15 sources in each direction, including adverse native-output cases. Correlations are descriptive; paired NMSE-change Spearman .110714 sine/.075 noise. No measured Jacobian or causal mechanism follows.",
+    "closure": "One saved-array-only diagnostic complete. Native and objective branches remain CLOSED; no fitting, native calls, tuning or source selection."
+  }
+}

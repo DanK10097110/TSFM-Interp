@@ -1,0 +1,4576 @@
+{
+  "curves": {
+    "m4_hourly/real/discovery": {
+      "levels": {
+        "1": {
+          "loss": {
+            "mean": 0.29045579804804045,
+            "low": 0.022126222939716778,
+            "high": 0.6962755276446106,
+            "independent_sources": 4,
+            "positive_sources": 4,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0,
+            "independent_sources": 4,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "2": {
+          "loss": {
+            "mean": 2.9301882494477245,
+            "low": 0.22981557279477782,
+            "high": 7.822410644594445,
+            "independent_sources": 4,
+            "positive_sources": 4,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -2.6397324513996843,
+            "low": -7.717762945293076,
+            "high": -0.04865701079833133,
+            "independent_sources": 4,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "4": {
+          "loss": {
+            "mean": 0.7030133649368211,
+            "low": 0.460823469972813,
+            "high": 1.1061985882982162,
+            "independent_sources": 4,
+            "positive_sources": 4,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.4125575668887806,
+            "low": -0.4748629436512051,
+            "high": -0.36345928826771956,
+            "independent_sources": 4,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "8": {
+          "loss": {
+            "mean": 0.6326073510757645,
+            "low": 0.2619843121408812,
+            "high": 0.9916746759531786,
+            "independent_sources": 4,
+            "positive_sources": 4,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.34215155302772404,
+            "low": -0.5305441998591187,
+            "high": -0.1537589061963293,
+            "independent_sources": 4,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        }
+      },
+      "classical": {
+        "spectral": {
+          "mean": 1.418850097936909,
+          "low": 0.9723412753306532,
+          "high": 1.6942506919777667,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "seasonal": {
+          "mean": 0.6843121367344922,
+          "low": 0.02977969335733037,
+          "high": 1.651656801371027,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "decomposed_spectral": {
+          "mean": 2.45264072573181,
+          "low": 1.83898308640407,
+          "high": 2.8496258268133077,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "crossings": {
+        "1": 3,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "None": 1
+      },
+      "nonmonotone_sources": 4
+    },
+    "m4_hourly/real/check": {
+      "levels": {
+        "1": {
+          "loss": {
+            "mean": 0.473469576292681,
+            "low": 0.07459744303360961,
+            "high": 1.1514819411412627,
+            "independent_sources": 4,
+            "positive_sources": 4,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0,
+            "independent_sources": 4,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "2": {
+          "loss": {
+            "mean": 4.615891631580197,
+            "low": 0.6772468552542049,
+            "high": 11.54209579240216,
+            "independent_sources": 4,
+            "positive_sources": 4,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -4.1424220552875175,
+            "low": -11.284315090945896,
+            "high": -0.45439248034835433,
+            "independent_sources": 4,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "4": {
+          "loss": {
+            "mean": 0.9271049573291065,
+            "low": 0.4663188567181802,
+            "high": 1.3940026607512126,
+            "independent_sources": 4,
+            "positive_sources": 4,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.45363538103642553,
+            "low": -1.2007745595734836,
+            "high": 0.29350379750063255,
+            "independent_sources": 4,
+            "positive_sources": 1,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "8": {
+          "loss": {
+            "mean": 1.302146086418654,
+            "low": 0.564083569249052,
+            "high": 2.081908284926035,
+            "independent_sources": 4,
+            "positive_sources": 4,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.828676510125973,
+            "low": -1.6851216775966327,
+            "high": 0.02776865734468667,
+            "independent_sources": 4,
+            "positive_sources": 1,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        }
+      },
+      "classical": {
+        "spectral": {
+          "mean": 2.9687233842748317,
+          "low": 1.6019012577791791,
+          "high": 5.152166332953358,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "seasonal": {
+          "mean": 0.8830766690662211,
+          "low": 0.19226906481070505,
+          "high": 1.6897385366610926,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "decomposed_spectral": {
+          "mean": 2.9604761123039163,
+          "low": 2.501891810265788,
+          "high": 3.54117847720178,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "crossings": {
+        "1": 3,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "None": 1
+      },
+      "nonmonotone_sources": 4
+    },
+    "monash_electricity_hourly/real/discovery": {
+      "levels": {
+        "1": {
+          "loss": {
+            "mean": 1.0140281794867756,
+            "low": 0.31866079633518735,
+            "high": 1.7907362772101925,
+            "independent_sources": 4,
+            "positive_sources": 4,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0,
+            "independent_sources": 4,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "2": {
+          "loss": {
+            "mean": 0.7269510259111363,
+            "low": 0.5764192428700303,
+            "high": 0.8506310727548887,
+            "independent_sources": 4,
+            "positive_sources": 4,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": 0.28707715357563945,
+            "low": -0.3527923154133078,
+            "high": 1.1202606657648533,
+            "independent_sources": 4,
+            "positive_sources": 2,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "4": {
+          "loss": {
+            "mean": 0.8163221340981848,
+            "low": 0.5449642031691332,
+            "high": 1.0876800650272362,
+            "independent_sources": 4,
+            "positive_sources": 4,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": 0.19770604538859093,
+            "low": -0.5985181211267585,
+            "high": 1.323634337464913,
+            "independent_sources": 4,
+            "positive_sources": 2,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "8": {
+          "loss": {
+            "mean": 1.2734204836233545,
+            "low": 0.9598173639692629,
+            "high": 1.587023603277446,
+            "independent_sources": 4,
+            "positive_sources": 4,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.25939230413657877,
+            "low": -1.04435491733342,
+            "high": 0.8006548355371839,
+            "independent_sources": 4,
+            "positive_sources": 1,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        }
+      },
+      "classical": {
+        "spectral": {
+          "mean": 3.064613363293981,
+          "low": 1.2492979710581367,
+          "high": 5.073019136797616,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "seasonal": {
+          "mean": 1.532261813496747,
+          "low": 0.3701436674099613,
+          "high": 3.4248973728206873,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "decomposed_spectral": {
+          "mean": 2.196836708699212,
+          "low": 0.8563626033936802,
+          "high": 3.33840786113028,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "crossings": {
+        "1": 1,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "None": 3
+      },
+      "nonmonotone_sources": 4
+    },
+    "monash_electricity_hourly/real/check": {
+      "levels": {
+        "1": {
+          "loss": {
+            "mean": 0.6360691568974826,
+            "low": 0.4901126345169516,
+            "high": 0.8652190703242942,
+            "independent_sources": 4,
+            "positive_sources": 4,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0,
+            "independent_sources": 4,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "2": {
+          "loss": {
+            "mean": 1.0451088326555347,
+            "low": 0.7667134053760014,
+            "high": 1.2181869204391207,
+            "independent_sources": 4,
+            "positive_sources": 4,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.4090396757580522,
+            "low": -0.6306289978998403,
+            "high": -0.1874503536162641,
+            "independent_sources": 4,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "4": {
+          "loss": {
+            "mean": 1.319018566499142,
+            "low": 1.1673500331660795,
+            "high": 1.605549039303039,
+            "independent_sources": 4,
+            "positive_sources": 4,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.6829494096016595,
+            "low": -1.071357427796428,
+            "high": -0.3250228764235056,
+            "independent_sources": 4,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "8": {
+          "loss": {
+            "mean": 1.3475263242488758,
+            "low": 1.1250552418788982,
+            "high": 1.5793854148375237,
+            "independent_sources": 4,
+            "positive_sources": 4,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.7114571673513932,
+            "low": -1.0483765743003175,
+            "high": -0.4849043430512139,
+            "independent_sources": 4,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        }
+      },
+      "classical": {
+        "spectral": {
+          "mean": 2.412058333435898,
+          "low": 1.233648511996741,
+          "high": 3.5904681548750554,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "seasonal": {
+          "mean": 0.44982295356092816,
+          "low": 0.3049912386647994,
+          "high": 0.580294028493513,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "decomposed_spectral": {
+          "mean": 2.390049218061504,
+          "low": 2.0781048058561336,
+          "high": 2.8321604934006848,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "crossings": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "None": 4
+      },
+      "nonmonotone_sources": 4
+    },
+    "monash_pedestrian_counts/real/discovery": {
+      "levels": {
+        "1": {
+          "loss": {
+            "mean": 0.08232353752665769,
+            "low": 0.03332218507402064,
+            "high": 0.11597240576806393,
+            "independent_sources": 4,
+            "positive_sources": 4,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0,
+            "independent_sources": 4,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "2": {
+          "loss": {
+            "mean": 0.134812230602312,
+            "low": 0.0957838220046033,
+            "high": 0.16248893999634834,
+            "independent_sources": 4,
+            "positive_sources": 4,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.052488693075654326,
+            "low": -0.06835235780031924,
+            "high": -0.03662502835098941,
+            "independent_sources": 4,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "4": {
+          "loss": {
+            "mean": 0.7031325576115613,
+            "low": 0.413541945863962,
+            "high": 0.9653491235396083,
+            "independent_sources": 4,
+            "positive_sources": 4,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.6208090200849038,
+            "low": -0.8890707977526597,
+            "high": -0.3098207123863643,
+            "independent_sources": 4,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "8": {
+          "loss": {
+            "mean": 0.49193773542700825,
+            "low": 0.2511010683358001,
+            "high": 0.7327744025182166,
+            "independent_sources": 4,
+            "positive_sources": 4,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.4096141979003506,
+            "low": -0.6230929381036145,
+            "high": -0.19613545769708665,
+            "independent_sources": 4,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        }
+      },
+      "classical": {
+        "spectral": {
+          "mean": 2.227381230975083,
+          "low": 1.918512442797769,
+          "high": 2.519444867166259,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "seasonal": {
+          "mean": 0.18787425287150789,
+          "low": 0.0790087023887467,
+          "high": 0.2945761333559121,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "decomposed_spectral": {
+          "mean": 3.2825840746707353,
+          "low": 3.038676017185752,
+          "high": 3.5875704666998387,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "crossings": {
+        "1": 4,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "None": 0
+      },
+      "nonmonotone_sources": 4
+    },
+    "monash_pedestrian_counts/real/check": {
+      "levels": {
+        "1": {
+          "loss": {
+            "mean": 0.1116029813926477,
+            "low": 0.06945231933547347,
+            "high": 0.15506726019404762,
+            "independent_sources": 4,
+            "positive_sources": 4,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0,
+            "independent_sources": 4,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "2": {
+          "loss": {
+            "mean": 0.16917246204950642,
+            "low": 0.14538898902710884,
+            "high": 0.20430352059226986,
+            "independent_sources": 4,
+            "positive_sources": 4,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.05756948065685871,
+            "low": -0.113781945864695,
+            "high": -0.0012948531982177706,
+            "independent_sources": 4,
+            "positive_sources": 1,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "4": {
+          "loss": {
+            "mean": 0.31217962044239717,
+            "low": 0.12249550767697005,
+            "high": 0.5630228125579154,
+            "independent_sources": 4,
+            "positive_sources": 4,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.20057663904974943,
+            "low": -0.47100418821022877,
+            "high": -0.0352327868545957,
+            "independent_sources": 4,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "8": {
+          "loss": {
+            "mean": 0.3982009846664424,
+            "low": 0.1796052842728502,
+            "high": 0.7278851308704518,
+            "independent_sources": 4,
+            "positive_sources": 4,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.2865980032737947,
+            "low": -0.6147803985202589,
+            "high": -0.10500076525143615,
+            "independent_sources": 4,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        }
+      },
+      "classical": {
+        "spectral": {
+          "mean": 2.2584469123577255,
+          "low": 1.9016996088260298,
+          "high": 2.6290547772589328,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "seasonal": {
+          "mean": 0.23488814630389726,
+          "low": 0.14397809824162933,
+          "high": 0.32209144585891436,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "decomposed_spectral": {
+          "mean": 3.2770273307434237,
+          "low": 2.8693977457554887,
+          "high": 3.7238124684241987,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "crossings": {
+        "1": 4,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "None": 0
+      },
+      "nonmonotone_sources": 4
+    },
+    "synthetic/chirp/discovery": {
+      "levels": {
+        "1": {
+          "loss": {
+            "mean": 0.9096764235248351,
+            "low": 0.6869537196292105,
+            "high": 1.1119982690311783,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0,
+            "independent_sources": 8,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "2": {
+          "loss": {
+            "mean": 1.3250966642112605,
+            "low": 0.9655793337388285,
+            "high": 1.6864717036558237,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.41542024068642547,
+            "low": -0.6455064957773482,
+            "high": -0.1763898560841414,
+            "independent_sources": 8,
+            "positive_sources": 2,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "4": {
+          "loss": {
+            "mean": 1.9588408953424683,
+            "low": 1.49336114301138,
+            "high": 2.442949164815481,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -1.0491644718176332,
+            "low": -1.418157124475823,
+            "high": -0.6766751257479797,
+            "independent_sources": 8,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "8": {
+          "loss": {
+            "mean": 2.45517454598736,
+            "low": 1.960011333993021,
+            "high": 3.0154720609486843,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -1.5454981224625253,
+            "low": -1.9447722251769117,
+            "high": -1.1903006846595086,
+            "independent_sources": 8,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        }
+      },
+      "classical": {
+        "spectral": {
+          "mean": 2.5795415667594446,
+          "low": 1.7434789614866821,
+          "high": 3.430343240359379,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "seasonal": {
+          "mean": 2.2121111850738737,
+          "low": 2.021523877525533,
+          "high": 2.466253992525341,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "decomposed_spectral": {
+          "mean": 3.191883148668415,
+          "low": 2.3838738043190104,
+          "high": 3.932587811768815,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "crossings": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "None": 8
+      },
+      "nonmonotone_sources": 8
+    },
+    "synthetic/chirp/check": {
+      "levels": {
+        "1": {
+          "loss": {
+            "mean": 0.9824645954673021,
+            "low": 0.8151568902387026,
+            "high": 1.1474665469194247,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0,
+            "independent_sources": 8,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "2": {
+          "loss": {
+            "mean": 1.0994722951355838,
+            "low": 0.8667109787361424,
+            "high": 1.323705664279482,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.11700769966828167,
+            "low": -0.20005419778101471,
+            "high": -0.02595425551703898,
+            "independent_sources": 8,
+            "positive_sources": 2,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "4": {
+          "loss": {
+            "mean": 1.7837059648066238,
+            "low": 1.5431138648927514,
+            "high": 2.03525127273429,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.8012413693393214,
+            "low": -1.1000053000927348,
+            "high": -0.5554199222539893,
+            "independent_sources": 8,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "8": {
+          "loss": {
+            "mean": 2.442968692251844,
+            "low": 2.096849027212889,
+            "high": 2.792185307531425,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -1.460504096784542,
+            "low": -1.8328492912564645,
+            "high": -1.0367271312967539,
+            "independent_sources": 8,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        }
+      },
+      "classical": {
+        "spectral": {
+          "mean": 1.9928703270807564,
+          "low": 1.5126240718215649,
+          "high": 2.515116548744398,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "seasonal": {
+          "mean": 2.3883831719948554,
+          "low": 1.9800577962242636,
+          "high": 2.873107503384525,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "decomposed_spectral": {
+          "mean": 2.8195227442145274,
+          "low": 2.275732190534953,
+          "high": 3.3585818828248533,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "crossings": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "None": 8
+      },
+      "nonmonotone_sources": 8
+    },
+    "synthetic/coupled/discovery": {
+      "levels": {
+        "1": {
+          "loss": {
+            "mean": 0.8610491993438841,
+            "low": 0.6800841189572653,
+            "high": 1.057399899876629,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0,
+            "independent_sources": 8,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "2": {
+          "loss": {
+            "mean": 1.1541871031718536,
+            "low": 0.8971339523760238,
+            "high": 1.4434467186971092,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.29313790382796934,
+            "low": -0.4118447662867021,
+            "high": -0.17977182453613855,
+            "independent_sources": 8,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "4": {
+          "loss": {
+            "mean": 1.283627002249857,
+            "low": 0.9261847231926461,
+            "high": 1.6870998117290985,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.42257780290597297,
+            "low": -0.6794451583589153,
+            "high": -0.13932237233976183,
+            "independent_sources": 8,
+            "positive_sources": 2,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "8": {
+          "loss": {
+            "mean": 1.2981675146702831,
+            "low": 1.0502851253686767,
+            "high": 1.6335384593887685,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.4371183153263989,
+            "low": -0.6533125172554209,
+            "high": -0.2466419956178078,
+            "independent_sources": 8,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        }
+      },
+      "classical": {
+        "spectral": {
+          "mean": 0.12943933513145406,
+          "low": 0.09835691279234442,
+          "high": 0.15802451058587463,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "seasonal": {
+          "mean": 2.111177794006106,
+          "low": 1.9521650177933205,
+          "high": 2.3701851770799296,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "decomposed_spectral": {
+          "mean": 4.651184979195436e-30,
+          "low": 3.374335473976386e-30,
+          "high": 5.901518144971194e-30,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "crossings": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "None": 8
+      },
+      "nonmonotone_sources": 8
+    },
+    "synthetic/coupled/check": {
+      "levels": {
+        "1": {
+          "loss": {
+            "mean": 1.1535139574701265,
+            "low": 0.7518716661881658,
+            "high": 1.5415734081725323,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0,
+            "independent_sources": 8,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "2": {
+          "loss": {
+            "mean": 1.6763734515386295,
+            "low": 1.1297419601351362,
+            "high": 2.352879068608549,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.522859494068503,
+            "low": -0.9150105667475342,
+            "high": -0.1791972690613962,
+            "independent_sources": 8,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "4": {
+          "loss": {
+            "mean": 1.4048961612497242,
+            "low": 0.9936443511020618,
+            "high": 1.8285355587628527,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.25138220377959763,
+            "low": -0.7357854072638528,
+            "high": 0.3110532123665906,
+            "independent_sources": 8,
+            "positive_sources": 2,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "8": {
+          "loss": {
+            "mean": 1.1145931477644706,
+            "low": 0.7853640727455192,
+            "high": 1.4829709230063082,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": 0.03892080970565581,
+            "low": -0.3799513829468963,
+            "high": 0.5343974132858389,
+            "independent_sources": 8,
+            "positive_sources": 4,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        }
+      },
+      "classical": {
+        "spectral": {
+          "mean": 0.17817889751045682,
+          "low": 0.13142543575014992,
+          "high": 0.22532995874819972,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "seasonal": {
+          "mean": 2.28049102868884,
+          "low": 1.9007731564094863,
+          "high": 2.7054351578462703,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "decomposed_spectral": {
+          "mean": 4.925090046738269e-30,
+          "low": 3.1593001808536656e-30,
+          "high": 6.747420921934925e-30,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "crossings": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "None": 8
+      },
+      "nonmonotone_sources": 8
+    },
+    "synthetic/off_grid/discovery": {
+      "levels": {
+        "1": {
+          "loss": {
+            "mean": 1.1073055716027456,
+            "low": 0.8881504742276193,
+            "high": 1.299849991860082,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0,
+            "independent_sources": 8,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "2": {
+          "loss": {
+            "mean": 1.4956431131026084,
+            "low": 1.0410157753019234,
+            "high": 1.9959762448600102,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.3883375414998631,
+            "low": -0.7785328154453671,
+            "high": -0.07933176197508561,
+            "independent_sources": 8,
+            "positive_sources": 2,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "4": {
+          "loss": {
+            "mean": 1.5742370135946373,
+            "low": 1.168526377813331,
+            "high": 1.9869150243258276,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.4669314419918918,
+            "low": -0.7644418666443724,
+            "high": -0.18659681840927073,
+            "independent_sources": 8,
+            "positive_sources": 1,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "8": {
+          "loss": {
+            "mean": 1.8189837909200737,
+            "low": 1.1391019223335683,
+            "high": 2.8702884055449327,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.7116782193173281,
+            "low": -1.6673457803837004,
+            "high": -0.09173688416574492,
+            "independent_sources": 8,
+            "positive_sources": 2,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        }
+      },
+      "classical": {
+        "spectral": {
+          "mean": 1.4578323476464685,
+          "low": 1.1543521644926358,
+          "high": 1.7545447664438398,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "seasonal": {
+          "mean": 2.1531115321483103,
+          "low": 1.9020474563023444,
+          "high": 2.4786782463610995,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "decomposed_spectral": {
+          "mean": 2.6208005859649877,
+          "low": 2.0741246585428135,
+          "high": 3.121616736944459,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "crossings": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "None": 8
+      },
+      "nonmonotone_sources": 7
+    },
+    "synthetic/off_grid/check": {
+      "levels": {
+        "1": {
+          "loss": {
+            "mean": 1.0532899933925362,
+            "low": 0.8708858471557407,
+            "high": 1.2850113691117233,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0,
+            "independent_sources": 8,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "2": {
+          "loss": {
+            "mean": 1.4840738271119949,
+            "low": 1.1887354164257697,
+            "high": 1.8386732329353557,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.4307838337194586,
+            "low": -0.5908839482619478,
+            "high": -0.2618478480994696,
+            "independent_sources": 8,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "4": {
+          "loss": {
+            "mean": 1.777037099623478,
+            "low": 1.501993944509871,
+            "high": 2.0245823644590693,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.7237471062309415,
+            "low": -1.005623125901147,
+            "high": -0.4275692647634579,
+            "independent_sources": 8,
+            "positive_sources": 1,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "8": {
+          "loss": {
+            "mean": 1.8922504972392498,
+            "low": 1.5608872048576332,
+            "high": 2.2733342342027427,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.8389605038467134,
+            "low": -1.2514631751061178,
+            "high": -0.4556779134797992,
+            "independent_sources": 8,
+            "positive_sources": 1,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        }
+      },
+      "classical": {
+        "spectral": {
+          "mean": 1.637667150670008,
+          "low": 1.174554395158511,
+          "high": 2.222092536234657,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "seasonal": {
+          "mean": 2.313961189388044,
+          "low": 1.8953009378594445,
+          "high": 2.765758667484175,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "decomposed_spectral": {
+          "mean": 2.5624104824358165,
+          "low": 2.0290845616238067,
+          "high": 3.099672343333804,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "crossings": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "None": 8
+      },
+      "nonmonotone_sources": 8
+    },
+    "synthetic/phase_coherent/discovery": {
+      "levels": {
+        "1": {
+          "loss": {
+            "mean": 1.3197961891113055,
+            "low": 1.249618194079728,
+            "high": 1.3709535457739448,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0,
+            "independent_sources": 8,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "2": {
+          "loss": {
+            "mean": 1.4253616107333735,
+            "low": 1.3634188854275817,
+            "high": 1.495343659207417,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.10556542162206803,
+            "low": -0.1924779112266734,
+            "high": -0.021544217396018403,
+            "independent_sources": 8,
+            "positive_sources": 2,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "4": {
+          "loss": {
+            "mean": 0.7630969081578477,
+            "low": 0.6530716631932134,
+            "high": 0.8721984608869896,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": 0.5566992809534579,
+            "low": 0.39880597716123617,
+            "high": 0.7059772219989748,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "8": {
+          "loss": {
+            "mean": 1.2337135916432203,
+            "low": 1.2095923500864345,
+            "high": 1.2560814436647723,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": 0.08608259746808528,
+            "low": 0.0009653807713783227,
+            "high": 0.14769744532420623,
+            "independent_sources": 8,
+            "positive_sources": 7,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        }
+      },
+      "classical": {
+        "spectral": {
+          "mean": 0.1116790787953841,
+          "low": 0.07995699115670912,
+          "high": 0.14706838919972168,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "seasonal": {
+          "mean": 2.038682203544746,
+          "low": 1.8899497254240556,
+          "high": 2.2240759320270933,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "decomposed_spectral": {
+          "mean": 7.585696860551999e-30,
+          "low": 5.565535366348678e-30,
+          "high": 9.665775287227585e-30,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "crossings": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "None": 8
+      },
+      "nonmonotone_sources": 8
+    },
+    "synthetic/phase_coherent/check": {
+      "levels": {
+        "1": {
+          "loss": {
+            "mean": 1.342557294823731,
+            "low": 1.3152743253963552,
+            "high": 1.3726401734565634,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0,
+            "independent_sources": 8,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "2": {
+          "loss": {
+            "mean": 1.4712914139754958,
+            "low": 1.34767733485088,
+            "high": 1.5918045767326903,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.1287341191517649,
+            "low": -0.2539109047917619,
+            "high": 0.0007113743779348072,
+            "independent_sources": 8,
+            "positive_sources": 2,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "4": {
+          "loss": {
+            "mean": 0.7963838108751167,
+            "low": 0.6890009470738094,
+            "high": 0.8967343464415156,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": 0.5461734839486143,
+            "low": 0.41972846890295373,
+            "high": 0.6796784866679478,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "8": {
+          "loss": {
+            "mean": 1.2415950981217048,
+            "low": 1.2164518203129977,
+            "high": 1.2629754675031601,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": 0.10096219670202636,
+            "low": 0.07012640027013586,
+            "high": 0.1333463400123907,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        }
+      },
+      "classical": {
+        "spectral": {
+          "mean": 0.15976359270338444,
+          "low": 0.10760405954940541,
+          "high": 0.22046295317832673,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "seasonal": {
+          "mean": 2.0582439743564107,
+          "low": 1.8660194159990526,
+          "high": 2.259228816819966,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "decomposed_spectral": {
+          "mean": 9.264752170842949e-30,
+          "low": 6.0409580580649206e-30,
+          "high": 1.2671755924643424e-29,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "crossings": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "None": 8
+      },
+      "nonmonotone_sources": 8
+    },
+    "synthetic/phase_matched/discovery": {
+      "levels": {
+        "1": {
+          "loss": {
+            "mean": 1.0340477036303917,
+            "low": 0.8893240181935067,
+            "high": 1.1688401312782364,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0,
+            "independent_sources": 8,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "2": {
+          "loss": {
+            "mean": 1.3564763865352667,
+            "low": 1.0996775704243775,
+            "high": 1.6338228314291245,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.3224286829048749,
+            "low": -0.5650761792634449,
+            "high": -0.07387397752873785,
+            "independent_sources": 8,
+            "positive_sources": 2,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "4": {
+          "loss": {
+            "mean": 1.1363317124944605,
+            "low": 0.9168097276913745,
+            "high": 1.3796272848801192,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.10228400886406895,
+            "low": -0.3521059552070056,
+            "high": 0.1336621829151624,
+            "independent_sources": 8,
+            "positive_sources": 4,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "8": {
+          "loss": {
+            "mean": 1.1564735757976372,
+            "low": 1.0003735425750877,
+            "high": 1.334781335295513,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.1224258721672457,
+            "low": -0.34688056519363675,
+            "high": 0.10379957445942202,
+            "independent_sources": 8,
+            "positive_sources": 4,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        }
+      },
+      "classical": {
+        "spectral": {
+          "mean": 0.11478307955300415,
+          "low": 0.08237102096037655,
+          "high": 0.1493195729038067,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "seasonal": {
+          "mean": 2.095840294368503,
+          "low": 1.8414163558113716,
+          "high": 2.341169854327614,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "decomposed_spectral": {
+          "mean": 6.44751053030541e-30,
+          "low": 4.364675938512788e-30,
+          "high": 8.852004020237267e-30,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "crossings": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "None": 8
+      },
+      "nonmonotone_sources": 8
+    },
+    "synthetic/phase_matched/check": {
+      "levels": {
+        "1": {
+          "loss": {
+            "mean": 1.1482150408334877,
+            "low": 1.0591449428590234,
+            "high": 1.2397955549975905,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0,
+            "independent_sources": 8,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "2": {
+          "loss": {
+            "mean": 1.6849661092190766,
+            "low": 1.1476360367825076,
+            "high": 2.4328199595211233,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.5367510683855888,
+            "low": -1.343138115571946,
+            "high": 0.03069922758944185,
+            "independent_sources": 8,
+            "positive_sources": 3,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "4": {
+          "loss": {
+            "mean": 1.2319079905005317,
+            "low": 1.0328378377878682,
+            "high": 1.4361123858380571,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.08369294966704402,
+            "low": -0.20934982137552224,
+            "high": 0.04144471823332392,
+            "independent_sources": 8,
+            "positive_sources": 3,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "8": {
+          "loss": {
+            "mean": 1.2448839546482806,
+            "low": 1.1497904745879894,
+            "high": 1.3337257453629694,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.09666891381479303,
+            "low": -0.16228148555238728,
+            "high": -0.024128148750789915,
+            "independent_sources": 8,
+            "positive_sources": 2,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        }
+      },
+      "classical": {
+        "spectral": {
+          "mean": 0.12738533952030026,
+          "low": 0.09878826686933706,
+          "high": 0.15433085164506405,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "seasonal": {
+          "mean": 2.3800374342275714,
+          "low": 2.0026863449225223,
+          "high": 2.761092163517461,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "decomposed_spectral": {
+          "mean": 6.33458821714621e-30,
+          "low": 4.1060715071510974e-30,
+          "high": 8.776898046832718e-30,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "crossings": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "None": 8
+      },
+      "nonmonotone_sources": 8
+    },
+    "synthetic/stationary/discovery": {
+      "levels": {
+        "1": {
+          "loss": {
+            "mean": 0.9664866034147968,
+            "low": 0.7880840853485687,
+            "high": 1.1428078973739626,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0,
+            "independent_sources": 8,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "2": {
+          "loss": {
+            "mean": 1.2617271697291381,
+            "low": 1.0631277620633455,
+            "high": 1.4541154476455485,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.2952405663143413,
+            "low": -0.4456322263830998,
+            "high": -0.13641781596421054,
+            "independent_sources": 8,
+            "positive_sources": 1,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "4": {
+          "loss": {
+            "mean": 1.1702527438563233,
+            "low": 0.9312431720251306,
+            "high": 1.4370185632865566,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.20376614044152624,
+            "low": -0.5015756390730188,
+            "high": 0.10838649954712619,
+            "independent_sources": 8,
+            "positive_sources": 3,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "8": {
+          "loss": {
+            "mean": 1.1324658554842624,
+            "low": 1.0119484127349387,
+            "high": 1.2479158912808146,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.1659792520694655,
+            "low": -0.3845470778458329,
+            "high": 0.051683679303187346,
+            "independent_sources": 8,
+            "positive_sources": 3,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        }
+      },
+      "classical": {
+        "spectral": {
+          "mean": 0.10001456885441418,
+          "low": 0.08330933886087588,
+          "high": 0.11625180441872444,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "seasonal": {
+          "mean": 2.1859322126584564,
+          "low": 2.012808902314877,
+          "high": 2.4298643292995914,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "decomposed_spectral": {
+          "mean": 6.000208410664974e-30,
+          "low": 2.9872730732362008e-30,
+          "high": 9.561321489091241e-30,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "crossings": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "None": 8
+      },
+      "nonmonotone_sources": 8
+    },
+    "synthetic/stationary/check": {
+      "levels": {
+        "1": {
+          "loss": {
+            "mean": 0.9225145600990019,
+            "low": 0.8161036011689959,
+            "high": 1.030899414911898,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0,
+            "independent_sources": 8,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "2": {
+          "loss": {
+            "mean": 1.5359227524456702,
+            "low": 1.289758192234577,
+            "high": 1.8183707031952365,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.6134081923466683,
+            "low": -0.9259649373315,
+            "high": -0.3114985535669296,
+            "independent_sources": 8,
+            "positive_sources": 0,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "4": {
+          "loss": {
+            "mean": 1.2666520614828896,
+            "low": 0.9285596178476322,
+            "high": 1.5999089326695983,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.3441375013838876,
+            "low": -0.6689546862538205,
+            "high": -0.04048791126034197,
+            "independent_sources": 8,
+            "positive_sources": 3,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        },
+        "8": {
+          "loss": {
+            "mean": 1.045624242003841,
+            "low": 0.8384700146931342,
+            "high": 1.2725419758305745,
+            "independent_sources": 8,
+            "positive_sources": 8,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          },
+          "gain": {
+            "mean": -0.12310968190483912,
+            "low": -0.3115482720883904,
+            "high": 0.09532599815910754,
+            "independent_sources": 8,
+            "positive_sources": 3,
+            "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+          }
+        }
+      },
+      "classical": {
+        "spectral": {
+          "mean": 0.1281559771196994,
+          "low": 0.09321620582621332,
+          "high": 0.16172896423004593,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "seasonal": {
+          "mean": 2.284122306448184,
+          "low": 1.918395555544769,
+          "high": 2.70460897763154,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "decomposed_spectral": {
+          "mean": 5.788555116221031e-30,
+          "low": 3.6949828901717126e-30,
+          "high": 8.108011593327821e-30,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "crossings": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "None": 8
+      },
+      "nonmonotone_sources": 8
+    }
+  },
+  "grouping": {
+    "m4_hourly/real/discovery": {
+      "interleaved": {
+        "mean": 0.29296924151532944,
+        "low": 0.10515115174443251,
+        "high": 0.4248975799296006,
+        "independent_sources": 4,
+        "positive_sources": 4,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "matched_random": {
+        "mean": 0.0775053721774753,
+        "low": -0.031800656436120345,
+        "high": 0.18681140079107095,
+        "independent_sources": 4,
+        "positive_sources": 3,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "linear_detrend": {
+        "mean": -0.18983308898142628,
+        "low": -0.7070248976237739,
+        "high": 0.1551617852651172,
+        "independent_sources": 4,
+        "positive_sources": 2,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "m4_hourly/real/check": {
+      "interleaved": {
+        "mean": 0.44572710327666254,
+        "low": -0.007184458536714289,
+        "high": 0.8986386650900393,
+        "independent_sources": 4,
+        "positive_sources": 3,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "matched_random": {
+        "mean": 0.1518358691461802,
+        "low": 0.003074281837975701,
+        "high": 0.3633529508016394,
+        "independent_sources": 4,
+        "positive_sources": 3,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "linear_detrend": {
+        "mean": -0.09217331381855132,
+        "low": -0.7377370365780999,
+        "high": 0.624620436301969,
+        "independent_sources": 4,
+        "positive_sources": 1,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "monash_electricity_hourly/real/discovery": {
+      "interleaved": {
+        "mean": 0.16970830826262476,
+        "low": -0.03363855006095068,
+        "high": 0.443597771387038,
+        "independent_sources": 4,
+        "positive_sources": 3,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "matched_random": {
+        "mean": -0.06386008555103719,
+        "low": -0.1676945988410783,
+        "high": 0.021238321665969145,
+        "independent_sources": 4,
+        "positive_sources": 1,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "linear_detrend": {
+        "mean": 0.12887990547500972,
+        "low": -0.14862611014597327,
+        "high": 0.41273942156807986,
+        "independent_sources": 4,
+        "positive_sources": 3,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "monash_electricity_hourly/real/check": {
+      "interleaved": {
+        "mean": 0.6011352811804693,
+        "low": 0.3718227695764422,
+        "high": 0.8366560963773864,
+        "independent_sources": 4,
+        "positive_sources": 4,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "matched_random": {
+        "mean": 0.2570491607761977,
+        "low": -0.05276703517346937,
+        "high": 0.5668653567258648,
+        "independent_sources": 4,
+        "positive_sources": 2,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "linear_detrend": {
+        "mean": 0.6917974828116193,
+        "low": 0.48896419051998924,
+        "high": 0.9308112882074668,
+        "independent_sources": 4,
+        "positive_sources": 4,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "monash_pedestrian_counts/real/discovery": {
+      "interleaved": {
+        "mean": 0.3672235445683848,
+        "low": 0.14993993878172007,
+        "high": 0.6175690318506737,
+        "independent_sources": 4,
+        "positive_sources": 4,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "matched_random": {
+        "mean": -0.10621266571520853,
+        "low": -0.2975882639604474,
+        "high": 0.03229874975689055,
+        "independent_sources": 4,
+        "positive_sources": 1,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "linear_detrend": {
+        "mean": -0.3344636445221019,
+        "low": -0.8208349319268928,
+        "high": 0.1512705701985077,
+        "independent_sources": 4,
+        "positive_sources": 2,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "monash_pedestrian_counts/real/check": {
+      "interleaved": {
+        "mean": 0.03405793706108354,
+        "low": -0.09514542718183167,
+        "high": 0.16326130130399874,
+        "independent_sources": 4,
+        "positive_sources": 2,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "matched_random": {
+        "mean": 0.013135295897579863,
+        "low": -0.10334272589891079,
+        "high": 0.11029162194919018,
+        "independent_sources": 4,
+        "positive_sources": 2,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "linear_detrend": {
+        "mean": -0.11705612558325351,
+        "low": -0.28702118602050103,
+        "high": -0.013070720703183311,
+        "independent_sources": 4,
+        "positive_sources": 0,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "synthetic/stationary/discovery": {
+      "interleaved": {
+        "mean": 0.037787044588279375,
+        "low": -0.13581296268011528,
+        "high": 0.24227198252979956,
+        "independent_sources": 8,
+        "positive_sources": 4,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "matched_random": {
+        "mean": -1.811552375330372e-07,
+        "low": -4.4646757374477986e-07,
+        "high": 0.0,
+        "independent_sources": 8,
+        "positive_sources": 0,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "linear_detrend": {
+        "mean": 0.029298390540758473,
+        "low": -0.010755670421577199,
+        "high": 0.09030540768915266,
+        "independent_sources": 8,
+        "positive_sources": 5,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "synthetic/stationary/check": {
+      "interleaved": {
+        "mean": 0.22102778092963948,
+        "low": -0.00755588737076508,
+        "high": 0.4712853422728731,
+        "independent_sources": 8,
+        "positive_sources": 6,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "matched_random": {
+        "mean": 5.6147509308601684e-08,
+        "low": 0.0,
+        "high": 1.6844252792580505e-07,
+        "independent_sources": 8,
+        "positive_sources": 1,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "linear_detrend": {
+        "mean": 0.0034020221729020445,
+        "low": -0.059662585495496565,
+        "high": 0.07365631426661766,
+        "independent_sources": 8,
+        "positive_sources": 5,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    }
+  },
+  "phase": {
+    "phase_coherent/discovery": {
+      "1": {
+        "mean": 0.3533095856965087,
+        "low": 0.16212045097784367,
+        "high": 0.5541180831551288,
+        "independent_sources": 8,
+        "positive_sources": 7,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "4": {
+        "mean": -0.40715583569847547,
+        "low": -0.6136967115839788,
+        "high": -0.24608145692521158,
+        "independent_sources": 8,
+        "positive_sources": 0,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "8": {
+        "mean": 0.10124773615895791,
+        "low": -0.007323339814021473,
+        "high": 0.2129538518822068,
+        "independent_sources": 8,
+        "positive_sources": 6,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "phase_matched/discovery": {
+      "1": {
+        "mean": 0.06756110021559485,
+        "low": -0.14692923589624796,
+        "high": 0.27214031246382436,
+        "independent_sources": 8,
+        "positive_sources": 5,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "4": {
+        "mean": -0.03392103136186246,
+        "low": -0.2899429796097243,
+        "high": 0.21113981317330618,
+        "independent_sources": 8,
+        "positive_sources": 4,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "8": {
+        "mean": 0.024007720313375003,
+        "low": -0.18731632686353805,
+        "high": 0.23537852043956048,
+        "independent_sources": 8,
+        "positive_sources": 5,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "phase_coherent/check": {
+      "1": {
+        "mean": 0.420042734724729,
+        "low": 0.3022319619583528,
+        "high": 0.5420176638373788,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "4": {
+        "mean": -0.4702682506077729,
+        "low": -0.719416252092079,
+        "high": -0.23380036181433023,
+        "independent_sources": 8,
+        "positive_sources": 1,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "8": {
+        "mean": 0.19597085611786358,
+        "low": -0.035781562445803494,
+        "high": 0.40915887958635955,
+        "independent_sources": 8,
+        "positive_sources": 6,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "phase_matched/check": {
+      "1": {
+        "mean": 0.22570048073448573,
+        "low": 0.04627762166755036,
+        "high": 0.3921142281173329,
+        "independent_sources": 8,
+        "positive_sources": 6,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "4": {
+        "mean": -0.034744070982357836,
+        "low": -0.30780916713715856,
+        "high": 0.2537741798226766,
+        "independent_sources": 8,
+        "positive_sources": 3,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "8": {
+        "mean": 0.19925971264443965,
+        "low": -0.027265107772046937,
+        "high": 0.4100929782613963,
+        "independent_sources": 8,
+        "positive_sources": 6,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    }
+  },
+  "responses": {
+    "m4_hourly/real/0/0/discovery": {
+      "1": {
+        "error": {
+          "mean": 0.6404074184487373,
+          "low": 0.5349422877745373,
+          "high": 0.7392419856118742,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.49776478682179165,
+          "low": 0.2998751086777553,
+          "high": 0.6110441308025181,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 0.8895086140840998,
+          "low": 0.7846926629969,
+          "high": 1.0179028321698915,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.08694992215060739,
+          "low": 0.04408349587210736,
+          "high": 0.1475116885468153,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "2": {
+        "error": {
+          "mean": 0.8701234514300162,
+          "low": 0.6056971119704434,
+          "high": 1.1180489940419314,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.6321912282161832,
+          "low": 0.4593311630615183,
+          "high": 0.8206621011213303,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 0.8223357570758558,
+          "low": 0.6768633470604491,
+          "high": 0.9348554009430866,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.279841202945542,
+          "low": 0.14727562806663802,
+          "high": 0.5074732501010564,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "4": {
+        "error": {
+          "mean": 1.900153875036186,
+          "low": 0.9229470230865021,
+          "high": 2.7933268579384904,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.33586249084254016,
+          "low": 0.031949336505681505,
+          "high": 0.62242583878368,
+          "independent_sources": 4,
+          "positive_sources": 3,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.2411055758086786,
+          "low": 0.745848913774477,
+          "high": 1.694604812294922,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.4648427183440262,
+          "low": 0.2601029768910677,
+          "high": 0.6989617557418464,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "8": {
+        "error": {
+          "mean": 4.0604842070680025,
+          "low": 0.67189757876181,
+          "high": 9.453881224980496,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.4109495588531498,
+          "low": 0.08678412051249228,
+          "high": 0.6871280539975545,
+          "independent_sources": 4,
+          "positive_sources": 3,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.2454345802161448,
+          "low": 0.6929015855577914,
+          "high": 1.8254843620130725,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 2.4894827139674636,
+          "low": 0.0812108863813428,
+          "high": 7.1833817101811075,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "spectral": {
+        "mean": 0.30284375032164423,
+        "low": 0.09995130369790849,
+        "high": 0.42551928772142433,
+        "independent_sources": 4,
+        "positive_sources": 4,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "periodic128_posthoc": {
+        "mean": 5.653546030132611e-30,
+        "low": 5.526694122977348e-30,
+        "high": 5.8092158698698815e-30,
+        "independent_sources": 4,
+        "positive_sources": 4,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "paired_K4_gain": {
+        "mean": -1.2597464565874485,
+        "low": -2.220095805425057,
+        "high": -0.16658394697286502,
+        "independent_sources": 4,
+        "positive_sources": 1,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "m4_hourly/real/0/0/check": {
+      "1": {
+        "error": {
+          "mean": 1.3256093194624654,
+          "low": 0.9536111609933606,
+          "high": 1.6976074779315704,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.2555724247256338,
+          "low": -0.004671133905665981,
+          "high": 0.5158159833569336,
+          "independent_sources": 4,
+          "positive_sources": 3,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.2440617103259515,
+          "low": 0.8395331935280532,
+          "high": 1.6485902271238495,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.3032985341133073,
+          "low": 0.17816217983294239,
+          "high": 0.3997735361653837,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "2": {
+        "error": {
+          "mean": 1.3266387966264783,
+          "low": 0.941156193704577,
+          "high": 1.7999601358669615,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.3757383170049315,
+          "low": -0.01973920386788152,
+          "high": 0.7712158378777445,
+          "independent_sources": 4,
+          "positive_sources": 3,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.234008418201738,
+          "low": 0.7619394307219252,
+          "high": 1.7060774056815506,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.3095691763725638,
+          "low": 0.1312288529294006,
+          "high": 0.48790949981572707,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "4": {
+        "error": {
+          "mean": 1.4601366368922475,
+          "low": 0.7924722798327044,
+          "high": 2.1278009939517903,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.41663698800267956,
+          "low": 0.09246077109913564,
+          "high": 0.8848703337472058,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.117058464960412,
+          "low": 0.6316045530776034,
+          "high": 1.5197200164126488,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.3335864014895635,
+          "low": 0.14878003132835177,
+          "high": 0.54759868053861,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "8": {
+        "error": {
+          "mean": 1.7615268056956777,
+          "low": 1.2934752369191709,
+          "high": 2.229578374472185,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.7052735906404692,
+          "low": 0.23707515069420143,
+          "high": 1.1309571826453482,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.160893619221985,
+          "low": 0.7818212796754395,
+          "high": 1.5399659587685306,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.24813235962713334,
+          "low": 0.15727078790577007,
+          "high": 0.3278622055322906,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "spectral": {
+        "mean": 3.05522364488296,
+        "low": 2.5748436756128877e-30,
+        "high": 8.466105297317181,
+        "independent_sources": 4,
+        "positive_sources": 4,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "periodic128_posthoc": {
+        "mean": 5.6240338630691706e-30,
+        "low": 5.496309121690362e-30,
+        "high": 5.7409792458192435e-30,
+        "independent_sources": 4,
+        "positive_sources": 4,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "paired_K4_gain": {
+        "mean": -0.1345273174297819,
+        "low": -0.9148605033680444,
+        "high": 0.6100693744024479,
+        "independent_sources": 4,
+        "positive_sources": 2,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "monash_electricity_hourly/real/0/0/discovery": {
+      "1": {
+        "error": {
+          "mean": 3.2377484589278094,
+          "low": 0.712240424423416,
+          "high": 8.139595276822494,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.14147298381337542,
+          "low": -0.7473957743297668,
+          "high": 0.6806320324108417,
+          "independent_sources": 4,
+          "positive_sources": 3,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.1754746957579938,
+          "low": 0.5175773114704438,
+          "high": 2.0522063574566154,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 1.2671053291362029,
+          "low": 0.09017374078113864,
+          "high": 3.132116754439684,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "2": {
+        "error": {
+          "mean": 1.5663957315544783,
+          "low": 1.0979847942635161,
+          "high": 2.0348066688454405,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.3488633743739869,
+          "low": 0.20560931933325982,
+          "high": 0.49912516455437095,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.232561640878707,
+          "low": 1.0199624024193137,
+          "high": 1.4336970346830038,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.6425854771515026,
+          "low": 0.3164381269508594,
+          "high": 0.9600922013676718,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "4": {
+        "error": {
+          "mean": 0.6553264110984622,
+          "low": 0.49709567489215567,
+          "high": 0.7962387873084756,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.635006928926823,
+          "low": 0.39822341352346574,
+          "high": 0.8745010322407698,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 0.7184505234892032,
+          "low": 0.5082536673875866,
+          "high": 0.9297564930004742,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.23031615978733894,
+          "low": 0.1286931927480877,
+          "high": 0.345610740937476,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "8": {
+        "error": {
+          "mean": 1.2735498165495511,
+          "low": 0.7641224965172584,
+          "high": 1.789589440791172,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.895793145631155,
+          "low": 0.653324417196371,
+          "high": 1.1382618740659387,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 0.7626722841595086,
+          "low": 0.6043662501342881,
+          "high": 0.9337579788881811,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.23553528562808887,
+          "low": 0.16511637457389505,
+          "high": 0.3326205390882937,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "spectral": {
+        "mean": 1.9897635124878654,
+        "low": 0.34695458400247337,
+        "high": 3.6570305880416503,
+        "independent_sources": 4,
+        "positive_sources": 4,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "periodic128_posthoc": {
+        "mean": 5.563358921648258e-30,
+        "low": 5.4767322854421296e-30,
+        "high": 5.649985557854387e-30,
+        "independent_sources": 4,
+        "positive_sources": 4,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "paired_K4_gain": {
+        "mean": 2.5824220478293474,
+        "low": -0.1023467857179088,
+        "high": 7.660848024763187,
+        "independent_sources": 4,
+        "positive_sources": 3,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "monash_electricity_hourly/real/0/0/check": {
+      "1": {
+        "error": {
+          "mean": 0.7356323719635418,
+          "low": 0.47707079750906883,
+          "high": 0.9941939464180147,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.567491217307978,
+          "low": 0.4476994528218128,
+          "high": 0.6872829817941434,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 0.6162292520972947,
+          "low": 0.46420790242385523,
+          "high": 0.7958678858658279,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.3760607312289973,
+          "low": 0.18049333143510707,
+          "high": 0.6657186720998475,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "2": {
+        "error": {
+          "mean": 1.5197387804996976,
+          "low": 1.1004857118118434,
+          "high": 1.9187834498758596,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.4334214382079866,
+          "low": 0.32044641110298855,
+          "high": 0.5463964653129848,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 0.8387128799700547,
+          "low": 0.7979206871517253,
+          "high": 0.882124263706956,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.8424094550434323,
+          "low": 0.3507325399387531,
+          "high": 1.3340863701481116,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "4": {
+        "error": {
+          "mean": 0.9769994295733234,
+          "low": 0.8894526694075051,
+          "high": 1.0645461897391417,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.4140516338457909,
+          "low": 0.3662019372334543,
+          "high": 0.46190133045812753,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 0.9643257243746932,
+          "low": 0.8689743257445873,
+          "high": 1.0616102425681577,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.3051569370665487,
+          "low": 0.13356535586244367,
+          "high": 0.4767485182706536,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "8": {
+        "error": {
+          "mean": 1.0119202252709203,
+          "low": 0.6953900893966755,
+          "high": 1.328450361145165,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.652826739757011,
+          "low": 0.5319589338499009,
+          "high": 0.7984099909537914,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 0.950596988196554,
+          "low": 0.8688371344575324,
+          "high": 1.0191374433862288,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.19255701915049003,
+          "low": 0.08581066795304867,
+          "high": 0.29930337034793136,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "spectral": {
+        "mean": 1.9829967117536622,
+        "low": 4.150992161029742e-30,
+        "high": 4.004030073069552,
+        "independent_sources": 4,
+        "positive_sources": 4,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "periodic128_posthoc": {
+        "mean": 5.567530089818864e-30,
+        "low": 5.4279457494356446e-30,
+        "high": 5.6511378142551065e-30,
+        "independent_sources": 4,
+        "positive_sources": 4,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "paired_K4_gain": {
+        "mean": -0.24136705760978172,
+        "low": -0.4123818718984364,
+        "high": -0.06946221622713987,
+        "independent_sources": 4,
+        "positive_sources": 1,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "monash_pedestrian_counts/real/0/0/discovery": {
+      "1": {
+        "error": {
+          "mean": 0.571215807596595,
+          "low": 0.41994665466279346,
+          "high": 0.7872282228166735,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.57619577080279,
+          "low": 0.4252863470830173,
+          "high": 0.67738076021884,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 0.8074030857290625,
+          "low": 0.6651867072146034,
+          "high": 1.017566349733989,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.09925472830646777,
+          "low": 0.0765861046067006,
+          "high": 0.13900233774102091,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "2": {
+        "error": {
+          "mean": 1.0076675595497018,
+          "low": 0.6256756569968037,
+          "high": 1.3896594621026002,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.42912185270490466,
+          "low": 0.2894512102062801,
+          "high": 0.5131043717848838,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 0.9213029686669607,
+          "low": 0.7265194588400767,
+          "high": 1.168106736029342,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.2978009816129037,
+          "low": 0.1039676841830309,
+          "high": 0.5989527021371093,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "4": {
+        "error": {
+          "mean": 1.4664361989436063,
+          "low": 0.890787248056623,
+          "high": 1.860604813759739,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.12101344582729649,
+          "low": -0.09323890489444604,
+          "high": 0.3668627045924461,
+          "independent_sources": 4,
+          "positive_sources": 2,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.4770058381682714,
+          "low": 1.0862245528046324,
+          "high": 1.7952886479285506,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.2653624559130105,
+          "low": 0.10751997299171756,
+          "high": 0.5015183759668107,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "8": {
+        "error": {
+          "mean": 1.2606858611137035,
+          "low": 0.8073069017465524,
+          "high": 1.578806495747846,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.1676467698680092,
+          "low": 0.0009969197717048031,
+          "high": 0.4420317189010422,
+          "independent_sources": 4,
+          "positive_sources": 3,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.4034865636204845,
+          "low": 1.0382725671689497,
+          "high": 1.6439232664745793,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.09895798316633891,
+          "low": 0.04965974840765279,
+          "high": 0.14912721165333595,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "spectral": {
+        "mean": 1.4967339802763298,
+        "low": 1.8149766695940856e-30,
+        "high": 4.490201940828989,
+        "independent_sources": 4,
+        "positive_sources": 4,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "periodic128_posthoc": {
+        "mean": 5.59929203750471e-30,
+        "low": 5.5179024066398534e-30,
+        "high": 5.6806816683695675e-30,
+        "independent_sources": 4,
+        "positive_sources": 4,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "paired_K4_gain": {
+        "mean": -0.8952203913470116,
+        "low": -1.3669694244519566,
+        "high": -0.3396928374932949,
+        "independent_sources": 4,
+        "positive_sources": 0,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "monash_pedestrian_counts/real/0/0/check": {
+      "1": {
+        "error": {
+          "mean": 0.6810495039385699,
+          "low": 0.46922077759071046,
+          "high": 0.956268166436734,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.541356634469554,
+          "low": 0.37669560625595855,
+          "high": 0.6841790173304938,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 0.9137116076509626,
+          "low": 0.6818382560024288,
+          "high": 1.319070785234225,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.18226503103630887,
+          "low": 0.08351028113141934,
+          "high": 0.2810197809411984,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "2": {
+        "error": {
+          "mean": 0.729929002924468,
+          "low": 0.5356635899363593,
+          "high": 0.915601526107078,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.6156674523895873,
+          "low": 0.44820401502635576,
+          "high": 0.7245381954539567,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 0.7183700069737466,
+          "low": 0.44946157332454295,
+          "high": 0.9994251501672782,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.30647936596881753,
+          "low": 0.15950550700733132,
+          "high": 0.4209930719568157,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "4": {
+        "error": {
+          "mean": 2.108136046437345,
+          "low": 0.9497915347248755,
+          "high": 3.3586228699393645,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.1259707754784769,
+          "low": -0.11829040633003311,
+          "high": 0.37023195728698693,
+          "independent_sources": 4,
+          "positive_sources": 2,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.395585453876966,
+          "low": 1.0033032593427427,
+          "high": 1.7718438125626945,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.3547879735121948,
+          "low": 0.14046145250525355,
+          "high": 0.6781627518616279,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "8": {
+        "error": {
+          "mean": 2.6213095395420143,
+          "low": 1.4774951205445745,
+          "high": 3.765123958539454,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.2957075247176792,
+          "low": 0.13006558302199306,
+          "high": 0.5339341349725211,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.3460524359519377,
+          "low": 1.004123835588146,
+          "high": 1.660179851429511,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.5588944967103313,
+          "low": 0.3245094706314425,
+          "high": 0.9140188401281053,
+          "independent_sources": 4,
+          "positive_sources": 4,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "spectral": {
+        "mean": 2.071596617418986,
+        "low": 1.6313300444473344e-30,
+        "high": 6.214789852256958,
+        "independent_sources": 4,
+        "positive_sources": 4,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "periodic128_posthoc": {
+        "mean": 5.5100757050379645e-30,
+        "low": 5.449239447720951e-30,
+        "high": 5.5764341511554276e-30,
+        "independent_sources": 4,
+        "positive_sources": 4,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "paired_K4_gain": {
+        "mean": -1.4270865424987755,
+        "low": -2.707939214161835,
+        "high": -0.48057075713416514,
+        "independent_sources": 4,
+        "positive_sources": 0,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "synthetic/distractor/6/0.5/discovery": {
+      "1": {
+        "error": {
+          "mean": 0.81367600174548,
+          "low": 0.6823259224502097,
+          "high": 0.9598915343216786,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.8932660068233211,
+          "low": 0.8220119482871587,
+          "high": 0.966154600397037,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 0.6621495468392089,
+          "low": 0.5767208494955887,
+          "high": 0.7315286422760924,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.21006731559487374,
+          "low": 0.13811913124052533,
+          "high": 0.2797798189777342,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "4": {
+        "error": {
+          "mean": 0.7065508127359885,
+          "low": 0.5863021006282773,
+          "high": 0.8349900744638223,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.9686239985508316,
+          "low": 0.8542575302840758,
+          "high": 1.05103368991349,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 0.578275557662822,
+          "low": 0.5070162439717482,
+          "high": 0.6655921651538448,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.10218826805147452,
+          "low": 0.06324292611572245,
+          "high": 0.15528990909661533,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "spectral": {
+        "mean": 0.00514615556002279,
+        "low": 0.002182364150631582,
+        "high": 0.009367739657950454,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "periodic128_posthoc": {
+        "mean": 5.518147981285258e-30,
+        "low": 5.4922176392514676e-30,
+        "high": 5.5434584813914856e-30,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "paired_K4_gain": {
+        "mean": 0.1071251890094915,
+        "low": -0.039495060504712055,
+        "high": 0.24847071537774568,
+        "independent_sources": 8,
+        "positive_sources": 6,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "synthetic/distractor/6/0.5/check": {
+      "1": {
+        "error": {
+          "mean": 0.7087867697699299,
+          "low": 0.564883412433228,
+          "high": 0.8778261944463657,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.879195147997211,
+          "low": 0.79108151240123,
+          "high": 0.9632536387025468,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 0.5761836778704106,
+          "low": 0.4989063536460703,
+          "high": 0.6678400139800384,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.21526252332159207,
+          "low": 0.12407249479376763,
+          "high": 0.30152354110293367,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "4": {
+        "error": {
+          "mean": 0.7398303250669813,
+          "low": 0.650931517872929,
+          "high": 0.8408830994752227,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.7861144879719629,
+          "low": 0.6225265372332813,
+          "high": 0.9513580790950723,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 0.6533231602851839,
+          "low": 0.6091116514328745,
+          "high": 0.7092176714622861,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.14320443188371512,
+          "low": 0.09748492461170247,
+          "high": 0.18874688228566838,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "spectral": {
+        "mean": 0.005843731334135745,
+        "low": 0.0034955163754568277,
+        "high": 0.008219245506490376,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "periodic128_posthoc": {
+        "mean": 5.51307805312209e-30,
+        "low": 5.482764239675861e-30,
+        "high": 5.5464964053919844e-30,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "paired_K4_gain": {
+        "mean": -0.031043555297051325,
+        "low": -0.1729953052813738,
+        "high": 0.10235011428753635,
+        "independent_sources": 8,
+        "positive_sources": 3,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "synthetic/distractor/6/2.0/discovery": {
+      "1": {
+        "error": {
+          "mean": 0.8208585425892687,
+          "low": 0.5971259820563147,
+          "high": 1.0620047627589102,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.41785438664318486,
+          "low": 0.23742212870050922,
+          "high": 0.5696470601013178,
+          "independent_sources": 8,
+          "positive_sources": 7,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.0224202135256917,
+          "low": 0.7551175585306742,
+          "high": 1.3773659770934301,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.11437395353714837,
+          "low": 0.08603379983540016,
+          "high": 0.15739199649462052,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "4": {
+        "error": {
+          "mean": 0.8220469192429078,
+          "low": 0.5852311937464281,
+          "high": 1.0775533799107626,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.42246992881312095,
+          "low": 0.23152671353479026,
+          "high": 0.5865490454535692,
+          "independent_sources": 8,
+          "positive_sources": 7,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.0375085951899963,
+          "low": 0.7414187275556569,
+          "high": 1.4319952659865909,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.11568650810590249,
+          "low": 0.09118493142650279,
+          "high": 0.15170231508307444,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "spectral": {
+        "mean": 0.0033069374064725737,
+        "low": 0.0010012408355381754,
+        "high": 0.006227515592609915,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "periodic128_posthoc": {
+        "mean": 5.5973159177774754e-30,
+        "low": 5.543734842887595e-30,
+        "high": 5.644779663435933e-30,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "paired_K4_gain": {
+        "mean": -0.0011883766536389985,
+        "low": -0.025159865177365553,
+        "high": 0.017722091999357814,
+        "independent_sources": 8,
+        "positive_sources": 4,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "synthetic/distractor/6/2.0/check": {
+      "1": {
+        "error": {
+          "mean": 1.149649755892582,
+          "low": 0.874138408946066,
+          "high": 1.5605149818014774,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.272909214758125,
+          "low": 0.032234089048956104,
+          "high": 0.5078046200498993,
+          "independent_sources": 8,
+          "positive_sources": 7,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.171704917016447,
+          "low": 0.8669070230110157,
+          "high": 1.5096176095230531,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.17289425345473758,
+          "low": 0.1385764168662031,
+          "high": 0.20655106725486733,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "4": {
+        "error": {
+          "mean": 1.1286501316855684,
+          "low": 0.848922232918068,
+          "high": 1.5361498089525287,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.25575078638679527,
+          "low": 0.02689608048115895,
+          "high": 0.4786756657402152,
+          "independent_sources": 8,
+          "positive_sources": 7,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.1778897594291053,
+          "low": 0.8622867176059862,
+          "high": 1.5253101641939604,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.1628729308079152,
+          "low": 0.13103969854678615,
+          "high": 0.19409747366860514,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "spectral": {
+        "mean": 0.0036904609610837066,
+        "low": 0.0018048025262633084,
+        "high": 0.005834575057572307,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "periodic128_posthoc": {
+        "mean": 5.591934880386113e-30,
+        "low": 5.4864953539254295e-30,
+        "high": 5.713912742966331e-30,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "paired_K4_gain": {
+        "mean": 0.020999624207013803,
+        "low": 0.004820295594769707,
+        "high": 0.03749542188343772,
+        "independent_sources": 8,
+        "positive_sources": 7,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "synthetic/distractor/6/8.0/discovery": {
+      "1": {
+        "error": {
+          "mean": 0.8558442523527281,
+          "low": 0.5840983642596943,
+          "high": 1.155630189526194,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.30029105867613887,
+          "low": 0.12499316364247076,
+          "high": 0.43752230917942336,
+          "independent_sources": 8,
+          "positive_sources": 7,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.102690308610733,
+          "low": 0.7537946926873995,
+          "high": 1.552769395755586,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.09390292614497416,
+          "low": 0.05937754455045875,
+          "high": 0.1407137388645748,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "4": {
+        "error": {
+          "mean": 0.8606886995339549,
+          "low": 0.5770562820336016,
+          "high": 1.1715646979992305,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.29950808604179147,
+          "low": 0.1200411941779084,
+          "high": 0.43938928966586366,
+          "independent_sources": 8,
+          "positive_sources": 7,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.104899664707504,
+          "low": 0.7484892648503937,
+          "high": 1.568980724057264,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.09340812620655839,
+          "low": 0.06144607566610628,
+          "high": 0.13568260811695382,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "spectral": {
+        "mean": 0.4191495021666333,
+        "low": 0.0012419156706931448,
+        "high": 1.2527255815286606,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "periodic128_posthoc": {
+        "mean": 5.812828193686139e-30,
+        "low": 5.593144749606869e-30,
+        "high": 6.085722838350656e-30,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "paired_K4_gain": {
+        "mean": -0.0048444471812267575,
+        "low": -0.021758941743524825,
+        "high": 0.008526384592340086,
+        "independent_sources": 8,
+        "positive_sources": 3,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "synthetic/distractor/6/8.0/check": {
+      "1": {
+        "error": {
+          "mean": 1.148460377332181,
+          "low": 0.8273391012813243,
+          "high": 1.5886820443323943,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.14514451095968486,
+          "low": -0.05481035020686449,
+          "high": 0.33927590698498794,
+          "independent_sources": 8,
+          "positive_sources": 6,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.246316188968181,
+          "low": 0.7784551580172415,
+          "high": 1.7009665926183157,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.12836357973530163,
+          "low": 0.09180814207720436,
+          "high": 0.16463156399014614,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "4": {
+        "error": {
+          "mean": 1.1410177880155414,
+          "low": 0.8231962938215753,
+          "high": 1.572824973839555,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.1432822053249425,
+          "low": -0.05709754721446142,
+          "high": 0.336014751559832,
+          "independent_sources": 8,
+          "positive_sources": 6,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.26042269834265,
+          "low": 0.7883062480109236,
+          "high": 1.7236289634075754,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.12649624315097058,
+          "low": 0.0901476406578155,
+          "high": 0.1631865981458634,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "spectral": {
+        "mean": 2.0840676873927553,
+        "low": 0.8366649054278043,
+        "high": 2.9173546715763727,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "periodic128_posthoc": {
+        "mean": 5.766167570738982e-30,
+        "low": 5.3876317547436546e-30,
+        "high": 6.147617443171731e-30,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "paired_K4_gain": {
+        "mean": 0.00744258931663987,
+        "low": -0.0004353382791723641,
+        "high": 0.014703892600278132,
+        "independent_sources": 8,
+        "positive_sources": 6,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "synthetic/distractor/17/0.5/discovery": {
+      "1": {
+        "error": {
+          "mean": 1.1545915404277762,
+          "low": 1.0899751208312325,
+          "high": 1.2197628047370892,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.06629322126638798,
+          "low": 0.05763346511102202,
+          "high": 0.07433271880065356,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.1463387778933742,
+          "low": 0.9470327772789553,
+          "high": 1.3256799962387351,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.27124054502038186,
+          "low": 0.2154670391228931,
+          "high": 0.322072112040365,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "4": {
+        "error": {
+          "mean": 0.712308652608312,
+          "low": 0.6675950876068366,
+          "high": 0.7599654766804226,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.3218394787213873,
+          "low": 0.2918875999082762,
+          "high": 0.3521314225707776,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 0.9508954733556696,
+          "low": 0.8630218278701403,
+          "high": 1.0386420884684757,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.06529738488813408,
+          "low": 0.061930408993988266,
+          "high": 0.06790893338915364,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "spectral": {
+        "mean": 0.0042066926413953975,
+        "low": 0.002818881509183921,
+        "high": 0.006291657914567679,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "periodic128_posthoc": {
+        "mean": 5.480944502747011e-30,
+        "low": 5.468832847654943e-30,
+        "high": 5.494404585892022e-30,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "paired_K4_gain": {
+        "mean": 0.44228288781946434,
+        "low": 0.3513944607445644,
+        "high": 0.516828663842609,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "synthetic/distractor/17/0.5/check": {
+      "1": {
+        "error": {
+          "mean": 1.1023462011450356,
+          "low": 1.0349388369258157,
+          "high": 1.1782255832972155,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.06512330541939267,
+          "low": 0.058331066994504355,
+          "high": 0.07208239939220538,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 0.9275790258344803,
+          "low": 0.7173662294771791,
+          "high": 1.1415965582403698,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.21664401876373401,
+          "low": 0.1497973112390067,
+          "high": 0.2888204852465242,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "4": {
+        "error": {
+          "mean": 0.7478962472416841,
+          "low": 0.7178233508138732,
+          "high": 0.7747264736405877,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.3101981517700296,
+          "low": 0.2910867326042633,
+          "high": 0.33360139358966273,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.009372257646264,
+          "low": 0.958266271007927,
+          "high": 1.056420452723653,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.06321831717442195,
+          "low": 0.058560431779260486,
+          "high": 0.06827907793885038,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "spectral": {
+        "mean": 0.006586202137688174,
+        "low": 0.0038290316920843604,
+        "high": 0.009288098527979148,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "periodic128_posthoc": {
+        "mean": 5.504179032907279e-30,
+        "low": 5.4817456090096116e-30,
+        "high": 5.5229893305849326e-30,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "paired_K4_gain": {
+        "mean": 0.3544499539033515,
+        "low": 0.28989834216066124,
+        "high": 0.42060071806114563,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "synthetic/distractor/17/2.0/discovery": {
+      "1": {
+        "error": {
+          "mean": 1.7767690869180743,
+          "low": 1.631546180487991,
+          "high": 1.9683900053778676,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.030809386270930827,
+          "low": 0.01842132547172657,
+          "high": 0.04487340122640721,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.361339546808468,
+          "low": 1.2067004120783704,
+          "high": 1.5131387277426314,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.8125109433366079,
+          "low": 0.668240434148289,
+          "high": 1.0173009860959157,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "4": {
+        "error": {
+          "mean": 0.712308652608312,
+          "low": 0.6675950876068366,
+          "high": 0.7599654766804226,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.3218394787213873,
+          "low": 0.2918875999082762,
+          "high": 0.3521314225707776,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 0.9508954733556696,
+          "low": 0.8630218278701403,
+          "high": 1.0386420884684757,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.06529738488813408,
+          "low": 0.061930408993988266,
+          "high": 0.06790893338915364,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "spectral": {
+        "mean": 0.00377524137917494,
+        "low": 0.001810856137365653,
+        "high": 0.006253878961154981,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "periodic128_posthoc": {
+        "mean": 5.663201938770644e-30,
+        "low": 5.569704973775223e-30,
+        "high": 5.7556244246723946e-30,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "paired_K4_gain": {
+        "mean": 1.0644604343097623,
+        "low": 0.8896314443099617,
+        "high": 1.2670877929260251,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "synthetic/distractor/17/2.0/check": {
+      "1": {
+        "error": {
+          "mean": 2.030500181193551,
+          "low": 1.7544154311893647,
+          "high": 2.282602076344413,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.015320059144355263,
+          "low": -0.009150007927826949,
+          "high": 0.03975014265301755,
+          "independent_sources": 8,
+          "positive_sources": 5,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.3855812907459466,
+          "low": 1.2156506492033794,
+          "high": 1.5543684568978098,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 1.022344894491395,
+          "low": 0.7826482200755809,
+          "high": 1.2425215856885912,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "4": {
+        "error": {
+          "mean": 0.7478962472416841,
+          "low": 0.7178233508138732,
+          "high": 0.7747264736405877,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.3101981517700296,
+          "low": 0.2910867326042633,
+          "high": 0.33360139358966273,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.009372257646264,
+          "low": 0.958266271007927,
+          "high": 1.056420452723653,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.06321831717442195,
+          "low": 0.058560431779260486,
+          "high": 0.06827907793885038,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "spectral": {
+        "mean": 0.005260981703836262,
+        "low": 0.0030829885020113626,
+        "high": 0.007700322086108836,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "periodic128_posthoc": {
+        "mean": 5.588319675928854e-30,
+        "low": 5.4949880597269355e-30,
+        "high": 5.7023492738569054e-30,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "paired_K4_gain": {
+        "mean": 1.2826039339518664,
+        "low": 1.022778519496788,
+        "high": 1.525159215932523,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "synthetic/distractor/17/8.0/discovery": {
+      "1": {
+        "error": {
+          "mean": 1.238771787331313,
+          "low": 1.165349626379959,
+          "high": 1.3075720257543675,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": -0.015594257634631039,
+          "low": -0.03607013029549564,
+          "high": 0.0056339250336682346,
+          "independent_sources": 8,
+          "positive_sources": 2,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.531034464644041,
+          "low": 1.245179970571845,
+          "high": 1.762466319123229,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.1948931401752207,
+          "low": 0.1571365102367017,
+          "high": 0.23392531573885741,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "4": {
+        "error": {
+          "mean": 0.712308652608312,
+          "low": 0.6675950876068366,
+          "high": 0.7599654766804226,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.3218394787213873,
+          "low": 0.2918875999082762,
+          "high": 0.3521314225707776,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 0.9508954733556696,
+          "low": 0.8630218278701403,
+          "high": 1.0386420884684757,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.06529738488813408,
+          "low": 0.061930408993988266,
+          "high": 0.06790893338915364,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "spectral": {
+        "mean": 0.0029044907398996763,
+        "low": 0.0012038175971486116,
+        "high": 0.0050280183645433065,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "periodic128_posthoc": {
+        "mean": 5.944433158494371e-30,
+        "low": 5.567211490924065e-30,
+        "high": 6.339438175225189e-30,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "paired_K4_gain": {
+        "mean": 0.5264631347230012,
+        "low": 0.432753824248928,
+        "high": 0.6098850316011581,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "synthetic/distractor/17/8.0/check": {
+      "1": {
+        "error": {
+          "mean": 1.279860610934934,
+          "low": 1.1882492495209658,
+          "high": 1.3700931678874004,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": -0.03547724987617701,
+          "low": -0.061731670993343715,
+          "high": -0.007137523795094534,
+          "independent_sources": 8,
+          "positive_sources": 1,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.6345173481204642,
+          "low": 1.2623133943209233,
+          "high": 1.987494851446854,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.19454714230013814,
+          "low": 0.16128845356846336,
+          "high": 0.22773330540798187,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "4": {
+        "error": {
+          "mean": 0.7478962472416841,
+          "low": 0.7178233508138732,
+          "high": 0.7747264736405877,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "gain": {
+          "mean": 0.3101981517700296,
+          "low": 0.2910867326042633,
+          "high": 0.33360139358966273,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "absolute_phase_error": {
+          "mean": 1.009372257646264,
+          "low": 0.958266271007927,
+          "high": 1.056420452723653,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        },
+        "off_target": {
+          "mean": 0.06321831717442195,
+          "low": 0.058560431779260486,
+          "high": 0.06827907793885038,
+          "independent_sources": 8,
+          "positive_sources": 8,
+          "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+        }
+      },
+      "spectral": {
+        "mean": 0.0032681187262610803,
+        "low": 0.0013943554355003826,
+        "high": 0.005430731850185467,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "periodic128_posthoc": {
+        "mean": 5.826986544209985e-30,
+        "low": 5.4651330963842815e-30,
+        "high": 6.180197636934139e-30,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "paired_K4_gain": {
+        "mean": 0.5319643636932498,
+        "low": 0.4365228512048445,
+        "high": 0.6309930091917892,
+        "independent_sources": 8,
+        "positive_sources": 8,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    }
+  },
+  "distractor_contrasts": {
+    "6/discovery": {
+      "1": {
+        "mean": 0.042168250607247965,
+        "low": -0.31162511021965256,
+        "high": 0.4136019858871956,
+        "independent_sources": 8,
+        "positive_sources": 3,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "4": {
+        "mean": 0.15413788679796622,
+        "low": -0.12053050579252422,
+        "high": 0.442074376691596,
+        "independent_sources": 8,
+        "positive_sources": 4,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "6/check": {
+      "1": {
+        "mean": 0.43967360756225127,
+        "low": 0.0019242805772387939,
+        "high": 0.9609658326956527,
+        "independent_sources": 8,
+        "positive_sources": 7,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "4": {
+        "mean": 0.40118746294856,
+        "low": 0.024800917548305594,
+        "high": 0.8674488160398024,
+        "independent_sources": 8,
+        "positive_sources": 6,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "17/discovery": {
+      "1": {
+        "mean": 0.08418024690353683,
+        "low": -0.030575990971141904,
+        "high": 0.20574158477274812,
+        "independent_sources": 8,
+        "positive_sources": 5,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "4": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "independent_sources": 8,
+        "positive_sources": 0,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    },
+    "17/check": {
+      "1": {
+        "mean": 0.17751440978989833,
+        "low": 0.027568930484948084,
+        "high": 0.32249130568535594,
+        "independent_sources": 8,
+        "positive_sources": 5,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      },
+      "4": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "independent_sources": 8,
+        "positive_sources": 0,
+        "scope": "Unadjusted descriptive source bootstrap; conditional on this dataset/design"
+      }
+    }
+  },
+  "candidates": [
+    {
+      "contrast": "grouping/interleaved",
+      "cell": "m4_hourly/real",
+      "discovery": 0.29296924151532944,
+      "check": 0.44572710327666254,
+      "direction": "positive contrast"
+    },
+    {
+      "contrast": "grouping/interleaved",
+      "cell": "monash_electricity_hourly/real",
+      "discovery": 0.16970830826262476,
+      "check": 0.6011352811804693,
+      "direction": "positive contrast"
+    },
+    {
+      "contrast": "grouping/linear_detrend",
+      "cell": "monash_electricity_hourly/real",
+      "discovery": 0.12887990547500972,
+      "check": 0.6917974828116193,
+      "direction": "positive contrast"
+    },
+    {
+      "contrast": "grouping/linear_detrend",
+      "cell": "monash_pedestrian_counts/real",
+      "discovery": -0.3344636445221019,
+      "check": -0.11705612558325351,
+      "direction": "negative contrast"
+    },
+    {
+      "contrast": "phase/1",
+      "cell": "phase_coherent",
+      "discovery": 0.3533095856965087,
+      "check": 0.420042734724729,
+      "direction": "positive contrast"
+    },
+    {
+      "contrast": "phase/4",
+      "cell": "phase_coherent",
+      "discovery": -0.40715583569847547,
+      "check": -0.4702682506077729,
+      "direction": "negative contrast"
+    },
+    {
+      "contrast": "phase/8",
+      "cell": "phase_coherent",
+      "discovery": 0.10124773615895791,
+      "check": 0.19597085611786358,
+      "direction": "positive contrast"
+    },
+    {
+      "contrast": "K4 minus native fidelity gain",
+      "cell": "m4_hourly/real",
+      "discovery": -0.4125575668887806,
+      "check": -0.45363538103642553,
+      "direction": "degradation"
+    },
+    {
+      "contrast": "K4 minus native fidelity gain",
+      "cell": "monash_pedestrian_counts/real",
+      "discovery": -0.6208090200849038,
+      "check": -0.20057663904974943,
+      "direction": "degradation"
+    },
+    {
+      "contrast": "K4 minus native fidelity gain",
+      "cell": "synthetic/chirp",
+      "discovery": -1.0491644718176332,
+      "check": -0.8012413693393214,
+      "direction": "degradation"
+    },
+    {
+      "contrast": "K4 minus native fidelity gain",
+      "cell": "synthetic/coupled",
+      "discovery": -0.42257780290597297,
+      "check": -0.25138220377959763,
+      "direction": "degradation"
+    },
+    {
+      "contrast": "K4 minus native fidelity gain",
+      "cell": "synthetic/off_grid",
+      "discovery": -0.4669314419918918,
+      "check": -0.7237471062309415,
+      "direction": "degradation"
+    },
+    {
+      "contrast": "K4 minus native fidelity gain",
+      "cell": "synthetic/phase_coherent",
+      "discovery": 0.5566992809534579,
+      "check": 0.5461734839486143,
+      "direction": "improvement"
+    },
+    {
+      "contrast": "K4 minus native fidelity gain",
+      "cell": "synthetic/stationary",
+      "discovery": -0.20376614044152624,
+      "check": -0.3441375013838876,
+      "direction": "degradation"
+    }
+  ]
+}

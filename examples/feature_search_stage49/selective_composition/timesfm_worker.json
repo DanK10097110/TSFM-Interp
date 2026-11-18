@@ -1,0 +1,23 @@
+{
+  "seconds": 2254.198404174007,
+  "peak_rss": 2182365184,
+  "gates": {
+    "self_patch": 0.0,
+    "normalizer_identity": 0.0,
+    "repeat": 0.0,
+    "random_invalid": 64,
+    "random_total": 3546,
+    "closure_max": 2.264507941163174e-07
+  },
+  "cuts": [
+    "0",
+    "5",
+    "10"
+  ],
+  "hashes": {
+    "timesfm_forecasts.json": "d01a653112c92d473d3ed4ec8f669020a6dd4d6c2a0cf59bf37dbc3846b0f1c0",
+    "timesfm_geometry.json": "3daa6c661cf20058fba47f43ee5fb1e075b4b489171ccc31a97188020aa7d8a4",
+    "timesfm_stability.json": "49aa0e633d1199ceebfe85f7431fcd85fd2be6173e8f7ea6c556f4219847418e",
+    "timesfm_states.npz": "a46cf7d38aea5fcd21820ebdb379e35a49bcf54b53867adcbfdf2a23627d478a"
+  }
+}

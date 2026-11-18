@@ -1,0 +1,46 @@
+{
+  "git_head": "6256007686a43a78849134d7fbda1d9801c104a9",
+  "working_tree": "pre-existing uncommitted research preserved; steering files are new uncommitted additions",
+  "device": "CPU float32; CUDA unavailable",
+  "threads": 2,
+  "versions": {
+    "torch": "2.12.0",
+    "numpy": "2.1.0",
+    "scipy": "1.18.0",
+    "chronos-forecasting": "2.3.1",
+    "timesfm": "2.0.2",
+    "transformers": "4.57.6"
+  },
+  "sources": {
+    "tsfm_lens/tsfm_lens/steering/api.py": "ec54432e0c709868d36cf22b722f6a1fbba575c2565b1191788686f49ee97897",
+    "tsfm_lens/tsfm_lens/steering/timesfm.py": "dd064d20ac2e3b283db7e3369d932d812048a5d86ef1cf23955864770c68c421",
+    "tsfm_lens/tsfm_lens/steering/__init__.py": "12bf16dd8bfd4c8ac20a9df2f190f93eda3efce3bef3f9652142e3c8b10b94a9",
+    "tsfm_lens/tsfm_lens/steering/native.py": "135bd0bd60adf943763b3a4d061b91eb78d4febd77a70d8a947443c7ebd35da9",
+    "tsfm_lens/tsfm_lens/steering/solver.py": "da9bf775bd639fee2b88bfe36a0368e34d7a837c6350b0977b6c680524e0d3d0",
+    "tsfm_lens/tsfm_lens/steering/controller.py": "134aa62b91d5de89efd670bb7791fbaf294069d6fe46caec7fe62321c9fc8ad8",
+    "tsfm_lens/tsfm_lens/steering/targets.py": "15e243bd27a74d9a98a8491582d51dba7c4f7f4cdf2f74bcfab8ab68ccc2924b",
+    "tsfm_lens/tsfm_lens/sae/modern.py": "ffd47e128ad6944495eb8e83add64a52147bcf7028da5fca9c430c9ae053bd3c",
+    "tsfm_lens/tsfm_lens/experiments/steering_upstream.py": "f8f56d4004a3aa1dee832d7782e355fd3cb4f040dab51222324e06dedd40616a",
+    "tsfm_lens/tsfm_lens/experiments/steering_real.py": "b40c7f3ab8e5386dd312071a35150dec4d218e77cc373be18f371f3ccd6cc253",
+    "tsfm_lens/tsfm_lens/experiments/steering_control.py": "47d2fda055d4e0fc62848ceff1431da825f491e44bd6bdbdf923d3f93b9d3a10",
+    "tsfm_lens/tsfm_lens/experiments/steering_study.py": "636d7b8f964e538f66004fac3397df66d2938f3491e5a999d915120a8c194240",
+    "tsfm_lens/run_steering.py": "4dbe65980ee788ae9918f7bfd6ea6d5bbbee5f38ad26021088913e02edfae4c2",
+    "tsfm_lens/audit_steering.py": "28021ed3803d766d755af141d361d99b2c29509fd235800bb4fc5bd1458d7e22",
+    "tsfm_lens/render_steering_report.py": "95bd08cc2dee19c6a8082415438360aeec7a2e59f02a73ec941e12418971e888",
+    "tsfm_lens/tests/test_steering_api.py": "2398deaa615339cb0ebc40891158b1ecb1b4723453e500c7468db50b7660e9c3",
+    "tsfm_lens/tests/test_selective_steering.py": "5442bb733b524c4df6017cca61a77801a2ccba05c61e3f0ebac105553ddc77b4",
+    "tsfm_lens/tests/test_modern_sae.py": "7c19f5ca503bd83da08962a5e942f64b4a0bf0b5392740d5a8001c77fe2cea53"
+  },
+  "checkpoints": {
+    "amazon/chronos-bolt-small": {
+      "cached_revision": "772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+      "offline": true
+    },
+    "google/timesfm-2.5-200m-pytorch": {
+      "cached_revision": "1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+      "offline": true
+    }
+  },
+  "source_snapshot_sha256": "874624821d2ac78bdba049471ae690f7876da0445282ffa2b662420a3fbc2acd",
+  "snapshot_note": "Final implementation includes checkpoint loading, validation and explicit-phase support added after experiments; the numerical defaults used in recorded experiments are unchanged."
+}

@@ -1,0 +1,14 @@
+{
+  "question": "Do weather-pilot tests reject deliberate recipe, grouping and native-gate failures?",
+  "design": "Isolated in-memory source mutations; no checkpoint imports or native calls.",
+  "exact_findings": {
+    "tests_passed": 5,
+    "plants_completed": 11,
+    "plants_caught": 11,
+    "native_launched": false
+  },
+  "controls": "Every mutation changes source and must yield a failed test, not collection errors.",
+  "limitations": "Known-answer instrumentation audit; no forecasting evidence.",
+  "evidence_class": "software verification",
+  "next_decision": "Freeze pilot and independently replay analytic preparations; HOLD native until grant."
+}

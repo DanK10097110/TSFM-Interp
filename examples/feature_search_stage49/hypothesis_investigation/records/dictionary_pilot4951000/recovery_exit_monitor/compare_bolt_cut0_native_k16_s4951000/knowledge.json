@@ -1,0 +1,81 @@
+{
+  "question": "Are active feature directions stable across the three dictionary seeds?",
+  "exact_results": {
+    "native": {
+      "status": "deterministic_basis_single_fit",
+      "seed_variation": "not_applicable"
+    },
+    "rotation": {
+      "0_1": {
+        "matched": 337,
+        "mean_abs_cosine": 0.13403092324733734,
+        "unmatched_a": 0,
+        "unmatched_b": 10
+      },
+      "0_2": {
+        "matched": 326,
+        "mean_abs_cosine": 0.13280047476291656,
+        "unmatched_a": 11,
+        "unmatched_b": 0
+      },
+      "1_2": {
+        "matched": 326,
+        "mean_abs_cosine": 0.1346578598022461,
+        "unmatched_a": 21,
+        "unmatched_b": 0
+      }
+    },
+    "pca": {
+      "status": "deterministic_basis_single_fit",
+      "seed_variation": "not_applicable"
+    },
+    "topk": {
+      "0_1": {
+        "matched": 164,
+        "mean_abs_cosine": 0.3735949695110321,
+        "unmatched_a": 30,
+        "unmatched_b": 0
+      },
+      "0_2": {
+        "matched": 145,
+        "mean_abs_cosine": 0.4055243134498596,
+        "unmatched_a": 49,
+        "unmatched_b": 0
+      },
+      "1_2": {
+        "matched": 145,
+        "mean_abs_cosine": 0.40385493636131287,
+        "unmatched_a": 19,
+        "unmatched_b": 0
+      }
+    },
+    "nested": {
+      "0_1": {
+        "matched": 212,
+        "mean_abs_cosine": 0.2964772582054138,
+        "unmatched_a": 0,
+        "unmatched_b": 2
+      },
+      "0_2": {
+        "matched": 161,
+        "mean_abs_cosine": 0.365521103143692,
+        "unmatched_a": 51,
+        "unmatched_b": 0
+      },
+      "1_2": {
+        "matched": 161,
+        "mean_abs_cosine": 0.3622000217437744,
+        "unmatched_a": 53,
+        "unmatched_b": 0
+      }
+    }
+  },
+  "controls": [
+    "one-to-one matching; dead atoms excluded; deterministic native/PCA ceilings; random rotation floor"
+  ],
+  "limitations": [
+    "direction stability does not establish semantic or causal stability"
+  ],
+  "next_step": "Native preservation and crossed-phase targeted interventions remain required.",
+  "status": "comparison_only"
+}

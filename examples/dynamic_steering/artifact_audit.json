@@ -1,0 +1,8 @@
+{
+  "checked_artifact_hashes": 115,
+  "steering_cases": 1125,
+  "sensitivity_pairs": 96,
+  "max_error_discrepancy": 1.1102230246251565e-16,
+  "max_recorded_native_replay_discrepancy": 0.0,
+  "scope": "offline recomputation from raw arrays and hash verification; native replay was performed during each experiment"
+}

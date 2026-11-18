@@ -1,0 +1,220 @@
+{
+  "bolt": {
+    "config": {
+      "name": "bolt",
+      "adapter": "chronos_bolt",
+      "checkpoint": "amazon/chronos-bolt-small",
+      "layer_regex": "",
+      "batch_size": 32,
+      "capture_layer_stride": 1,
+      "kwargs": {},
+      "random_init": false
+    },
+    "adapter_source_sha256": "8a876125160daa1f7a7325491bc3c15d083c5dad5af99d8a405cb486e1d09602",
+    "checkpoint_identifier": "amazon/chronos-bolt-small",
+    "checkpoint_identifier_sha256": "86deab4bb6e53afc7fa57d2ac88de879437b1153679a8b9bacd1215c9814ba76",
+    "checkpoint_scope": "Identifier, not a checksum of weights; offline installed cached checkpoint only",
+    "cases": {
+      "p32_16_c128": {
+        "native": {
+          "output_steps": 64,
+          "normalization_audit_source_sha256": "1f24c6daa90740fee72a36c481b8d2409d1b2db8ad4cf8c857bea4a891f7646a"
+        },
+        "forward_passes": 1,
+        "autoregressive_rollouts": 0,
+        "repeat_max_abs": 0.0,
+        "permutation_max_abs": 0.0,
+        "forecast_sha256": "66caf311703eb44860aff5593799adf1cb3ea94b254e64911fff440a73583bc5"
+      },
+      "p32_16_c512": {
+        "native": {
+          "output_steps": 64,
+          "normalization_audit_source_sha256": "1f24c6daa90740fee72a36c481b8d2409d1b2db8ad4cf8c857bea4a891f7646a"
+        },
+        "forward_passes": 1,
+        "autoregressive_rollouts": 0,
+        "repeat_max_abs": 0.0,
+        "permutation_max_abs": 0.0,
+        "forecast_sha256": "0f051531d037fc2d41165307d8c5a7c9da683e500f7d7dde2ce27e94b963cb3d"
+      },
+      "p40_20_c128": {
+        "native": {
+          "output_steps": 64,
+          "normalization_audit_source_sha256": "1f24c6daa90740fee72a36c481b8d2409d1b2db8ad4cf8c857bea4a891f7646a"
+        },
+        "forward_passes": 1,
+        "autoregressive_rollouts": 0,
+        "repeat_max_abs": 0.0,
+        "permutation_max_abs": 0.0,
+        "forecast_sha256": "adc090a5e1e2f8615759cc0d1586df6b8ad85e98f771b0c7c2c48e1558d53267"
+      },
+      "p40_20_c512": {
+        "native": {
+          "output_steps": 64,
+          "normalization_audit_source_sha256": "1f24c6daa90740fee72a36c481b8d2409d1b2db8ad4cf8c857bea4a891f7646a"
+        },
+        "forward_passes": 1,
+        "autoregressive_rollouts": 0,
+        "repeat_max_abs": 0.0,
+        "permutation_max_abs": 0.0,
+        "forecast_sha256": "22517d4873f79499ebedc0d226d06af81988942b311ad3eca7d227fa82defd05"
+      }
+    },
+    "resolved_model_config_declarations": {
+      "_name_or_path": "amazon/chronos-bolt-small",
+      "_commit_hash": "772f3d25d38aec6d914c8949dab4462e2d46f5d8"
+    },
+    "resolved_declaration_scope": "Native declarations when available; null means unavailable, not verified weight bytes",
+    "wall_seconds": 9.158795557013946,
+    "peak_allocated_bytes": 208354304,
+    "peak_reserved_bytes": 281018368
+  },
+  "timesfm": {
+    "config": {
+      "name": "timesfm",
+      "adapter": "timesfm",
+      "checkpoint": "google/timesfm-2.5-200m-pytorch",
+      "layer_regex": "",
+      "batch_size": 32,
+      "capture_layer_stride": 1,
+      "kwargs": {},
+      "random_init": false
+    },
+    "adapter_source_sha256": "39ae8128e782bb56fd15add2ea292274b0d4f5c6a517a50f4c0087724d6ebccd",
+    "checkpoint_identifier": "google/timesfm-2.5-200m-pytorch",
+    "checkpoint_identifier_sha256": "63be2e9043364b292399295f1201c39e16fdf2eae2a4d0b21a519a0b31ad5384",
+    "checkpoint_scope": "Identifier, not a checksum of weights; offline installed cached checkpoint only",
+    "cases": {
+      "p32_16_c128": {
+        "native": {
+          "output_steps": 128,
+          "normalization_audit_source_sha256": "1f24c6daa90740fee72a36c481b8d2409d1b2db8ad4cf8c857bea4a891f7646a"
+        },
+        "forward_passes": 1,
+        "autoregressive_rollouts": 0,
+        "repeat_max_abs": 0.0,
+        "permutation_max_abs": 0.0,
+        "forecast_sha256": "bdfb43826de26c612728c430a36a8426629f2cccaef3957af9e7cb63ba78e38a"
+      },
+      "p32_16_c512": {
+        "native": {
+          "output_steps": 128,
+          "normalization_audit_source_sha256": "1f24c6daa90740fee72a36c481b8d2409d1b2db8ad4cf8c857bea4a891f7646a"
+        },
+        "forward_passes": 1,
+        "autoregressive_rollouts": 0,
+        "repeat_max_abs": 0.0,
+        "permutation_max_abs": 0.0,
+        "forecast_sha256": "47942822216cd29048d5e3c30d33afcc1da6123ac47823b686871574a5151b93"
+      },
+      "p40_20_c128": {
+        "native": {
+          "output_steps": 128,
+          "normalization_audit_source_sha256": "1f24c6daa90740fee72a36c481b8d2409d1b2db8ad4cf8c857bea4a891f7646a"
+        },
+        "forward_passes": 1,
+        "autoregressive_rollouts": 0,
+        "repeat_max_abs": 0.0,
+        "permutation_max_abs": 0.0,
+        "forecast_sha256": "4ceb3b00b4196faac5353c067ff9dfd271a21c2b5dd9ddc637b82e4528252828"
+      },
+      "p40_20_c512": {
+        "native": {
+          "output_steps": 128,
+          "normalization_audit_source_sha256": "1f24c6daa90740fee72a36c481b8d2409d1b2db8ad4cf8c857bea4a891f7646a"
+        },
+        "forward_passes": 1,
+        "autoregressive_rollouts": 0,
+        "repeat_max_abs": 0.0,
+        "permutation_max_abs": 0.0,
+        "forecast_sha256": "4d0e5f243ac2412392ae078a12215a20deaf2ee1994096535431a9d06d9cde2f"
+      }
+    },
+    "resolved_model_config_declarations": {
+      "_name_or_path": null,
+      "_commit_hash": null
+    },
+    "resolved_declaration_scope": "Native declarations when available; null means unavailable, not verified weight bytes",
+    "wall_seconds": 8.55782687701867,
+    "peak_allocated_bytes": 977705472,
+    "peak_reserved_bytes": 1046478848
+  },
+  "chronos2": {
+    "config": {
+      "name": "chronos2",
+      "adapter": "chronos2",
+      "checkpoint": "amazon/chronos-2",
+      "layer_regex": "",
+      "batch_size": 32,
+      "capture_layer_stride": 1,
+      "kwargs": {},
+      "random_init": false
+    },
+    "adapter_source_sha256": "e38368da3a9e4f2bd404070ce6d84dd4f0d260967b9ab0a19d0a1f74ed26b1b8",
+    "checkpoint_identifier": "amazon/chronos-2",
+    "checkpoint_identifier_sha256": "d2dfb1c44b4d6ec3723f0c5a3041de33ac78119a5b4dd894546ac83bf91b507a",
+    "checkpoint_scope": "Identifier, not a checksum of weights; offline installed cached checkpoint only",
+    "cases": {
+      "p32_16_c128": {
+        "native": {
+          "output_patches": 4,
+          "use_arcsinh": true,
+          "singleton_max_abs": 1.9073486328125e-06,
+          "normalization_source_sha256": "572a3ffd23a7887c423d234fd0086a4dfa2bac0c3e34d4b7d42eb9cda2e3d1d4"
+        },
+        "forward_passes": 1,
+        "autoregressive_rollouts": 0,
+        "repeat_max_abs": 0.0,
+        "permutation_max_abs": 0.0,
+        "forecast_sha256": "3c327e22f575b424797f7a812c5846ae72938e42a1b25ac8e633b6871c4e5054"
+      },
+      "p32_16_c512": {
+        "native": {
+          "output_patches": 4,
+          "use_arcsinh": true,
+          "singleton_max_abs": 2.384185791015625e-06,
+          "normalization_source_sha256": "572a3ffd23a7887c423d234fd0086a4dfa2bac0c3e34d4b7d42eb9cda2e3d1d4"
+        },
+        "forward_passes": 1,
+        "autoregressive_rollouts": 0,
+        "repeat_max_abs": 0.0,
+        "permutation_max_abs": 0.0,
+        "forecast_sha256": "446d824806123041847d38095f7a9a8391122143e8cf4410d939c3d4bcbe8fb3"
+      },
+      "p40_20_c128": {
+        "native": {
+          "output_patches": 4,
+          "use_arcsinh": true,
+          "singleton_max_abs": 9.5367431640625e-07,
+          "normalization_source_sha256": "572a3ffd23a7887c423d234fd0086a4dfa2bac0c3e34d4b7d42eb9cda2e3d1d4"
+        },
+        "forward_passes": 1,
+        "autoregressive_rollouts": 0,
+        "repeat_max_abs": 0.0,
+        "permutation_max_abs": 0.0,
+        "forecast_sha256": "dbac628592ff6afb456147f20aa1126ceea4de5ad6055637b469e0a0652f6e16"
+      },
+      "p40_20_c512": {
+        "native": {
+          "output_patches": 4,
+          "use_arcsinh": true,
+          "singleton_max_abs": 1.5497207641601562e-06,
+          "normalization_source_sha256": "572a3ffd23a7887c423d234fd0086a4dfa2bac0c3e34d4b7d42eb9cda2e3d1d4"
+        },
+        "forward_passes": 1,
+        "autoregressive_rollouts": 0,
+        "repeat_max_abs": 0.0,
+        "permutation_max_abs": 0.0,
+        "forecast_sha256": "fe708def8d681bbb68f20d46b2928d310012ffebb17069d1b84b379f8324d388"
+      }
+    },
+    "resolved_model_config_declarations": {
+      "_name_or_path": "amazon/chronos-2",
+      "_commit_hash": "29ec3766d36d6f73f0696f85560a422f50e8498c"
+    },
+    "resolved_declaration_scope": "Native declarations when available; null means unavailable, not verified weight bytes",
+    "wall_seconds": 4.590279725001892,
+    "peak_allocated_bytes": 499722240,
+    "peak_reserved_bytes": 524288000
+  }
+}

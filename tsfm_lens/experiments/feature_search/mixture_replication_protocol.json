@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "purpose": "Fresh native-forecast replication of input cross-frequency coupling and composition interaction; no hidden-feature claim",
+  "seed_base": 1215000,
+  "n_bundles": 128,
+  "rows_per_bundle": 8,
+  "context": 128,
+  "horizon": 32,
+  "periods": [32, 16],
+  "phase_shift": 1.5707963267948966,
+  "amplitudes": [0.5, 2.0],
+  "offset": [-2.0, 2.0],
+  "noise": 0,
+  "slope": 0,
+  "conditions": {"mixed": 4, "pure_phi": 2, "pure_psi": 2},
+  "normalization": "All condition MSE divided by SAME per-bundle mixed energy (a*a+b*b)/2; pure amplitudes unchanged",
+  "resampling_unit": "generating-seed bundle; 128 independent units; four mixed cells and two pure cells remain together",
+  "phase_floor_relative_to_truth_amplitude": 0.000001,
+  "claims": {
+    "mixed_phi_untouched_phase_timesfm_minus_bolt": {"direction": "positive", "minimum_practical": 0.1, "unit": "radians"},
+    "mixed_psi_untouched_phase_timesfm_minus_bolt": {"direction": "positive", "minimum_practical": 0.1, "unit": "radians"},
+    "mixed_scaled_mse_timesfm_minus_bolt": {"direction": "positive", "minimum_practical": 0.05, "unit": "mixed-energy-scaled MSE"},
+    "model_by_composition_interaction": {"direction": "positive", "minimum_practical": 0.05, "unit": "mixed gap minus equal-weight mean pure_phi/pure_psi gap; same mixed-energy denominator"}
+  },
+  "inference": {"n_boot": 2000, "n_permutations": 1999, "seed": 113, "ci": 0.95, "p": "two-sided paired generating-seed sign-flip plus-one; symmetry/exchangeability assumption", "multiplicity": "fixed complete Holm4 family; untestable claims retained at p=1"},
+  "pass_rule": "Each claim: positive mean at least minimum_practical, bootstrap lower CI >0, Holm4 p<0.05; overall replication requires all four",
+  "composition_caution": "Positive interaction does not alone imply ranking flip; pure gap interval and mixed gap interval reported separately",
+  "compute": "Only cached Bolt-small and TimesFM2.5; FP32 no autocast; GPU3 sole job; batch8; CPU threads2; GPU cap6GB",
+  "selection": "No fitting, layer selection, feature selection, or adaptive controls. Protocol frozen before inference."
+}

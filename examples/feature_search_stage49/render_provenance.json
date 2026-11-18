@@ -1,0 +1,5 @@
+{
+  "renderer_sha256": "06cfa68e74178b2396a04bc5e5827d36c2f2372f7c79aabd319b84b16e9fc201",
+  "source_data_sha256": "9fd43a3ef8423218125e30675ef27ca984dc90aa093154cf8925da10b9bc7e5a",
+  "scope": "Rendering only; independent replay source hash remains a separate computation record"
+}

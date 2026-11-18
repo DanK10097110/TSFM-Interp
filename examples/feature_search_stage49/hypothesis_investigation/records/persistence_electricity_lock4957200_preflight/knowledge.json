@@ -1,0 +1,14 @@
+{
+  "question": "Can reused singleton locking distinguish its exact gates from nonexact historical batch4 replay?",
+  "design": "Known-answer fake models using existing joint normalizer helper; in-memory mutations only.",
+  "exact_findings": {
+    "tests_passed": 3,
+    "plants_completed": 4,
+    "plants_caught": 4,
+    "native_launched": false
+  },
+  "controls": "Exact implicit full repeat, known locked residual28 versus ordinary4, explicit nonidentity for tiny batch differences, algebraic MSE drift bound.",
+  "limitations": "No native outcomes; existing helper inverse tests remain bound from completed weather instrument.",
+  "evidence_class": "software verification",
+  "next_decision": "Freeze same64 electricity sources only; HOLD native until explicit slot grant after Plato32 causal."
+}

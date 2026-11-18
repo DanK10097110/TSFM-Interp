@@ -1,0 +1,268 @@
+[
+  {
+    "request_index": 0,
+    "context_index": 0,
+    "kind": "level",
+    "window": "short",
+    "context_window": "recent",
+    "strength": 0.1,
+    "replay_max_abs": 0.0,
+    "gain": 0.9974596861991355,
+    "collateral": 2.3990033541691904e-05,
+    "relative_error": 0.0025404270760192938,
+    "achieved": true,
+    "protected_rms": 2.4592785423672534e-06,
+    "protected_relative_error": 2.0046898328952632e-05,
+    "coefficient_norm": 0.08310165856894702,
+    "radius": 0.2,
+    "site": {
+      "module": "lm_heads.0",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        2,
+        1024
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear"
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.00046435009559521364,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.0025404270760192938,
+        "coefficient_norm": 0.08310165856894702,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 5.151993777025514e-07,
+          "unrestricted_minimum_norm": 0.08310170967366423,
+          "unreachable_fraction": 1.2243447687799852e-15,
+          "rank": 32,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": null,
+    "baseline_crossing_fraction": null,
+    "context_policy": false
+  },
+  {
+    "request_index": 1,
+    "context_index": 0,
+    "kind": "trend",
+    "window": "long",
+    "context_window": "recent",
+    "strength": 0.1,
+    "replay_max_abs": 0.0,
+    "gain": 0.9974631618219046,
+    "collateral": 2.626942648051058e-05,
+    "relative_error": 0.0025369741868238754,
+    "achieved": true,
+    "protected_rms": 6.979726808446866e-07,
+    "protected_relative_error": 1.9102596032182964e-05,
+    "coefficient_norm": 0.025876858441697702,
+    "radius": 0.2,
+    "site": {
+      "module": "lm_heads.0",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        2,
+        1024
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear"
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.0004600158374825261,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.0025369741868238762,
+        "coefficient_norm": 0.025876858441697702,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 6.37768961487873e-07,
+          "unrestricted_minimum_norm": 0.02587688075204275,
+          "unreachable_fraction": 1.2524721604666485e-15,
+          "rank": 32,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": null,
+    "baseline_crossing_fraction": null,
+    "context_policy": false
+  },
+  {
+    "request_index": 2,
+    "context_index": 0,
+    "kind": "seasonality",
+    "window": "all",
+    "context_window": "recent",
+    "strength": 0.1,
+    "replay_max_abs": 0.0,
+    "gain": 0.997466083482729,
+    "collateral": 2.1380553271530992e-05,
+    "relative_error": 0.002534006717543914,
+    "achieved": true,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.0883146270927018,
+    "radius": 0.2,
+    "site": {
+      "module": "lm_heads.0",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        2,
+        1024
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear"
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.0004622502832006262,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.002534006717543914,
+        "coefficient_norm": 0.0883146270927018,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 5.847565150587239e-07,
+          "unrestricted_minimum_norm": 0.08831468834936558,
+          "unreachable_fraction": 1.5768789510685852e-15,
+          "rank": 32,
+          "norm_constraint_active": false,
+          "penalty": 1e-05
+        }
+      }
+    ],
+    "model_calls": 2,
+    "crossing_fraction": null,
+    "baseline_crossing_fraction": null,
+    "context_policy": false
+  },
+  {
+    "request_index": 3,
+    "context_index": 0,
+    "kind": "context_ignore",
+    "window": "all",
+    "context_window": "recent",
+    "strength": 0.5,
+    "replay_max_abs": 0.0,
+    "gain": 0.7369469032186836,
+    "collateral": 0.09428566568258702,
+    "relative_error": 0.2794400087307635,
+    "achieved": false,
+    "protected_rms": 0.0,
+    "protected_relative_error": 0.0,
+    "coefficient_norm": 0.19999999999999996,
+    "radius": 0.2,
+    "site": {
+      "module": "model.embed_layer.emb",
+      "path": [
+        "args",
+        0
+      ],
+      "occurrence": 0,
+      "shape": [
+        2,
+        96
+      ],
+      "mode": "last",
+      "source": "module_input",
+      "module_type": "Linear"
+    },
+    "selection": "separate calibration/validation",
+    "validation_error": 0.4818676062779444,
+    "history": [
+      {
+        "iteration": 0,
+        "accepted": true,
+        "relative_error": 0.39123210228051386,
+        "coefficient_norm": 0.20000000000000007,
+        "measurement": {
+          "method": "frozen mean response warm start"
+        },
+        "linear_solve": {
+          "relative_error": 0.42578849341473596,
+          "unrestricted_minimum_norm": 0.7271299514294306,
+          "unreachable_fraction": 1.0060908097673221e-15,
+          "rank": 32,
+          "norm_constraint_active": true,
+          "penalty": 42.369544171774464
+        }
+      },
+      {
+        "iteration": 1,
+        "accepted": true,
+        "relative_error": 0.3479117161382748,
+        "coefficient_norm": 0.18105075149696517,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 0.09312735013552649,
+          "unrestricted_minimum_norm": 0.42534112303229793,
+          "unreachable_fraction": 5.543969202507573e-16,
+          "rank": 32,
+          "norm_constraint_active": true,
+          "penalty": 7.897016001538648
+        }
+      },
+      {
+        "iteration": 2,
+        "accepted": true,
+        "relative_error": 0.2794400087307635,
+        "coefficient_norm": 0.19999999999999996,
+        "measurement": {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        },
+        "linear_solve": {
+          "relative_error": 0.12307436695760213,
+          "unrestricted_minimum_norm": 0.40532993567538694,
+          "unreachable_fraction": 9.647301363660947e-16,
+          "rank": 32,
+          "norm_constraint_active": true,
+          "penalty": 15.045565985430686
+        }
+      }
+    ],
+    "model_calls": 43,
+    "crossing_fraction": null,
+    "baseline_crossing_fraction": null,
+    "context_policy": true
+  }
+]

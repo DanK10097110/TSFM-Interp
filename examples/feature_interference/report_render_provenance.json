@@ -1,0 +1,7 @@
+{
+  "scope": "Presentation-only rerender; no statistical analysis or inference rerun",
+  "renderer_source_sha256": "8cd4301f7b6e8a4ab4f0eb69eb1e474a495dc68a41df0825b6150c1d92fc2fe0",
+  "results_sha256": "7b7b5486abda18ba0fa2ce7ce066bbf7a8edb1c411dae8dc030816f89129a386",
+  "analysis_provenance_sha256": "113b14e2de24b735f90609d8e562a327206e8a76245abd0694a78ec8d59cf1b2",
+  "html_sha256": "ffc617ea0b0ed4a16046c8b733b876556babab5dfb694e62993096ecc9f858a5"
+}

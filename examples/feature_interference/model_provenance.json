@@ -1,0 +1,56 @@
+{
+  "bolt": {
+    "config": {
+      "name": "bolt",
+      "adapter": "chronos_bolt",
+      "checkpoint": "amazon/chronos-bolt-small",
+      "batch_size": 8
+    },
+    "device": "cuda:0",
+    "dtype": "float32",
+    "batch_size": 8,
+    "repeat_max_abs": 0.0,
+    "sha256": "95c57837992410aab47dfe194db0db7a8aa751999fbfdd86977f4912871ba5fc",
+    "effective_model_config": {
+      "name": "bolt",
+      "adapter": "chronos_bolt",
+      "checkpoint": "amazon/chronos-bolt-small",
+      "layer_regex": "",
+      "batch_size": 8,
+      "capture_layer_stride": 1,
+      "kwargs": {},
+      "random_init": false
+    },
+    "model_config_sha256": "bd3012bf0ac8b4b8f6547e7cd66e045328094c2b453fd2e6119ce916f50615b0",
+    "checkpoint_identifier_sha256": "86deab4bb6e53afc7fa57d2ac88de879437b1153679a8b9bacd1215c9814ba76",
+    "checkpoint_identifier_hash_scope": "identifier string only, not checkpoint weight bytes",
+    "corpus_sha256": "8aef6b8436eca9bba493da71f79531f12ff03029811b82a5f210241c477fd412"
+  },
+  "timesfm": {
+    "config": {
+      "name": "timesfm",
+      "adapter": "timesfm",
+      "checkpoint": "google/timesfm-2.5-200m-pytorch",
+      "batch_size": 8
+    },
+    "device": "cuda:0",
+    "dtype": "float32",
+    "batch_size": 8,
+    "repeat_max_abs": 0.0,
+    "sha256": "af714d15cbafbcdf85b740e30298e94764e9356ab443091b6b6de00345a68e72",
+    "effective_model_config": {
+      "name": "timesfm",
+      "adapter": "timesfm",
+      "checkpoint": "google/timesfm-2.5-200m-pytorch",
+      "layer_regex": "",
+      "batch_size": 8,
+      "capture_layer_stride": 1,
+      "kwargs": {},
+      "random_init": false
+    },
+    "model_config_sha256": "009fd441577f263ecac16a052fb1b005ebeda83f77399fbed40adbb34a7b8ef6",
+    "checkpoint_identifier_sha256": "63be2e9043364b292399295f1201c39e16fdf2eae2a4d0b21a519a0b31ad5384",
+    "checkpoint_identifier_hash_scope": "identifier string only, not checkpoint weight bytes",
+    "corpus_sha256": "8aef6b8436eca9bba493da71f79531f12ff03029811b82a5f210241c477fd412"
+  }
+}

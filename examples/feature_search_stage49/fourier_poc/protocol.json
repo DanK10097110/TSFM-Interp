@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "history": 128,
+  "horizon": 32,
+  "leaf_count": 8,
+  "levels": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "source_seed_ids": [
+    4929000,
+    4929001,
+    4929002,
+    4929003,
+    4929004,
+    4929005,
+    4929006,
+    4929007,
+    4929008,
+    4929009,
+    4929010,
+    4929011,
+    4929012,
+    4929013,
+    4929014,
+    4929015
+  ],
+  "real_source_rank": [
+    8,
+    15
+  ],
+  "source_count": 40,
+  "rows": 456,
+  "node_count": 2948,
+  "zero_id": 0,
+  "primary": "Mean detrending, exact contiguous spectral leaves; root raw history, level once; retain all energy",
+  "comparisons": [
+    "K1/2/4/8 curves",
+    "same leaves contiguous/interleaved/energy-matched random grouping",
+    "same spectrum phase changes/coherent and crest-matched",
+    "distractor amplitude and distance",
+    "off-grid/chirp/coupled stress",
+    "real paired +/- additions",
+    "linear-detrend sensitivity"
+  ],
+  "primary_summary": "Heldout check half reported separately from discovery; no tuning or test-selected K; K4 primary paired contrast",
+  "nomination": "Absolute paired mean effect>=0.10 fixed source-scale squared error, same sign discovery/check; candidates only, no automatic expansion or significance claim",
+  "crossing": "First tested K with normalized error<=0.25; censored if none; not semantic interpretability",
+  "uncertainty": "1999 source bootstrap, conditional on dataset/design, descriptive unadjusted95%; no multiple-testing claims",
+  "validity": "FP64 reconstruction<=1e-12 relative; native FP32 input reconstruction<=2e-6 relative; K1 identity exact; phase crest<=3%; random energy mismatch<=0.1",
+  "amplitude": "Known additions .5; period128/5. Real inputs use their own past128 SD; distractor target/noise fixed",
+  "split": "Synthetic first8 seeds discovery,last8 check; real4+4 per dataset; same source all conditions same split",
+  "data_provenance": "Cached real sources have unknown pretraining overlap; fresh trajectories do not imply unfamiliar generators",
+  "scope": "Behavioral no-oracle adapter diagnostic, no internal causal claim or newly fitted SAE",
+  "budget": {
+    "cpu_threads": 1,
+    "seconds_per_model": 600,
+    "worker_bytes": 3221225472,
+    "max_inputs": 6500,
+    "gpu": false
+  },
+  "checkpoints": {
+    "bolt": {
+      "repo": "amazon/chronos-bolt-small",
+      "revision": "772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+      "weights": {
+        "model.safetensors": "06a6a19bbe74bc10a9cd193bd4bf2bf638ae07f7e0d51653ae7ab8ea968a21dd"
+      }
+    },
+    "timesfm": {
+      "repo": "google/timesfm-2.5-200m-pytorch",
+      "revision": "1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+      "weights": {
+        "model.safetensors": "2f776efe6245e42b24bc4153ffdf61810140210e4bd3b01fb21f7aa779ab6ce8"
+      }
+    }
+  },
+  "source_bindings": {
+    "fourier_poc.py": "18fcaf686a26e2b1c49010f2a4f6cb8ef289fc6af358af86a97fa9b3a2987a9b",
+    "fourier_adapter.py": "2b1b842e98ac865b06158324a38028928eae636d3062475d159927668d78dede",
+    "real_background_poc.py": "c88868ab339608f52afa8041d89cf3b48aa4260e87fb497b64fa7bf058b3eda6",
+    "homogeneous_normalizer.py": "2670effb2dfc0b631d368a69cab4263a8d2a90eb1208acc93d246a5c0ef55051"
+  },
+  "artifact_hashes": {
+    "corpus.npz": "804728a52761e9a965bc70904a493b5eb917d1e4493fe77acbe847202ff5a2e5",
+    "bank.npz": "2a47819d66967f5c8d5b006e23c293be055a51fa317b596ea0ec43fedfde3112",
+    "rows.json": "1bf41835f73c9b1945700a302521e0c010eae271d23bc01954b789a227ea61ef",
+    "plans.json": "0c58801a41a20492fb84c047f88075b6b5c7f04c09c23f5f108c01bd2c5b3631"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "n": 96,
+  "learned_n": 72,
+  "learned_successes": 68,
+  "learned_mean_error": 0.035558273300209046,
+  "input_policy_n": 24,
+  "replay_max_abs": 0.0,
+  "seconds": 481.42377320094965
+}

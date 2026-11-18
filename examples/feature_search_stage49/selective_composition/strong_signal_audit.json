@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "forecast_scores": 736,
+  "hidden_closures": 256,
+  "input_closure_max": 1.9714630011189749e-07,
+  "random_invalid_pairs": 7,
+  "source_sha256": "5878d333d8a4c09e573af6048138d084a9a4570ffa5da3816ebfbd5a63cb5016"
+}

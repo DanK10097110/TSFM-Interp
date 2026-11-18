@@ -1,0 +1,1842 @@
+{
+  "{\"prediction_length\": 32, \"request\": {\"context_window\": \"recent\", \"delay\": 1.0, \"forecast_window\": \"short\", \"kind\": \"level\", \"lower\": null, \"outside_weight\": 0.2, \"period\": null, \"phase\": null, \"quantile\": 0.9, \"smoothing\": 2.0, \"strength\": 0.1, \"upper\": null, \"value\": null}}": {
+    "selection": "separate calibration/validation",
+    "calibration_indices": [
+      0
+    ],
+    "validation_indices": [
+      0
+    ],
+    "request": {
+      "kind": "level",
+      "strength": 0.1,
+      "forecast_window": "short",
+      "context_window": "recent",
+      "period": null,
+      "phase": null,
+      "value": null,
+      "lower": null,
+      "upper": null,
+      "quantile": 0.9,
+      "smoothing": 2.0,
+      "delay": 1.0,
+      "outside_weight": 0.2
+    },
+    "chosen": {
+      "site": "module_input:output_projection_point.residual_layer:0:['args', 0]:last",
+      "error": 0.050958444913274684,
+      "errors": [
+        0.050958444913274684
+      ],
+      "mean_coefficient_norm": 0.16823029193543387,
+      "details": [
+        {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        }
+      ]
+    },
+    "rank": 128,
+    "observed_internal_sites": 338,
+    "searched_candidates": 4,
+    "candidate_scores": [
+      {
+        "site": "module_input:tokenizer.hidden_layer:0:['args', 0]:last",
+        "error": 1.0617964696364135,
+        "errors": [
+          1.0617964696364135
+        ],
+        "mean_coefficient_norm": 0.2,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_projection_point.residual_layer:0:['args', 0]:last",
+        "error": 0.050958444913274684,
+        "errors": [
+          0.050958444913274684
+        ],
+        "mean_coefficient_norm": 0.16823029193543387,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_projection_point.residual_layer:0:['args', 0]:shared",
+        "error": 0.05668477099898087,
+        "errors": [
+          0.05668477099898087
+        ],
+        "mean_coefficient_norm": 0.06688315246900058,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "input:__input__:0:[]:single",
+        "error": 1.8296705373851347,
+        "errors": [
+          1.8296705373851347
+        ],
+        "mean_coefficient_norm": 0.19999999999999998,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      }
+    ],
+    "screening": [
+      {
+        "site": "module_input:tokenizer.hidden_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.026018575991459826
+      },
+      {
+        "site": "module_input:stacked_xf.0.attn.qkv_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0042369768926388395
+      },
+      {
+        "site": "module_input:stacked_xf.0.ff1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.024354462792725302
+      },
+      {
+        "site": "module_input:stacked_xf.1.post_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.009664818119913043
+      },
+      {
+        "site": "module_input:stacked_xf.2.pre_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.021406937167592052
+      },
+      {
+        "site": "module_input:stacked_xf.2.ff0:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.016405657839488736
+      },
+      {
+        "site": "module_input:stacked_xf.3.attn.out:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.00792479764749687
+      },
+      {
+        "site": "module_input:stacked_xf.3.post_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.008370373511503154
+      },
+      {
+        "site": "module_input:stacked_xf.4.pre_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.008339088259993974
+      },
+      {
+        "site": "module_input:stacked_xf.5.attn.qkv_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0011449239608583431
+      },
+      {
+        "site": "module_input:stacked_xf.5.ff1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.003911109293254873
+      },
+      {
+        "site": "module_input:stacked_xf.6.post_attn_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.01080728655476235
+      },
+      {
+        "site": "module_input:stacked_xf.7.pre_attn_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.008002623918019798
+      },
+      {
+        "site": "module_input:stacked_xf.7.pre_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.008985145803639518
+      },
+      {
+        "site": "module_input:stacked_xf.8.attn.qkv_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002569148675013477
+      },
+      {
+        "site": "module_input:stacked_xf.8.ff1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0033069558419707577
+      },
+      {
+        "site": "module_input:stacked_xf.9.post_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.010330316994397116
+      },
+      {
+        "site": "module_input:stacked_xf.10.pre_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.01815737563312412
+      },
+      {
+        "site": "module_input:stacked_xf.10.ff0:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.008247318372509914
+      },
+      {
+        "site": "module_input:stacked_xf.11.attn.out:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0008549679935770356
+      },
+      {
+        "site": "module_input:stacked_xf.11.post_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.004196014253934602
+      },
+      {
+        "site": "module_input:stacked_xf.12.pre_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.010516264726662028
+      },
+      {
+        "site": "module_input:stacked_xf.13.attn.qkv_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00126265914356252
+      },
+      {
+        "site": "module_input:stacked_xf.13.ff1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.005423827842368658
+      },
+      {
+        "site": "module_input:stacked_xf.14.post_attn_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.019366045798205167
+      },
+      {
+        "site": "module_input:stacked_xf.14.post_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.006349995648791979
+      },
+      {
+        "site": "module_input:stacked_xf.15.pre_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.01944531652019874
+      },
+      {
+        "site": "module_input:stacked_xf.16.attn.qkv_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002945529704070998
+      },
+      {
+        "site": "module_input:stacked_xf.16.ff1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.003424536264326746
+      },
+      {
+        "site": "module_input:stacked_xf.17.post_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.006990329410264346
+      },
+      {
+        "site": "module_input:stacked_xf.18.pre_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.049073484081198014
+      },
+      {
+        "site": "module_input:stacked_xf.18.ff0:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0177507396329937
+      },
+      {
+        "site": "module_input:stacked_xf.18.ff1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.011159712587739921
+      },
+      {
+        "site": "module_input:stacked_xf.18.ff1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.008868010096088117
+      },
+      {
+        "site": "module_input:stacked_xf.18.post_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.01914336189863149
+      },
+      {
+        "site": "module_input:stacked_xf.18.post_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.012035995667814903
+      },
+      {
+        "site": "module_input:stacked_xf.19.pre_attn_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.02405877639455352
+      },
+      {
+        "site": "module_input:stacked_xf.19.pre_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.06949853556221869
+      },
+      {
+        "site": "module_input:stacked_xf.19.attn.qkv_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.014880572706886424
+      },
+      {
+        "site": "module_input:stacked_xf.19.attn.qkv_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.012880004905588327
+      },
+      {
+        "site": "module_input:stacked_xf.19.attn.out:0:['args', 0]:last",
+        "normalized_signed_effect": 0.004740529132447825
+      },
+      {
+        "site": "module_input:stacked_xf.19.attn.out:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.010366979276905192
+      },
+      {
+        "site": "module_input:stacked_xf.19.post_attn_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.02233450020593652
+      },
+      {
+        "site": "module_input:stacked_xf.19.post_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.017115458780421696
+      },
+      {
+        "site": "module_input:stacked_xf.19.pre_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.04471239158024762
+      },
+      {
+        "site": "module_input:stacked_xf.19.pre_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.05059167801060648
+      },
+      {
+        "site": "module_input:stacked_xf.19.ff0:0:['args', 0]:last",
+        "normalized_signed_effect": 0.015487469307981845
+      },
+      {
+        "site": "module_input:stacked_xf.19.ff0:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.021104144582765504
+      },
+      {
+        "site": "module_input:stacked_xf.19.ff1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.02124763827252122
+      },
+      {
+        "site": "module_input:stacked_xf.19.ff1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.018164099708293833
+      },
+      {
+        "site": "module_input:stacked_xf.19.post_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.020813714740840903
+      },
+      {
+        "site": "module_input:stacked_xf.19.post_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.01380264702723002
+      },
+      {
+        "site": "module_input:output_projection_point.hidden_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.007762820185106355
+      },
+      {
+        "site": "module_input:output_projection_point.hidden_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.018718547867614004
+      },
+      {
+        "site": "module_input:output_projection_point.output_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.010535367722428067
+      },
+      {
+        "site": "module_input:output_projection_point.output_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.016441790043739406
+      },
+      {
+        "site": "module_input:output_projection_point.residual_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.03550650275335213
+      },
+      {
+        "site": "module_input:output_projection_point.residual_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.057880031235371714
+      },
+      {
+        "site": "module_input:output_projection_quantiles.hidden_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:output_projection_quantiles.hidden_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:output_projection_quantiles.output_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:output_projection_quantiles.output_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:output_projection_quantiles.residual_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:output_projection_quantiles.residual_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      }
+    ],
+    "rejected_candidates": [],
+    "model_calls": 217,
+    "elapsed_seconds": 33.923008939949796,
+    "context_length": 128,
+    "prediction_length": 32,
+    "caveat": "bounded search; best observed validation score, not global optimality or semantic disentanglement"
+  },
+  "{\"prediction_length\": 32, \"request\": {\"context_window\": \"recent\", \"delay\": 1.0, \"forecast_window\": \"long\", \"kind\": \"trend\", \"lower\": null, \"outside_weight\": 0.2, \"period\": null, \"phase\": null, \"quantile\": 0.9, \"smoothing\": 2.0, \"strength\": 0.1, \"upper\": null, \"value\": null}}": {
+    "selection": "separate calibration/validation",
+    "calibration_indices": [
+      0
+    ],
+    "validation_indices": [
+      0
+    ],
+    "request": {
+      "kind": "trend",
+      "strength": 0.1,
+      "forecast_window": "long",
+      "context_window": "recent",
+      "period": null,
+      "phase": null,
+      "value": null,
+      "lower": null,
+      "upper": null,
+      "quantile": 0.9,
+      "smoothing": 2.0,
+      "delay": 1.0,
+      "outside_weight": 0.2
+    },
+    "chosen": {
+      "site": "module_input:output_projection_point.residual_layer:0:['args', 0]:last",
+      "error": 0.05096229241450124,
+      "errors": [
+        0.05096229241450124
+      ],
+      "mean_coefficient_norm": 0.04769251109157834,
+      "details": [
+        {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        }
+      ]
+    },
+    "rank": 128,
+    "observed_internal_sites": 338,
+    "searched_candidates": 4,
+    "candidate_scores": [
+      {
+        "site": "module_input:tokenizer.hidden_layer:0:['args', 0]:last",
+        "error": 1.1091422788254288,
+        "errors": [
+          1.1091422788254288
+        ],
+        "mean_coefficient_norm": 0.20000000000000004,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_projection_point.residual_layer:0:['args', 0]:last",
+        "error": 0.05096229241450124,
+        "errors": [
+          0.05096229241450124
+        ],
+        "mean_coefficient_norm": 0.04769251109157834,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_projection_point.residual_layer:0:['args', 0]:shared",
+        "error": 0.05667889894855673,
+        "errors": [
+          0.05667889894855673
+        ],
+        "mean_coefficient_norm": 0.020648618541395495,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "input:__input__:0:[]:single",
+        "error": 0.9162541438981693,
+        "errors": [
+          0.9162541438981693
+        ],
+        "mean_coefficient_norm": 0.05988647498464521,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      }
+    ],
+    "screening": [
+      {
+        "site": "module_input:tokenizer.hidden_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.026018575991459826
+      },
+      {
+        "site": "module_input:stacked_xf.0.attn.qkv_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0042369768926388395
+      },
+      {
+        "site": "module_input:stacked_xf.0.ff1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.024354462792725302
+      },
+      {
+        "site": "module_input:stacked_xf.1.post_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.009664818119913043
+      },
+      {
+        "site": "module_input:stacked_xf.2.pre_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.021406937167592052
+      },
+      {
+        "site": "module_input:stacked_xf.2.ff0:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.016405657839488736
+      },
+      {
+        "site": "module_input:stacked_xf.3.attn.out:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.00792479764749687
+      },
+      {
+        "site": "module_input:stacked_xf.3.post_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.008370373511503154
+      },
+      {
+        "site": "module_input:stacked_xf.4.pre_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.008339088259993974
+      },
+      {
+        "site": "module_input:stacked_xf.5.attn.qkv_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0011449239608583431
+      },
+      {
+        "site": "module_input:stacked_xf.5.ff1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.003911109293254873
+      },
+      {
+        "site": "module_input:stacked_xf.6.post_attn_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.01080728655476235
+      },
+      {
+        "site": "module_input:stacked_xf.7.pre_attn_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.008002623918019798
+      },
+      {
+        "site": "module_input:stacked_xf.7.pre_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.008985145803639518
+      },
+      {
+        "site": "module_input:stacked_xf.8.attn.qkv_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002569148675013477
+      },
+      {
+        "site": "module_input:stacked_xf.8.ff1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0033069558419707577
+      },
+      {
+        "site": "module_input:stacked_xf.9.post_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.010330316994397116
+      },
+      {
+        "site": "module_input:stacked_xf.10.pre_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.01815737563312412
+      },
+      {
+        "site": "module_input:stacked_xf.10.ff0:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.008247318372509914
+      },
+      {
+        "site": "module_input:stacked_xf.11.attn.out:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0008549679935770356
+      },
+      {
+        "site": "module_input:stacked_xf.11.post_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.004196014253934602
+      },
+      {
+        "site": "module_input:stacked_xf.12.pre_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.010516264726662028
+      },
+      {
+        "site": "module_input:stacked_xf.13.attn.qkv_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00126265914356252
+      },
+      {
+        "site": "module_input:stacked_xf.13.ff1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.005423827842368658
+      },
+      {
+        "site": "module_input:stacked_xf.14.post_attn_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.019366045798205167
+      },
+      {
+        "site": "module_input:stacked_xf.14.post_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.006349995648791979
+      },
+      {
+        "site": "module_input:stacked_xf.15.pre_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.01944531652019874
+      },
+      {
+        "site": "module_input:stacked_xf.16.attn.qkv_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002945529704070998
+      },
+      {
+        "site": "module_input:stacked_xf.16.ff1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.003424536264326746
+      },
+      {
+        "site": "module_input:stacked_xf.17.post_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.006990329410264346
+      },
+      {
+        "site": "module_input:stacked_xf.18.pre_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.049073484081198014
+      },
+      {
+        "site": "module_input:stacked_xf.18.ff0:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0177507396329937
+      },
+      {
+        "site": "module_input:stacked_xf.18.ff1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.011159712587739921
+      },
+      {
+        "site": "module_input:stacked_xf.18.ff1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.008868010096088117
+      },
+      {
+        "site": "module_input:stacked_xf.18.post_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.01914336189863149
+      },
+      {
+        "site": "module_input:stacked_xf.18.post_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.012035995667814903
+      },
+      {
+        "site": "module_input:stacked_xf.19.pre_attn_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.02405877639455352
+      },
+      {
+        "site": "module_input:stacked_xf.19.pre_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.06949853556221869
+      },
+      {
+        "site": "module_input:stacked_xf.19.attn.qkv_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.014880572706886424
+      },
+      {
+        "site": "module_input:stacked_xf.19.attn.qkv_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.012880004905588327
+      },
+      {
+        "site": "module_input:stacked_xf.19.attn.out:0:['args', 0]:last",
+        "normalized_signed_effect": 0.004740529132447825
+      },
+      {
+        "site": "module_input:stacked_xf.19.attn.out:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.010366979276905192
+      },
+      {
+        "site": "module_input:stacked_xf.19.post_attn_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.02233450020593652
+      },
+      {
+        "site": "module_input:stacked_xf.19.post_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.017115458780421696
+      },
+      {
+        "site": "module_input:stacked_xf.19.pre_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.04471239158024762
+      },
+      {
+        "site": "module_input:stacked_xf.19.pre_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.05059167801060648
+      },
+      {
+        "site": "module_input:stacked_xf.19.ff0:0:['args', 0]:last",
+        "normalized_signed_effect": 0.015487469307981845
+      },
+      {
+        "site": "module_input:stacked_xf.19.ff0:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.021104144582765504
+      },
+      {
+        "site": "module_input:stacked_xf.19.ff1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.02124763827252122
+      },
+      {
+        "site": "module_input:stacked_xf.19.ff1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.018164099708293833
+      },
+      {
+        "site": "module_input:stacked_xf.19.post_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.020813714740840903
+      },
+      {
+        "site": "module_input:stacked_xf.19.post_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.01380264702723002
+      },
+      {
+        "site": "module_input:output_projection_point.hidden_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.007762820185106355
+      },
+      {
+        "site": "module_input:output_projection_point.hidden_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.018718547867614004
+      },
+      {
+        "site": "module_input:output_projection_point.output_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.010535367722428067
+      },
+      {
+        "site": "module_input:output_projection_point.output_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.016441790043739406
+      },
+      {
+        "site": "module_input:output_projection_point.residual_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.03550650275335213
+      },
+      {
+        "site": "module_input:output_projection_point.residual_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.057880031235371714
+      },
+      {
+        "site": "module_input:output_projection_quantiles.hidden_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:output_projection_quantiles.hidden_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:output_projection_quantiles.output_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:output_projection_quantiles.output_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:output_projection_quantiles.residual_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:output_projection_quantiles.residual_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      }
+    ],
+    "rejected_candidates": [],
+    "model_calls": 221,
+    "elapsed_seconds": 34.37159485090524,
+    "context_length": 128,
+    "prediction_length": 32,
+    "caveat": "bounded search; best observed validation score, not global optimality or semantic disentanglement"
+  },
+  "{\"prediction_length\": 32, \"request\": {\"context_window\": \"recent\", \"delay\": 1.0, \"forecast_window\": \"all\", \"kind\": \"seasonality\", \"lower\": null, \"outside_weight\": 0.2, \"period\": 24, \"phase\": null, \"quantile\": 0.9, \"smoothing\": 2.0, \"strength\": 0.1, \"upper\": null, \"value\": null}}": {
+    "selection": "separate calibration/validation",
+    "calibration_indices": [
+      0
+    ],
+    "validation_indices": [
+      0
+    ],
+    "request": {
+      "kind": "seasonality",
+      "strength": 0.1,
+      "forecast_window": "all",
+      "context_window": "recent",
+      "period": 24,
+      "phase": null,
+      "value": null,
+      "lower": null,
+      "upper": null,
+      "quantile": 0.9,
+      "smoothing": 2.0,
+      "delay": 1.0,
+      "outside_weight": 0.2
+    },
+    "chosen": {
+      "site": "module_input:output_projection_point.residual_layer:0:['args', 0]:last",
+      "error": 0.05129019773359087,
+      "errors": [
+        0.05129019773359087
+      ],
+      "mean_coefficient_norm": 0.19999999999999998,
+      "details": [
+        {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        }
+      ]
+    },
+    "rank": 128,
+    "observed_internal_sites": 338,
+    "searched_candidates": 4,
+    "candidate_scores": [
+      {
+        "site": "module_input:tokenizer.hidden_layer:0:['args', 0]:last",
+        "error": 1.3082392059489214,
+        "errors": [
+          1.3082392059489214
+        ],
+        "mean_coefficient_norm": 0.2,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_projection_point.residual_layer:0:['args', 0]:last",
+        "error": 0.05129019773359087,
+        "errors": [
+          0.05129019773359087
+        ],
+        "mean_coefficient_norm": 0.19999999999999998,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_projection_point.residual_layer:0:['args', 0]:shared",
+        "error": 0.05668540703712137,
+        "errors": [
+          0.05668540703712137
+        ],
+        "mean_coefficient_norm": 0.07094998684242118,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "input:__input__:0:[]:single",
+        "error": 0.4731590043414673,
+        "errors": [
+          0.4731590043414673
+        ],
+        "mean_coefficient_norm": 0.0911160278544037,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      }
+    ],
+    "screening": [
+      {
+        "site": "module_input:tokenizer.hidden_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.026018575991459826
+      },
+      {
+        "site": "module_input:stacked_xf.0.attn.qkv_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0042369768926388395
+      },
+      {
+        "site": "module_input:stacked_xf.0.ff1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.024354462792725302
+      },
+      {
+        "site": "module_input:stacked_xf.1.post_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.009664818119913043
+      },
+      {
+        "site": "module_input:stacked_xf.2.pre_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.021406937167592052
+      },
+      {
+        "site": "module_input:stacked_xf.2.ff0:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.016405657839488736
+      },
+      {
+        "site": "module_input:stacked_xf.3.attn.out:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.00792479764749687
+      },
+      {
+        "site": "module_input:stacked_xf.3.post_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.008370373511503154
+      },
+      {
+        "site": "module_input:stacked_xf.4.pre_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.008339088259993974
+      },
+      {
+        "site": "module_input:stacked_xf.5.attn.qkv_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0011449239608583431
+      },
+      {
+        "site": "module_input:stacked_xf.5.ff1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.003911109293254873
+      },
+      {
+        "site": "module_input:stacked_xf.6.post_attn_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.01080728655476235
+      },
+      {
+        "site": "module_input:stacked_xf.7.pre_attn_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.008002623918019798
+      },
+      {
+        "site": "module_input:stacked_xf.7.pre_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.008985145803639518
+      },
+      {
+        "site": "module_input:stacked_xf.8.attn.qkv_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002569148675013477
+      },
+      {
+        "site": "module_input:stacked_xf.8.ff1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0033069558419707577
+      },
+      {
+        "site": "module_input:stacked_xf.9.post_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.010330316994397116
+      },
+      {
+        "site": "module_input:stacked_xf.10.pre_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.01815737563312412
+      },
+      {
+        "site": "module_input:stacked_xf.10.ff0:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.008247318372509914
+      },
+      {
+        "site": "module_input:stacked_xf.11.attn.out:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0008549679935770356
+      },
+      {
+        "site": "module_input:stacked_xf.11.post_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.004196014253934602
+      },
+      {
+        "site": "module_input:stacked_xf.12.pre_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.010516264726662028
+      },
+      {
+        "site": "module_input:stacked_xf.13.attn.qkv_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00126265914356252
+      },
+      {
+        "site": "module_input:stacked_xf.13.ff1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.005423827842368658
+      },
+      {
+        "site": "module_input:stacked_xf.14.post_attn_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.019366045798205167
+      },
+      {
+        "site": "module_input:stacked_xf.14.post_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.006349995648791979
+      },
+      {
+        "site": "module_input:stacked_xf.15.pre_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.01944531652019874
+      },
+      {
+        "site": "module_input:stacked_xf.16.attn.qkv_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002945529704070998
+      },
+      {
+        "site": "module_input:stacked_xf.16.ff1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.003424536264326746
+      },
+      {
+        "site": "module_input:stacked_xf.17.post_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.006990329410264346
+      },
+      {
+        "site": "module_input:stacked_xf.18.pre_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.049073484081198014
+      },
+      {
+        "site": "module_input:stacked_xf.18.ff0:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0177507396329937
+      },
+      {
+        "site": "module_input:stacked_xf.18.ff1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.011159712587739921
+      },
+      {
+        "site": "module_input:stacked_xf.18.ff1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.008868010096088117
+      },
+      {
+        "site": "module_input:stacked_xf.18.post_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.01914336189863149
+      },
+      {
+        "site": "module_input:stacked_xf.18.post_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.012035995667814903
+      },
+      {
+        "site": "module_input:stacked_xf.19.pre_attn_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.02405877639455352
+      },
+      {
+        "site": "module_input:stacked_xf.19.pre_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.06949853556221869
+      },
+      {
+        "site": "module_input:stacked_xf.19.attn.qkv_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.014880572706886424
+      },
+      {
+        "site": "module_input:stacked_xf.19.attn.qkv_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.012880004905588327
+      },
+      {
+        "site": "module_input:stacked_xf.19.attn.out:0:['args', 0]:last",
+        "normalized_signed_effect": 0.004740529132447825
+      },
+      {
+        "site": "module_input:stacked_xf.19.attn.out:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.010366979276905192
+      },
+      {
+        "site": "module_input:stacked_xf.19.post_attn_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.02233450020593652
+      },
+      {
+        "site": "module_input:stacked_xf.19.post_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.017115458780421696
+      },
+      {
+        "site": "module_input:stacked_xf.19.pre_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.04471239158024762
+      },
+      {
+        "site": "module_input:stacked_xf.19.pre_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.05059167801060648
+      },
+      {
+        "site": "module_input:stacked_xf.19.ff0:0:['args', 0]:last",
+        "normalized_signed_effect": 0.015487469307981845
+      },
+      {
+        "site": "module_input:stacked_xf.19.ff0:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.021104144582765504
+      },
+      {
+        "site": "module_input:stacked_xf.19.ff1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.02124763827252122
+      },
+      {
+        "site": "module_input:stacked_xf.19.ff1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.018164099708293833
+      },
+      {
+        "site": "module_input:stacked_xf.19.post_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.020813714740840903
+      },
+      {
+        "site": "module_input:stacked_xf.19.post_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.01380264702723002
+      },
+      {
+        "site": "module_input:output_projection_point.hidden_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.007762820185106355
+      },
+      {
+        "site": "module_input:output_projection_point.hidden_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.018718547867614004
+      },
+      {
+        "site": "module_input:output_projection_point.output_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.010535367722428067
+      },
+      {
+        "site": "module_input:output_projection_point.output_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.016441790043739406
+      },
+      {
+        "site": "module_input:output_projection_point.residual_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.03550650275335213
+      },
+      {
+        "site": "module_input:output_projection_point.residual_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.057880031235371714
+      },
+      {
+        "site": "module_input:output_projection_quantiles.hidden_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:output_projection_quantiles.hidden_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:output_projection_quantiles.output_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:output_projection_quantiles.output_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:output_projection_quantiles.residual_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:output_projection_quantiles.residual_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      }
+    ],
+    "rejected_candidates": [],
+    "model_calls": 225,
+    "elapsed_seconds": 34.820336310891435,
+    "context_length": 128,
+    "prediction_length": 32,
+    "caveat": "bounded search; best observed validation score, not global optimality or semantic disentanglement"
+  },
+  "{\"prediction_length\": 32, \"request\": {\"context_window\": \"recent\", \"delay\": 1.0, \"forecast_window\": \"all\", \"kind\": \"context_ignore\", \"lower\": null, \"outside_weight\": 0.2, \"period\": null, \"phase\": null, \"quantile\": 0.9, \"smoothing\": 2.0, \"strength\": 0.5, \"upper\": null, \"value\": null}}": {
+    "selection": "separate calibration/validation",
+    "calibration_indices": [
+      0
+    ],
+    "validation_indices": [
+      0
+    ],
+    "request": {
+      "kind": "context_ignore",
+      "strength": 0.5,
+      "forecast_window": "all",
+      "context_window": "recent",
+      "period": null,
+      "phase": null,
+      "value": null,
+      "lower": null,
+      "upper": null,
+      "quantile": 0.9,
+      "smoothing": 2.0,
+      "delay": 1.0,
+      "outside_weight": 0.2
+    },
+    "chosen": {
+      "site": "module_input:output_projection_point.residual_layer:0:['args', 0]:shared",
+      "error": 0.4288440208838172,
+      "errors": [
+        0.4288440208838172
+      ],
+      "mean_coefficient_norm": 0.20000000000000004,
+      "details": [
+        {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        }
+      ]
+    },
+    "rank": 128,
+    "observed_internal_sites": 338,
+    "searched_candidates": 4,
+    "candidate_scores": [
+      {
+        "site": "module_input:tokenizer.hidden_layer:0:['args', 0]:last",
+        "error": 0.8201942805659108,
+        "errors": [
+          0.8201942805659108
+        ],
+        "mean_coefficient_norm": 0.19999999999999996,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_projection_point.residual_layer:0:['args', 0]:last",
+        "error": 0.74595210987666,
+        "errors": [
+          0.74595210987666
+        ],
+        "mean_coefficient_norm": 0.2,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_projection_point.residual_layer:0:['args', 0]:shared",
+        "error": 0.4288440208838172,
+        "errors": [
+          0.4288440208838172
+        ],
+        "mean_coefficient_norm": 0.20000000000000004,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "input:__input__:0:[]:single",
+        "error": 0.6113091061205222,
+        "errors": [
+          0.6113091061205222
+        ],
+        "mean_coefficient_norm": 0.20000000000000004,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      }
+    ],
+    "screening": [
+      {
+        "site": "module_input:tokenizer.hidden_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.026018575991459826
+      },
+      {
+        "site": "module_input:stacked_xf.0.attn.qkv_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0042369768926388395
+      },
+      {
+        "site": "module_input:stacked_xf.0.ff1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.024354462792725302
+      },
+      {
+        "site": "module_input:stacked_xf.1.post_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.009664818119913043
+      },
+      {
+        "site": "module_input:stacked_xf.2.pre_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.021406937167592052
+      },
+      {
+        "site": "module_input:stacked_xf.2.ff0:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.016405657839488736
+      },
+      {
+        "site": "module_input:stacked_xf.3.attn.out:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.00792479764749687
+      },
+      {
+        "site": "module_input:stacked_xf.3.post_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.008370373511503154
+      },
+      {
+        "site": "module_input:stacked_xf.4.pre_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.008339088259993974
+      },
+      {
+        "site": "module_input:stacked_xf.5.attn.qkv_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0011449239608583431
+      },
+      {
+        "site": "module_input:stacked_xf.5.ff1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.003911109293254873
+      },
+      {
+        "site": "module_input:stacked_xf.6.post_attn_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.01080728655476235
+      },
+      {
+        "site": "module_input:stacked_xf.7.pre_attn_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.008002623918019798
+      },
+      {
+        "site": "module_input:stacked_xf.7.pre_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.008985145803639518
+      },
+      {
+        "site": "module_input:stacked_xf.8.attn.qkv_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002569148675013477
+      },
+      {
+        "site": "module_input:stacked_xf.8.ff1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0033069558419707577
+      },
+      {
+        "site": "module_input:stacked_xf.9.post_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.010330316994397116
+      },
+      {
+        "site": "module_input:stacked_xf.10.pre_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.01815737563312412
+      },
+      {
+        "site": "module_input:stacked_xf.10.ff0:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.008247318372509914
+      },
+      {
+        "site": "module_input:stacked_xf.11.attn.out:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0008549679935770356
+      },
+      {
+        "site": "module_input:stacked_xf.11.post_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.004196014253934602
+      },
+      {
+        "site": "module_input:stacked_xf.12.pre_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.010516264726662028
+      },
+      {
+        "site": "module_input:stacked_xf.13.attn.qkv_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00126265914356252
+      },
+      {
+        "site": "module_input:stacked_xf.13.ff1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.005423827842368658
+      },
+      {
+        "site": "module_input:stacked_xf.14.post_attn_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.019366045798205167
+      },
+      {
+        "site": "module_input:stacked_xf.14.post_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.006349995648791979
+      },
+      {
+        "site": "module_input:stacked_xf.15.pre_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.01944531652019874
+      },
+      {
+        "site": "module_input:stacked_xf.16.attn.qkv_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002945529704070998
+      },
+      {
+        "site": "module_input:stacked_xf.16.ff1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.003424536264326746
+      },
+      {
+        "site": "module_input:stacked_xf.17.post_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.006990329410264346
+      },
+      {
+        "site": "module_input:stacked_xf.18.pre_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.049073484081198014
+      },
+      {
+        "site": "module_input:stacked_xf.18.ff0:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0177507396329937
+      },
+      {
+        "site": "module_input:stacked_xf.18.ff1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.011159712587739921
+      },
+      {
+        "site": "module_input:stacked_xf.18.ff1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.008868010096088117
+      },
+      {
+        "site": "module_input:stacked_xf.18.post_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.01914336189863149
+      },
+      {
+        "site": "module_input:stacked_xf.18.post_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.012035995667814903
+      },
+      {
+        "site": "module_input:stacked_xf.19.pre_attn_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.02405877639455352
+      },
+      {
+        "site": "module_input:stacked_xf.19.pre_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.06949853556221869
+      },
+      {
+        "site": "module_input:stacked_xf.19.attn.qkv_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.014880572706886424
+      },
+      {
+        "site": "module_input:stacked_xf.19.attn.qkv_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.012880004905588327
+      },
+      {
+        "site": "module_input:stacked_xf.19.attn.out:0:['args', 0]:last",
+        "normalized_signed_effect": 0.004740529132447825
+      },
+      {
+        "site": "module_input:stacked_xf.19.attn.out:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.010366979276905192
+      },
+      {
+        "site": "module_input:stacked_xf.19.post_attn_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.02233450020593652
+      },
+      {
+        "site": "module_input:stacked_xf.19.post_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.017115458780421696
+      },
+      {
+        "site": "module_input:stacked_xf.19.pre_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.04471239158024762
+      },
+      {
+        "site": "module_input:stacked_xf.19.pre_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.05059167801060648
+      },
+      {
+        "site": "module_input:stacked_xf.19.ff0:0:['args', 0]:last",
+        "normalized_signed_effect": 0.015487469307981845
+      },
+      {
+        "site": "module_input:stacked_xf.19.ff0:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.021104144582765504
+      },
+      {
+        "site": "module_input:stacked_xf.19.ff1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.02124763827252122
+      },
+      {
+        "site": "module_input:stacked_xf.19.ff1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.018164099708293833
+      },
+      {
+        "site": "module_input:stacked_xf.19.post_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.020813714740840903
+      },
+      {
+        "site": "module_input:stacked_xf.19.post_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.01380264702723002
+      },
+      {
+        "site": "module_input:output_projection_point.hidden_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.007762820185106355
+      },
+      {
+        "site": "module_input:output_projection_point.hidden_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.018718547867614004
+      },
+      {
+        "site": "module_input:output_projection_point.output_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.010535367722428067
+      },
+      {
+        "site": "module_input:output_projection_point.output_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.016441790043739406
+      },
+      {
+        "site": "module_input:output_projection_point.residual_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.03550650275335213
+      },
+      {
+        "site": "module_input:output_projection_point.residual_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.057880031235371714
+      },
+      {
+        "site": "module_input:output_projection_quantiles.hidden_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:output_projection_quantiles.hidden_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:output_projection_quantiles.output_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:output_projection_quantiles.output_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:output_projection_quantiles.residual_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:output_projection_quantiles.residual_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      }
+    ],
+    "rejected_candidates": [],
+    "model_calls": 229,
+    "elapsed_seconds": 35.28652380895801,
+    "context_length": 128,
+    "prediction_length": 32,
+    "caveat": "bounded search; best observed validation score, not global optimality or semantic disentanglement"
+  },
+  "{\"prediction_length\": 32, \"request\": {\"context_window\": \"recent\", \"delay\": 1.0, \"forecast_window\": \"all\", \"kind\": \"uncertainty\", \"lower\": null, \"outside_weight\": 0.2, \"period\": null, \"phase\": null, \"quantile\": 0.9, \"smoothing\": 2.0, \"strength\": 0.2, \"upper\": null, \"value\": null}}": {
+    "selection": "separate calibration/validation",
+    "calibration_indices": [
+      0
+    ],
+    "validation_indices": [
+      0
+    ],
+    "request": {
+      "kind": "uncertainty",
+      "strength": 0.2,
+      "forecast_window": "all",
+      "context_window": "recent",
+      "period": null,
+      "phase": null,
+      "value": null,
+      "lower": null,
+      "upper": null,
+      "quantile": 0.9,
+      "smoothing": 2.0,
+      "delay": 1.0,
+      "outside_weight": 0.2
+    },
+    "chosen": {
+      "site": "module_input:output_projection_point.residual_layer:0:['args', 0]:last",
+      "error": 0.050952839045255494,
+      "errors": [
+        0.050952839045255494
+      ],
+      "mean_coefficient_norm": 0.08114302877170794,
+      "details": [
+        {
+          "probe_batch": 16,
+          "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+          "probe_step": 0.005
+        }
+      ]
+    },
+    "rank": 128,
+    "observed_internal_sites": 338,
+    "searched_candidates": 4,
+    "candidate_scores": [
+      {
+        "site": "module_input:tokenizer.hidden_layer:0:['args', 0]:last",
+        "error": 1.0410103321438815,
+        "errors": [
+          1.0410103321438815
+        ],
+        "mean_coefficient_norm": 0.20000000000000007,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_projection_point.residual_layer:0:['args', 0]:last",
+        "error": 0.050952839045255494,
+        "errors": [
+          0.050952839045255494
+        ],
+        "mean_coefficient_norm": 0.08114302877170794,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "module_input:output_projection_point.residual_layer:0:['args', 0]:shared",
+        "error": 0.05668602929108517,
+        "errors": [
+          0.05668602929108517
+        ],
+        "mean_coefficient_norm": 0.02367040375136787,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      },
+      {
+        "site": "input:__input__:0:[]:single",
+        "error": 1.8080541945712865,
+        "errors": [
+          1.8080541945712865
+        ],
+        "mean_coefficient_norm": 0.19999999999998677,
+        "details": [
+          {
+            "probe_batch": 16,
+            "batching": "signed pair and actual probe-size endpoints match singleton forecasts",
+            "probe_step": 0.005
+          }
+        ]
+      }
+    ],
+    "screening": [
+      {
+        "site": "module_input:tokenizer.hidden_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.026018575991459826
+      },
+      {
+        "site": "module_input:stacked_xf.0.attn.qkv_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0042369768926388395
+      },
+      {
+        "site": "module_input:stacked_xf.0.ff1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.024354462792725302
+      },
+      {
+        "site": "module_input:stacked_xf.1.post_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.009664818119913043
+      },
+      {
+        "site": "module_input:stacked_xf.2.pre_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.021406937167592052
+      },
+      {
+        "site": "module_input:stacked_xf.2.ff0:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.016405657839488736
+      },
+      {
+        "site": "module_input:stacked_xf.3.attn.out:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.00792479764749687
+      },
+      {
+        "site": "module_input:stacked_xf.3.post_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.008370373511503154
+      },
+      {
+        "site": "module_input:stacked_xf.4.pre_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.008339088259993974
+      },
+      {
+        "site": "module_input:stacked_xf.5.attn.qkv_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0011449239608583431
+      },
+      {
+        "site": "module_input:stacked_xf.5.ff1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.003911109293254873
+      },
+      {
+        "site": "module_input:stacked_xf.6.post_attn_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.01080728655476235
+      },
+      {
+        "site": "module_input:stacked_xf.7.pre_attn_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.008002623918019798
+      },
+      {
+        "site": "module_input:stacked_xf.7.pre_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.008985145803639518
+      },
+      {
+        "site": "module_input:stacked_xf.8.attn.qkv_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002569148675013477
+      },
+      {
+        "site": "module_input:stacked_xf.8.ff1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0033069558419707577
+      },
+      {
+        "site": "module_input:stacked_xf.9.post_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.010330316994397116
+      },
+      {
+        "site": "module_input:stacked_xf.10.pre_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.01815737563312412
+      },
+      {
+        "site": "module_input:stacked_xf.10.ff0:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.008247318372509914
+      },
+      {
+        "site": "module_input:stacked_xf.11.attn.out:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0008549679935770356
+      },
+      {
+        "site": "module_input:stacked_xf.11.post_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.004196014253934602
+      },
+      {
+        "site": "module_input:stacked_xf.12.pre_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.010516264726662028
+      },
+      {
+        "site": "module_input:stacked_xf.13.attn.qkv_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.00126265914356252
+      },
+      {
+        "site": "module_input:stacked_xf.13.ff1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.005423827842368658
+      },
+      {
+        "site": "module_input:stacked_xf.14.post_attn_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.019366045798205167
+      },
+      {
+        "site": "module_input:stacked_xf.14.post_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.006349995648791979
+      },
+      {
+        "site": "module_input:stacked_xf.15.pre_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.01944531652019874
+      },
+      {
+        "site": "module_input:stacked_xf.16.attn.qkv_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.002945529704070998
+      },
+      {
+        "site": "module_input:stacked_xf.16.ff1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.003424536264326746
+      },
+      {
+        "site": "module_input:stacked_xf.17.post_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.006990329410264346
+      },
+      {
+        "site": "module_input:stacked_xf.18.pre_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.049073484081198014
+      },
+      {
+        "site": "module_input:stacked_xf.18.ff0:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0177507396329937
+      },
+      {
+        "site": "module_input:stacked_xf.18.ff1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.011159712587739921
+      },
+      {
+        "site": "module_input:stacked_xf.18.ff1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.008868010096088117
+      },
+      {
+        "site": "module_input:stacked_xf.18.post_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.01914336189863149
+      },
+      {
+        "site": "module_input:stacked_xf.18.post_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.012035995667814903
+      },
+      {
+        "site": "module_input:stacked_xf.19.pre_attn_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.02405877639455352
+      },
+      {
+        "site": "module_input:stacked_xf.19.pre_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.06949853556221869
+      },
+      {
+        "site": "module_input:stacked_xf.19.attn.qkv_proj:0:['args', 0]:last",
+        "normalized_signed_effect": 0.014880572706886424
+      },
+      {
+        "site": "module_input:stacked_xf.19.attn.qkv_proj:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.012880004905588327
+      },
+      {
+        "site": "module_input:stacked_xf.19.attn.out:0:['args', 0]:last",
+        "normalized_signed_effect": 0.004740529132447825
+      },
+      {
+        "site": "module_input:stacked_xf.19.attn.out:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.010366979276905192
+      },
+      {
+        "site": "module_input:stacked_xf.19.post_attn_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.02233450020593652
+      },
+      {
+        "site": "module_input:stacked_xf.19.post_attn_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.017115458780421696
+      },
+      {
+        "site": "module_input:stacked_xf.19.pre_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.04471239158024762
+      },
+      {
+        "site": "module_input:stacked_xf.19.pre_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.05059167801060648
+      },
+      {
+        "site": "module_input:stacked_xf.19.ff0:0:['args', 0]:last",
+        "normalized_signed_effect": 0.015487469307981845
+      },
+      {
+        "site": "module_input:stacked_xf.19.ff0:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.021104144582765504
+      },
+      {
+        "site": "module_input:stacked_xf.19.ff1:0:['args', 0]:last",
+        "normalized_signed_effect": 0.02124763827252122
+      },
+      {
+        "site": "module_input:stacked_xf.19.ff1:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.018164099708293833
+      },
+      {
+        "site": "module_input:stacked_xf.19.post_ff_ln:0:['args', 0]:last",
+        "normalized_signed_effect": 0.020813714740840903
+      },
+      {
+        "site": "module_input:stacked_xf.19.post_ff_ln:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.01380264702723002
+      },
+      {
+        "site": "module_input:output_projection_point.hidden_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.007762820185106355
+      },
+      {
+        "site": "module_input:output_projection_point.hidden_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.018718547867614004
+      },
+      {
+        "site": "module_input:output_projection_point.output_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.010535367722428067
+      },
+      {
+        "site": "module_input:output_projection_point.output_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.016441790043739406
+      },
+      {
+        "site": "module_input:output_projection_point.residual_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.03550650275335213
+      },
+      {
+        "site": "module_input:output_projection_point.residual_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.057880031235371714
+      },
+      {
+        "site": "module_input:output_projection_quantiles.hidden_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:output_projection_quantiles.hidden_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:output_projection_quantiles.output_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:output_projection_quantiles.output_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:output_projection_quantiles.residual_layer:0:['args', 0]:last",
+        "normalized_signed_effect": 0.0
+      },
+      {
+        "site": "module_input:output_projection_quantiles.residual_layer:0:['args', 0]:shared",
+        "normalized_signed_effect": 0.0
+      }
+    ],
+    "rejected_candidates": [],
+    "model_calls": 233,
+    "elapsed_seconds": 35.73959494999144,
+    "context_length": 128,
+    "prediction_length": 32,
+    "caveat": "bounded search; best observed validation score, not global optimality or semantic disentanglement"
+  }
+}

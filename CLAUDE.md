@@ -8,6 +8,10 @@
 > `ROADMAP.md` is the research log (Findings blocks, recorded numbers, plans).
 > It is huge — **grep it for the section you were pointed at, never read it in
 > bulk**. Active work: `ROADMAP.md` §37 (the Concept Atlas, items P0–P8).
+> The feature-comparison research restart and its reusable diagnostics are in
+> §48; begin with `examples/feature_search_20261111/index.html` for the worked study.
+> The deeper frequency/composition experiments continue in §49, with a fresh
+> replication report at `examples/feature_search_stage49/index.html`.
 > Section numbers below (§2, §7, §11) match `CLAUDE_FULL.md`, so references in
 > code comments still resolve.
 >
@@ -275,6 +279,12 @@ automatically a causal floor**:
 
 Check reach against a twin before running a battery on it.
 
+When validating a resumed suffix or hidden-state reference, compare the native
+**normalized head output** as well as the physical forecast. A zero background
+output scale can hide incorrect hidden computation behind an identical constant
+forecast (ROADMAP §49.14). Natural-state transport and anchor sensitivity are
+separate controls; a passing output replay alone does not validate the anchor.
+
 ### 6.3 Time alignment
 
 - Raw token positions are not comparable across models.
@@ -283,6 +293,11 @@ Check reach against a twin before running a battery on it.
 - L1's window-level CKA concatenates a window's tokens in time order by default
   (`alignment.window_rep: concat`, Gram sums, `analysis/window_concat.py`); the mean pool understated
   TimesFM-vs-fine-token CKA by up to 0.33 (FINDINGS MN-38). Configs of recorded runs pin `mean`.
+- This is not a universal advantage of concatenation. Changing window size
+  changes the row-level observation, feature budget and spectrum. The opt-in
+  `run_window_robustness.py` audits identical series/crops with pooling and
+  training-only PCA controls; see `docs/window_robustness.md`, FINDINGS MP-12.
+  Whole-series permutation handles dependence, not this change of estimand.
 - **Everything cross-model runs on `[series, window, dim]`.** Attention lag
   axes are multiplied by `token_width` before plotting.
 - `run_alignment_gate` runs inside extraction. It probes every layer,
@@ -335,6 +350,23 @@ under `confirmation.json`'s `concept_replication` key (P7; epoch 1 is
 `benchmark_large/private_epoch1`, consumed by
 `runs/full_report_run_4model_epoch1`). Unregistered findings cannot be
 rescued. L0, L1 and L3 replicate on private data.
+
+The opt-in `run_feature_interference.py` prepares a fresh synthetic factorial
+before inference and compares pure/mixed component behavior with paired seed
+uncertainty and global Holm correction (`docs/feature_interference.md`). It is
+a standalone diagnostic, not a sealed-private confirmation stage. Prediction
+files must carry explicit row IDs AND the exact source corpus SHA256: the same
+factorial IDs can recur at different context lengths. An oracle component sum
+is a diagnostic with known decomposition, not a deployable improvement.
+
+`run_feature_search_plan.py` registers the whole discovery catalog before its
+result-reading step, applies one global case-by-pair-by-endpoint Holm family,
+and freezes qualifying claims and fresh generating seeds for replication
+(`docs/feature_search_plan.md`). Missing claims retain p=1. Practical mean-size
+and direction gates are predeclared; exact sign probability and mean are
+different estimands, and neither can rescue the other's primary verdict.
+Hashes provide an auditable declaration, not proof of no prior inspection.
+This CPU-only planner emits commands and does not schedule model inference.
 
 ### 6.7 Report (`report/report.py`)
 
