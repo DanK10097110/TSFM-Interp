@@ -1,0 +1,68 @@
+# Three increasing intervention amounts per direction, measured on the same eight contexts.
+run: {name: steering_dose_pilot, device: cpu, dtype: float32, seed: 731}
+data: {source: smoke, context_len: 64, horizon: 8, smoke_series_per_family: 24}
+models:
+  - {name: Chronos-Bolt, adapter: chronos_bolt, checkpoint: amazon/chronos-bolt-small, batch_size: 128}
+steering:
+  enabled: true
+  max_series: 8
+  quantiles: [0.1, 0.5, 0.9]
+  search: {max_candidates: 3, screen_candidates: 8, rank: 16, refinement_steps: 1, calibration_samples: 4, validation_samples: 4}
+  requests:
+    - {kind: level, strength: 0.1}
+    - {kind: level, strength: 0.2}
+    - {kind: level, strength: 0.3}
+    - {kind: trend, strength: -0.1}
+    - {kind: trend, strength: -0.2}
+    - {kind: trend, strength: -0.3}
+    - {kind: detrend, strength: 0.25}
+    - {kind: detrend, strength: 0.5}
+    - {kind: detrend, strength: 0.75}
+    - {kind: amplitude, strength: 0.1}
+    - {kind: amplitude, strength: 0.2}
+    - {kind: amplitude, strength: 0.3}
+    - {kind: seasonality, strength: 0.1, period: 8, phase: 0}
+    - {kind: seasonality, strength: 0.2, period: 8, phase: 0}
+    - {kind: seasonality, strength: 0.3, period: 8, phase: 0}
+    - {kind: deseasonalize, strength: 0.25, period: 8}
+    - {kind: deseasonalize, strength: 0.5, period: 8}
+    - {kind: deseasonalize, strength: 0.75, period: 8}
+    - {kind: smooth, strength: 0.25}
+    - {kind: smooth, strength: 0.5}
+    - {kind: smooth, strength: 0.75}
+    - {kind: roughness, strength: 0.1}
+    - {kind: roughness, strength: 0.2}
+    - {kind: roughness, strength: 0.3}
+    - {kind: uncertainty, strength: 0.1}
+    - {kind: uncertainty, strength: 0.2}
+    - {kind: uncertainty, strength: 0.3}
+    - {kind: asymmetry, strength: 0.1}
+    - {kind: asymmetry, strength: 0.2}
+    - {kind: asymmetry, strength: 0.3}
+    - {kind: quantile, strength: 0.1, quantile: 0.9}
+    - {kind: quantile, strength: 0.2, quantile: 0.9}
+    - {kind: quantile, strength: 0.3, quantile: 0.9}
+    - {kind: anchor, strength: 0.125, value: 0}
+    - {kind: anchor, strength: 0.25, value: 0}
+    - {kind: anchor, strength: 0.375, value: 0}
+    - {kind: mean_revert, strength: 0.25}
+    - {kind: mean_revert, strength: 0.5}
+    - {kind: mean_revert, strength: 0.75}
+    - {kind: bounds, lower: -1.0, upper: 1.0}
+    - {kind: bounds, lower: -0.5, upper: 0.5}
+    - {kind: bounds, lower: -0.3333333333333333, upper: 0.3333333333333333}
+    - {kind: delay, delay: 0.5}
+    - {kind: delay, delay: 1}
+    - {kind: delay, delay: 1.5}
+    - {kind: context_ignore, strength: 0.25}
+    - {kind: context_ignore, strength: 0.5}
+    - {kind: context_ignore, strength: 1}
+    - {kind: context_emphasize, strength: 0.25}
+    - {kind: context_emphasize, strength: 0.5}
+    - {kind: context_emphasize, strength: 0.75}
+    - {kind: context_focus, outside_weight: 0.75}
+    - {kind: context_focus, outside_weight: 0.5}
+    - {kind: context_focus, outside_weight: 0.25}
+    - {kind: context_recency, strength: 0.5}
+    - {kind: context_recency, strength: 1}
+    - {kind: context_recency, strength: 1.5}

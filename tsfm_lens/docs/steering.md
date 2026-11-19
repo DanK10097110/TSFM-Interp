@@ -1,5 +1,7 @@
 # Steer forecasts in a toolkit run
 
+For a worked example of the mechanism and the evidence on dose and mixed steering, see [How forecast steering works](../tsfm_lens/steering/README.md).
+
 Add this block to your run YAML. The enabled stage runs each request independently on every configured model, using the same evaluation contexts and forecast horizon.
 
 ```yaml
