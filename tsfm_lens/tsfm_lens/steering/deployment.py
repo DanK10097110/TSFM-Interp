@@ -141,7 +141,7 @@ class SteeredForecaster:
             if "model-state.pt" in bundle.namelist():
                 with bundle.open("model-state.pt") as state:
                     model.module.load_state_dict(torch.load(state, map_location="cpu", weights_only=True))
-            model.model_id = f"{original.adapter}:{original.checkpoint}"
+            model.model_id = f"{original.adapter}:{original.checkpoint}" + getattr(adapter, "forecast_revision", "")
             for name in ("profiles.json", "profiles.npz"):
                 (Path(tmp) / name).write_bytes(bundle.read(name))
             steerer = DynamicSteerer.load(tmp, model)

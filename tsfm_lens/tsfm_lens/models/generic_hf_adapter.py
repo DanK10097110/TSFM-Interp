@@ -109,6 +109,12 @@ class GenericHFAdapter(ModelAdapter):
         self._discovery = None
         self._forecast_strategy: Optional[str] = None
         self._input_kwarg, self._aux_kwargs = self._resolve_input()
+        config = getattr(self._model, "config", None)
+        self._token_horizons = (tuple(sorted(config.horizon_lengths))
+                                if "max_horizon_length" in self._forward_signature()
+                                and getattr(config, "input_size", None) == 1
+                                and getattr(config, "horizon_lengths", None) else ())
+        self.forecast_revision = ":last-token-horizon-v1" if self._token_horizons else ""
         self._input_rank = self._resolve_input_rank()
         if not self.cfg.layer_regex:
             self.default_layer_regex = self._discover_layer_regex()
@@ -542,7 +548,8 @@ class GenericHFAdapter(ModelAdapter):
     def predict(self, contexts: np.ndarray, horizon: int, quantiles: list) -> dict:
         """Forecast via the first forecast strategy that resolves, recorded once.
 
-        Two strategies, in order: a `generate()` that returns sampled
+        For declared per-token horizon heads, use the last token and the
+        shortest direct head covering the horizon. Otherwise try a `generate()` that returns sampled
         `sequences` (real quantiles), then a forward pass carrying a named
         prediction field (a point forecast only). Neither resolving is an
         error, not an empty forecast.
@@ -550,7 +557,7 @@ class GenericHFAdapter(ModelAdapter):
         stats = (self._zscore_stats(contexts)
                  if self._input_normalization == "zscore" else None)
         prepared = self.prepare(contexts, stats)
-        samples = self._try_generate(prepared, horizon)
+        samples = None if self._token_horizons else self._try_generate(prepared, horizon)
         if samples is not None:
             self._forecast_strategy = "generate"
             if stats is not None:
@@ -591,10 +598,23 @@ class GenericHFAdapter(ModelAdapter):
             return None
         return _fit_horizon(seq.float().cpu().numpy(), horizon, self.name, axis=2)
 
+    def _forecast_fields(self, prepared, horizon):
+        """Resolve per-position multi-horizon heads at the last observed token."""
+        if self._token_horizons:
+            width = next((v for v in self._token_horizons if v >= horizon), None)
+            if width is None:
+                raise ValueError(f"{self.name}: horizon {horizon} exceeds largest direct head {self._token_horizons[-1]}")
+            output = self._model(**prepared, max_horizon_length=width)
+            logits = output.logits if hasattr(output, "logits") else output["logits"]
+            if logits.ndim != 3 or logits.shape[-1] != width:
+                raise ValueError(f"{self.name}: expected per-token logits [batch, tokens, {width}]")
+            return {"logits": logits[:, -1, :]}
+        return self._model(**prepared)
+
     def _try_forward_field(self, prepared: dict, horizon: int) -> Optional[np.ndarray]:
         """Point forecast `[B, H]` from a named forward output field, or None."""
         with torch.no_grad():
-            out = self._model(**prepared)
+            out = self._forecast_fields(prepared, horizon)
         for field in _FORECAST_FIELDS:
             val = out.get(field) if hasattr(out, "get") else getattr(out, field, None)
             if not isinstance(val, torch.Tensor) or val.ndim < 2:
@@ -632,7 +652,7 @@ class GenericHFAdapter(ModelAdapter):
                 tier_actual=self.capability_tier(), tier_required=self.capability_tier())
         stats = (self._zscore_stats(contexts)
                  if self._input_normalization == "zscore" else None)
-        out = self._model(**self.prepare(contexts, stats))
+        out = self._forecast_fields(self.prepare(contexts, stats), horizon)
         for field in _FORECAST_FIELDS:
             val = out.get(field) if hasattr(out, "get") else getattr(out, field, None)
             if not isinstance(val, torch.Tensor) or val.ndim < 2:

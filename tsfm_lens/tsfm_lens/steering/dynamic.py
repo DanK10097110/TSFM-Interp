@@ -174,6 +174,38 @@ class DynamicSteerer:
         matrix=np.random.default_rng(seed).normal(size=(width,rank))
         return np.linalg.qr(matrix,mode='reduced')[0].T
 
+    def _infer_readout(self, x, h, site, layer, base):
+        """Identify returned rows of an unfamiliar wide Linear from four input perturbations.
+
+        Each row has a characteristic response across random directions. A sliced
+        or reordered affine readout preserves that pattern up to a scale on each forecast coordinate.
+        The fourth direction checks the mapping independently of its selection.
+        """
+        rng = np.random.default_rng(self.config.seed)
+        directions = rng.normal(size=(4, site.width))
+        directions /= np.linalg.norm(directions, axis=1, keepdims=True)
+        weight = layer.weight.detach()
+        projected = weight @ torch.as_tensor(directions.T, device=weight.device, dtype=weight.dtype)
+        predicted = projected.float().cpu().numpy().astype(float)
+        step = min(self.config.probe_step, self.config.radius)
+        observed = np.stack([
+            (self._evaluate(x[None], h, site, direction[None], np.array([[step]]))[0] - base).ravel()
+            for direction in directions
+        ], axis=1)
+        norms = np.linalg.norm(predicted[:, :3], axis=1)
+        patterns = predicted[:, :3] / np.maximum(norms[:, None], 1e-30)
+        rows = np.array([np.argmax(patterns @ response[:3]) for response in observed])
+        expected = predicted[rows]
+        power = np.sum(expected[:, :3] ** 2, axis=1)
+        if np.any(power == 0):
+            return None
+        gains = np.sum(expected[:, :3] * observed[:, :3], axis=1) / power
+        residual = observed - gains[:, None] * expected
+        if (np.all(gains > 0) and np.all(np.linalg.norm(residual, axis=1) <= .02 * np.linalg.norm(observed, axis=1))
+                and np.linalg.norm(residual[:, 3]) <= .02 * np.linalg.norm(observed[:, 3])):
+            return rows
+        return None
+
     def _candidates(self,x,h):
         """Screen real output effects before spending full Jacobians on candidates.
 
@@ -205,6 +237,37 @@ class DynamicSteerer:
                             self._readout_rows[site.label] = indices.copy()
                             break
                 if len(preferred) == allowance:
+                    break
+        self._inferred_sites = set()
+        if (not preferred and allowance and self.config.basis_strategy == "auto"
+                and self.model.module is not None):
+            # Small Linear heads already get their complete row space in _basis.
+            # Try only the last two wide heads, leaving the normal search available.
+            tried = set()
+            base = None
+            for site in reversed(sites):
+                if (site.mode not in ("last", "single") or site.occurrence or site.occurrences
+                        or site.batch_multiplier != 1 or site.module in tried):
+                    continue
+                layer = self.model.module.get_submodule(site.module)
+                if not isinstance(layer, torch.nn.Linear) or min(layer.weight.shape) <= self.config.rank:
+                    continue
+                if self.config.max_calls - (self.model.calls - self._start_calls) < 16:
+                    break
+                tried.add(site.module)
+                if base is None:
+                    base = self._forecast(x[None], h)[0]
+                try:
+                    rows = self._infer_readout(x, h, site, layer, base)
+                except _BudgetExhausted:
+                    raise
+                except (SteeringUnavailable, ValueError, RuntimeError):
+                    rows = None
+                if rows is not None:
+                    self._inferred_sites.add(site.label)
+                    self._readout_rows[site.label] = rows
+                    preferred.append(site)
+                if len(tried) == 2 or len(preferred) == allowance:
                     break
         preferred_modules = {p.module for p in preferred}
         sites = [s for s in sites if s.module not in preferred_modules]
@@ -414,13 +477,19 @@ class DynamicSteerer:
                     gains = [float(np.sum(j * expected) / np.sum(expected**2)) for j in responses]
                     if any(g <= 0 or np.linalg.norm(j-g*expected) > .02*np.linalg.norm(j)
                            for j, g in zip(responses, gains)):
-                        failures.append(dict(site=site.label, reason="Readout disagreed with signed probes; using measured basis"))
-                        space = None
-                        basis = self._basis(site)
-                        measured = [self._jacobian(x,h,site,basis,np.zeros(len(basis)),base)
-                                    for x,base in zip(train,bases)]
-                        mean = np.mean([j for j, _ in measured], axis=0)
-                        details = [info for _, info in measured]
+                        if site.label in self._inferred_sites:
+                            # Coordinate-wise rescaling preserves the identified rows.
+                            # Measure the actual response after choosing a task-specific basis.
+                            mean = None
+                            self._basis_sources[site.label] = "inferred forecast row space with measured local response"
+                        else:
+                            failures.append(dict(site=site.label, reason="Declared readout disagreed with signed probes"))
+                            basis = self._basis(site)
+                            space = None
+                            measured = [self._jacobian(x,h,site,basis,np.zeros(len(basis)),base)
+                                        for x,base in zip(train,bases)]
+                            mean = np.mean([j for j, _ in measured], axis=0)
+                            details = [info for _, info in measured]
                     else:
                         mean = float(np.mean(gains))
                         self._basis_sources[site.label] = "active forecast readout, calibration-target subspace"
@@ -437,12 +506,17 @@ class DynamicSteerer:
             calibration_targets = ([self._target(x,h,base,request) for x,base in zip(train,bases)]
                                    if any(m[-1] is not None for m in measurements) else [])
             for site,basis,response,details,space in measurements:
-                if space is not None:
-                    basis, raw_response = space.basis(calibration_targets, self.config.rank)
-                    response = raw_response * response
-                candidates_by_label[site.label] = (site,basis,response,space is not None)
                 errors=[];norms=[]
                 try:
+                    if space is not None:
+                        basis, raw_response = space.basis(calibration_targets, self.config.rank)
+                        if response is None:
+                            response, measurement = self._jacobian(train[0], h, site, basis,
+                                                                   np.zeros(len(basis)), bases[0])
+                            details = [measurement]
+                        else:
+                            response = raw_response * response
+                    candidates_by_label[site.label] = (site,basis,response,space is not None)
                     for x,base,target in zip(valid,valbases,targets):
                         if np.linalg.norm(target)==0:errors.append(0.);norms.append(0.);continue
                         local = self._local_readout_response(x,h,site,basis,response,base) if space is not None else response

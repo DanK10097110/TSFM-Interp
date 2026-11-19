@@ -34,6 +34,19 @@ PYTHONPATH=. python ../examples/steering/validation/check_exports.py /tmp/steeri
 
 The export check loads the ZIPs embedded in the report, reproduces the worst nonzero bounds and combined-request cases, then doubles and quadruples the inference radius for those same cases. The report's counts use the original limit. The linked compressed JSON files retain split membership, controller settings, discovery, forecasts, diagnostics and outcomes.
 
+## Held-out model checks
+
+The [three-model report](heldout_report.html) evaluates the same median-forecast requests on Timer, Chronos-2 and Time-MoE. None requires a steering-specific adapter or layer name. To reproduce from `tsfm_lens/`, run the two configs below. Both use four calibration, four validation and 16 evaluation histories, seed 9107, an eight-step horizon, rank 16 and radius 0.2. To replicate on the second split, use seed 15503 and a separate run name in each config.
+
+```bash
+python run.py --config ../examples/steering/heldout_models.yaml --stages steering --force steering
+python run.py --config ../examples/steering/heldout_quantiles.yaml --stages steering --force steering
+```
+
+The [earlier Timer and Chronos-2 measurements](heldout_before.json.gz) use the same seed and histories. The [fresh-seed median results](heldout_replication.json.gz), [Chronos-2 distributional check](heldout_quantiles.json.gz), and [fresh-seed distributional replication](heldout_quantile_replication.json.gz) can each be passed to `audit.py`. Each file includes the requested changes, achieved forecasts, replay, failures, split membership and confidence intervals. Point-only models are evaluated through their single output channel.
+
+For Time-MoE the adapter selects the smallest native head covering the requested horizon and reads the last observed token. On the cached 50M checkpoint the largest direct horizon is 64. Refit existing Time-MoE steering exports and regenerate forecast-dependent analyses made with the older adapter. The changed forecast identity rejects older profiles when loaded.
+
 The [original all-type report](../all_types_report.html), [Bolt dose report](../dose_pilot_report.html), [TimesFM dose report](../dose_timesfm_report.html) and [mixed pilot](../mixed_pilot.json) record the earlier search at commit `4f92d9d`.
 
 To repeat the M4 daily transfer, pass the local GIFT-Eval Arrow shard from dataset revision `30841734ac5cfddbd0c3bad6d09d2b6b32becbb0`. The saved result includes the source file SHA-256, item IDs, forecasts and paired losses. From `tsfm_lens/` run the command below.

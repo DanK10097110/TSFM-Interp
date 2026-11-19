@@ -335,3 +335,31 @@ def test_validation_selection_preserves_edit_headroom_at_probe_precision():
     economical.update(errors=[0., .11], error=.055)
     controller.config.tolerance = .1
     assert controller._select_candidate([costly, economical]) is costly
+
+
+@pytest.mark.parametrize("transform", ["identity", "scale", "mix"])
+def test_unknown_wide_head_with_reordered_rows(transform):
+    with torch.random.fork_rng():
+        torch.manual_seed(14)
+        module = torch.nn.Linear(16, 32).eval()
+    selected = [7, 23, 1, 19]
+
+    def predict(x, h):
+        y = module(torch.from_numpy(x)).detach().numpy()
+        result = y[:, selected]
+        if transform == "scale":
+            return result * np.array([1., 2., 3., 4.])
+        return result + y[:, :4] if transform == "mix" else result
+
+    model = SteeringModel(predict, module=module)
+    controller = DynamicSteerer(model, SearchConfig(rank=4, include_input=False, max_candidates=1))
+    request = SteeringRequest("level", .03)
+    report = controller.fit(data()[:4], request, prediction_length=4,
+                            validation_contexts=data()[4:6])[request.key(4)]
+    assert report["local_readout"] == (transform != "mix")
+    if transform == "scale":
+        assert "row space" in report["basis_source"]
+    if transform != "mix":
+        result = controller.steer(data()[6:], request, prediction_length=4)
+        assert all(r["achieved"] for r in result.diagnostics)
+        np.testing.assert_allclose(controller.replay(data()[6:], result), result.forecast)

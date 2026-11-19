@@ -108,7 +108,7 @@ class SteeringModel:
         adapter.ensure_loaded()
         module=adapter.module if adapter.capability_tier()>=1 else None
         return cls(lambda x,h:adapter.predict(x,h,list(quantiles)),module=module,
-                   quantiles=quantiles,model_id=f'{adapter.cfg.adapter}:{adapter.cfg.checkpoint}',
+                   quantiles=quantiles,model_id=f'{adapter.cfg.adapter}:{adapter.cfg.checkpoint}' + getattr(adapter, 'forecast_revision', ''),
                    readout_rows=getattr(adapter, 'steering_readout_rows', None))
 
     def forecast(self,contexts,prediction_length):

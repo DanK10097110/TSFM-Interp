@@ -450,3 +450,25 @@ def test_unknown_normalization_mode_is_refused():
     a = _clamp_adapter("minmax")
     with pytest.raises(ValueError, match="input_normalization"):
         a.ensure_loaded()
+
+
+def test_per_token_horizon_head_starts_after_the_last_observation():
+    class TokenForecast(_PatchNet):
+        def __init__(self):
+            super().__init__()
+            self.config.input_size = 1
+            self.config.horizon_lengths = [1, 4]
+
+        def forward(self, past_values, max_horizon_length=None, **kwargs):
+            super().forward(past_values)
+            width = max_horizon_length or 1
+            return {"logits": past_values[:, :, None] + torch.arange(1, width + 1)}
+
+    adapter = _adapter(TokenForecast)
+    adapter.ensure_loaded()
+    x = np.arange(_CONTEXT, dtype="float32")[None]
+    expected = [[64., 65., 66.]]
+    np.testing.assert_allclose(adapter.predict(x, 3, [.5])["point"], expected)
+    np.testing.assert_allclose(adapter.predict_differentiable(x, 3).detach().numpy(), expected)
+    with pytest.raises(ValueError, match="exceeds largest direct head"):
+        adapter.predict(x, 5, [.5])

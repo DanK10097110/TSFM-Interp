@@ -1,0 +1,19 @@
+# Shared median-forecast protocol on held-out panel architectures.
+run: {name: steering_heldout_frozen, device: cpu, dtype: float32, seed: 9107}
+data: {source: smoke, context_len: 192, horizon: 8, smoke_series_per_family: 24}
+models:
+  - {name: Timer, adapter: generic_hf, checkpoint: thuml/timer-base-84m, batch_size: 128, kwargs: {auto_class: AutoModelForCausalLM}}
+  - {name: Chronos-2, adapter: chronos2, checkpoint: amazon/chronos-2, batch_size: 128}
+  - {name: Time-MoE, adapter: generic_hf, checkpoint: Maple728/TimeMoE-50M, batch_size: 128, kwargs: {auto_class: AutoModelForCausalLM, input_normalization: zscore}}
+steering:
+  enabled: true
+  max_series: 16
+  quantiles: [0.5]
+  search: {max_candidates: 3, screen_candidates: 8, rank: 16, refinement_steps: 1, calibration_samples: 4, validation_samples: 4}
+  requests:
+    - {kind: level, strength: 0.2}
+    - {kind: trend, strength: -0.2}
+    - {kind: seasonality, strength: 0.2, period: 8, phase: 0}
+    - {kind: bounds, lower: -0.5, upper: 0.5}
+    - kind: combined
+      terms: [{kind: level, strength: 0.2}, {kind: trend, strength: -0.2}]

@@ -1,0 +1,15 @@
+# Probabilistic follow-up on the same split as heldout_models.yaml.
+run: {name: steering_heldout_quantiles, device: cpu, dtype: float32, seed: 9107}
+data: {source: smoke, context_len: 192, horizon: 8, smoke_series_per_family: 24}
+models:
+  - {name: Chronos-2, adapter: chronos2, checkpoint: amazon/chronos-2, batch_size: 128}
+steering:
+  enabled: true
+  max_series: 16
+  quantiles: [0.1, 0.5, 0.9]
+  search: {max_candidates: 3, screen_candidates: 8, rank: 16, refinement_steps: 1, calibration_samples: 4, validation_samples: 4}
+  requests:
+    - {kind: uncertainty, strength: 0.2}
+    - {kind: quantile, strength: 0.2, quantile: 0.9}
+    - kind: combined
+      terms: [{kind: level, strength: 0.2}, {kind: uncertainty, strength: 0.2}]
