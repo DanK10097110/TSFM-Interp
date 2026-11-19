@@ -7,9 +7,10 @@ from .api import ForecastSteerer, SteeringBatch
 from .model import SteeringModel, SteeringUnavailable
 from .requests import SteeringRequest, TASKS
 from .dynamic import DynamicSteerer, SearchConfig, DynamicSteeringResult
+from .deployment import SteeredForecaster
 
 __all__ = ["SteeringSolution", "solve_direction", "response_metrics",
            "interval_shift", "seasonal_shift", "quantile_shift", "steer_hidden",
            "trust_region_direction", "ForecastSteerer", "SteeringBatch",
            "SteeringModel", "SteeringRequest", "DynamicSteerer", "SearchConfig",
-           "SteeringUnavailable", "TASKS", "DynamicSteeringResult"]
+           "SteeringUnavailable", "TASKS", "DynamicSteeringResult", "SteeredForecaster"]

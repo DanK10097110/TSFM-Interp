@@ -48,6 +48,7 @@ Changelog = "https://github.com/DanK10097110/TSFM-Interp/blob/main/CHANGELOG.md"
 
 [project.scripts]
 tsfm-lens = "tsfm_lens.run:main"
+tsfm-steering-studio = "tsfm_lens.steering.studio:main"
 
 [tool.setuptools.packages.find]
 include = ["tsfm_lens*"]

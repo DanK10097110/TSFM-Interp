@@ -20,13 +20,17 @@ import yaml
 class SteeringConfig:
     enabled: bool = False
     requests: list[dict] = field(default_factory=list)
+    search: dict = field(default_factory=dict)
     max_series: int = 8
     quantiles: list = field(default_factory=lambda: [0.5])
 
     def validate(self, data):
-        from .steering import SteeringRequest
+        from .steering import SearchConfig, SteeringRequest
         from .steering.requests import window_mask
 
+        if "seed" in self.search:
+            raise ValueError("use run.seed for steering discovery")
+        SearchConfig(**self.search)
         if not isinstance(self.requests, list) or not self.requests:
             raise ValueError("steering.requests must contain at least one request")
         if type(self.max_series) is not int or self.max_series < 1:
