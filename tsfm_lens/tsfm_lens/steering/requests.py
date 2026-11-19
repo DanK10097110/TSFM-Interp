@@ -6,7 +6,7 @@ ignore/emphasize means by constructing an observable input counterfactual;
 they make no claim about directly changing attention weights.
 """
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 import json
 
 import numpy as np
@@ -82,6 +82,35 @@ class SteeringRequest:
         return json.dumps(dict(request=asdict(self),prediction_length=int(prediction_length)),sort_keys=True)
 
 
+@dataclass(frozen=True)
+class CombinedRequest:
+    """Sum forecast changes relative to one baseline and fit one shared edit."""
+    terms: tuple[SteeringRequest, ...]
+    kind: str = field(default="combined", init=False)
+
+    def __post_init__(self):
+        terms = tuple(self.terms)
+        if len(terms) < 2 or any(not isinstance(t, SteeringRequest) or t.kind.startswith("context_") for t in terms):
+            raise ValueError("combined steering needs at least two forecast requests")
+        object.__setattr__(self, "terms", terms)
+
+    def key(self, prediction_length):
+        return json.dumps(dict(request=asdict(self), prediction_length=int(prediction_length)), sort_keys=True)
+
+
+def request_from_dict(item):
+    if not isinstance(item, dict):
+        raise ValueError("each steering request must be a mapping")
+    if item.get("kind") == "combined":
+        if set(item) != {"kind", "terms"}:
+            raise ValueError("combined requests take a list of terms, each with its own settings")
+        terms = item["terms"]
+        if not isinstance(terms, (list, tuple)) or not all(isinstance(t, dict) for t in terms):
+            raise ValueError("combined terms must be a list of forecast requests")
+        return CombinedRequest(tuple(SteeringRequest(**term) for term in terms))
+    return SteeringRequest(**item)
+
+
 def window_mask(window, length, *, context=False):
     """Resolve explicit or named half-open windows without silently clipping typos."""
     if length < 1:
@@ -147,6 +176,8 @@ def requested_change(baseline, context, quantiles, request, *, counterfactual_fo
     Point-only forecasts support all requests except uncertainty/asymmetry and
     unavailable quantiles. No future observations are used.
     """
+    if isinstance(request, CombinedRequest):
+        return sum(requested_change(baseline, context, quantiles, term) for term in request.terms)
     y=np.asarray(baseline,dtype=float);x=np.asarray(context,dtype=float)
     q=np.asarray(quantiles,dtype=float)
     if y.ndim!=2 or y.shape[1]!=len(q) or not np.isfinite(y).all() or not np.isfinite(x).all():

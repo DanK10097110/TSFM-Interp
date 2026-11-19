@@ -1,0 +1,54 @@
+[
+  {
+    "model": "Chronos-Bolt",
+    "request": {
+      "kind": "bounds",
+      "lower": -0.5,
+      "upper": 0.5
+    },
+    "series": "level_shift_9",
+    "trials": [
+      {
+        "radius": 0.2,
+        "error": 0.794168113592806,
+        "norm": 0.20000000000000007
+      },
+      {
+        "radius": 0.4,
+        "error": 0.5887707640858588,
+        "norm": 0.39999999999999997
+      },
+      {
+        "radius": 0.8,
+        "error": 0.18216012378021096,
+        "norm": 0.7999999999999999
+      }
+    ]
+  },
+  {
+    "model": "TimesFM",
+    "request": {
+      "kind": "bounds",
+      "lower": -0.5,
+      "upper": 0.5
+    },
+    "series": "level_shift_9",
+    "trials": [
+      {
+        "radius": 0.2,
+        "error": 0.7196154430219459,
+        "norm": 0.2000000000000002
+      },
+      {
+        "radius": 0.4,
+        "error": 0.4422534279609811,
+        "norm": 0.3999999999991765
+      },
+      {
+        "radius": 0.8,
+        "error": 3.4608735685686556e-06,
+        "norm": 0.7362245586821885
+      }
+    ]
+  }
+]

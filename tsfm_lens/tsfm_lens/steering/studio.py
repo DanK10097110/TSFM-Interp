@@ -1,5 +1,6 @@
 """Local desktop controls for fitting, comparing and exporting steering requests."""
 import argparse
+import json
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, replace
 
@@ -10,6 +11,7 @@ from ..pipeline import Context
 from ..utils import set_seed
 from . import DynamicSteerer, SearchConfig, SteeredForecaster, SteeringModel, SteeringRequest, TASKS
 from .report import _sample
+from .requests import CombinedRequest, request_from_dict
 
 # Options relevant to each request, with starting values for new configurations.
 _OPTIONS = {
@@ -76,6 +78,8 @@ def launch(cfg, predictor=None):
     kind = tk.StringVar(value=(cfg.steering.requests or [{"kind": "level"}])[0]["kind"])
     strength = tk.StringVar()
     option_values = {}
+    pending_terms = []
+    mix_label = tk.StringVar()
     ref = tk.StringVar()
     labels = [str(session.ctx.data.meta.iloc[i]["series_id"]) for i in session.examples[:3]]
     executor = ThreadPoolExecutor(max_workers=1)
@@ -92,14 +96,25 @@ def launch(cfg, predictor=None):
     def change_direction(event=None):
         preset = next((r for r in cfg.steering.requests if r["kind"] == kind.get()),
                       {"kind": kind.get(), **_OPTIONS.get(kind.get(), {})})
+        for widget in settings.winfo_children():
+            widget.destroy()
+        option_values.clear()
+        if kind.get() == "combined":
+            pending_terms.clear()
+            mix_label.set("")
+            terms = preset.get("terms", [{"kind": "level", "strength": .2}, {"kind": "trend", "strength": -.2}])
+            strength.set("")
+            amount.configure(state="disabled")
+            ttk.Label(settings, text="Forecast directions and amounts (JSON list)").pack(anchor="w")
+            value = tk.StringVar(value=json.dumps(terms))
+            option_values["terms"] = value
+            ttk.Entry(settings, textvariable=value, width=75).pack(fill="x")
+            return
         item = asdict(SteeringRequest(**preset))
         if kind.get() == "quantile" and item["quantile"] not in cfg.steering.quantiles:
             item["quantile"] = max(cfg.steering.quantiles)
         strength.set(item["strength"])
         amount.configure(state="disabled" if kind.get() in {"bounds", "delay", "context_focus"} else "normal")
-        for widget in settings.winfo_children():
-            widget.destroy()
-        option_values.clear()
         defaults = {"forecast_window": "all", **_OPTIONS.get(kind.get(), {})}
         for column, name in enumerate(defaults):
             value = item[name]
@@ -120,7 +135,7 @@ def launch(cfg, predictor=None):
 
 
     dropdown(0, "Model", model, [m.name for m in cfg.models])
-    dropdown(1, "Direction", kind, TASKS, change_direction)
+    dropdown(1, "Direction", kind, (*TASKS, "combined"), change_direction)
     ttk.Label(body, text="Strength").grid(row=2, column=0, sticky="w")
     amount = ttk.Spinbox(body, textvariable=strength, from_=-1e6, to=1e6, increment=.05)
     amount.grid(row=2, column=1, sticky="ew")
@@ -183,21 +198,46 @@ def launch(cfg, predictor=None):
         canvas.draw()
         info = result.diagnostics[0]
         target = "Zero requested change" if info["zero_target"] else f"Relative error {info['relative_error']:.1%}"
+        if info["radius"] is not None and np.isclose(info["coefficient_norm"], info["radius"]):
+            target += " · edit radius reached"
         status.set(f"{target} · replay {'matched' if matched else 'failed'} · {info['site']['source']}")
+
+    def current_request():
+        parameters = {}
+        for name, var in option_values.items():
+            value = var.get().strip()
+            if name == "terms":
+                parameters[name] = json.loads(value)
+            elif name.endswith("_window"):
+                if "," in value:
+                    value = tuple(int(step.strip()) for step in value.strip("[]()").split(","))
+                parameters[name] = value
+            elif value:
+                parameters[name] = float(value)
+        if kind.get() != "combined":
+            parameters["strength"] = float(strength.get())
+        return request_from_dict(dict(kind=kind.get(), **parameters))
+
+    def add_component():
+        try:
+            request = current_request()
+            if isinstance(request, CombinedRequest) or request.kind.startswith("context_"):
+                raise ValueError("Choose a forecast direction to add to the mix.")
+            pending_terms.append(request)
+            mix_label.set(" + ".join(r.kind for r in pending_terms) + " + current direction")
+        except (ValueError, TypeError) as exc:
+            messagebox.showerror("Invalid component", str(exc))
+
+    def clear_mix():
+        pending_terms.clear()
+        mix_label.set("")
 
     def compare():
         nonlocal displayed
         try:
-            parameters = {}
-            for name, var in option_values.items():
-                value = var.get().strip()
-                if name.endswith("_window"):
-                    if "," in value:
-                        value = tuple(int(step.strip()) for step in value.strip("[]()").split(","))
-                    parameters[name] = value
-                elif value:
-                    parameters[name] = float(value)
-            request = SteeringRequest(kind.get(), float(strength.get()), **parameters)
+            request = current_request()
+            if pending_terms:
+                request = CombinedRequest((*pending_terms, request))
             text = input_box.get("1.0", "end").strip().strip("[]")
             values = [float(v) for v in text.replace(",", " ").split()]
             name = model.get()
@@ -217,6 +257,11 @@ def launch(cfg, predictor=None):
             status.set("Exporting displayed model…")
             busy(lambda: displayed.export(path, include_checkpoint=include), lambda saved: status.set(f"Exported {saved}"))
 
+    mix = ttk.Frame(body)
+    mix.grid(row=9, column=0, columnspan=2, sticky="w")
+    ttk.Button(mix, text="Add current direction to mix", command=add_component).pack(side="left")
+    ttk.Button(mix, text="Clear mix", command=clear_mix).pack(side="left", padx=6)
+    ttk.Label(mix, textvariable=mix_label).pack(side="left")
     run_button = ttk.Button(actions, text="Compare forecasts", command=compare)
     run_button.pack(side="left", padx=(0, 8))
     export_button = ttk.Button(actions, text="Export displayed model…", command=export, state="disabled")

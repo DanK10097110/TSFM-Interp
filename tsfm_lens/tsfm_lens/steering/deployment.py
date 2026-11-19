@@ -15,14 +15,14 @@ from ..models import build_adapter
 from ..utils import resolve_device, resolve_dtype
 from .dynamic import DynamicSteerer
 from .model import SteeringModel
-from .requests import SteeringRequest
+from .requests import CombinedRequest, SteeringRequest, request_from_dict
 
 
 @dataclass
 class SteeredForecaster:
     """A request-bound predictor. Artifacts reference the original base checkpoint."""
     steerer: DynamicSteerer
-    request: SteeringRequest
+    request: SteeringRequest | CombinedRequest
     model_config: ModelConfig
     data_config: DataConfig
     dtype: str
@@ -145,5 +145,5 @@ class SteeredForecaster:
             for name in ("profiles.json", "profiles.npz"):
                 (Path(tmp) / name).write_bytes(bundle.read(name))
             steerer = DynamicSteerer.load(tmp, model)
-        return cls(steerer, SteeringRequest(**meta["request"]), original, data, meta["dtype"], meta["seed"],
+        return cls(steerer, request_from_dict(meta["request"]), original, data, meta["dtype"], meta["seed"],
                    Path(path).resolve() if embedded and checkpoint is None else None)

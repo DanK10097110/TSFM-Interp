@@ -11,7 +11,7 @@ It consumes labeled benchmarks produced by the companion `tsfm_benchmark`
 package (sealed corpora with per-sample provenance and a public/private
 split) and produces one self-contained interactive HTML report.
 
-To test a desired forecast change, add a `steering` block to the run config. Its separate report compares unsteered, requested and observed forecasts on evaluation contexts and checks each intervention by replay. See the [steering guide](docs/steering.md) and [CPU example](configs/examples/steering.yaml).
+To test a desired forecast change, add a `steering` block to the run config. Its separate report compares unsteered, requested and observed forecasts on evaluation contexts and checks each intervention by replay. See the [steering mechanism and validation results](tsfm_lens/steering/README.md), [steering guide](docs/steering.md) and [CPU example](configs/examples/steering.yaml).
 
 ## The layered method
 

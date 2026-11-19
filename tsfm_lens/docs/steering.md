@@ -13,9 +13,11 @@ steering:
     - {kind: level, strength: 0.2}
     - {kind: trend, strength: -0.3, forecast_window: long}
     - {kind: uncertainty, strength: 0.2}
+    - kind: combined
+      terms: [{kind: level, strength: 0.2}, {kind: trend, strength: -0.3}]
 ```
 
-Here the level increases by 0.2 context standard deviations, the negative trend ramps downward, and the uncertainty request widens deviations from the median by 20%. Choose quantiles the adapter actually supports. The default is the median alone. Set `forecast_window` to `all`, `short`, `long`, or a half-open pair such as `[8, 16]`. Coordinates outside the window have a requested change of zero and still count toward the reported error.
+Here the level increases by 0.2 context standard deviations, the negative trend ramps downward, and the uncertainty request widens deviations from the median by 20%. The combined request raises and tilts the same forecast with a single bounded intervention. Choose quantiles the adapter actually supports. The default is the median alone. Set `forecast_window` to `all`, `short`, `long`, or a half-open pair such as `[8, 16]`. Coordinates outside the window have a requested change of zero and still count toward the reported error.
 
 | Desired change | Request kinds | Amount |
 | --- | --- | --- |
@@ -46,12 +48,12 @@ For Python integrations, import `DynamicSteerer`, `SteeringModel` and `SteeringR
 From `tsfm_lens/`, run the following with the Chronos and TimesFM adapters installed.
 
 ```bash
-python run.py --config ../examples/steering/all_types.yaml --stages steering
+python run.py --config ../examples/steering/readout_validation.yaml --stages steering --force steering
 ```
 
-The [two-model protocol](../../examples/steering/all_types.yaml) covers all 19 directions. It fixes the seed, forecast horizon, quantiles, search budget and request amounts before evaluation. Both models see the same four calibration contexts, four validation contexts and 24 distinct evaluation contexts from the six-family synthetic corpus. Change the configs to evaluate on your data or increase the sample and discovery budgets. Raw MAE uses the series' original units and can be dominated by large-scale series.
+The [two-model protocol](../../examples/steering/readout_validation.yaml) covers all 19 directions and two simultaneous pairs. It fixes the seed, forecast horizon, quantiles, search budget and request amounts before evaluation. Both models see the same four calibration contexts, four validation contexts and 24 distinct evaluation contexts from the six-family synthetic corpus. Change the configs to evaluate on your data or increase the sample and discovery budgets. Raw MAE uses the series' original units and can be dominated by large-scale series.
 
-Open the [generated validation report](../../examples/steering/all_types_report.html) locally. For each model and request it reports:
+Open the [generated validation report](../../examples/steering/validation/report.html) locally. For each model and request it reports:
 
 - **Verified** counts nonzero requested changes whose relative L2 error falls within tolerance and whose intervened forecast matches an independent replay. The denominator includes unavailable and zero-target cases. **Improved** counts cases closer to the requested forecast than the unsteered baseline.
 - **Uncertainty** includes a per-request 95% Wilson interval for the verified rate and the 90th percentile of full-forecast relative error on completed nonzero targets. The same contexts recur across requests. These intervals describe sampling uncertainty for each fitted profile individually.
@@ -60,11 +62,7 @@ Open the [generated validation report](../../examples/steering/all_types_report.
 - **Audit data** in the collapsed details include per-series ordinary and replayed forecasts, target changes, observed futures, scores and timings. A four-step known-answer check tests the intended transformation for each of the 19 request types.
 - **Context policies** define the desired output by changing the model input. Close agreement for a full-horizon context policy checks that the requested transformation was executed. Learned output directions are evaluated against targets defined in forecast space.
 
-### What happened in the published runs
-
-With a rank-16 search basis, Chronos-Bolt reached the 10% target-error tolerance on 33 of 360 learned-request trials. TimesFM reached it on 0 of 360. Both moved closer to the requested forecast on all 356 trials per model with a nonzero target. All four direct input policies matched their defined targets on all 24 contexts per model. These totals describe repeated measurements on the same 24 contexts.
-
-The [level-shift follow-up](../../examples/steering/level_rank64_report.html) used the same split, dose and horizon with a rank-64 search basis. Chronos-Bolt went from 0/24 to 18/24 verified and TimesFM from 0/24 to 1/24. Median steering time for the level request rose from 0.38 to 0.57 seconds on Chronos-Bolt and from 0.98 to 1.50 seconds on TimesFM in these CPU runs. Median forecast MAE and mean pinball loss both increased for the positive level shift on both models. Reproduce the [follow-up config](../../examples/steering/level_rank64.yaml) with the same command and its YAML path.
+The [steering module README](../tsfm_lens/steering/README.md) compares the original search and the readout-based controller at the same edit radius, explains remaining misses and reports the three-dose tests.
 
 ## Compare your own inputs
 
@@ -74,7 +72,7 @@ Launch the desktop studio on a machine with a graphical display and Tk installed
 python -m tsfm_lens.steering.studio --config configs/examples/steering.yaml
 ```
 
-Choose a model, direction and strength. The settings change with the direction. For example, seasonality exposes period and phase, while bounds exposes upper and lower limits. For windows, choose a preset or enter two comma-separated step indices. Select one of the reference contexts or replace its values with your own. **Compare forecasts** fits on the run's calibration and validation contexts and evaluates your input. The plot shows the channel with the largest requested change, the ordinary forecast, the target and the model output. The studio shows replay status and the intervention type. Use **Export displayed model** to save the last evaluated request and profile.
+Choose a model, direction and strength. The settings change with the direction. For example, seasonality exposes period and phase, while bounds exposes upper and lower limits. For windows, choose a preset or enter two comma-separated step indices. Select one of the reference contexts or replace its values with your own. **Compare forecasts** fits on the run's calibration and validation contexts and evaluates your input. The plot shows the channel with the largest requested change, the ordinary forecast, the target and the model output. The studio shows replay status and the intervention type. Use **Add current direction to mix** to keep a component while selecting another direction. Compare the combination, then use **Export displayed model** to save the last evaluated request and profile.
 
 To open an exported model directly, run `python -m tsfm_lens.steering.studio --bundle my-steered-model.zip`. Its stored request uses the saved profile. The studio provides generated reference contexts in this mode. Changing to a new learned request fits it on generated calibration and validation contexts. Open the original YAML to fit changes on the original corpus.
 

@@ -79,12 +79,16 @@ class SteeringModel:
 
     predict(contexts[B,C], prediction_length) returns [B,H,Q] or [B,H] for
     point-only outputs. A {'quantiles': ...} or {'point': ...} result is accepted.
-    Supply native quantile levels in the exact output order, including0.5.
+    Supply native quantile levels in the exact output order, including 0.5.
     Optional module access enables internal discovery. With no module, control
     can only act on the input; it is always labeled as such. A custom predictor
     should be deterministic and must not mutate the supplied contexts.
+    An adapter may supply readout_rows(horizon, quantiles), mapping Linear
+    module names to row indices in flattened [step, quantile] order. Declare
+    only affine readouts up to a positive context-dependent scale. Return an
+    empty mapping for unsupported geometry.
     """
-    def __init__(self,predict,*,module=None,quantiles=(.5,),model_id='custom'):
+    def __init__(self,predict,*,module=None,quantiles=(.5,),model_id='custom',readout_rows=None):
         if not callable(predict):raise TypeError('predict must be callable')
         if module is not None and not isinstance(module,torch.nn.Module):
             raise TypeError('module must be a torch.nn.Module or None')
@@ -92,6 +96,9 @@ class SteeringModel:
         if q.ndim!=1 or not len(q) or not np.isfinite(q).all() or np.any(np.diff(q)<=0) or not np.any(np.isclose(q,.5,atol=1e-7,rtol=0)) or q[0]<=0 or q[-1]>=1:
             raise ValueError('need increasing native quantiles including0.5; point-only uses [0.5]')
         self.predict_fn=predict;self.module=module;self.quantiles=q
+        if readout_rows is not None and not callable(readout_rows):
+            raise TypeError("readout_rows must be callable")
+        self.readout_rows = readout_rows
         self.model_id=str(model_id);self.calls=0;self.evaluated_rows=0
         self.lock=threading.RLock()
 
@@ -101,7 +108,8 @@ class SteeringModel:
         adapter.ensure_loaded()
         module=adapter.module if adapter.capability_tier()>=1 else None
         return cls(lambda x,h:adapter.predict(x,h,list(quantiles)),module=module,
-                   quantiles=quantiles,model_id=f'{adapter.cfg.adapter}:{adapter.cfg.checkpoint}')
+                   quantiles=quantiles,model_id=f'{adapter.cfg.adapter}:{adapter.cfg.checkpoint}',
+                   readout_rows=getattr(adapter, 'steering_readout_rows', None))
 
     def forecast(self,contexts,prediction_length):
         """Validate the public output contract and count actual model calls."""

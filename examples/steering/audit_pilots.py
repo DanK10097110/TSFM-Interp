@@ -1,4 +1,5 @@
 """Recalculate the dose and mixed pilot tables from forecast arrays, without loading a model."""
+import argparse
 from html.parser import HTMLParser
 import json
 from pathlib import Path
@@ -81,11 +82,16 @@ def increasing(rows):
 
 def main():
     directory = Path(__file__).resolve().parent
-    mixed = json.loads((directory / "mixed_pilot.json").read_text())
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--mixed", type=Path, default=directory / "mixed_pilot.json")
+    parser.add_argument("--bolt", type=Path, default=directory / "dose_pilot_report.html")
+    parser.add_argument("--timesfm", type=Path, default=directory / "dose_timesfm_report.html")
+    args = parser.parse_args()
+    mixed = json.loads(args.mixed.read_text())
     ids = mixed["evaluation"]
     assert len(set(ids)) == 8 and set(ids).isdisjoint(mixed["calibration"] + mixed["validation"])
-    bolt = doses(directory / "dose_pilot_report.html", ids)
-    timesfm = doses(directory / "dose_timesfm_report.html", ids)
+    bolt = doses(args.bolt, ids)
+    timesfm = doses(args.timesfm, ids)
     assert len(bolt) == len(timesfm) == 19
     print("| Request | Amounts | Bolt verified | TimesFM verified | Bolt increasing | TimesFM increasing |")
     print("| --- | --- | --- | --- | ---: | ---: |")
@@ -102,6 +108,8 @@ def main():
         req = a["request"]
         assert req == b["request"]
         label = req["kind"] + (" + " + req["second"]["kind"] if req.get("second") else "")
+        if req["kind"] == "combined":
+            label = " + ".join(term["kind"] for term in req["terms"])
         for group in (a, b):
             assert [c["series"] for c in group["cases"]] == ids
             hits, errors = 0, []

@@ -100,6 +100,14 @@ class TimesFMAdapter(ModelAdapter):
         starts = np.arange(n_tokens) * self._patch_len
         return np.stack([starts, starts + self._patch_len], axis=1).astype(np.float64)
 
+    def steering_readout_rows(self, horizon, quantiles):
+        """The reported quantiles come from the point head on single-patch decode."""
+        if horizon > self.module.o or any(q not in self._native_quantiles for q in quantiles):
+            return {}
+        channels = np.array([1 + self._native_quantiles.index(q) for q in quantiles])
+        rows = (np.arange(horizon)[:, None] * self.module.q + channels).ravel()
+        return {f"output_projection_point.{branch}": rows for branch in ("residual_layer", "output_layer")}
+
     def predict_differentiable(self, contexts: np.ndarray, horizon: int):
         """The point channel of `predict`'s decode, with autograd enabled.
 

@@ -18,8 +18,9 @@ import torch
 
 from .controller import trust_region_direction
 from .model import InterventionSite, SteeringModel, SteeringUnavailable
-from .requests import SteeringRequest, context_counterfactual, requested_change, window_mask
+from .requests import CombinedRequest, request_from_dict, SteeringRequest, context_counterfactual, requested_change, window_mask
 from .solver import response_metrics
+from .readout import ReadoutSpace
 
 
 @dataclass
@@ -78,7 +79,7 @@ class SteeringProfile:
     site: InterventionSite
     basis: np.ndarray
     response: np.ndarray
-    request: SteeringRequest
+    request: SteeringRequest | CombinedRequest
     prediction_length: int
     context_length: int
     report: dict
@@ -113,6 +114,7 @@ class DynamicSteerer:
         self._budget_fraction=1.
         self._model_stamp=self._stamp()
         self._basis_sources={}
+        self._readout_rows = {}
 
     def _stamp(self):
         """Cheap guard against normal in-place updates; saved profiles also hash weights."""
@@ -185,6 +187,30 @@ class DynamicSteerer:
             sites=[s for s in sites if re.search(self.config.module_pattern,s.module)]
         total=len(sites)
         allowance=self.config.max_candidates-int(self.config.include_input)
+        self._readout_rows = {}
+        preferred = []
+        if self.config.basis_strategy == 'auto' and self.model.readout_rows and allowance:
+            declared = self.model.readout_rows(h, self.model.quantiles)
+            for name, indices in declared.items():
+                for site in sites:
+                    if (site.module == name and site.occurrence == 0 and site.occurrences is None
+                            and site.mode in ('last', 'single', 'shared') and site.batch_multiplier == 1
+                            and (site.mode != 'shared' or site.shape[0] == 1)):
+                        module = self.model.module.get_submodule(name)
+                        indices = np.asarray(indices)
+                        if (isinstance(module, torch.nn.Linear) and indices.shape == (h * len(self.model.quantiles),)
+                                and np.issubdtype(indices.dtype, np.integer)
+                                and np.all((indices >= 0) & (indices < module.out_features))):
+                            preferred.append(site)
+                            self._readout_rows[site.label] = indices.copy()
+                            break
+                if len(preferred) == allowance:
+                    break
+        preferred_modules = {p.module for p in preferred}
+        sites = [s for s in sites if s.module not in preferred_modules]
+        allowance -= len(preferred)
+        if allowance == 0:
+            sites = []
         screening=[]
         if len(sites)>allowance and allowance>0:
             limit=min(len(sites),max(allowance,self.config.screen_candidates))
@@ -210,6 +236,7 @@ class DynamicSteerer:
             indices=list(np.linspace(0,max(0,len(sites)-late-1),early,dtype=int)) if early else []
             indices+=list(range(len(sites)-late,len(sites)))
             sites=[sites[i] for i in sorted(set(indices))]
+        sites = preferred + sites
         if self.config.include_input:
             sites.append(InterventionSite('__input__',[],0,[len(x)],'single','input','forecast_input'))
         if not sites:raise SteeringUnavailable('no supported internal sites; supply a module override or enable input interventions')
@@ -255,6 +282,13 @@ class DynamicSteerer:
         j=((values[:rank]-values[rank:])/(2*step*scale)).reshape(rank,-1).T
         if not np.isfinite(j).all():raise SteeringUnavailable('nonfinite response measurement')
         return j,dict(probe_batch=batch_size,batching=batch_reason,probe_step=step)
+
+    def _select_candidate(self, scores):
+        """Prefer the smaller edit if every validation residual is at probe precision."""
+        precise = [score for score in scores if max(score["errors"]) <= min(1e-4, self.config.tolerance)]
+        if precise:
+            return min(precise, key=lambda score: (score["mean_coefficient_norm"], score["error"]))
+        return min(scores, key=lambda score: (score["error"], score["mean_coefficient_norm"]))
 
     def _target(self,x,h,base,request):
         counterfactual=None
@@ -327,8 +361,8 @@ class DynamicSteerer:
                     raise ValueError('validation context geometry must match training')
             if set(row.tobytes() for row in train)&set(row.tobytes() for row in valid):
                 raise ValueError('identical context rows cross the calibration/validation split')
-            requests=[requests] if isinstance(requests,SteeringRequest) else list(requests)
-            if not requests or not all(isinstance(r,SteeringRequest) for r in requests):
+            requests=[requests] if isinstance(requests, (SteeringRequest, CombinedRequest)) else list(requests)
+            if not requests or not all(isinstance(r, (SteeringRequest, CombinedRequest)) for r in requests):
                 raise ValueError('requests must contain SteeringRequest instances')
             ti=np.linspace(0,len(train)-1,min(len(train),self.config.calibration_samples),dtype=int)
             vi=np.linspace(0,len(valid)-1,min(len(valid),self.config.validation_samples),dtype=int)
@@ -358,7 +392,14 @@ class DynamicSteerer:
         candidates,total,screening=self._candidates(train[0],h)
         measurements=[];failures=[]
         for site in candidates:
-            basis=self._basis(site)
+            space = None
+            if site.label in self._readout_rows:
+                layer = self.model.module.get_submodule(site.module)
+                rows = layer.weight.detach()[self._readout_rows[site.label]].float().cpu().numpy().astype(float)
+                space = ReadoutSpace(rows)
+                if not len(space.axes):
+                    space = None
+            basis = space.axes[:1] if space is not None else self._basis(site)
             try:
                 # Leave room to score measured candidates on actual validation
                 # forecasts instead of consuming the whole budget on probes.
@@ -367,7 +408,23 @@ class DynamicSteerer:
                 for x,base in zip(train,bases):
                     response,info=self._jacobian(x,h,site,basis,np.zeros(len(basis)),base)
                     responses.append(response);details.append(info)
-                measurements.append((site,basis,np.mean(responses,axis=0),details))
+                mean = np.mean(responses, axis=0)
+                if space is not None:
+                    expected = space.forward[:, :1]
+                    gains = [float(np.sum(j * expected) / np.sum(expected**2)) for j in responses]
+                    if any(g <= 0 or np.linalg.norm(j-g*expected) > .02*np.linalg.norm(j)
+                           for j, g in zip(responses, gains)):
+                        failures.append(dict(site=site.label, reason="Readout disagreed with signed probes; using measured basis"))
+                        space = None
+                        basis = self._basis(site)
+                        measured = [self._jacobian(x,h,site,basis,np.zeros(len(basis)),base)
+                                    for x,base in zip(train,bases)]
+                        mean = np.mean([j for j, _ in measured], axis=0)
+                        details = [info for _, info in measured]
+                    else:
+                        mean = float(np.mean(gains))
+                        self._basis_sources[site.label] = "active forecast readout, calibration-target subspace"
+                measurements.append((site,basis,mean,details,space))
             except _BudgetExhausted as error:
                 failures.append(dict(site=site.label,reason=str(error)));break
             except (SteeringUnavailable,ValueError,RuntimeError) as error:
@@ -376,12 +433,20 @@ class DynamicSteerer:
         for request in requests:
             targets=targets_by_request[request.key(h)]
             scored=[]
-            for site,basis,response,details in measurements:
+            candidates_by_label = {}
+            calibration_targets = ([self._target(x,h,base,request) for x,base in zip(train,bases)]
+                                   if any(m[-1] is not None for m in measurements) else [])
+            for site,basis,response,details,space in measurements:
+                if space is not None:
+                    basis, raw_response = space.basis(calibration_targets, self.config.rank)
+                    response = raw_response * response
+                candidates_by_label[site.label] = (site,basis,response,space is not None)
                 errors=[];norms=[]
                 try:
                     for x,base,target in zip(valid,valbases,targets):
                         if np.linalg.norm(target)==0:errors.append(0.);norms.append(0.);continue
-                        z=self._proposal(response,target/self._scale(x))
+                        local = self._local_readout_response(x,h,site,basis,response,base) if space is not None else response
+                        z=self._proposal(local,target/self._scale(x))
                         prediction=self._evaluate(x[None],h,site,basis,z[None])[0]
                         errors.append(response_metrics(prediction-base,target)['relative_error']);norms.append(float(np.linalg.norm(z)))
                     scored.append(dict(site=site.label,error=float(np.mean(errors)),errors=errors,
@@ -390,9 +455,10 @@ class DynamicSteerer:
                 except (SteeringUnavailable,ValueError,RuntimeError) as error:
                     failures.append(dict(site=site.label,request=request.kind,reason=str(error)))
             if not scored:raise SteeringUnavailable('no candidate completed validation within the budget')
-            best=min(scored,key=lambda v:(v['error'],v['mean_coefficient_norm']))
-            site,basis,response,_=next(v for v in measurements if v[0].label==best['site'])
+            best = self._select_candidate(scored)
+            site,basis,response,local_readout=candidates_by_label[best['site']]
             report=dict(**selection,request=asdict(request),chosen=best,rank=len(basis),
+                        local_readout=local_readout,
                         basis_source=self._basis_sources.get(site.label,'stored orthonormal basis'),
                         observed_internal_sites=total,searched_candidates=len(candidates),candidate_scores=scored,
                         screening=screening,
@@ -411,7 +477,7 @@ class DynamicSteerer:
             self._begin()
             x=np.asarray(contexts,dtype=np.float32)
             if x.ndim!=2 or not len(x) or not np.isfinite(x).all():raise ValueError('need finite [batch,context]')
-            if not isinstance(request,SteeringRequest):raise TypeError('request must be a SteeringRequest')
+            if not isinstance(request, (SteeringRequest, CombinedRequest)):raise TypeError('request must be a SteeringRequest')
             if self._direct_context(request,prediction_length):
                 return self._context_result(x,request,prediction_length)
             key=request.key(prediction_length)
@@ -448,7 +514,9 @@ class DynamicSteerer:
         base=self._forecast(x[None],h)[0];target=self._target(x,h,base,request)
         scored=[]
         for profile in unique.values():
-            z=self._proposal(profile.response,target/self._scale(x))
+            response = (self._local_readout_response(x,h,profile.site,profile.basis,profile.response,base)
+                        if profile.report.get("local_readout") else profile.response)
+            z=self._proposal(response,target/self._scale(x))
             forecast=self._evaluate(x[None],h,profile.site,profile.basis,z[None])[0]
             error=response_metrics(forecast-base,target)['relative_error'] if np.linalg.norm(target) else 0.
             scored.append((error,float(np.linalg.norm(z)),profile))
@@ -460,6 +528,25 @@ class DynamicSteerer:
             model_calls=self.model.calls-self._start_calls,elapsed_seconds=time.monotonic()-self._started)
         self.profiles[request.key(h)]=SteeringProfile(profile.site,profile.basis,profile.response,request,h,len(x),report)
 
+    def _local_readout_response(self, x, h, site, basis, response, base):
+        """Measure this context's activation norm and inverse-normalization gain together.
+
+        For an affine readout these multiply every row by the same scalar.
+        A failed full-model direction check falls back to local finite differences.
+        """
+        column = int(np.argmax(np.linalg.norm(response, axis=0)))
+        reference = response[:, column]
+        step = min(self.config.probe_step, self.config.radius)
+        probe = np.zeros((1, len(basis)))
+        probe[0, column] = step
+        changed = self._evaluate(x[None], h, site, basis, probe)[0]
+        measured = (changed-base).ravel() / (step*self._scale(x))
+        power = float(reference @ reference)
+        gain = float(measured @ reference / power) if power else 0.
+        if gain > 0 and np.linalg.norm(measured-gain*reference) <= .02*np.linalg.norm(measured):
+            return gain*response
+        return self._jacobian(x,h,site,basis,np.zeros(len(basis)),base)[0]
+
     def _control(self,x,profile,base,target):
         rank=len(profile.basis);z=np.zeros(rank);current=base.copy();history=[];j=profile.response
         norm=float(np.linalg.norm(target));scale=self._scale(x)
@@ -468,6 +555,10 @@ class DynamicSteerer:
             try:
                 if iteration:
                     j,measurement=self._jacobian(x,profile.prediction_length,profile.site,profile.basis,z)
+                elif profile.report.get("local_readout"):
+                    j = self._local_readout_response(x, profile.prediction_length, profile.site,
+                                                     profile.basis, profile.response, base)
+                    measurement = {"method": "forecast readout calibrated on current context"}
                 else:measurement={'method':'frozen mean response warm start'}
                 effective=(base+target-current).flatten()/scale+j@z
                 proposed,linear=trust_region_direction(j,effective,self.config.radius,ridge=self.config.ridge)
@@ -486,7 +577,8 @@ class DynamicSteerer:
                                     relative_error=float(np.linalg.norm(current-base-target)/norm)))
                 break
         metric=response_metrics(current-base,target) if norm else dict(gain=None,collateral=0.,relative_error=0.)
-        mask=window_mask(profile.request.forecast_window,len(base))
+        terms = profile.request.terms if isinstance(profile.request, CombinedRequest) else (profile.request,)
+        mask = np.logical_or.reduce([window_mask(t.forecast_window, len(base)) for t in terms])
         info=dict(**metric,achieved=metric['relative_error']<=self.config.tolerance,
                   zero_target=norm==0,budget_exhausted=any(v.get('budget_exhausted',False) for v in history),
                   protected_rms=float(np.sqrt(np.mean((current[~mask]-base[~mask])**2))) if (~mask).any() else 0.,
@@ -545,7 +637,7 @@ class DynamicSteerer:
         result=cls(model,SearchConfig(**metadata['config']))
         with np.load(path/'profiles.npz',allow_pickle=False) as arrays:
             for i,row in enumerate(metadata['profiles']):
-                request=SteeringRequest(**row['request'])
+                request=request_from_dict(row['request'])
                 canonical_key=request.key(row['prediction_length'])
                 # Early profiles preserved e.g. period=24 rather than 24.0.
                 # Compare semantics, then migrate to the canonical numeric key.

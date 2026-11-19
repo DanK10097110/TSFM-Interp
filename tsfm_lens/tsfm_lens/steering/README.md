@@ -5,7 +5,7 @@ Suppose a model predicts **100, 102, 101**. You want to raise the forecast by tw
 The run config and studio use the `DynamicSteerer` described below. The package also has a lower-level `ForecastSteerer` for direct edits at supported native forecast heads.
 
 1. **Specify the change.** A request translates into a desired movement at every future step and quantile. In the toolkit, a level strength of 0.2 means two units when the input history has a standard deviation of ten. A request can also specify zero movement, for example to protect the early forecast while changing its later half.
-2. **Find a place to intervene.** On calibration histories, the dynamic controller makes small trial changes at candidate locations in the model or at its input. It records which forecast values move and by how much. On separate validation histories it selects a location that tracks the request well within the allowed edit size. The model weights stay fixed.
+2. **Find a place to intervene.** On calibration histories, the dynamic controller makes small trial changes at candidate locations in the model or at its input. For supported single-patch Bolt and TimesFM forecasts, the final readout tells the controller which hidden directions feed the requested steps and quantiles. Think of a level change as asking which small adjustment would raise all the dots together. The controller uses the readout weights to propose that adjustment, measures its effect through the ordinary predictor, and checks it again on each new history. Other models, interpolated quantiles and longer rollouts use the empirical search. On separate validation histories it selects a location that tracks the request within the allowed edit size. When sites agree to numerical precision, it prefers the smaller edit so more of the allowance is available on a new history. The model weights stay fixed.
 3. **Try the edit on a new history.** The controller computes the ordinary forecast, uses the measured responses to choose a limited combination of edits, and runs the model again. It keeps changes that reduce the error. If the budget permits, it measures the local response again and refines the edit. A larger search basis gives it more directions to try and costs more model evaluations.
 4. **Measure the miss.** Suppose the model actually produces **101, 103, 102**. Every step moved one unit toward a two-unit target. The relative error is 50%. Repeating the intervention could reproduce those numbers perfectly and the forecast would still miss the default 10% tolerance. The report shows ordinary, requested and achieved forecasts together for this reason.
 
@@ -22,71 +22,89 @@ The full-horizon context policies have a simpler interpretation. For example, `c
 | Did steering improve prediction of the future? | Compare ordinary and steered MAE and pinball loss against observed futures. The positive level shift in the published budget comparison increased both losses on both models. |
 | Has this found where the model represents a concept such as trend? | A working intervention identifies a way to influence the output. Multiple sites or input edits can yield similar forecasts. A unique internal representation or a real-world causal mechanism requires separate evidence. |
 
-For example, to support a claim that uncertainty widened while the center stayed fixed, inspect the lower-to-upper quantile distance **and** the median at each forecast step. An aggregate error can hide a median shift. To claim better calibration, check how often future observations actually fell inside the intervals on held-out data.
+The verification error covers the configured horizon and quantiles. Unreported channels can also move. For example, to support a claim that uncertainty widened while the center stayed fixed, inspect the lower-to-upper quantile distance **and** the median at each forecast step. An aggregate error can hide a median shift. To claim better calibration, check how often future observations actually fell inside the intervals on held-out data.
 
-The larger two-model check used 24 held-out synthetic contexts. At search rank 16, each model moved closer to the requested forecast on all 356 nonzero learned targets. Chronos-Bolt met the 10% tolerance on 33 of 360 learned-request trials, and TimesFM on 0 of 360. Four trials per model already satisfied their bounds before steering. Increasing the rank to 64 for the positive level shift raised success from 0/24 to 18/24 for Bolt and from 0/24 to 1/24 for TimesFM. Rank changes the controller's search capacity; dose changes the target itself. [Two-model validation report](../../../examples/steering/all_types_report.html) · [Matched rank comparison](../../../examples/steering/level_rank64_report.html)
+## Reproduced results and limits
 
-## Doses and simultaneous requests
+The earlier implementation reached the 10% tolerance in 33/360 learned trials on Chronos-Bolt and 0/360 on TimesFM. Bolt spent much of its limited edit on hidden directions with little influence on the selected outputs. TimesFM could screen a quantile branch that executed during inference while the adapter returned quantiles from the point head. Both adapters now identify the rows actually used by the public forecast. Calibration builds a low-rank set of edits for the requested patterns. Validation still scores real forecasts, and inference still measures the achieved change through the frozen model. [Earlier report](../../../examples/steering/all_types_report.html) · [Readout basis construction](readout.py)
 
-In a run config, listing `level` and `uncertainty` produces two independent comparisons against the ordinary forecast. The public API and studio apply one behavioral request per forecast. An edit for a larger level shift may move the interval widths as a side effect. That alone gives no evidence that a user can independently set both quantities.
+| Verified on held-out synthetic histories | Chronos-Bolt | TimesFM |
+| --- | ---: | ---: |
+| Matched seed, 15 learned directions | 322/360 | 347/360 |
+| Matched seed, two mixed requests | 47/48 | 48/48 |
+| Matched seed, four direct policies | 96/96 | 96/96 |
+| Fresh seed, 15 learned directions | 316/360 | 347/360 |
+| Fresh seed, two mixed requests | 48/48 | 47/48 |
+| Fresh seed, four direct policies | 96/96 | 96/96 |
 
-### Can one edit satisfy two requests?
+Each run used four calibration histories, four validation histories and 24 evaluation histories, an eight-step horizon, three native quantiles, rank 16, a relative edit radius of 0.2 and a 10% target-error threshold. All tasks reuse the histories within a run. The report provides per-request Wilson intervals, typical and worst examples, raw observations, forecast losses and exportable profiles. The seed replication uses the same six synthetic families. Transfer to another checkpoint, horizon or real data distribution needs its own evaluation. [Two-model config](../../../examples/steering/readout_validation.yaml) · [Replication report](../../../examples/steering/validation/report.html) · [Matched-seed numeric evidence](../../../examples/steering/validation/matched.json.gz)
 
-We tested a research extension with two compatible pairs. For **level + trend**, for example, the controller asks for a forecast that is both higher and more downward-sloping. The driver adds the two desired changes relative to the same ordinary forecast, fits one intervention, then reruns the frozen model. The matched controls ask for each component alone. All five comparisons use rank 64, the same four calibration and four validation contexts, and the same eight held-out histories on each model. The doses are +0.2 for level, −0.2 for trend and +20% for interval spread. [Driver](../../../examples/steering/mixed_pilot.py) · [Per-case measurements and 95% intervals](../../../examples/steering/mixed_pilot.json)
+**What caused the remaining misses?** On the fresh seed, the largest bounds miss on each model occurred on the same level-shift history. Reloading the exported predictors reproduced the original forecasts. Holding the fitted profiles and targets fixed and increasing only the edit radius from 0.2 to 0.4 to 0.8 reduced Bolt's error from 79.4% to 58.9% to 18.2%, and TimesFM's from 72.0% to 44.2% to below 0.001%. Across both seeds, all 87 nonzero misses on single learned directions reached their radius. A fresh TimesFM level + uncertainty case illustrates a different limit. Its edit used 0.058 of the 0.2 allowance, but its fitted directions could only approximate the requested shape. Quadrupling the radius left its error at 10.43%. Large interventions can distort the forecast. The headline evaluation keeps the original radius. [Measured radius sweep](../../../examples/steering/validation/bounds_radius.json)
 
-| Request | Bolt verified | Bolt median error | TimesFM verified | TimesFM median error |
-| --- | ---: | ---: | ---: | ---: |
-| level | 6/8 | 3.1% | 1/8 | 19.1% |
-| trend | 6/8 | 0.0% | 0/8 | 66.7% |
-| uncertainty | 5/8 | 1.3% | 0/8 | 52.1% |
-| level + trend | 4/8 | 11.9% | 0/8 | 41.1% |
-| level + uncertainty | 2/8 | 14.1% | 0/8 | 30.2% |
+## Use two directions together
 
-Mixing changed what was achievable. On Bolt, both the level-only and trend-only controls passed on the same six histories. Combining them lost two of those six. Both level-only and spread-only controls passed on five histories. Only two of those five passed when combined. All 80 forecasts across the pilot and its single-request controls matched on replay. The combined error can also hide a weak component. On TimesFM, projecting the achieved changes onto the requested level and trend patterns gave a median level gain of 1.00 and a median trend gain of 0.52 (1 means the requested amplitude). The forecast generally moved up while acquiring only part of the requested slope. Other pairs, conflicting requests and sequences of context edits still need their own tests. This pilot is available through the research driver; the YAML, GUI and exported predictors support individual requests.
+Use separate entries in `steering.requests` to run independent comparisons. For a single intervention that raises the forecast and also tilts it downward, use a combined request. Each term uses the same ordinary forecast, with its own amount and optional window. The controller adds the desired changes and fits one edit within one radius.
 
-### Does turning up the dose give more control?
+```yaml
+steering:
+  enabled: true
+  quantiles: [0.1, 0.5, 0.9]
+  requests:
+    - kind: combined
+      terms:
+        - {kind: level, strength: 0.2}
+        - {kind: trend, strength: -0.2}
+```
 
-We fitted three amounts for every steering type at rank 16. Both models received the same eight synthetic evaluation histories at every amount. For each history we asked whether a larger request moved the forecast farther and whether it produced the requested pattern and amount. For example, on Bolt, signed trend strengths −0.1, −0.2 and −0.3 produced progressively larger edits on all eight histories. The counts meeting the 10% tolerance **fell from 6/8 to 2/8 to 0/8**. Three observations along a dose curve establish neither a continuous response nor behavior in the opposite direction. [Bolt protocol](../../../examples/steering/dose_pilot.yaml) · [TimesFM protocol](../../../examples/steering/dose_timesfm.yaml)
+In Python, pass `CombinedRequest((SteeringRequest("level", .2), SteeringRequest("trend", -.2)))` to the same fit and steer methods. In the studio, choose the first direction and amount, click **Add current direction to mix**, choose the second, then **Compare forecasts**. **Export displayed model** saves the tested combination. The report shows the gain of each distinguishable component, where 1 means the requested amount. Opposing terms can cancel, and gains for linearly dependent target patterns cannot be estimated separately. Combinations accept forecast-space requests. The four history-editing policies run individually.
+
+In the matched rank-64 pilot, level alone, trend alone, uncertainty alone, level + trend, and level + uncertainty each passed on all eight evaluation histories on both models. All 80 replayed forecasts matched. For each eight-history group the pointwise 95% Wilson interval is about 68–100%. The rank-16 reports above test both mixtures on larger samples. [Pilot driver](../../../examples/steering/mixed_pilot.py) · [Forecast arrays, component gains and intervals](../../../examples/steering/validation/mixed.json)
+
+We also loaded the matched-seed mixed exports and applied them to 24 distinct M4 daily series without refitting. Both mixtures verified on all 24 histories on each checkpoint. Each of the four groups has a pointwise 95% Wilson interval of 86.2–100%. Selection used seed 42 and the final 72 finite observations of each eligible series (64 input, eight future). These data were held out from steering calibration and selection. Base-model pretraining exposure is unknown. [Transfer measurements and 95% intervals](../../../examples/steering/validation/m4_daily.json) · [Reproduction script](../../../examples/steering/validation/check_transfer.py)
+
+## What changes with dose?
+
+We tested three amounts for every direction at rank 16 on the same eight held-out histories. For example, both models tracked all three trend strengths on all eight. Bolt reached the strongest asymmetry request on four of eight. Across the 360 learned trials per model, Bolt verified 312 and TimesFM verified 341. All 96 direct-policy trials per model verified. All 912 forecasts reproduced on replay. These repeated measurements describe dose response on eight histories.
 
 <details>
-<summary>Results for all 19 directions and three doses</summary>
+<summary>All 19 dose curves</summary>
 
-“Verified” gives the counts at the three amounts, each out of eight. A zero target stays in the denominator and earns no hit. “Increasing” counts histories where the size of the achieved change (its Euclidean norm across steps and quantiles) increased at both dose steps. Ties within absolute tolerance 1e−6 and relative tolerance 1e−5 count as ties. Each dose can select a different intervention site.
+Each verified count is out of eight. “Increasing” counts histories where the magnitude of the achieved change rose at both dose steps, excluding numerical ties. Zero targets count in the denominator and earn no hit. Bounds give symmetric limits, delay is in forecast steps, and focus gives the outside weight.
 
 | Request | Amounts | Bolt verified | TimesFM verified | Bolt increasing | TimesFM increasing |
 | --- | --- | --- | --- | ---: | ---: |
-| level | 0.1, 0.2, 0.3 | 0, 0, 0 | 0, 0, 0 | 8 | 7 |
-| trend | -0.1, -0.2, -0.3 | 6, 2, 0 | 0, 0, 0 | 8 | 7 |
-| detrend | 0.25, 0.5, 0.75 | 7, 7, 7 | 0, 0, 0 | 8 | 6 |
-| amplitude | 0.1, 0.2, 0.3 | 0, 0, 0 | 0, 0, 0 | 8 | 3 |
-| seasonality | 0.1, 0.2, 0.3 | 0, 0, 0 | 0, 0, 0 | 8 | 5 |
-| deseasonalize | 0.25, 0.5, 0.75 | 0, 0, 0 | 0, 0, 0 | 8 | 7 |
-| smooth | 0.25, 0.5, 0.75 | 0, 0, 0 | 0, 0, 0 | 8 | 7 |
-| roughness | 0.1, 0.2, 0.3 | 0, 0, 0 | 0, 0, 0 | 8 | 8 |
-| uncertainty | 0.1, 0.2, 0.3 | 0, 0, 0 | 0, 0, 0 | 8 | 6 |
-| asymmetry | 0.1, 0.2, 0.3 | 0, 0, 0 | 0, 0, 0 | 8 | 6 |
-| quantile | 0.1, 0.2, 0.3 | 0, 0, 0 | 0, 0, 0 | 8 | 7 |
-| anchor | 0.125, 0.25, 0.375 | 1, 1, 1 | 0, 0, 0 | 8 | 5 |
-| mean_revert | 0.25, 0.5, 0.75 | 2, 0, 0 | 0, 0, 0 | 8 | 7 |
-| bounds | ±1, ±0.5, ±0.333333 | 0, 0, 0 | 0, 0, 0 | 6 | 5 |
-| delay | 0.5, 1, 1.5 | 0, 0, 0 | 0, 0, 0 | 8 | 6 |
+| level | 0.1, 0.2, 0.3 | 8, 8, 6 | 8, 8, 8 | 8 | 8 |
+| trend | -0.1, -0.2, -0.3 | 8, 8, 8 | 8, 8, 8 | 8 | 8 |
+| detrend | 0.25, 0.5, 0.75 | 8, 8, 8 | 8, 8, 8 | 8 | 8 |
+| amplitude | 0.1, 0.2, 0.3 | 8, 8, 8 | 8, 8, 8 | 8 | 8 |
+| seasonality | 0.1, 0.2, 0.3 | 8, 6, 6 | 8, 8, 8 | 8 | 8 |
+| deseasonalize | 0.25, 0.5, 0.75 | 8, 8, 8 | 8, 8, 8 | 8 | 8 |
+| smooth | 0.25, 0.5, 0.75 | 8, 8, 8 | 8, 8, 8 | 8 | 8 |
+| roughness | 0.1, 0.2, 0.3 | 8, 8, 8 | 8, 8, 8 | 8 | 8 |
+| uncertainty | 0.1, 0.2, 0.3 | 8, 8, 8 | 8, 8, 8 | 8 | 8 |
+| asymmetry | 0.1, 0.2, 0.3 | 8, 5, 4 | 8, 8, 8 | 8 | 8 |
+| quantile | 0.1, 0.2, 0.3 | 8, 6, 6 | 8, 8, 8 | 8 | 8 |
+| anchor | 0.125, 0.25, 0.375 | 8, 8, 3 | 8, 8, 7 | 8 | 8 |
+| mean_revert | 0.25, 0.5, 0.75 | 8, 8, 4 | 8, 8, 8 | 8 | 8 |
+| bounds | ±1, ±0.5, ±0.333333 | 1, 1, 0 | 2, 2, 2 | 1 | 3 |
+| delay | 0.5, 1, 1.5 | 8, 8, 8 | 8, 8, 8 | 8 | 6 |
 | context_ignore | 0.25, 0.5, 1 | 8, 8, 8 | 8, 8, 8 | 8 | 8 |
 | context_emphasize | 0.25, 0.5, 0.75 | 8, 8, 8 | 8, 8, 8 | 8 | 8 |
 | context_focus | 0.75, 0.5, 0.25 | 8, 8, 8 | 8, 8, 8 | 7 | 8 |
 | context_recency | 0.5, 1, 1.5 | 8, 8, 8 | 8, 8, 8 | 7 | 7 |
 
-Bounds are symmetric limits, delay is measured in steps, and focus uses the weight left on history outside the selected window. Tightening the bounds and lowering the outside weight make stronger requests.
-
 </details>
 
-Open the reports locally to inspect individual forecasts, replay, confidence intervals and forecast losses. These results are exploratory. Even 8/8 gives a pointwise 95% Wilson interval of approximately 68–100% under independent sampling. The 912 dose evaluations reuse those eight histories across models, types and doses. [Bolt dose report](../../../examples/steering/dose_pilot_report.html) · [TimesFM dose report](../../../examples/steering/dose_timesfm_report.html)
+[Chronos-Bolt numeric evidence](../../../examples/steering/validation/bolt_doses.json.gz) · [TimesFM numeric evidence](../../../examples/steering/validation/timesfm_doses.json.gz)
 
-To rerun the experiments from `tsfm_lens/` with the model adapters installed:
+To regenerate the comparisons from `tsfm_lens/` with both adapters installed, use the commands below. For the replication report, use a copy of the validation config with `run.seed: 20261120` and a separate run name. Run the audit script on any of the linked HTML or compressed JSON files to recompute verified counts from the forecasts.
 
 ```bash
-python run.py --config ../examples/steering/dose_pilot.yaml --stages steering
-python run.py --config ../examples/steering/dose_timesfm.yaml --stages steering
+python run.py --config ../examples/steering/readout_validation.yaml --stages steering --force steering
+python run.py --config ../examples/steering/dose_pilot.yaml --stages steering --force steering
+python run.py --config ../examples/steering/dose_timesfm.yaml --stages steering --force steering
 PYTHONPATH=. python ../examples/steering/mixed_pilot.py
+python ../examples/steering/validation/audit.py ../examples/steering/validation/report.html
 ```
 
-To reproduce the tables from the saved measurements, run `python examples/steering/audit_pilots.py` from the repository root. To use steering on your own inputs, see the [configuration, studio and deployment guide](../../docs/steering.md).
+The [configuration, studio and deployment guide](../../docs/steering.md) covers custom histories and exported predictors.

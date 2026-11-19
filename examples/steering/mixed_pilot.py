@@ -1,11 +1,11 @@
 """Test two additive forecast targets through one intervention on each frozen model.
 
 From tsfm_lens/, run python ../examples/steering/mixed_pilot.py with the toolkit installed.
-This research adapter extends target construction only. The public controller fits,
+The public controller fits,
 steers and replays each request using its usual validation and inference paths.
 """
 import argparse
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
 import json
 from pathlib import Path
 
@@ -14,23 +14,10 @@ from scipy.stats import binomtest
 
 from tsfm_lens.config import load_config
 from tsfm_lens.pipeline import Context
-from tsfm_lens.steering import DynamicSteerer, SearchConfig, SteeringModel, SteeringRequest
+from tsfm_lens.steering import CombinedRequest, DynamicSteerer, SearchConfig, SteeringModel, SteeringRequest
 from tsfm_lens.steering.report import _sample
 from tsfm_lens.steering.requests import requested_change
 from tsfm_lens.utils import set_seed
-
-
-@dataclass(frozen=True, kw_only=True)
-class Pair(SteeringRequest):
-    second: SteeringRequest
-
-
-class AdditivePilot(DynamicSteerer):
-    def _target(self, x, h, base, request):
-        first = super()._target(x, h, base, request)
-        if isinstance(request, Pair):
-            return first + super()._target(x, h, base, request.second)
-        return first
 
 
 def evaluate(steerer, req, x, horizon):
@@ -38,9 +25,8 @@ def evaluate(steerer, req, x, horizon):
     replay = steerer.replay(x[None], result)
     base = result.baseline[0]
     actual = replay[0] - base
-    components = [requested_change(base, x, result.quantiles, req)]
-    if isinstance(req, Pair):
-        components.append(requested_change(base, x, result.quantiles, req.second))
+    terms = req.terms if isinstance(req, CombinedRequest) else (req,)
+    components = [requested_change(base, x, result.quantiles, term) for term in terms]
     target = sum(components)
     np.testing.assert_allclose(target, result.requested_change[0])
     size = np.linalg.norm(target)
@@ -70,14 +56,14 @@ def main():
     level = SteeringRequest("level", .2)
     trend = SteeringRequest("trend", -.2)
     spread = SteeringRequest("uncertainty", .2)
-    requests = [level, trend, spread, Pair("level", .2, second=trend), Pair("level", .2, second=spread)]
+    requests = [level, trend, spread, CombinedRequest((level, trend)), CombinedRequest((level, spread))]
     output = dict(protocol="Add the requested changes relative to the same unsteered forecast; fit a single intervention.",
                   config="all_types.yaml", search=asdict(search), seed=cfg.run.seed,
                   quantiles=cfg.steering.quantiles, calibration=ids[train].tolist(),
                   validation=ids[valid].tolist(), evaluation=ids[test].tolist(), groups=[])
     for spec in cfg.models:
         model = SteeringModel.from_adapter(ctx.hub.get(spec.name), quantiles=cfg.steering.quantiles)
-        steerer = AdditivePilot(model, search)
+        steerer = DynamicSteerer(model, search)
         steerer.fit(contexts[train], requests, prediction_length=cfg.data.horizon,
                     validation_contexts=contexts[valid])
         for req in requests:

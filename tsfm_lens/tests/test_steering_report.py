@@ -27,6 +27,18 @@ def test_optional_report_preserves_original_and_rejects_zero_effect(tmp_path):
     assert (cfg.run_dir() / "report.html").read_bytes() == original
 
 
+def test_cancelling_mixture_is_a_zero_target_and_reports_unidentifiable_gains(tmp_path):
+    cfg = load_config(Path(__file__).parents[1] / "configs/examples/steering.yaml")
+    cfg.run.out_dir = str(tmp_path)
+    cfg.steering.max_series = 2
+    cfg.steering.requests = [{"kind": "combined", "terms": [
+        {"kind": "level", "strength": 0.1}, {"kind": "level", "strength": -0.1}]}]
+    run_pipeline(cfg, stages=["steering"])
+    html = (cfg.run_dir() / "steering/report.html").read_text()
+    assert "0 / 2 verified" in html and "2 zero targets" in html
+    assert "component targets could not be distinguished" in html
+
+
 def test_failed_replay_cannot_verify_an_otherwise_exact_result(tmp_path, monkeypatch):
     from tsfm_lens.steering import DynamicSteerer
 
@@ -47,19 +59,21 @@ def test_report_statistics_and_inference_bundle_roundtrip(tmp_path):
     import re
 
     import numpy as np
-    from tsfm_lens.steering import SteeredForecaster, SteeringRequest
+    from tsfm_lens.steering import SteeredForecaster
+    from tsfm_lens.steering.requests import request_from_dict
     from tsfm_lens.steering.studio import StudioSession
 
     cfg = load_config(Path(__file__).parents[1] / "configs/examples/steering.yaml")
     cfg.run.out_dir = str(tmp_path)
     cfg.steering.max_series = 3
-    cfg.steering.requests = [{"kind": "level", "strength": 0.1}, {"kind": "context_ignore"}]
+    cfg.steering.requests = [{"kind": "level", "strength": 0.1}, {"kind": "context_ignore"},
+                             {"kind": "combined", "terms": [{"kind": "trend"}, {"kind": "level"}]}]
     cfg.steering.search = {"rank": 6, "max_candidates": 3, "screen_candidates": 4}
     run_pipeline(cfg, stages=["steering"])
     html = (cfg.run_dir() / "steering/report.html").read_text()
     records = json.loads(re.search(r'id="steering-results">(.*?)</script>', html).group(1))
     bundles = re.findall(r'data:application/zip;base64,([^"]+)', html)
-    assert len(records) == len(bundles) == 2
+    assert len(records) == len(bundles) == 3
     session = StudioSession(cfg)
     for item, record, encoded in zip(cfg.steering.requests, records, bundles):
         assert record["total"] == record["completed"] == record["replay_matches"] == 3
@@ -69,7 +83,7 @@ def test_report_statistics_and_inference_bundle_roundtrip(tmp_path):
         bundle.write_bytes(base64.b64decode(encoded))
         deployed = SteeredForecaster.load(bundle)
         new_input = np.linspace(-2, 1, cfg.data.context_len, dtype=np.float32)
-        _, preview, replay_ok = session.compare(cfg.models[0].name, SteeringRequest(**item), new_input)
+        _, preview, replay_ok = session.compare(cfg.models[0].name, request_from_dict(item), new_input)
         assert replay_ok
         np.testing.assert_allclose(deployed.predict(new_input), preview.forecast, rtol=1e-5, atol=1e-6)
 

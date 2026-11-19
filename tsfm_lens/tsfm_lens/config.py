@@ -25,8 +25,8 @@ class SteeringConfig:
     quantiles: list = field(default_factory=lambda: [0.5])
 
     def validate(self, data):
-        from .steering import SearchConfig, SteeringRequest
-        from .steering.requests import window_mask
+        from .steering import SearchConfig
+        from .steering.requests import CombinedRequest, request_from_dict, window_mask
 
         if "seed" in self.search:
             raise ValueError("use run.seed for steering discovery")
@@ -40,13 +40,14 @@ class SteeringConfig:
                 or any(not 0 < q < 1 for q in levels) or levels != sorted(set(levels))):
             raise ValueError("steering.quantiles must be increasing and include 0.5")
         for item in self.requests:
-            request = SteeringRequest(**item)
-            window_mask(request.forecast_window, data.horizon)
-            window_mask(request.context_window, data.context_len, context=True)
-            if request.kind in ("asymmetry", "uncertainty") and len(levels) < 3:
-                raise ValueError("spread requests require at least three steering.quantiles")
-            if request.kind == "quantile" and request.quantile not in levels:
-                raise ValueError("requested quantile is missing from steering.quantiles")
+            parsed = request_from_dict(item)
+            for request in (parsed.terms if isinstance(parsed, CombinedRequest) else (parsed,)):
+                window_mask(request.forecast_window, data.horizon)
+                window_mask(request.context_window, data.context_len, context=True)
+                if request.kind in ("asymmetry", "uncertainty") and len(levels) < 3:
+                    raise ValueError("spread requests require at least three steering.quantiles")
+                if request.kind == "quantile" and request.quantile not in levels:
+                    raise ValueError("requested quantile is missing from steering.quantiles")
 
 
 @dataclass

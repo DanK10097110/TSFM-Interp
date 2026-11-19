@@ -16,7 +16,8 @@ from matplotlib.figure import Figure
 from ..utils import log
 from .deployment import SteeredForecaster
 from .reference_checks import report_controls
-from . import DynamicSteerer, SearchConfig, SteeringModel, SteeringRequest, SteeringUnavailable
+from .requests import CombinedRequest, request_from_dict, requested_change
+from . import DynamicSteerer, SearchConfig, SteeringModel, SteeringUnavailable
 
 
 def _sample(data, seed, limit, calibration=2, validation=2):
@@ -97,9 +98,17 @@ def _evaluate(steerer, request, contexts, splits, ids, horizon, discovery, targe
                                  verified=bool(verified), seconds=latency, calls=call_count,
                                  baseline_mae=before_mae[-1], steered_mae=after_mae[-1],
                                  baseline_pinball=before_pinball[-1], steered_pinball=after_pinball[-1],
-                                 baseline=result.baseline[0].tolist(), requested_change=delta[0].tolist(),
+                                 baseline=result.baseline[0].tolist(), forecast=result.forecast[0].tolist(),
+                                 requested_change=delta[0].tolist(),
                                  replay=replay[0].tolist(), future=targets[index].tolist(),
                                  diagnostics=result.diagnostics[0]))
+        if isinstance(request, CombinedRequest):
+            components = [requested_change(result.baseline[0], x[0], result.quantiles, term)
+                          for term in request.terms]
+            matrix = np.column_stack([component.ravel() for component in components])
+            gains, _, rank, _ = np.linalg.lstsq(matrix, (replay - result.baseline).ravel(), rcond=None)
+            observations[-1].update(component_targets=[c.tolist() for c in components],
+                                    component_gains=gains.tolist() if rank == len(components) else None)
         latencies.append(latency)
         calls.append(call_count)
         rows.append((index, relative, bool(repeatable), bool(verified), result))
@@ -116,6 +125,23 @@ def _evaluate(steerer, request, contexts, splits, ids, horizon, discovery, targe
                   p90_relative_error=float(np.quantile(errors, .9)) if errors else None,
                   replay_matches=sum(r[2] for r in rows), completed=len(rows),
                   zero_targets=len(rows)-len(errors), unavailable=len(failures))
+    missed = [row for row in observations if row["relative_error"] is not None and not row["verified"]]
+    at_radius = sum(1 for row in missed if row["diagnostics"].get("radius") is not None and
+                    np.isclose(row["diagnostics"]["coefficient_norm"], row["diagnostics"]["radius"]))
+    record["misses_at_radius"] = at_radius
+    if missed:
+        parts.append(f"<p>{at_radius} of {len(missed)} nonzero misses used the full edit radius. "
+                     "The construction details give each edit norm, allowed radius and local solver residual.</p>")
+    if isinstance(request, CombinedRequest):
+        gains = [row["component_gains"] for row in observations if row["component_gains"] is not None]
+        if gains:
+            record["median_component_gains"] = np.median(gains, axis=0).tolist()
+            labels = [f"{term.kind} {gain:.3g}" for term, gain in zip(request.terms, record["median_component_gains"])]
+            parts.append("<p>Median fitted gain for each component (1 means the requested amount) "
+                         + escape(", ".join(labels)) + f". Estimated on {len(gains)} contexts with independent "
+                         "target patterns. The full-forecast error also counts off-target movement.</p>")
+        else:
+            parts.append("<p>The component targets could not be distinguished on these contexts.</p>")
     if rows:
         diffs = np.column_stack((np.subtract(after_mae, before_mae),
                                  np.subtract(after_pinball, before_pinball)))
@@ -176,7 +202,7 @@ def run_steering_report(cfg, hub, data):
                                     validation=ids[valid].tolist(), evaluation=ids[test].tolist(),
                                     search=asdict(search)), indent=2, default=str)), '</pre></details>']
     overview = []
-    requests = [SteeringRequest(**item) for item in settings.requests]
+    requests = [request_from_dict(item) for item in settings.requests]
     for model_index, spec in enumerate(cfg.models):
         model = SteeringModel.from_adapter(hub.get(spec.name), quantiles=settings.quantiles)
         steerer = DynamicSteerer(model, search)
@@ -188,11 +214,14 @@ def run_steering_report(cfg, hub, data):
             discoveries = {}  # Evaluate independently if any request prevented a shared fit.
         for request_index, item in enumerate(settings.requests):
             log.info("steering: %s · %s", spec.name, item["kind"])
-            request = SteeringRequest(**item)
-            dose = {"delay": f"{request.delay:g} steps",
-                    "context_focus": f"outside weight {request.outside_weight:g}",
-                    "bounds": f"limits {request.lower} to {request.upper}"}.get(
-                        request.kind, f"strength {request.strength:g}")
+            request = request_from_dict(item)
+            if isinstance(request, CombinedRequest):
+                dose = " + ".join(term.kind for term in request.terms)
+            else:
+                dose = {"delay": f"{request.delay:g} steps",
+                        "context_focus": f"outside weight {request.outside_weight:g}",
+                        "bounds": f"limits {request.lower} to {request.upper}"}.get(
+                            request.kind, f"strength {request.strength:g}")
             parts.append(f'<h3 id="m{model_index}-r{request_index}">' f"{escape(request.kind)} · {dose}</h3>"
                          f"<code>{escape(json.dumps(item))}</code>")
             html, stats = _evaluate(steerer, request, contexts, (train, valid, test), ids, cfg.data.horizon,

@@ -285,3 +285,53 @@ def test_new_request_reuses_learned_response_without_repeating_discovery():
     result=controller.steer(data()[6:],request,prediction_length=8)
     assert all(d['achieved'] for d in result.diagnostics)
     assert all('online transfer' in d['selection'] and d['validation_error'] is None for d in result.diagnostics)
+
+
+@pytest.mark.parametrize("reverse_mapping", [False, True])
+def test_readout_low_rank_mixed_control_and_empirical_fallback(tmp_path, reverse_mapping):
+    from tsfm_lens.steering import CombinedRequest
+
+    _, model = registered()
+    order = np.arange(24)
+    model.readout_rows = lambda h, q: {"banana": order[::-1].copy() if reverse_mapping else order}
+    limits = SearchConfig(max_candidates=1, include_input=False, module_pattern="banana",
+                          rank=2, radius=.2, calibration_samples=2, validation_samples=2)
+    controller = DynamicSteerer(model, limits)
+    request = CombinedRequest((SteeringRequest("level", .01, forecast_window="short"),
+                               SteeringRequest("trend", -.01, forecast_window="short")))
+    report = controller.fit(data()[:4], request, prediction_length=8,
+                            validation_contexts=data()[4:6])[request.key(8)]
+    assert report["local_readout"] == (not reverse_mapping)
+    assert report["rank"] == 2
+    path = tmp_path / "profile"
+    controller.save(path)
+    restored = DynamicSteerer.load(path, model)
+    result = restored.steer(data()[6:], request, prediction_length=8, auto_discover=False)
+    for i, info in enumerate(result.diagnostics):
+        assert info["coefficient_norm"] <= limits.radius + 1e-8
+        if not reverse_mapping:
+            assert info["achieved"]
+            np.testing.assert_allclose(result.forecast[i,4:], result.baseline[i,4:], atol=1e-5)
+        expected = sum(requested_change(result.baseline[i], data()[6+i], result.quantiles, term)
+                       for term in request.terms)
+        np.testing.assert_allclose(result.requested_change[i], expected)
+    np.testing.assert_allclose(restored.replay(data()[6:], result), result.forecast)
+
+
+def test_combined_request_rejects_ambiguous_context_composition():
+    from tsfm_lens.steering import CombinedRequest
+    with pytest.raises(ValueError, match="two forecast requests"):
+        CombinedRequest((SteeringRequest("level"), SteeringRequest("context_focus")))
+
+
+def test_validation_selection_preserves_edit_headroom_at_probe_precision():
+    _, model = registered()
+    controller = DynamicSteerer(model, config())
+    costly = dict(errors=[2e-6, 4e-6], error=3e-6, mean_coefficient_norm=.19)
+    economical = dict(errors=[6e-6, 8e-6], error=7e-6, mean_coefficient_norm=.03)
+    assert controller._select_candidate([costly, economical]) is economical
+    controller.config.tolerance = 4e-6
+    assert controller._select_candidate([costly, economical]) is costly
+    economical.update(errors=[0., .11], error=.055)
+    controller.config.tolerance = .1
+    assert controller._select_candidate([costly, economical]) is costly

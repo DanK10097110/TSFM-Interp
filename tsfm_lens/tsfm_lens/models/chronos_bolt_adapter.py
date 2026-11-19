@@ -124,6 +124,17 @@ class ChronosBoltAdapter(ModelAdapter):
         return {"point": mean.float().cpu().numpy(),
                 "quantiles": q.float().cpu().numpy()}
 
+    def steering_readout_rows(self, horizon, quantiles):
+        """Native row indices in the order returned by predict_quantiles."""
+        native = list(self.pipeline.quantiles)
+        patch = self.pipeline.model_prediction_length
+        if horizon > patch or any(q not in native for q in quantiles):
+            return {}
+        if self.module.instance_norm.use_arcsinh or self.module.output_patch_embedding.use_layer_norm:
+            return {}
+        rows = (np.arange(horizon)[:, None] + patch * np.array([native.index(q) for q in quantiles])).ravel()
+        return {f"output_patch_embedding.{branch}": rows for branch in ("residual_layer", "output_layer")}
+
     def predict_differentiable(self, contexts: np.ndarray, horizon: int):
         """The median quantile channel of one Bolt head pass, with autograd enabled.
 

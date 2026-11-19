@@ -28,7 +28,7 @@ confirmation) · [Colab quickstart](https://colab.research.google.com/github/Dan
 | To… | Start here |
 | --- | --- |
 | Run the interpretability toolkit | [Quickstart](docs/QUICKSTART.md) and [example run configs](tsfm_lens/configs/examples/) |
-| Steer forecasts, verify results, or export a predictor | [How steering works and what the evidence supports](tsfm_lens/tsfm_lens/steering/README.md), [desktop studio and deployment guide](tsfm_lens/docs/steering.md), [CPU example](tsfm_lens/configs/examples/steering.yaml), and [two-model validation report](examples/steering/all_types_report.html) |
+| Steer forecasts, verify results, or export a predictor | [How steering works and what the evidence supports](tsfm_lens/tsfm_lens/steering/README.md), [desktop studio and deployment guide](tsfm_lens/docs/steering.md), [CPU example](tsfm_lens/configs/examples/steering.yaml), and [two-model validation report](examples/steering/validation/report.html) |
 | Build a benchmark corpus | [Benchmark toolkit](tsfm_benchmark/) |
 | Extend the toolkit to another model | [Adapter guide](tsfm_lens/docs/ADDING_A_MODEL.md) |
 
