@@ -1,0 +1,146 @@
+{
+  "joint_22112401": {
+    "cases": [
+      "daily/1489",
+      "daily/2515",
+      "daily/154",
+      "monash_traffic/T000523",
+      "monash_traffic/T000196",
+      "monash_traffic/T000257"
+    ],
+    "features": [
+      905,
+      52,
+      115,
+      556,
+      1001,
+      3
+    ],
+    "native_max_by_arm": {
+      "source": 1.430511474609375e-06,
+      "paired": 1.430511474609375e-06,
+      "other": 1.6689300537109375e-06,
+      "dense": 9.5367431640625e-07
+    }
+  },
+  "joint_22112402": {
+    "cases": [
+      "daily/1489",
+      "daily/2515",
+      "daily/154",
+      "monash_traffic/T000523",
+      "monash_traffic/T000196",
+      "monash_traffic/T000257"
+    ],
+    "features": [
+      938,
+      105,
+      82,
+      599,
+      1010,
+      1
+    ],
+    "native_max_by_arm": {
+      "source": 1.087784767150879e-06,
+      "paired": 1.1920928955078125e-06,
+      "other": 9.5367431640625e-07,
+      "dense": 1.9073486328125e-06
+    }
+  },
+  "masked_22112401": {
+    "cases": [
+      "daily/1489",
+      "daily/2515",
+      "daily/154",
+      "monash_traffic/T000523",
+      "monash_traffic/T000196",
+      "monash_traffic/T000257"
+    ],
+    "features": [
+      888,
+      263,
+      41,
+      624,
+      979,
+      24
+    ],
+    "native_max_by_arm": {
+      "source": 1.1920928955078125e-06,
+      "paired": 9.5367431640625e-07,
+      "other": 9.5367431640625e-07,
+      "dense": 1.1920928955078125e-06
+    }
+  },
+  "masked_22112402": {
+    "cases": [
+      "daily/1489",
+      "daily/2515",
+      "daily/154",
+      "monash_traffic/T000523",
+      "monash_traffic/T000196",
+      "monash_traffic/T000257"
+    ],
+    "features": [
+      901,
+      61,
+      9,
+      582,
+      1021,
+      28
+    ],
+    "native_max_by_arm": {
+      "source": 1.5050172805786133e-06,
+      "paired": 1.430511474609375e-06,
+      "other": 1.430511474609375e-06,
+      "dense": 1.430511474609375e-06
+    }
+  },
+  "shuffled_22112401": {
+    "cases": [
+      "daily/1489",
+      "daily/2515",
+      "daily/154",
+      "monash_traffic/T000523",
+      "monash_traffic/T000196",
+      "monash_traffic/T000257"
+    ],
+    "features": [
+      951,
+      58,
+      43,
+      586,
+      1012,
+      33
+    ],
+    "native_max_by_arm": {
+      "source": 1.0728836059570312e-06,
+      "paired": 9.5367431640625e-07,
+      "other": 1.430511474609375e-06,
+      "dense": 1.6689300537109375e-06
+    }
+  },
+  "shuffled_22112402": {
+    "cases": [
+      "daily/1489",
+      "daily/2515",
+      "daily/154",
+      "monash_traffic/T000523",
+      "monash_traffic/T000196",
+      "monash_traffic/T000257"
+    ],
+    "features": [
+      906,
+      25,
+      29,
+      519,
+      1010,
+      20
+    ],
+    "native_max_by_arm": {
+      "source": 1.3113021850585938e-06,
+      "paired": 1.430511474609375e-06,
+      "other": 1.6689300537109375e-06,
+      "dense": 1.6689300537109375e-06
+    }
+  }
+}

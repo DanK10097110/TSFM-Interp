@@ -1,0 +1,86 @@
+{
+  "0.15": {
+    "identities": [
+      "daily/2845",
+      "daily/154",
+      "monash_traffic/T000812",
+      "monash_traffic/T000074"
+    ],
+    "native_slot": 61,
+    "max_abs_hidden_derivative_error": 3.8782759880007234e-05,
+    "projected": {
+      "joint_22112401": {
+        "max_abs_projection_error": 3.0133507003213634e-05,
+        "median_relative_signature_error": 8.126845810371908e-07,
+        "max_relative_signature_error": 7.5135716716640135e-06
+      },
+      "joint_22112402": {
+        "max_abs_projection_error": 2.6553701347276934e-05,
+        "median_relative_signature_error": 7.097722043093437e-07,
+        "max_relative_signature_error": 6.707802652632165e-06
+      },
+      "masked_22112401": {
+        "max_abs_projection_error": 2.8822689927303076e-05,
+        "median_relative_signature_error": 7.373678833951968e-07,
+        "max_relative_signature_error": 5.781906042310842e-06
+      },
+      "masked_22112402": {
+        "max_abs_projection_error": 2.8847833005680862e-05,
+        "median_relative_signature_error": 7.777517985751464e-07,
+        "max_relative_signature_error": 4.077774238011743e-06
+      },
+      "shuffled_22112401": {
+        "max_abs_projection_error": 3.874516994432859e-05,
+        "median_relative_signature_error": 7.053357605964698e-07,
+        "max_relative_signature_error": 8.00627815866503e-06
+      },
+      "shuffled_22112402": {
+        "max_abs_projection_error": 3.887592416298176e-05,
+        "median_relative_signature_error": 7.55775015227154e-07,
+        "max_relative_signature_error": 7.157424337243908e-06
+      }
+    }
+  },
+  "0.075": {
+    "identities": [
+      "daily/2845",
+      "daily/154",
+      "monash_traffic/T000812",
+      "monash_traffic/T000074"
+    ],
+    "native_slot": 61,
+    "max_abs_hidden_derivative_error": 0.00010181877206960621,
+    "projected": {
+      "joint_22112401": {
+        "max_abs_projection_error": 7.190941092841054e-05,
+        "median_relative_signature_error": 1.3201056811487282e-06,
+        "max_relative_signature_error": 9.135213817408432e-06
+      },
+      "joint_22112402": {
+        "max_abs_projection_error": 7.240908727211489e-05,
+        "median_relative_signature_error": 1.2332287810505175e-06,
+        "max_relative_signature_error": 5.585788950032087e-06
+      },
+      "masked_22112401": {
+        "max_abs_projection_error": 7.235962489363443e-05,
+        "median_relative_signature_error": 1.1689262933188473e-06,
+        "max_relative_signature_error": 1.2805434156106982e-05
+      },
+      "masked_22112402": {
+        "max_abs_projection_error": 7.791608692178489e-05,
+        "median_relative_signature_error": 1.1670228524400236e-06,
+        "max_relative_signature_error": 9.536005796415627e-06
+      },
+      "shuffled_22112401": {
+        "max_abs_projection_error": 7.747332681168359e-05,
+        "median_relative_signature_error": 1.113044966762477e-06,
+        "max_relative_signature_error": 1.1203668107792203e-05
+      },
+      "shuffled_22112402": {
+        "max_abs_projection_error": 7.508172766318551e-05,
+        "median_relative_signature_error": 1.239711336451219e-06,
+        "max_relative_signature_error": 1.5006611990634203e-05
+      }
+    }
+  }
+}

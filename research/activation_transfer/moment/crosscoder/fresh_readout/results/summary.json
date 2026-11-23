@@ -1,0 +1,6361 @@
+{
+  "stations": 24,
+  "dates": 12,
+  "histories": 288,
+  "seeds": [
+    22112401,
+    22112402
+  ],
+  "methods": {
+    "joint": {
+      "22112401": {
+        "response_size_by_slot": {
+          "small": {
+            "centered_rms_C_min_p10_median_p90_max": [
+              [
+                0.0007457339463611034,
+                0.027742668939798862,
+                0.0011140744829937833,
+                0.00030823520716368114
+              ],
+              [
+                0.00313783036018575,
+                0.05509821784112175,
+                0.0027555746421145237,
+                0.0014142137284434036
+              ],
+              [
+                0.010106646504443338,
+                0.1152966940852043,
+                0.007898941057238618,
+                0.0036108600408948036
+              ],
+              [
+                0.023566998498406544,
+                0.216753782652375,
+                0.017865591781922124,
+                0.010770829764755057
+              ],
+              [
+                0.05763467085452373,
+                0.5467685145481079,
+                0.0367226025899334,
+                0.030740050378987922
+              ]
+            ],
+            "counts_below_full_call_audit_tolerance_0p0002C": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "paired": {
+            "centered_rms_C_min_p10_median_p90_max": [
+              [
+                0.001494232367074641,
+                0.0037547791668082592,
+                0.001076578552732563,
+                0.000920611411385351
+              ],
+              [
+                0.005120240327326574,
+                0.01029295579019408,
+                0.0045400138670990695,
+                0.0031657879000455825
+              ],
+              [
+                0.017757139619380954,
+                0.023125656400375352,
+                0.019035919269064484,
+                0.009258495169428947
+              ],
+              [
+                0.060459232099269254,
+                0.05777973954510083,
+                0.06474200177316285,
+                0.02947524282223255
+              ],
+              [
+                0.2770000416485752,
+                0.2834422638905217,
+                0.35621490044248777,
+                0.17183758859896012
+              ]
+            ],
+            "counts_below_full_call_audit_tolerance_0p0002C": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "decoy": {
+            "centered_rms_C_min_p10_median_p90_max": [
+              [
+                0.001591524843599324,
+                0.0038458538183832403,
+                0.0016922330502343664,
+                0.0009576532092023072
+              ],
+              [
+                0.004816831100413597,
+                0.010040850700228404,
+                0.005085938012031759,
+                0.0031805069367022
+              ],
+              [
+                0.01634547006755542,
+                0.02192004110421365,
+                0.01887966299560425,
+                0.010696502179361033
+              ],
+              [
+                0.055343193657736954,
+                0.05931433291435638,
+                0.06929072328540663,
+                0.030398380763610736
+              ],
+              [
+                0.18044140078853685,
+                0.17289288881861595,
+                0.37422041023470365,
+                0.12454047776062008
+              ]
+            ],
+            "counts_below_full_call_audit_tolerance_0p0002C": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "dense": {
+            "centered_rms_C_min_p10_median_p90_max": [
+              [
+                0.0015302571240637178,
+                0.00284059543484237,
+                0.0016352076905998866,
+                0.0012304608937516017
+              ],
+              [
+                0.006273037437004859,
+                0.010437120370832248,
+                0.005724334629435415,
+                0.003837485271933705
+              ],
+              [
+                0.020558502478643596,
+                0.025731871820895626,
+                0.02193273067336498,
+                0.010695321096408457
+              ],
+              [
+                0.07584617742425,
+                0.06017211550578444,
+                0.07393368568026411,
+                0.0336199467648869
+              ],
+              [
+                0.31120035695894055,
+                0.4014288700535636,
+                0.4030230350639493,
+                0.19280657363188772
+              ]
+            ],
+            "counts_below_full_call_audit_tolerance_0p0002C": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "metrics": {
+          "previous_paired": {
+            "estimate": -0.025306679724508716,
+            "ci95": [
+              -0.10515749231339712,
+              0.053674124839232125
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_decoy": {
+            "estimate": -0.016192802402881158,
+            "ci95": [
+              -0.09881982850101377,
+              0.06923618419562357
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_dense": {
+            "estimate": -0.03269900224679984,
+            "ci95": [
+              -0.10988125549345969,
+              0.042215433064464035
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_paired_minus_decoy": {
+            "estimate": -0.00911387732162755,
+            "ci95": [
+              -0.12593574265949561,
+              0.09728775328767278
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_paired_minus_dense": {
+            "estimate": 0.00739232252229113,
+            "ci95": [
+              -0.04597361986924329,
+              0.06340957706117555
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_small_rms_C": {
+            "estimate": 0.015615271560743885,
+            "ci95": [
+              0.011961279865426156,
+              0.019370126742468595
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_small_centered_rms_C": {
+            "estimate": 0.015129649995021168,
+            "ci95": [
+              0.011552180030593622,
+              0.01879255841051335
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_paired_rms_C": {
+            "estimate": 0.11902337942553745,
+            "ci95": [
+              0.07422531078183305,
+              0.1787499901662276
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_paired_centered_rms_C": {
+            "estimate": 0.041428334220828256,
+            "ci95": [
+              0.024614493516095515,
+              0.059687366103617454
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_decoy_rms_C": {
+            "estimate": 0.09927284302575265,
+            "ci95": [
+              0.07074565634778575,
+              0.1326819068149924
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_decoy_centered_rms_C": {
+            "estimate": 0.036852210255207365,
+            "ci95": [
+              0.024414710209664077,
+              0.04997158678192229
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_dense_rms_C": {
+            "estimate": 0.14275248545305275,
+            "ci95": [
+              0.09019253126086557,
+              0.21103599287081246
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_dense_centered_rms_C": {
+            "estimate": 0.047976042623614094,
+            "ci95": [
+              0.0288717652183549,
+              0.069888956287558
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired": {
+            "estimate": -0.0077491733996,
+            "ci95": [
+              -0.08512251450609253,
+              0.07126232459600469
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_decoy": {
+            "estimate": -0.003899181414821182,
+            "ci95": [
+              -0.08687834060328144,
+              0.07378584738143246
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_dense": {
+            "estimate": -0.02272601728321896,
+            "ci95": [
+              -0.09874688169930232,
+              0.05809216676611938
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired_minus_decoy": {
+            "estimate": -0.0038499919847788232,
+            "ci95": [
+              -0.1006936697169572,
+              0.09862009742068943
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired_minus_dense": {
+            "estimate": 0.014976843883618952,
+            "ci95": [
+              -0.04172594081969751,
+              0.0756996819406358
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_small_rms_C": {
+            "estimate": 0.16124061144966645,
+            "ci95": [
+              0.1332346579826912,
+              0.19024982312494462
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_small_centered_rms_C": {
+            "estimate": 0.15063887974355236,
+            "ci95": [
+              0.12433135665362581,
+              0.17744702483559407
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired_rms_C": {
+            "estimate": 0.09119031205249975,
+            "ci95": [
+              0.07302706489866732,
+              0.10931539988499714
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired_centered_rms_C": {
+            "estimate": 0.039477407756643504,
+            "ci95": [
+              0.028542758878145984,
+              0.054907154371591764
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_decoy_rms_C": {
+            "estimate": 0.09854216039392452,
+            "ci95": [
+              0.07567153116839202,
+              0.12237426031392133
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_decoy_centered_rms_C": {
+            "estimate": 0.040461272829130694,
+            "ci95": [
+              0.029956176167075375,
+              0.05144639428697627
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_dense_rms_C": {
+            "estimate": 0.10410077769465473,
+            "ci95": [
+              0.07958432580452357,
+              0.12989223359508767
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_dense_centered_rms_C": {
+            "estimate": 0.048104635934273304,
+            "ci95": [
+              0.031503605172145274,
+              0.07259778913565942
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired": {
+            "estimate": -0.011754847836802767,
+            "ci95": [
+              -0.07327576527446959,
+              0.047854694685044795
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_decoy": {
+            "estimate": -0.024872062669006195,
+            "ci95": [
+              -0.08342974587379273,
+              0.03543186304704127
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_dense": {
+            "estimate": -0.014451605659553326,
+            "ci95": [
+              -0.08349303500477576,
+              0.05469511353326357
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired_minus_decoy": {
+            "estimate": 0.01311721483220343,
+            "ci95": [
+              -0.07301270673619105,
+              0.09531943657119328
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired_minus_dense": {
+            "estimate": 0.0026967578227505493,
+            "ci95": [
+              -0.04082866621962562,
+              0.04529054624109939
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_small_rms_C": {
+            "estimate": 0.011926243482725401,
+            "ci95": [
+              0.009564267345857665,
+              0.014393872584142244
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_small_centered_rms_C": {
+            "estimate": 0.011167757999341152,
+            "ci95": [
+              0.009065198884092926,
+              0.013324702012095496
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired_rms_C": {
+            "estimate": 0.11955843437502606,
+            "ci95": [
+              0.08382960080742079,
+              0.17517870226887217
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired_centered_rms_C": {
+            "estimate": 0.04928147943248472,
+            "ci95": [
+              0.029936351028823187,
+              0.07129986115349718
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_decoy_rms_C": {
+            "estimate": 0.12058335579712155,
+            "ci95": [
+              0.08935944909322169,
+              0.16312067351554074
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_decoy_centered_rms_C": {
+            "estimate": 0.04921157620414277,
+            "ci95": [
+              0.031000339057775675,
+              0.07207451784850927
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_dense_rms_C": {
+            "estimate": 0.14797021133486232,
+            "ci95": [
+              0.1029227110945189,
+              0.21150186062878576
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_dense_centered_rms_C": {
+            "estimate": 0.05746576209842705,
+            "ci95": [
+              0.03386644382608824,
+              0.08331816527320496
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired": {
+            "estimate": -0.04924544360368442,
+            "ci95": [
+              -0.10352484973760191,
+              0.01130818377555832
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_decoy": {
+            "estimate": 0.003039874013298466,
+            "ci95": [
+              -0.06456773945543874,
+              0.06736807589403197
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_dense": {
+            "estimate": -0.05354658706120154,
+            "ci95": [
+              -0.1161914980011732,
+              0.012278501339906983
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired_minus_decoy": {
+            "estimate": -0.05228531761698285,
+            "ci95": [
+              -0.14092075631391393,
+              0.039907214035711853
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired_minus_dense": {
+            "estimate": 0.004301143457517107,
+            "ci95": [
+              -0.04338680956958456,
+              0.05086647507447681
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_small_rms_C": {
+            "estimate": 0.007231462130324966,
+            "ci95": [
+              0.005201861653658999,
+              0.009488386207953052
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_small_centered_rms_C": {
+            "estimate": 0.006923349631135634,
+            "ci95": [
+              0.005038117179187281,
+              0.009040190474423644
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired_rms_C": {
+            "estimate": 0.06749654988501097,
+            "ci95": [
+              0.05228553961051342,
+              0.08792370561524242
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired_centered_rms_C": {
+            "estimate": 0.023742972466964364,
+            "ci95": [
+              0.014082720093619756,
+              0.035685354146113506
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_decoy_rms_C": {
+            "estimate": 0.06913765050051261,
+            "ci95": [
+              0.05247547191520704,
+              0.0895027377325714
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_decoy_centered_rms_C": {
+            "estimate": 0.02225687039854323,
+            "ci95": [
+              0.014769258325389573,
+              0.030523099723083202
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_dense_rms_C": {
+            "estimate": 0.07919561981787171,
+            "ci95": [
+              0.063186083358724,
+              0.09867553068823381
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_dense_centered_rms_C": {
+            "estimate": 0.0266312226349234,
+            "ci95": [
+              0.01652469010109627,
+              0.039417546437818925
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future1_paired": {
+            "estimate": 0.00400567443720277,
+            "ci95": [
+              -0.10491744333394622,
+              0.11468826830288914
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future1_paired_minus_decoy": {
+            "estimate": -0.016967206816982223,
+            "ci95": [
+              -0.14880950050315872,
+              0.11925266219507087
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future1_paired_minus_dense": {
+            "estimate": 0.012280086060868414,
+            "ci95": [
+              -0.05927300299212983,
+              0.08400411939747561
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future2_paired": {
+            "estimate": 0.041496270204084446,
+            "ci95": [
+              -0.05524752041674435,
+              0.13376815155161842
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future2_paired_minus_decoy": {
+            "estimate": 0.04843532563220412,
+            "ci95": [
+              -0.09910056973110895,
+              0.1901411842310746
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future2_paired_minus_dense": {
+            "estimate": 0.010675700426101855,
+            "ci95": [
+              -0.06668573045839145,
+              0.09883485593440546
+            ],
+            "defined_bootstraps": 3000
+          }
+        },
+        "defined_cases": {
+          "previous_paired": 288,
+          "previous_decoy": 288,
+          "previous_dense": 288,
+          "previous_paired_minus_decoy": 288,
+          "previous_paired_minus_dense": 288,
+          "previous_small_rms_C": 288,
+          "previous_small_centered_rms_C": 288,
+          "previous_paired_rms_C": 288,
+          "previous_paired_centered_rms_C": 288,
+          "previous_decoy_rms_C": 288,
+          "previous_decoy_centered_rms_C": 288,
+          "previous_dense_rms_C": 288,
+          "previous_dense_centered_rms_C": 288,
+          "edited_paired": 288,
+          "edited_decoy": 288,
+          "edited_dense": 288,
+          "edited_paired_minus_decoy": 288,
+          "edited_paired_minus_dense": 288,
+          "edited_small_rms_C": 288,
+          "edited_small_centered_rms_C": 288,
+          "edited_paired_rms_C": 288,
+          "edited_paired_centered_rms_C": 288,
+          "edited_decoy_rms_C": 288,
+          "edited_decoy_centered_rms_C": 288,
+          "edited_dense_rms_C": 288,
+          "edited_dense_centered_rms_C": 288,
+          "future1_paired": 288,
+          "future1_decoy": 288,
+          "future1_dense": 288,
+          "future1_paired_minus_decoy": 288,
+          "future1_paired_minus_dense": 288,
+          "future1_small_rms_C": 288,
+          "future1_small_centered_rms_C": 288,
+          "future1_paired_rms_C": 288,
+          "future1_paired_centered_rms_C": 288,
+          "future1_decoy_rms_C": 288,
+          "future1_decoy_centered_rms_C": 288,
+          "future1_dense_rms_C": 288,
+          "future1_dense_centered_rms_C": 288,
+          "future2_paired": 288,
+          "future2_decoy": 288,
+          "future2_dense": 288,
+          "future2_paired_minus_decoy": 288,
+          "future2_paired_minus_dense": 288,
+          "future2_small_rms_C": 288,
+          "future2_small_centered_rms_C": 288,
+          "future2_paired_rms_C": 288,
+          "future2_paired_centered_rms_C": 288,
+          "future2_decoy_rms_C": 288,
+          "future2_decoy_centered_rms_C": 288,
+          "future2_dense_rms_C": 288,
+          "future2_dense_centered_rms_C": 288,
+          "edited_minus_future1_paired": 288,
+          "edited_minus_future1_paired_minus_decoy": 288,
+          "edited_minus_future1_paired_minus_dense": 288,
+          "edited_minus_future2_paired": 288,
+          "edited_minus_future2_paired_minus_decoy": 288,
+          "edited_minus_future2_paired_minus_dense": 288
+        },
+        "sampled_distinct_source_atoms": 165,
+        "positive_dose_quantiles": [
+          1.5531175136566162,
+          2.0815788984298704,
+          2.919164299964905,
+          4.621027088165284,
+          6.621118068695068
+        ],
+        "target_write_norm_quantiles": [
+          2.3208167552948,
+          3.679387164115906,
+          5.212434530258179,
+          8.464688777923586,
+          11.47372817993164
+        ],
+        "full_graph_check": {
+          "small": {
+            "ordinary": 4.291534423828125e-06,
+            "small": 7.62939453125e-06,
+            "zero_cached_vs_direct": 4.291534423828125e-06
+          },
+          "large": {
+            "ordinary": 7.62939453125e-06,
+            "paired": 1.1444091796875e-05,
+            "decoy": 9.5367431640625e-06,
+            "dense": 7.62939453125e-06,
+            "zero_cached_vs_direct": 7.62939453125e-06
+          }
+        }
+      },
+      "22112402": {
+        "response_size_by_slot": {
+          "small": {
+            "centered_rms_C_min_p10_median_p90_max": [
+              [
+                0.0007838355807409011,
+                0.0230946342388213,
+                0.000982870464203368,
+                0.0006077258714946962
+              ],
+              [
+                0.0030691710522273035,
+                0.05712901874266376,
+                0.0031406923259719513,
+                0.001498860034169731
+              ],
+              [
+                0.009400944845168305,
+                0.1085152531925187,
+                0.0076085110631119385,
+                0.00335522588262063
+              ],
+              [
+                0.026008505027794063,
+                0.22324077011847304,
+                0.017472472878617345,
+                0.011491424332485078
+              ],
+              [
+                0.07746954903310779,
+                0.4822706550528529,
+                0.04677169325505725,
+                0.04389415050606479
+              ]
+            ],
+            "counts_below_full_call_audit_tolerance_0p0002C": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "paired": {
+            "centered_rms_C_min_p10_median_p90_max": [
+              [
+                0.0009395874745305623,
+                0.0035124178443014624,
+                0.0011703638861061427,
+                0.0014854532720209252
+              ],
+              [
+                0.004732737894008098,
+                0.009170275259071641,
+                0.005463275840891426,
+                0.0035564162078337218
+              ],
+              [
+                0.015502813496282486,
+                0.023770819325151918,
+                0.02104712706519643,
+                0.009714584997671433
+              ],
+              [
+                0.05512382275236259,
+                0.06325210264348867,
+                0.0762498410403522,
+                0.0316810912358313
+              ],
+              [
+                0.18661467335490298,
+                0.24772573786713592,
+                0.3825967562245258,
+                0.18407259959559621
+              ]
+            ],
+            "counts_below_full_call_audit_tolerance_0p0002C": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "decoy": {
+            "centered_rms_C_min_p10_median_p90_max": [
+              [
+                0.0006440793520847398,
+                0.0021503082015620002,
+                0.0005338109992463701,
+                0.001436666578346859
+              ],
+              [
+                0.004464485512878383,
+                0.010514999990494791,
+                0.005517210097663154,
+                0.004082060807489596
+              ],
+              [
+                0.016091514540369632,
+                0.023305329260677674,
+                0.01937218499981687,
+                0.010338941681125362
+              ],
+              [
+                0.055422508342402935,
+                0.05790904773134304,
+                0.06664926401911124,
+                0.02672460157047824
+              ],
+              [
+                0.329451339097129,
+                0.15693701127330278,
+                0.21395265038679673,
+                0.18845097838720146
+              ]
+            ],
+            "counts_below_full_call_audit_tolerance_0p0002C": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "dense": {
+            "centered_rms_C_min_p10_median_p90_max": [
+              [
+                0.0015296286789676322,
+                0.003824927648818384,
+                0.0010493515380859434,
+                0.0013344839499397642
+              ],
+              [
+                0.005453851575261498,
+                0.00973752397213181,
+                0.006185904456032392,
+                0.003984911820899622
+              ],
+              [
+                0.018220933609693023,
+                0.026381097959108063,
+                0.024653778727146632,
+                0.012343703413713977
+              ],
+              [
+                0.0624067909977589,
+                0.07450449656068692,
+                0.08600160430461423,
+                0.03338499022322315
+              ],
+              [
+                0.23525474873963229,
+                0.2187693040542897,
+                0.35462070159760506,
+                0.24228508686857886
+              ]
+            ],
+            "counts_below_full_call_audit_tolerance_0p0002C": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "metrics": {
+          "previous_paired": {
+            "estimate": -0.053409620049829694,
+            "ci95": [
+              -0.14882629071077508,
+              0.040418257105047685
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_decoy": {
+            "estimate": -0.05775929070976798,
+            "ci95": [
+              -0.15255162907785288,
+              0.037798821670768694
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_dense": {
+            "estimate": -0.08003179760215257,
+            "ci95": [
+              -0.18842212252564045,
+              0.032140029324365944
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_paired_minus_decoy": {
+            "estimate": 0.0043496706599383044,
+            "ci95": [
+              -0.12000683540807977,
+              0.1356000909941525
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_paired_minus_dense": {
+            "estimate": 0.026622177552322854,
+            "ci95": [
+              -0.039576901107558786,
+              0.09981324785389382
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_small_rms_C": {
+            "estimate": 0.017804746250272167,
+            "ci95": [
+              0.013740896058259748,
+              0.02212854838747179
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_small_centered_rms_C": {
+            "estimate": 0.01708432566122194,
+            "ci95": [
+              0.013209546888054084,
+              0.020904067576492033
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_paired_rms_C": {
+            "estimate": 0.1109124602757079,
+            "ci95": [
+              0.07526403208039462,
+              0.1511623852025254
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_paired_centered_rms_C": {
+            "estimate": 0.034487368617467595,
+            "ci95": [
+              0.023849601756882884,
+              0.04558891036573297
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_decoy_rms_C": {
+            "estimate": 0.10240589313271753,
+            "ci95": [
+              0.07389462139936198,
+              0.14053757071103146
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_decoy_centered_rms_C": {
+            "estimate": 0.037493219139351365,
+            "ci95": [
+              0.02465407496730351,
+              0.05521558629984265
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_dense_rms_C": {
+            "estimate": 0.13762779378196935,
+            "ci95": [
+              0.09551622898564846,
+              0.18754154292474107
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_dense_centered_rms_C": {
+            "estimate": 0.0411959384472302,
+            "ci95": [
+              0.028214236445968363,
+              0.0548515306214279
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired": {
+            "estimate": -0.0101799455052922,
+            "ci95": [
+              -0.08942517324045147,
+              0.06481661432063081
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_decoy": {
+            "estimate": 0.021213764868331653,
+            "ci95": [
+              -0.061177022782867074,
+              0.10383240692595908
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_dense": {
+            "estimate": -0.002471702216738428,
+            "ci95": [
+              -0.06696303576780141,
+              0.06143195565688111
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired_minus_decoy": {
+            "estimate": -0.03139371037362383,
+            "ci95": [
+              -0.1364812685533196,
+              0.0746395922931134
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired_minus_dense": {
+            "estimate": -0.00770824328855378,
+            "ci95": [
+              -0.07050119417537071,
+              0.055347610140143465
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_small_rms_C": {
+            "estimate": 0.15633490620411078,
+            "ci95": [
+              0.1320904242411381,
+              0.17975638415818998
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_small_centered_rms_C": {
+            "estimate": 0.14509840619997935,
+            "ci95": [
+              0.12313133492464477,
+              0.16706127021729972
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired_rms_C": {
+            "estimate": 0.10004453892816319,
+            "ci95": [
+              0.07223229801580357,
+              0.12859690481558156
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired_centered_rms_C": {
+            "estimate": 0.04288944671550207,
+            "ci95": [
+              0.027950965892695474,
+              0.05987930106806227
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_decoy_rms_C": {
+            "estimate": 0.11020364190668969,
+            "ci95": [
+              0.07742962275210057,
+              0.15184593454679507
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_decoy_centered_rms_C": {
+            "estimate": 0.039173496208557174,
+            "ci95": [
+              0.028222158684181774,
+              0.049854242368817275
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_dense_rms_C": {
+            "estimate": 0.10782490875594608,
+            "ci95": [
+              0.08231219034035246,
+              0.13610870906056582
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_dense_centered_rms_C": {
+            "estimate": 0.04732859307437572,
+            "ci95": [
+              0.03149571489854303,
+              0.06351864824027002
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired": {
+            "estimate": -0.018841741539433618,
+            "ci95": [
+              -0.08581955649372373,
+              0.05240845043352539
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_decoy": {
+            "estimate": 0.006627717646269811,
+            "ci95": [
+              -0.05388295224498653,
+              0.06211120895129627
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_dense": {
+            "estimate": -0.017703070847433878,
+            "ci95": [
+              -0.08092031419406041,
+              0.04429907990777175
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired_minus_decoy": {
+            "estimate": -0.02546945918570344,
+            "ci95": [
+              -0.10572046458678926,
+              0.0633902964283393
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired_minus_dense": {
+            "estimate": -0.0011386706919997351,
+            "ci95": [
+              -0.044812351187061526,
+              0.042598933821411576
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_small_rms_C": {
+            "estimate": 0.01267714025974556,
+            "ci95": [
+              0.009903105720092384,
+              0.01574182621382766
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_small_centered_rms_C": {
+            "estimate": 0.011978247621475134,
+            "ci95": [
+              0.009413864245438608,
+              0.014857729029520301
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired_rms_C": {
+            "estimate": 0.13319197691014117,
+            "ci95": [
+              0.09468745873440372,
+              0.18536648736023642
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired_centered_rms_C": {
+            "estimate": 0.05268693546963332,
+            "ci95": [
+              0.03414433986533731,
+              0.07699451767978689
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_decoy_rms_C": {
+            "estimate": 0.11734009513615741,
+            "ci95": [
+              0.08435428585420249,
+              0.15700236287078984
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_decoy_centered_rms_C": {
+            "estimate": 0.045293049440792606,
+            "ci95": [
+              0.03015333482939165,
+              0.06139965107100126
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_dense_rms_C": {
+            "estimate": 0.15919395256231061,
+            "ci95": [
+              0.11784760735699149,
+              0.21285926986140072
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_dense_centered_rms_C": {
+            "estimate": 0.058333171695067666,
+            "ci95": [
+              0.0387138767579147,
+              0.08091558887462309
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired": {
+            "estimate": -0.05821567492287464,
+            "ci95": [
+              -0.11904317620222483,
+              0.003283904348297352
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_decoy": {
+            "estimate": 0.006107673508205398,
+            "ci95": [
+              -0.05570513543237769,
+              0.06845428341816197
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_dense": {
+            "estimate": -0.05224459661365138,
+            "ci95": [
+              -0.11014809024759165,
+              0.003813357189032357
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired_minus_decoy": {
+            "estimate": -0.06432334843108006,
+            "ci95": [
+              -0.15557973899218616,
+              0.02444618282591336
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired_minus_dense": {
+            "estimate": -0.005971078309223273,
+            "ci95": [
+              -0.06313673347317168,
+              0.04510901558796654
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_small_rms_C": {
+            "estimate": 0.008332815603464399,
+            "ci95": [
+              0.005595790170744811,
+              0.01120143876956193
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_small_centered_rms_C": {
+            "estimate": 0.007956000268722401,
+            "ci95": [
+              0.005332555622790689,
+              0.010800598618393274
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired_rms_C": {
+            "estimate": 0.07546903189269066,
+            "ci95": [
+              0.06068426223017522,
+              0.0921316841850557
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired_centered_rms_C": {
+            "estimate": 0.02464307545167438,
+            "ci95": [
+              0.014803063354229895,
+              0.03698842636333902
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_decoy_rms_C": {
+            "estimate": 0.07017458431819566,
+            "ci95": [
+              0.05125800168645328,
+              0.09212137766109627
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_decoy_centered_rms_C": {
+            "estimate": 0.02188156708038419,
+            "ci95": [
+              0.013280575855979934,
+              0.0345557843310433
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_dense_rms_C": {
+            "estimate": 0.08841540344326537,
+            "ci95": [
+              0.07195098709252389,
+              0.10623257041860133
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_dense_centered_rms_C": {
+            "estimate": 0.026682726319679755,
+            "ci95": [
+              0.017054726553613956,
+              0.04134625069961923
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future1_paired": {
+            "estimate": 0.008661796034141422,
+            "ci95": [
+              -0.09393209740520105,
+              0.11256127074762817
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future1_paired_minus_decoy": {
+            "estimate": -0.005924251187920396,
+            "ci95": [
+              -0.13665088795605404,
+              0.1235585483685576
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future1_paired_minus_dense": {
+            "estimate": -0.0065695725965540476,
+            "ci95": [
+              -0.07700870819756479,
+              0.06530132060676312
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future2_paired": {
+            "estimate": 0.04803572941758245,
+            "ci95": [
+              -0.06331573010951697,
+              0.1506099153523919
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future2_paired_minus_decoy": {
+            "estimate": 0.03292963805745623,
+            "ci95": [
+              -0.10967638381410846,
+              0.17588624464217686
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future2_paired_minus_dense": {
+            "estimate": -0.0017371649793304971,
+            "ci95": [
+              -0.09615389098635103,
+              0.09276807886083455
+            ],
+            "defined_bootstraps": 3000
+          }
+        },
+        "defined_cases": {
+          "previous_paired": 288,
+          "previous_decoy": 288,
+          "previous_dense": 288,
+          "previous_paired_minus_decoy": 288,
+          "previous_paired_minus_dense": 288,
+          "previous_small_rms_C": 288,
+          "previous_small_centered_rms_C": 288,
+          "previous_paired_rms_C": 288,
+          "previous_paired_centered_rms_C": 288,
+          "previous_decoy_rms_C": 288,
+          "previous_decoy_centered_rms_C": 288,
+          "previous_dense_rms_C": 288,
+          "previous_dense_centered_rms_C": 288,
+          "edited_paired": 288,
+          "edited_decoy": 288,
+          "edited_dense": 288,
+          "edited_paired_minus_decoy": 288,
+          "edited_paired_minus_dense": 288,
+          "edited_small_rms_C": 288,
+          "edited_small_centered_rms_C": 288,
+          "edited_paired_rms_C": 288,
+          "edited_paired_centered_rms_C": 288,
+          "edited_decoy_rms_C": 288,
+          "edited_decoy_centered_rms_C": 288,
+          "edited_dense_rms_C": 288,
+          "edited_dense_centered_rms_C": 288,
+          "future1_paired": 288,
+          "future1_decoy": 288,
+          "future1_dense": 288,
+          "future1_paired_minus_decoy": 288,
+          "future1_paired_minus_dense": 288,
+          "future1_small_rms_C": 288,
+          "future1_small_centered_rms_C": 288,
+          "future1_paired_rms_C": 288,
+          "future1_paired_centered_rms_C": 288,
+          "future1_decoy_rms_C": 288,
+          "future1_decoy_centered_rms_C": 288,
+          "future1_dense_rms_C": 288,
+          "future1_dense_centered_rms_C": 288,
+          "future2_paired": 288,
+          "future2_decoy": 288,
+          "future2_dense": 288,
+          "future2_paired_minus_decoy": 288,
+          "future2_paired_minus_dense": 288,
+          "future2_small_rms_C": 288,
+          "future2_small_centered_rms_C": 288,
+          "future2_paired_rms_C": 288,
+          "future2_paired_centered_rms_C": 288,
+          "future2_decoy_rms_C": 288,
+          "future2_decoy_centered_rms_C": 288,
+          "future2_dense_rms_C": 288,
+          "future2_dense_centered_rms_C": 288,
+          "edited_minus_future1_paired": 288,
+          "edited_minus_future1_paired_minus_decoy": 288,
+          "edited_minus_future1_paired_minus_dense": 288,
+          "edited_minus_future2_paired": 288,
+          "edited_minus_future2_paired_minus_decoy": 288,
+          "edited_minus_future2_paired_minus_dense": 288
+        },
+        "sampled_distinct_source_atoms": 150,
+        "positive_dose_quantiles": [
+          1.5055475234985352,
+          2.007259154319763,
+          2.8906164169311523,
+          4.52314133644104,
+          8.903465270996094
+        ],
+        "target_write_norm_quantiles": [
+          1.8632545471191406,
+          3.587184524536133,
+          5.229625940322876,
+          8.417826843261718,
+          15.166841506958008
+        ],
+        "full_graph_check": {
+          "small": {
+            "ordinary": 4.291534423828125e-06,
+            "small": 5.7220458984375e-06,
+            "zero_cached_vs_direct": 4.291534423828125e-06
+          },
+          "large": {
+            "ordinary": 7.62939453125e-06,
+            "paired": 7.62939453125e-06,
+            "decoy": 8.58306884765625e-06,
+            "dense": 1.1444091796875e-05,
+            "zero_cached_vs_direct": 7.62939453125e-06
+          }
+        }
+      },
+      "fixed_seed_mean": {
+        "previous_paired": {
+          "estimate": -0.03935814988716921,
+          "ci95": [
+            -0.10425200166699479,
+            0.025527016896999277
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_decoy": {
+          "estimate": -0.03697604655632457,
+          "ci95": [
+            -0.09956758537000338,
+            0.024647767110246844
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_dense": {
+          "estimate": -0.0563653999244762,
+          "ci95": [
+            -0.1359859918609615,
+            0.018723015838926063
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_paired_minus_decoy": {
+          "estimate": -0.002382103330844623,
+          "ci95": [
+            -0.08972017944535632,
+            0.08319917154706108
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_paired_minus_dense": {
+          "estimate": 0.017007250037306992,
+          "ci95": [
+            -0.027113637544869555,
+            0.06821454506753324
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_small_rms_C": {
+          "estimate": 0.016710008905508028,
+          "ci95": [
+            0.013051000890840108,
+            0.02007994948467181
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_small_centered_rms_C": {
+          "estimate": 0.016106987828121554,
+          "ci95": [
+            0.012586557745209127,
+            0.019307158151310656
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_paired_rms_C": {
+          "estimate": 0.11496791985062269,
+          "ci95": [
+            0.0766090737443406,
+            0.1562167235777084
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_paired_centered_rms_C": {
+          "estimate": 0.037957851419147925,
+          "ci95": [
+            0.02478366686024889,
+            0.050901354280223486
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_decoy_rms_C": {
+          "estimate": 0.10083936807923509,
+          "ci95": [
+            0.07472175513750065,
+            0.1292277636397183
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_decoy_centered_rms_C": {
+          "estimate": 0.03717271469727937,
+          "ci95": [
+            0.025333223476422282,
+            0.04920469540905476
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_dense_rms_C": {
+          "estimate": 0.14019013961751103,
+          "ci95": [
+            0.09629906946265283,
+            0.18947354484055168
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_dense_centered_rms_C": {
+          "estimate": 0.04458599053542214,
+          "ci95": [
+            0.02944418674521906,
+            0.059800128358511145
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_paired": {
+          "estimate": -0.0089645594524461,
+          "ci95": [
+            -0.07195701291771692,
+            0.05239289270076527
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_decoy": {
+          "estimate": 0.008657291726755235,
+          "ci95": [
+            -0.04826865384959589,
+            0.06539141466562819
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_dense": {
+          "estimate": -0.012598859749978694,
+          "ci95": [
+            -0.06287441010592425,
+            0.039165903735115457
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_paired_minus_decoy": {
+          "estimate": -0.017621851179201328,
+          "ci95": [
+            -0.09739089507558149,
+            0.06340943527851882
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_paired_minus_dense": {
+          "estimate": 0.0036343002975325863,
+          "ci95": [
+            -0.039518029538307874,
+            0.05036334111705966
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_small_rms_C": {
+          "estimate": 0.15878775882688861,
+          "ci95": [
+            0.13498632239192532,
+            0.18192805399147766
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_small_centered_rms_C": {
+          "estimate": 0.14786864297176586,
+          "ci95": [
+            0.12569797621928952,
+            0.1693263380549657
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_paired_rms_C": {
+          "estimate": 0.09561742549033148,
+          "ci95": [
+            0.07503297274489383,
+            0.11670780237855742
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_paired_centered_rms_C": {
+          "estimate": 0.04118342723607279,
+          "ci95": [
+            0.02874658327252622,
+            0.05577078348608355
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_decoy_rms_C": {
+          "estimate": 0.1043729011503071,
+          "ci95": [
+            0.08131025011530013,
+            0.12884235735729596
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_decoy_centered_rms_C": {
+          "estimate": 0.03981738451884394,
+          "ci95": [
+            0.030102768262746694,
+            0.04940653912299405
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_dense_rms_C": {
+          "estimate": 0.1059628432253004,
+          "ci95": [
+            0.08262884034232694,
+            0.1309766038649736
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_dense_centered_rms_C": {
+          "estimate": 0.04771661450432452,
+          "ci95": [
+            0.032309162432652534,
+            0.06532764129242523
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_paired": {
+          "estimate": -0.015298294688118191,
+          "ci95": [
+            -0.0576102673111661,
+            0.029403733811560768
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_decoy": {
+          "estimate": -0.009122172511368192,
+          "ci95": [
+            -0.05027929105901737,
+            0.03126468771459941
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_dense": {
+          "estimate": -0.0160773382534936,
+          "ci95": [
+            -0.061816892620994664,
+            0.03226029855847948
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_paired_minus_decoy": {
+          "estimate": -0.006176122176750004,
+          "ci95": [
+            -0.059529256162238316,
+            0.05089657453351649
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_paired_minus_dense": {
+          "estimate": 0.0007790435653754071,
+          "ci95": [
+            -0.03263356817321861,
+            0.03348644305276156
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_small_rms_C": {
+          "estimate": 0.01230169187123548,
+          "ci95": [
+            0.009942873622542247,
+            0.014713209838571937
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_small_centered_rms_C": {
+          "estimate": 0.011573002810408142,
+          "ci95": [
+            0.009401903747830002,
+            0.013787816710353649
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_paired_rms_C": {
+          "estimate": 0.12637520564258362,
+          "ci95": [
+            0.0931393633004661,
+            0.16789850797395903
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_paired_centered_rms_C": {
+          "estimate": 0.05098420745105902,
+          "ci95": [
+            0.03326483419458795,
+            0.07007600885051632
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_decoy_rms_C": {
+          "estimate": 0.11896172546663948,
+          "ci95": [
+            0.09049736256687746,
+            0.15118766534845854
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_decoy_centered_rms_C": {
+          "estimate": 0.04725231282246769,
+          "ci95": [
+            0.03142572087538013,
+            0.06433838833653875
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_dense_rms_C": {
+          "estimate": 0.15358208194858647,
+          "ci95": [
+            0.11479896740991521,
+            0.19874163512244633
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_dense_centered_rms_C": {
+          "estimate": 0.057899466896747354,
+          "ci95": [
+            0.03777394022201242,
+            0.07940262580399399
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_paired": {
+          "estimate": -0.053730559263279534,
+          "ci95": [
+            -0.09801530656372781,
+            -0.010570715079374595
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_decoy": {
+          "estimate": 0.004573773760751932,
+          "ci95": [
+            -0.043306026954144906,
+            0.05184246097980938
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_dense": {
+          "estimate": -0.05289559183742645,
+          "ci95": [
+            -0.09660781057781098,
+            -0.00995843296879883
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_paired_minus_decoy": {
+          "estimate": -0.05830433302403146,
+          "ci95": [
+            -0.12520855088260036,
+            0.01085263040529164
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_paired_minus_dense": {
+          "estimate": -0.0008349674258530831,
+          "ci95": [
+            -0.035107745213990654,
+            0.03307914691977254
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_small_rms_C": {
+          "estimate": 0.007782138866894682,
+          "ci95": [
+            0.005497248391222677,
+            0.01020626432950259
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_small_centered_rms_C": {
+          "estimate": 0.007439674949929018,
+          "ci95": [
+            0.005292281380452513,
+            0.009720640507912508
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_paired_rms_C": {
+          "estimate": 0.07148279088885082,
+          "ci95": [
+            0.057996617545809676,
+            0.08752374036818075
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_paired_centered_rms_C": {
+          "estimate": 0.02419302395931937,
+          "ci95": [
+            0.01495155721156692,
+            0.03512771936340665
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_decoy_rms_C": {
+          "estimate": 0.06965611740935414,
+          "ci95": [
+            0.054341718371226214,
+            0.08728613899824945
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_decoy_centered_rms_C": {
+          "estimate": 0.02206921873946371,
+          "ci95": [
+            0.014470045353043847,
+            0.03163376026199764
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_dense_rms_C": {
+          "estimate": 0.08380551163056854,
+          "ci95": [
+            0.06934885892901335,
+            0.1013068662869334
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_dense_centered_rms_C": {
+          "estimate": 0.02665697447730158,
+          "ci95": [
+            0.017316659484171153,
+            0.03790982267281092
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_minus_future1_paired": {
+          "estimate": 0.0063337352356720965,
+          "ci95": [
+            -0.07499491976123857,
+            0.08385099714580918
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_minus_future1_paired_minus_decoy": {
+          "estimate": -0.01144572900245131,
+          "ci95": [
+            -0.1138558199454512,
+            0.08869521273935554
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_minus_future1_paired_minus_dense": {
+          "estimate": 0.002855256732157183,
+          "ci95": [
+            -0.04521700220766625,
+            0.051778797536301636
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_minus_future2_paired": {
+          "estimate": 0.04476599981083344,
+          "ci95": [
+            -0.031702926924173924,
+            0.12030323669054337
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_minus_future2_paired_minus_decoy": {
+          "estimate": 0.04068248184483017,
+          "ci95": [
+            -0.07544145134543331,
+            0.15081217398311164
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_minus_future2_paired_minus_dense": {
+          "estimate": 0.0044692677233856785,
+          "ci95": [
+            -0.05852585016135574,
+            0.07465794125127587
+          ],
+          "defined_bootstraps": 3000
+        }
+      }
+    },
+    "masked": {
+      "22112401": {
+        "response_size_by_slot": {
+          "small": {
+            "centered_rms_C_min_p10_median_p90_max": [
+              [
+                0.0006087614815059716,
+                0.026006018588268075,
+                0.0011425571555624078,
+                0.0006816761910350848
+              ],
+              [
+                0.0033798537142201313,
+                0.05336148074282985,
+                0.0030347615949065307,
+                0.0013058373898105194
+              ],
+              [
+                0.010323480804783805,
+                0.11499178064603763,
+                0.008049778901895266,
+                0.003871908960629126
+              ],
+              [
+                0.026241487016885084,
+                0.23748598551205735,
+                0.02050813340570215,
+                0.011253436913828335
+              ],
+              [
+                0.1177003003298529,
+                0.6738509808321042,
+                0.05762048942483598,
+                0.05675857995279027
+              ]
+            ],
+            "counts_below_full_call_audit_tolerance_0p0002C": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "paired": {
+            "centered_rms_C_min_p10_median_p90_max": [
+              [
+                0.0008801997731309623,
+                0.002210261556079027,
+                0.0005814019272291057,
+                0.0010165995925491042
+              ],
+              [
+                0.004584278819328792,
+                0.0074274932956691145,
+                0.004333238919280924,
+                0.003865658006297833
+              ],
+              [
+                0.017941405774488196,
+                0.023097718667761898,
+                0.020839043016085718,
+                0.010132253400760051
+              ],
+              [
+                0.06493149061384132,
+                0.0654601953442521,
+                0.07608812574472851,
+                0.037608900051447125
+              ],
+              [
+                0.48716322666817546,
+                0.2612152567629528,
+                0.6031218073547299,
+                0.1474247433193734
+              ]
+            ],
+            "counts_below_full_call_audit_tolerance_0p0002C": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "decoy": {
+            "centered_rms_C_min_p10_median_p90_max": [
+              [
+                0.0010418567827016139,
+                0.003215730110179663,
+                0.0010433807215725966,
+                0.0007639090516124842
+              ],
+              [
+                0.004022183606699559,
+                0.008929153548531356,
+                0.006351393994321602,
+                0.0030754106258247425
+              ],
+              [
+                0.018926120842355558,
+                0.023263945822357884,
+                0.02075722924170064,
+                0.010586826601510599
+              ],
+              [
+                0.06744605691540813,
+                0.05958450367566924,
+                0.07716325173959251,
+                0.03271826180445919
+              ],
+              [
+                0.4099633196901172,
+                0.6122630236760879,
+                0.6981876347895023,
+                0.12812757986920068
+              ]
+            ],
+            "counts_below_full_call_audit_tolerance_0p0002C": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "dense": {
+            "centered_rms_C_min_p10_median_p90_max": [
+              [
+                0.0011958429242632318,
+                0.002758221984951767,
+                0.0007930772114723258,
+                0.0003471727372931736
+              ],
+              [
+                0.005254301038530765,
+                0.009062501856078977,
+                0.004878927514454663,
+                0.0038209797456069407
+              ],
+              [
+                0.019193992878274235,
+                0.0237111352137915,
+                0.0209064006308083,
+                0.011204127504618328
+              ],
+              [
+                0.06903051943826645,
+                0.068485123662838,
+                0.09486952236750142,
+                0.04117064857929738
+              ],
+              [
+                0.5104283722244742,
+                0.48483657487431964,
+                0.7424107448081996,
+                0.22709961664636688
+              ]
+            ],
+            "counts_below_full_call_audit_tolerance_0p0002C": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "metrics": {
+          "previous_paired": {
+            "estimate": -0.03278404339414134,
+            "ci95": [
+              -0.13596902665266983,
+              0.07450211748921406
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_decoy": {
+            "estimate": -0.017292515959954433,
+            "ci95": [
+              -0.10079903464092778,
+              0.06483838429971618
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_dense": {
+            "estimate": -0.05717425865280997,
+            "ci95": [
+              -0.14922033092585668,
+              0.03633342349341768
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_paired_minus_decoy": {
+            "estimate": -0.015491527434186926,
+            "ci95": [
+              -0.1327122489327129,
+              0.10483643964039067
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_paired_minus_dense": {
+            "estimate": 0.02439021525866861,
+            "ci95": [
+              -0.0335445290705231,
+              0.08324444210311614
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_small_rms_C": {
+            "estimate": 0.018768268796192842,
+            "ci95": [
+              0.014187099566377821,
+              0.02471672866313788
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_small_centered_rms_C": {
+            "estimate": 0.018268751792880008,
+            "ci95": [
+              0.013782173549221587,
+              0.024182349536103914
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_paired_rms_C": {
+            "estimate": 0.14597675339922983,
+            "ci95": [
+              0.09153159194347764,
+              0.22316789506428408
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_paired_centered_rms_C": {
+            "estimate": 0.0512534760437742,
+            "ci95": [
+              0.029280793466970448,
+              0.08311720169560345
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_decoy_rms_C": {
+            "estimate": 0.12965998276599044,
+            "ci95": [
+              0.09011393086417721,
+              0.18295463570170883
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_decoy_centered_rms_C": {
+            "estimate": 0.04797115104524862,
+            "ci95": [
+              0.030435133420436432,
+              0.0742945209479248
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_dense_rms_C": {
+            "estimate": 0.16108641550996342,
+            "ci95": [
+              0.10661603927843485,
+              0.2328777941349854
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_dense_centered_rms_C": {
+            "estimate": 0.056735130956732355,
+            "ci95": [
+              0.03313072071769623,
+              0.08834650149241052
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired": {
+            "estimate": -0.08550215740528186,
+            "ci95": [
+              -0.1578270549724147,
+              -0.010490811218792551
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_decoy": {
+            "estimate": -0.03826859409888844,
+            "ci95": [
+              -0.11999724267546695,
+              0.04092754242832714
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_dense": {
+            "estimate": -0.056147221971889656,
+            "ci95": [
+              -0.13069149655041454,
+              0.021521129309970622
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired_minus_decoy": {
+            "estimate": -0.04723356330639342,
+            "ci95": [
+              -0.1540960919566379,
+              0.06051210035236556
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired_minus_dense": {
+            "estimate": -0.02935493543339222,
+            "ci95": [
+              -0.08228271547208173,
+              0.01853466677515408
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_small_rms_C": {
+            "estimate": 0.1757001015680667,
+            "ci95": [
+              0.14630794547410983,
+              0.20900645669780976
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_small_centered_rms_C": {
+            "estimate": 0.16412921765466726,
+            "ci95": [
+              0.13378804719607687,
+              0.19675929533028455
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired_rms_C": {
+            "estimate": 0.10251758412611567,
+            "ci95": [
+              0.07295652697587267,
+              0.1323829688333546
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired_centered_rms_C": {
+            "estimate": 0.04629366761197328,
+            "ci95": [
+              0.03215759630323279,
+              0.06375851250313505
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_decoy_rms_C": {
+            "estimate": 0.10696427225650423,
+            "ci95": [
+              0.07789932999678535,
+              0.14112100232819472
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_decoy_centered_rms_C": {
+            "estimate": 0.05373630206253716,
+            "ci95": [
+              0.03085479186494361,
+              0.09712747939453423
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_dense_rms_C": {
+            "estimate": 0.1040511144055129,
+            "ci95": [
+              0.07143806979153212,
+              0.14479402667745253
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_dense_centered_rms_C": {
+            "estimate": 0.053349006988791574,
+            "ci95": [
+              0.03301145916064695,
+              0.08618982207422529
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired": {
+            "estimate": -0.016895743177758663,
+            "ci95": [
+              -0.0834615453400105,
+              0.05018951851803042
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_decoy": {
+            "estimate": 0.0028379165701483675,
+            "ci95": [
+              -0.0626070624742715,
+              0.07201633207351446
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_dense": {
+            "estimate": -0.013570490051860052,
+            "ci95": [
+              -0.07337480510725784,
+              0.04854052673465594
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired_minus_decoy": {
+            "estimate": -0.019733659747907042,
+            "ci95": [
+              -0.0924299292981132,
+              0.060257269786572996
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired_minus_dense": {
+            "estimate": -0.003325253125898618,
+            "ci95": [
+              -0.04392555561755522,
+              0.0381493041282204
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_small_rms_C": {
+            "estimate": 0.013671774426895263,
+            "ci95": [
+              0.010919486052943617,
+              0.016832894711968034
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_small_centered_rms_C": {
+            "estimate": 0.01279175058903277,
+            "ci95": [
+              0.010215235069860024,
+              0.015699427929586094
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired_rms_C": {
+            "estimate": 0.16663778231544957,
+            "ci95": [
+              0.10919256850312653,
+              0.24463376400876988
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired_centered_rms_C": {
+            "estimate": 0.06216173006269163,
+            "ci95": [
+              0.03520024497529688,
+              0.10328278672670269
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_decoy_rms_C": {
+            "estimate": 0.15800425899542614,
+            "ci95": [
+              0.10089441548846817,
+              0.2546864226461377
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_decoy_centered_rms_C": {
+            "estimate": 0.061423801005604704,
+            "ci95": [
+              0.03446104130102169,
+              0.11204849445066176
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_dense_rms_C": {
+            "estimate": 0.1902638862914777,
+            "ci95": [
+              0.1290527982434914,
+              0.26711145303412914
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_dense_centered_rms_C": {
+            "estimate": 0.07395483574266495,
+            "ci95": [
+              0.041117722869314574,
+              0.12477946032706812
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired": {
+            "estimate": -0.049800149050374505,
+            "ci95": [
+              -0.11759063011438578,
+              0.014229983515739068
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_decoy": {
+            "estimate": -0.04499193264808451,
+            "ci95": [
+              -0.11485576981142606,
+              0.027838239924654916
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_dense": {
+            "estimate": -0.05687115164644416,
+            "ci95": [
+              -0.13293878114904864,
+              0.01534973325292337
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired_minus_decoy": {
+            "estimate": -0.004808216402289991,
+            "ci95": [
+              -0.09133779383814108,
+              0.08773345070355432
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired_minus_dense": {
+            "estimate": 0.0070710025960696605,
+            "ci95": [
+              -0.03285229837177411,
+              0.045284736569743696
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_small_rms_C": {
+            "estimate": 0.008457170690122893,
+            "ci95": [
+              0.005883898235237533,
+              0.011835474432000666
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_small_centered_rms_C": {
+            "estimate": 0.008129705673766686,
+            "ci95": [
+              0.005653953770615918,
+              0.011385914863618892
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired_rms_C": {
+            "estimate": 0.09492762992880763,
+            "ci95": [
+              0.06827030726008504,
+              0.12372535066481596
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired_centered_rms_C": {
+            "estimate": 0.025788596109010492,
+            "ci95": [
+              0.01772417735723338,
+              0.03470796282878546
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_decoy_rms_C": {
+            "estimate": 0.08491204124557238,
+            "ci95": [
+              0.0634132032590346,
+              0.10925213107747775
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_decoy_centered_rms_C": {
+            "estimate": 0.02416918947660873,
+            "ci95": [
+              0.01610992507878213,
+              0.03367347889788523
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_dense_rms_C": {
+            "estimate": 0.1064226275983366,
+            "ci95": [
+              0.07966122981156824,
+              0.13469907860967475
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_dense_centered_rms_C": {
+            "estimate": 0.028574734369108987,
+            "ci95": [
+              0.01881439707003253,
+              0.040996166797275906
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future1_paired": {
+            "estimate": -0.06860641422752321,
+            "ci95": [
+              -0.16659759261842716,
+              0.03025003169335192
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future1_paired_minus_decoy": {
+            "estimate": -0.027499903558486402,
+            "ci95": [
+              -0.16437818264548884,
+              0.10770402364835933
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future1_paired_minus_dense": {
+            "estimate": -0.026029682307493605,
+            "ci95": [
+              -0.09446189145981454,
+              0.03788095148391829
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future2_paired": {
+            "estimate": -0.03570200835490737,
+            "ci95": [
+              -0.13691370594649502,
+              0.06862157528780957
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future2_paired_minus_decoy": {
+            "estimate": -0.04242534690410345,
+            "ci95": [
+              -0.19149759124795557,
+              0.09467972720382492
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future2_paired_minus_dense": {
+            "estimate": -0.036425938029461875,
+            "ci95": [
+              -0.10668222263806346,
+              0.030061862023383554
+            ],
+            "defined_bootstraps": 3000
+          }
+        },
+        "defined_cases": {
+          "previous_paired": 288,
+          "previous_decoy": 288,
+          "previous_dense": 288,
+          "previous_paired_minus_decoy": 288,
+          "previous_paired_minus_dense": 288,
+          "previous_small_rms_C": 288,
+          "previous_small_centered_rms_C": 288,
+          "previous_paired_rms_C": 288,
+          "previous_paired_centered_rms_C": 288,
+          "previous_decoy_rms_C": 288,
+          "previous_decoy_centered_rms_C": 288,
+          "previous_dense_rms_C": 288,
+          "previous_dense_centered_rms_C": 288,
+          "edited_paired": 288,
+          "edited_decoy": 288,
+          "edited_dense": 288,
+          "edited_paired_minus_decoy": 288,
+          "edited_paired_minus_dense": 288,
+          "edited_small_rms_C": 288,
+          "edited_small_centered_rms_C": 288,
+          "edited_paired_rms_C": 288,
+          "edited_paired_centered_rms_C": 288,
+          "edited_decoy_rms_C": 288,
+          "edited_decoy_centered_rms_C": 288,
+          "edited_dense_rms_C": 288,
+          "edited_dense_centered_rms_C": 288,
+          "future1_paired": 288,
+          "future1_decoy": 288,
+          "future1_dense": 288,
+          "future1_paired_minus_decoy": 288,
+          "future1_paired_minus_dense": 288,
+          "future1_small_rms_C": 288,
+          "future1_small_centered_rms_C": 288,
+          "future1_paired_rms_C": 288,
+          "future1_paired_centered_rms_C": 288,
+          "future1_decoy_rms_C": 288,
+          "future1_decoy_centered_rms_C": 288,
+          "future1_dense_rms_C": 288,
+          "future1_dense_centered_rms_C": 288,
+          "future2_paired": 288,
+          "future2_decoy": 288,
+          "future2_dense": 288,
+          "future2_paired_minus_decoy": 288,
+          "future2_paired_minus_dense": 288,
+          "future2_small_rms_C": 288,
+          "future2_small_centered_rms_C": 288,
+          "future2_paired_rms_C": 288,
+          "future2_paired_centered_rms_C": 288,
+          "future2_decoy_rms_C": 288,
+          "future2_decoy_centered_rms_C": 288,
+          "future2_dense_rms_C": 288,
+          "future2_dense_centered_rms_C": 288,
+          "edited_minus_future1_paired": 288,
+          "edited_minus_future1_paired_minus_decoy": 288,
+          "edited_minus_future1_paired_minus_dense": 288,
+          "edited_minus_future2_paired": 288,
+          "edited_minus_future2_paired_minus_decoy": 288,
+          "edited_minus_future2_paired_minus_dense": 288
+        },
+        "sampled_distinct_source_atoms": 143,
+        "positive_dose_quantiles": [
+          1.3386298418045044,
+          1.760841476917267,
+          2.770235300064087,
+          5.222186708450318,
+          13.10494327545166
+        ],
+        "target_write_norm_quantiles": [
+          1.9894371032714844,
+          3.0691878318786623,
+          4.806875228881836,
+          9.312718772888186,
+          26.530319213867188
+        ],
+        "full_graph_check": {
+          "small": {
+            "ordinary": 4.291534423828125e-06,
+            "small": 8.58306884765625e-06,
+            "zero_cached_vs_direct": 4.291534423828125e-06
+          },
+          "large": {
+            "ordinary": 7.62939453125e-06,
+            "paired": 6.67572021484375e-06,
+            "decoy": 7.62939453125e-06,
+            "dense": 7.62939453125e-06,
+            "zero_cached_vs_direct": 7.62939453125e-06
+          }
+        }
+      },
+      "22112402": {
+        "response_size_by_slot": {
+          "small": {
+            "centered_rms_C_min_p10_median_p90_max": [
+              [
+                0.0009603245099971104,
+                0.017754485348384346,
+                0.0007907959264095751,
+                0.0004857515111461664
+              ],
+              [
+                0.003398714100987525,
+                0.05181496902460747,
+                0.003113196819222084,
+                0.0012685875583060065
+              ],
+              [
+                0.009486168717430566,
+                0.11152696338887588,
+                0.007456549139649557,
+                0.00362306697809518
+              ],
+              [
+                0.028052676605513572,
+                0.2654817121453585,
+                0.0177975208432035,
+                0.012581393534110748
+              ],
+              [
+                0.06998688225892104,
+                0.7617061743820808,
+                0.04689069406256673,
+                0.05199382791461701
+              ]
+            ],
+            "counts_below_full_call_audit_tolerance_0p0002C": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "paired": {
+            "centered_rms_C_min_p10_median_p90_max": [
+              [
+                0.0015849854109809508,
+                0.0030102688537664854,
+                0.0016524929731675626,
+                0.0006218927328118084
+              ],
+              [
+                0.004380965588040514,
+                0.008178008083332394,
+                0.00558142312498969,
+                0.003138872002291387
+              ],
+              [
+                0.019060350116586883,
+                0.026381869349075698,
+                0.020702083262073005,
+                0.009866746368704951
+              ],
+              [
+                0.07687375499685552,
+                0.07031051267808083,
+                0.10950172791686417,
+                0.03470433113214792
+              ],
+              [
+                0.3087143791322354,
+                0.1632947643233897,
+                0.2900846567509714,
+                0.17365620349979044
+              ]
+            ],
+            "counts_below_full_call_audit_tolerance_0p0002C": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "decoy": {
+            "centered_rms_C_min_p10_median_p90_max": [
+              [
+                0.0011216076627643113,
+                0.0028874914077782793,
+                0.0023215875178380307,
+                0.0008382437842588185
+              ],
+              [
+                0.004327930550737948,
+                0.0089432886817491,
+                0.004868153809961725,
+                0.0032209852466371677
+              ],
+              [
+                0.018007059398807354,
+                0.024836178371082172,
+                0.02056229407129949,
+                0.010760946693496191
+              ],
+              [
+                0.07160623080320443,
+                0.07153534605816703,
+                0.08644046018109017,
+                0.03906809602941697
+              ],
+              [
+                0.2524636817078997,
+                0.243193870616145,
+                0.24899090127845386,
+                0.1071338628592559
+              ]
+            ],
+            "counts_below_full_call_audit_tolerance_0p0002C": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "dense": {
+            "centered_rms_C_min_p10_median_p90_max": [
+              [
+                0.0012850032836030994,
+                0.004501515112170102,
+                0.002021730170187649,
+                0.0004968157518450201
+              ],
+              [
+                0.00444611763514697,
+                0.009202636741339257,
+                0.0052292456482064785,
+                0.003662272036656126
+              ],
+              [
+                0.020810432457344458,
+                0.025954509050465053,
+                0.02248447216265901,
+                0.012090367392875688
+              ],
+              [
+                0.07768727740819815,
+                0.08085847869189398,
+                0.12247187647879236,
+                0.038434833761509815
+              ],
+              [
+                0.32292009252719495,
+                0.2854564625614725,
+                0.40675963099845736,
+                0.21387114780197974
+              ]
+            ],
+            "counts_below_full_call_audit_tolerance_0p0002C": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "metrics": {
+          "previous_paired": {
+            "estimate": -0.03592301520054873,
+            "ci95": [
+              -0.12831602245982776,
+              0.05009992617203176
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_decoy": {
+            "estimate": -0.029737497485235402,
+            "ci95": [
+              -0.12066665467296406,
+              0.06038935298885379
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_dense": {
+            "estimate": -0.03597555161590362,
+            "ci95": [
+              -0.12351743479813436,
+              0.045762622491779696
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_paired_minus_decoy": {
+            "estimate": -0.006185517715313325,
+            "ci95": [
+              -0.11596682184456603,
+              0.10630301654022359
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_paired_minus_dense": {
+            "estimate": 5.253641535486896e-05,
+            "ci95": [
+              -0.052975638556076836,
+              0.05275448599172232
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_small_rms_C": {
+            "estimate": 0.017048076105944006,
+            "ci95": [
+              0.0135053813268208,
+              0.02082995404791521
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_small_centered_rms_C": {
+            "estimate": 0.016404184793992842,
+            "ci95": [
+              0.013021426928004006,
+              0.020076000980264224
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_paired_rms_C": {
+            "estimate": 0.1570965699777587,
+            "ci95": [
+              0.11268768001268899,
+              0.2023069830593751
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_paired_centered_rms_C": {
+            "estimate": 0.053708307733174684,
+            "ci95": [
+              0.03389827102308538,
+              0.07450136699037704
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_decoy_rms_C": {
+            "estimate": 0.13439390562405149,
+            "ci95": [
+              0.0936182410682674,
+              0.1781154670810496
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_decoy_centered_rms_C": {
+            "estimate": 0.04906857834610522,
+            "ci95": [
+              0.029982856250501806,
+              0.06921710524281748
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_dense_rms_C": {
+            "estimate": 0.1793989172133313,
+            "ci95": [
+              0.1246048996587927,
+              0.24334041353144584
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_dense_centered_rms_C": {
+            "estimate": 0.056497016266142716,
+            "ci95": [
+              0.03529875349781332,
+              0.07963454718083773
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired": {
+            "estimate": -0.017375989106143352,
+            "ci95": [
+              -0.08322538166431616,
+              0.04854923859404823
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_decoy": {
+            "estimate": 0.021473150162307126,
+            "ci95": [
+              -0.04399892401887619,
+              0.08607790743446407
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_dense": {
+            "estimate": -0.01199396006469798,
+            "ci95": [
+              -0.07820715246269647,
+              0.057594166389257205
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired_minus_decoy": {
+            "estimate": -0.038849139268450496,
+            "ci95": [
+              -0.13621796302712924,
+              0.05534434075206088
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired_minus_dense": {
+            "estimate": -0.005382029041445373,
+            "ci95": [
+              -0.046796870725724984,
+              0.03453151897278247
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_small_rms_C": {
+            "estimate": 0.18118675344111768,
+            "ci95": [
+              0.14832487560529642,
+              0.21940851004611803
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_small_centered_rms_C": {
+            "estimate": 0.16938407217750465,
+            "ci95": [
+              0.1377368214304648,
+              0.20654311014440577
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired_rms_C": {
+            "estimate": 0.11348180783358439,
+            "ci95": [
+              0.08940162078019734,
+              0.1383350931846483
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired_centered_rms_C": {
+            "estimate": 0.04390408819825297,
+            "ci95": [
+              0.03287454290434502,
+              0.05579186470821897
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_decoy_rms_C": {
+            "estimate": 0.11958740461216308,
+            "ci95": [
+              0.09167415134207435,
+              0.15470478475457533
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_decoy_centered_rms_C": {
+            "estimate": 0.04690706731127525,
+            "ci95": [
+              0.03210793335649651,
+              0.06717099459919633
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_dense_rms_C": {
+            "estimate": 0.12533769890834973,
+            "ci95": [
+              0.09580126339950563,
+              0.16084664405834817
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_dense_centered_rms_C": {
+            "estimate": 0.0516129428467724,
+            "ci95": [
+              0.036313760692976364,
+              0.0693887447661845
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired": {
+            "estimate": -0.0024270969191452665,
+            "ci95": [
+              -0.07058123253361943,
+              0.058420270453596095
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_decoy": {
+            "estimate": -0.011442010643318535,
+            "ci95": [
+              -0.0762148187226345,
+              0.05277945958437772
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_dense": {
+            "estimate": -0.006556649694463134,
+            "ci95": [
+              -0.06994975397029939,
+              0.05100859467446923
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired_minus_decoy": {
+            "estimate": 0.009014913724173283,
+            "ci95": [
+              -0.07160018575908642,
+              0.08767522710357337
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired_minus_dense": {
+            "estimate": 0.004129552775317873,
+            "ci95": [
+              -0.0342401958022376,
+              0.05071254107646704
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_small_rms_C": {
+            "estimate": 0.013228167126708133,
+            "ci95": [
+              0.010596905800168447,
+              0.016168013594684793
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_small_centered_rms_C": {
+            "estimate": 0.012442245662599404,
+            "ci95": [
+              0.010078610453841409,
+              0.015018492923141417
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired_rms_C": {
+            "estimate": 0.1773410708765458,
+            "ci95": [
+              0.1353739469537237,
+              0.22267335669685887
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired_centered_rms_C": {
+            "estimate": 0.0643374984850805,
+            "ci95": [
+              0.045536247526132306,
+              0.08313680115141651
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_decoy_rms_C": {
+            "estimate": 0.14400031356767098,
+            "ci95": [
+              0.10538389676867875,
+              0.18454072793211404
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_decoy_centered_rms_C": {
+            "estimate": 0.05310711210229435,
+            "ci95": [
+              0.03508482291015799,
+              0.07053305211116026
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_dense_rms_C": {
+            "estimate": 0.1962498184141092,
+            "ci95": [
+              0.15190841622879958,
+              0.24046969406469132
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_dense_centered_rms_C": {
+            "estimate": 0.07331907856948958,
+            "ci95": [
+              0.04970927307310985,
+              0.09836662809474357
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired": {
+            "estimate": 0.004466175069154418,
+            "ci95": [
+              -0.05189047919554443,
+              0.05902432791621585
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_decoy": {
+            "estimate": 0.02559391233686236,
+            "ci95": [
+              -0.04703543987012962,
+              0.09328579843632238
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_dense": {
+            "estimate": 0.0018981414690077444,
+            "ci95": [
+              -0.062304538383391186,
+              0.07262761108647801
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired_minus_decoy": {
+            "estimate": -0.02112773726770796,
+            "ci95": [
+              -0.09067064978378919,
+              0.06204812218027974
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired_minus_dense": {
+            "estimate": 0.0025680336001466767,
+            "ci95": [
+              -0.03808908153178915,
+              0.04211925346980512
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_small_rms_C": {
+            "estimate": 0.009052496426140555,
+            "ci95": [
+              0.006216726670806735,
+              0.012368973039107284
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_small_centered_rms_C": {
+            "estimate": 0.00870662033692089,
+            "ci95": [
+              0.0059213682311631795,
+              0.012105831696952452
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired_rms_C": {
+            "estimate": 0.10286217697831077,
+            "ci95": [
+              0.07774523129715566,
+              0.13055972143724354
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired_centered_rms_C": {
+            "estimate": 0.0252939166838578,
+            "ci95": [
+              0.016705976852627365,
+              0.03465047992031863
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_decoy_rms_C": {
+            "estimate": 0.08367659311101347,
+            "ci95": [
+              0.06338664723403166,
+              0.1030581417472542
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_decoy_centered_rms_C": {
+            "estimate": 0.024890576159698752,
+            "ci95": [
+              0.017671914958023525,
+              0.03173064629931742
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_dense_rms_C": {
+            "estimate": 0.11503066295994484,
+            "ci95": [
+              0.0871265175279884,
+              0.14273568804874934
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_dense_centered_rms_C": {
+            "estimate": 0.03003581183384055,
+            "ci95": [
+              0.019121778861804214,
+              0.043188037548826684
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future1_paired": {
+            "estimate": -0.014948892186998096,
+            "ci95": [
+              -0.10230100581291914,
+              0.06984443660344526
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future1_paired_minus_decoy": {
+            "estimate": -0.04786405299262376,
+            "ci95": [
+              -0.1797246736809958,
+              0.06789549305503163
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future1_paired_minus_dense": {
+            "estimate": -0.009511581816763252,
+            "ci95": [
+              -0.07329343299641367,
+              0.044503311473684255
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future2_paired": {
+            "estimate": -0.021842164175297774,
+            "ci95": [
+              -0.10473630579832456,
+              0.06592555068682174
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future2_paired_minus_decoy": {
+            "estimate": -0.017721402000742556,
+            "ci95": [
+              -0.13647124557122406,
+              0.10084803330740065
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future2_paired_minus_dense": {
+            "estimate": -0.00795006264159205,
+            "ci95": [
+              -0.06531465829081935,
+              0.04717215715599603
+            ],
+            "defined_bootstraps": 3000
+          }
+        },
+        "defined_cases": {
+          "previous_paired": 288,
+          "previous_decoy": 288,
+          "previous_dense": 288,
+          "previous_paired_minus_decoy": 288,
+          "previous_paired_minus_dense": 288,
+          "previous_small_rms_C": 288,
+          "previous_small_centered_rms_C": 288,
+          "previous_paired_rms_C": 288,
+          "previous_paired_centered_rms_C": 288,
+          "previous_decoy_rms_C": 288,
+          "previous_decoy_centered_rms_C": 288,
+          "previous_dense_rms_C": 288,
+          "previous_dense_centered_rms_C": 288,
+          "edited_paired": 288,
+          "edited_decoy": 288,
+          "edited_dense": 288,
+          "edited_paired_minus_decoy": 288,
+          "edited_paired_minus_dense": 288,
+          "edited_small_rms_C": 288,
+          "edited_small_centered_rms_C": 288,
+          "edited_paired_rms_C": 288,
+          "edited_paired_centered_rms_C": 288,
+          "edited_decoy_rms_C": 288,
+          "edited_decoy_centered_rms_C": 288,
+          "edited_dense_rms_C": 288,
+          "edited_dense_centered_rms_C": 288,
+          "future1_paired": 288,
+          "future1_decoy": 288,
+          "future1_dense": 288,
+          "future1_paired_minus_decoy": 288,
+          "future1_paired_minus_dense": 288,
+          "future1_small_rms_C": 288,
+          "future1_small_centered_rms_C": 288,
+          "future1_paired_rms_C": 288,
+          "future1_paired_centered_rms_C": 288,
+          "future1_decoy_rms_C": 288,
+          "future1_decoy_centered_rms_C": 288,
+          "future1_dense_rms_C": 288,
+          "future1_dense_centered_rms_C": 288,
+          "future2_paired": 288,
+          "future2_decoy": 288,
+          "future2_dense": 288,
+          "future2_paired_minus_decoy": 288,
+          "future2_paired_minus_dense": 288,
+          "future2_small_rms_C": 288,
+          "future2_small_centered_rms_C": 288,
+          "future2_paired_rms_C": 288,
+          "future2_paired_centered_rms_C": 288,
+          "future2_decoy_rms_C": 288,
+          "future2_decoy_centered_rms_C": 288,
+          "future2_dense_rms_C": 288,
+          "future2_dense_centered_rms_C": 288,
+          "edited_minus_future1_paired": 288,
+          "edited_minus_future1_paired_minus_decoy": 288,
+          "edited_minus_future1_paired_minus_dense": 288,
+          "edited_minus_future2_paired": 288,
+          "edited_minus_future2_paired_minus_decoy": 288,
+          "edited_minus_future2_paired_minus_dense": 288
+        },
+        "sampled_distinct_source_atoms": 144,
+        "positive_dose_quantiles": [
+          1.2201727628707886,
+          1.747453796863556,
+          2.961529850959778,
+          5.831012678146364,
+          13.736902236938477
+        ],
+        "target_write_norm_quantiles": [
+          2.132251739501953,
+          2.9971033573150634,
+          5.198004245758057,
+          10.690661907196047,
+          23.79167366027832
+        ],
+        "full_graph_check": {
+          "small": {
+            "ordinary": 4.291534423828125e-06,
+            "small": 5.7220458984375e-06,
+            "zero_cached_vs_direct": 4.291534423828125e-06
+          },
+          "large": {
+            "ordinary": 7.62939453125e-06,
+            "paired": 1.33514404296875e-05,
+            "decoy": 7.62939453125e-06,
+            "dense": 7.62939453125e-06,
+            "zero_cached_vs_direct": 7.62939453125e-06
+          }
+        }
+      },
+      "fixed_seed_mean": {
+        "previous_paired": {
+          "estimate": -0.03435352929734504,
+          "ci95": [
+            -0.10874803245779012,
+            0.040510363037890476
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_decoy": {
+          "estimate": -0.02351500672259492,
+          "ci95": [
+            -0.09058657906538158,
+            0.04324958397149579
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_dense": {
+          "estimate": -0.046574905134356796,
+          "ci95": [
+            -0.11832305066889724,
+            0.022298154823919607
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_paired_minus_decoy": {
+          "estimate": -0.010838522574750126,
+          "ci95": [
+            -0.09441506330373046,
+            0.0739943896973339
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_paired_minus_dense": {
+          "estimate": 0.012221375837011739,
+          "ci95": [
+            -0.0302375982735157,
+            0.05619788979018041
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_small_rms_C": {
+          "estimate": 0.017908172451068426,
+          "ci95": [
+            0.014464574589028584,
+            0.02137271746886382
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_small_centered_rms_C": {
+          "estimate": 0.017336468293436425,
+          "ci95": [
+            0.014006685653187237,
+            0.020760943733404383
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_paired_rms_C": {
+          "estimate": 0.15153666168849428,
+          "ci95": [
+            0.10949977141789816,
+            0.19587193072532377
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_paired_centered_rms_C": {
+          "estimate": 0.05248089188847444,
+          "ci95": [
+            0.03352602800866748,
+            0.07104901000707535
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_decoy_rms_C": {
+          "estimate": 0.13202694419502098,
+          "ci95": [
+            0.09626449773802653,
+            0.17177172501438762
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_decoy_centered_rms_C": {
+          "estimate": 0.04851986469567692,
+          "ci95": [
+            0.03126174875558448,
+            0.06600095955793443
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_dense_rms_C": {
+          "estimate": 0.17024266636164737,
+          "ci95": [
+            0.1239590665966623,
+            0.21786013991213624
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_dense_centered_rms_C": {
+          "estimate": 0.056616073611437535,
+          "ci95": [
+            0.0366549334863521,
+            0.07659718783900742
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_paired": {
+          "estimate": -0.051439073255712606,
+          "ci95": [
+            -0.09792579628721537,
+            -0.003544220144969803
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_decoy": {
+          "estimate": -0.008397721968290658,
+          "ci95": [
+            -0.057166642325064736,
+            0.04064119674624331
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_dense": {
+          "estimate": -0.034070591018293815,
+          "ci95": [
+            -0.08001518644867603,
+            0.01240128669081078
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_paired_minus_decoy": {
+          "estimate": -0.04304135128742195,
+          "ci95": [
+            -0.11114925134342572,
+            0.0254710276548333
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_paired_minus_dense": {
+          "estimate": -0.017368482237418797,
+          "ci95": [
+            -0.051401530997095594,
+            0.015236013875657348
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_small_rms_C": {
+          "estimate": 0.1784434275045922,
+          "ci95": [
+            0.1523241485959302,
+            0.20456613279387476
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_small_centered_rms_C": {
+          "estimate": 0.16675664491608594,
+          "ci95": [
+            0.14101574870777794,
+            0.1925018721406892
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_paired_rms_C": {
+          "estimate": 0.10799969597985003,
+          "ci95": [
+            0.08638457067570202,
+            0.12959614705912195
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_paired_centered_rms_C": {
+          "estimate": 0.045098877905113126,
+          "ci95": [
+            0.03337803453443812,
+            0.05760011596549188
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_decoy_rms_C": {
+          "estimate": 0.11327583843433366,
+          "ci95": [
+            0.0897562244633407,
+            0.14032516293234928
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_decoy_centered_rms_C": {
+          "estimate": 0.050321684686906204,
+          "ci95": [
+            0.03242213912019528,
+            0.07979258055796093
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_dense_rms_C": {
+          "estimate": 0.11469440665693131,
+          "ci95": [
+            0.09016640044262625,
+            0.1398863929212299
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_dense_centered_rms_C": {
+          "estimate": 0.05248097491778199,
+          "ci95": [
+            0.03565356586045533,
+            0.07213532905880814
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_paired": {
+          "estimate": -0.009661420048451965,
+          "ci95": [
+            -0.060683804519451816,
+            0.03859482753895773
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_decoy": {
+          "estimate": -0.004302047036585084,
+          "ci95": [
+            -0.050556100973726883,
+            0.03764231389834073
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_dense": {
+          "estimate": -0.010063569873161593,
+          "ci95": [
+            -0.056258325150810466,
+            0.034731781462836446
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_paired_minus_decoy": {
+          "estimate": -0.00535937301186688,
+          "ci95": [
+            -0.05757907954017225,
+            0.04327281801209022
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_paired_minus_dense": {
+          "estimate": 0.0004021498247096275,
+          "ci95": [
+            -0.02612688972280653,
+            0.030603793160504805
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_small_rms_C": {
+          "estimate": 0.013449970776801698,
+          "ci95": [
+            0.01124673301312281,
+            0.0158883222766142
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_small_centered_rms_C": {
+          "estimate": 0.012616998125816088,
+          "ci95": [
+            0.010687258968311346,
+            0.01473097064519407
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_paired_rms_C": {
+          "estimate": 0.1719894265959977,
+          "ci95": [
+            0.13093683592775274,
+            0.2160113618208574
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_paired_centered_rms_C": {
+          "estimate": 0.06324961427388606,
+          "ci95": [
+            0.042412167090753884,
+            0.08537208703391076
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_decoy_rms_C": {
+          "estimate": 0.15100228628154855,
+          "ci95": [
+            0.10901985697686256,
+            0.20841661437567477
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_decoy_centered_rms_C": {
+          "estimate": 0.05726545655394953,
+          "ci95": [
+            0.036038856759876677,
+            0.08589421441324546
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_dense_rms_C": {
+          "estimate": 0.19325685235279344,
+          "ci95": [
+            0.14914509413998536,
+            0.23722753249313988
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_dense_centered_rms_C": {
+          "estimate": 0.07363695715607727,
+          "ci95": [
+            0.0475997032997023,
+            0.10248830510253626
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_paired": {
+          "estimate": -0.022666986990610045,
+          "ci95": [
+            -0.06866024143687767,
+            0.024456765697234525
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_decoy": {
+          "estimate": -0.009699010155611074,
+          "ci95": [
+            -0.06327662210099984,
+            0.04301320020776986
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_dense": {
+          "estimate": -0.027486505088718208,
+          "ci95": [
+            -0.08089627145303052,
+            0.027759982458177464
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_paired_minus_decoy": {
+          "estimate": -0.012967976834998975,
+          "ci95": [
+            -0.07347458981160278,
+            0.05102501819985444
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_paired_minus_dense": {
+          "estimate": 0.004819518098108168,
+          "ci95": [
+            -0.024878890447151938,
+            0.03265391522423619
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_small_rms_C": {
+          "estimate": 0.008754833558131725,
+          "ci95": [
+            0.006216450456753851,
+            0.011705626409429
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_small_centered_rms_C": {
+          "estimate": 0.008418163005343787,
+          "ci95": [
+            0.005946741611216975,
+            0.011360667028516208
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_paired_rms_C": {
+          "estimate": 0.0988949034535592,
+          "ci95": [
+            0.0795423241967654,
+            0.11861324779643008
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_paired_centered_rms_C": {
+          "estimate": 0.025541256396434148,
+          "ci95": [
+            0.01848424236047997,
+            0.032154375030009064
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_decoy_rms_C": {
+          "estimate": 0.08429431717829292,
+          "ci95": [
+            0.06729973072288326,
+            0.10164973275474494
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_decoy_centered_rms_C": {
+          "estimate": 0.024529882818153742,
+          "ci95": [
+            0.017752394750617923,
+            0.031541497065714255
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_dense_rms_C": {
+          "estimate": 0.11072664527914072,
+          "ci95": [
+            0.09059748623555056,
+            0.13081636497960292
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_dense_centered_rms_C": {
+          "estimate": 0.02930527310147477,
+          "ci95": [
+            0.020320608919946505,
+            0.038416140256478035
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_minus_future1_paired": {
+          "estimate": -0.04177765320726065,
+          "ci95": [
+            -0.11091830315640537,
+            0.025678148132459035
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_minus_future1_paired_minus_decoy": {
+          "estimate": -0.037681978275555084,
+          "ci95": [
+            -0.12659037880816942,
+            0.04875569094975425
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_minus_future1_paired_minus_dense": {
+          "estimate": -0.01777063206212843,
+          "ci95": [
+            -0.06367650363133394,
+            0.021799663699782028
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_minus_future2_paired": {
+          "estimate": -0.02877208626510257,
+          "ci95": [
+            -0.09797756539609821,
+            0.03532633634167221
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_minus_future2_paired_minus_decoy": {
+          "estimate": -0.030073374452423002,
+          "ci95": [
+            -0.12406844248361462,
+            0.05916222988512523
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_minus_future2_paired_minus_dense": {
+          "estimate": -0.022188000335526963,
+          "ci95": [
+            -0.06795422988113879,
+            0.020728284971935018
+          ],
+          "defined_bootstraps": 3000
+        }
+      }
+    },
+    "shuffled": {
+      "22112401": {
+        "response_size_by_slot": {
+          "small": {
+            "centered_rms_C_min_p10_median_p90_max": [
+              [
+                0.0005429658346166689,
+                0.018543866259229984,
+                0.0004986823094921992,
+                0.00028472559227054543
+              ],
+              [
+                0.002581807126965054,
+                0.04715080892815282,
+                0.0026314744818675315,
+                0.0012781303002652607
+              ],
+              [
+                0.009015900555310522,
+                0.11293958859675776,
+                0.0073750950454859136,
+                0.0034821719300258073
+              ],
+              [
+                0.02583191790772535,
+                0.2573588177551283,
+                0.019774943334101115,
+                0.01167965424860731
+              ],
+              [
+                0.09680623999626618,
+                0.5045786124700099,
+                0.07606871821063023,
+                0.06008981289034633
+              ]
+            ],
+            "counts_below_full_call_audit_tolerance_0p0002C": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "paired": {
+            "centered_rms_C_min_p10_median_p90_max": [
+              [
+                0.0006480248558523275,
+                0.000980455584676329,
+                0.0003617984459031947,
+                0.00020659981035337516
+              ],
+              [
+                0.0026384059099100574,
+                0.0033613685700812092,
+                0.0027278497154422663,
+                0.001810298463705467
+              ],
+              [
+                0.01021116537803907,
+                0.01143447666984364,
+                0.011875002675334725,
+                0.005700558293543713
+              ],
+              [
+                0.04052791349311452,
+                0.03493411693789162,
+                0.0520033217421453,
+                0.019575648143710673
+              ],
+              [
+                0.11075014396506172,
+                0.3004834157631481,
+                0.6058388281771468,
+                0.24201949586785224
+              ]
+            ],
+            "counts_below_full_call_audit_tolerance_0p0002C": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "decoy": {
+            "centered_rms_C_min_p10_median_p90_max": [
+              [
+                0.0008325644716223803,
+                0.0010673735110247981,
+                0.00046390717382688263,
+                0.0004886563706971987
+              ],
+              [
+                0.0028035405631406155,
+                0.0032259008512571584,
+                0.003439199840588213,
+                0.0015246372758308184
+              ],
+              [
+                0.010214365633871078,
+                0.00978551815826321,
+                0.013582752012939982,
+                0.005842460077604989
+              ],
+              [
+                0.04130648509162694,
+                0.04005834547157826,
+                0.053647264181890135,
+                0.020960996216423108
+              ],
+              [
+                0.14432871959444352,
+                0.2164752293248241,
+                0.49442707463897706,
+                0.2859682251741707
+              ]
+            ],
+            "counts_below_full_call_audit_tolerance_0p0002C": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "dense": {
+            "centered_rms_C_min_p10_median_p90_max": [
+              [
+                0.00041543922598999964,
+                0.0011308574730398576,
+                0.00031387043044326437,
+                0.00020487523668771433
+              ],
+              [
+                0.002719868039705457,
+                0.004120010538700425,
+                0.002606406384876375,
+                0.001804027224584044
+              ],
+              [
+                0.00888817689695185,
+                0.011923885635048495,
+                0.00930695013791141,
+                0.004620437466832255
+              ],
+              [
+                0.031785155002566165,
+                0.03546419534912489,
+                0.04932489249885365,
+                0.01628380304901548
+              ],
+              [
+                0.19281498669764754,
+                0.3649869056624171,
+                0.373296530769532,
+                0.1750245930133452
+              ]
+            ],
+            "counts_below_full_call_audit_tolerance_0p0002C": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "metrics": {
+          "previous_paired": {
+            "estimate": 0.053764698483821455,
+            "ci95": [
+              -0.04245532511819334,
+              0.14219830077140752
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_decoy": {
+            "estimate": -0.048300798193448666,
+            "ci95": [
+              -0.1413888485621027,
+              0.045971108914837897
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_dense": {
+            "estimate": -0.02861928582839714,
+            "ci95": [
+              -0.11045852953494553,
+              0.061070217387237724
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_paired_minus_decoy": {
+            "estimate": 0.10206549667727007,
+            "ci95": [
+              -0.03308031157699274,
+              0.22797837317544636
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_paired_minus_dense": {
+            "estimate": 0.08238398431221862,
+            "ci95": [
+              -0.029540049843059437,
+              0.20624080558286764
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_small_rms_C": {
+            "estimate": 0.019517247354269865,
+            "ci95": [
+              0.013764689655486289,
+              0.02569884090787593
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_small_centered_rms_C": {
+            "estimate": 0.0187167798327666,
+            "ci95": [
+              0.013189722016675882,
+              0.02465478113613274
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_paired_rms_C": {
+            "estimate": 0.0916165676575524,
+            "ci95": [
+              0.07154739894643122,
+              0.11493736223488615
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_paired_centered_rms_C": {
+            "estimate": 0.02499116731861796,
+            "ci95": [
+              0.019232578444905866,
+              0.030818134125266187
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_decoy_rms_C": {
+            "estimate": 0.09946516386576597,
+            "ci95": [
+              0.0723295240661574,
+              0.1335137895699943
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_decoy_centered_rms_C": {
+            "estimate": 0.02987398616220298,
+            "ci95": [
+              0.02072660475803639,
+              0.039990486383497774
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_dense_rms_C": {
+            "estimate": 0.0688114255956845,
+            "ci95": [
+              0.050920398512770054,
+              0.09413978231908884
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_dense_centered_rms_C": {
+            "estimate": 0.023292825372911087,
+            "ci95": [
+              0.014913946920742984,
+              0.03532214187118426
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired": {
+            "estimate": 0.008607184510213618,
+            "ci95": [
+              -0.07365291508293492,
+              0.08941816934845019
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_decoy": {
+            "estimate": -0.020986166027565034,
+            "ci95": [
+              -0.09522804760660757,
+              0.05195261692252774
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_dense": {
+            "estimate": -0.05230651926629329,
+            "ci95": [
+              -0.13291858553606303,
+              0.02653587555007618
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired_minus_decoy": {
+            "estimate": 0.02959335053777866,
+            "ci95": [
+              -0.08232834574960587,
+              0.14248524784040018
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired_minus_dense": {
+            "estimate": 0.06091370377650688,
+            "ci95": [
+              -0.037347548542532624,
+              0.15939934331017952
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_small_rms_C": {
+            "estimate": 0.17472045880580683,
+            "ci95": [
+              0.14637725320750058,
+              0.20119156038121902
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_small_centered_rms_C": {
+            "estimate": 0.16140287407239914,
+            "ci95": [
+              0.13557637878518025,
+              0.18666538937532645
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired_rms_C": {
+            "estimate": 0.07043607170197752,
+            "ci95": [
+              0.04775997562073524,
+              0.09878960527953265
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired_centered_rms_C": {
+            "estimate": 0.03045305642500516,
+            "ci95": [
+              0.018528083483299172,
+              0.04969776939788647
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_decoy_rms_C": {
+            "estimate": 0.09312321426680281,
+            "ci95": [
+              0.05414793957332565,
+              0.13693193129014528
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_decoy_centered_rms_C": {
+            "estimate": 0.028340276894980157,
+            "ci95": [
+              0.019064622635571928,
+              0.0410884157931849
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_dense_rms_C": {
+            "estimate": 0.05985076945613999,
+            "ci95": [
+              0.04353962423846997,
+              0.07832781866248255
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_dense_centered_rms_C": {
+            "estimate": 0.03328439459960968,
+            "ci95": [
+              0.019749315353632363,
+              0.057978439795722855
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired": {
+            "estimate": -0.017127497252655645,
+            "ci95": [
+              -0.07747358535264474,
+              0.04780144338586748
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_decoy": {
+            "estimate": -0.022669607827397943,
+            "ci95": [
+              -0.08764492098481302,
+              0.043529969155608826
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_dense": {
+            "estimate": -0.055534862024076814,
+            "ci95": [
+              -0.12295488996857766,
+              0.013508241291619049
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired_minus_decoy": {
+            "estimate": 0.005542110574742308,
+            "ci95": [
+              -0.08725905810945347,
+              0.10091119443391965
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired_minus_dense": {
+            "estimate": 0.03840736477142116,
+            "ci95": [
+              -0.051744931011088346,
+              0.1274868889238972
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_small_rms_C": {
+            "estimate": 0.014507774279341542,
+            "ci95": [
+              0.01072194964417452,
+              0.01986839415323005
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_small_centered_rms_C": {
+            "estimate": 0.013648371837828199,
+            "ci95": [
+              0.010137097315608409,
+              0.018552561261066393
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired_rms_C": {
+            "estimate": 0.16678177409128953,
+            "ci95": [
+              0.09106929237601195,
+              0.2649976033058958
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired_centered_rms_C": {
+            "estimate": 0.058956992416259256,
+            "ci95": [
+              0.030395825038799267,
+              0.0997349821217053
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_decoy_rms_C": {
+            "estimate": 0.13851812274381167,
+            "ci95": [
+              0.0877137113849632,
+              0.20454583656185715
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_decoy_centered_rms_C": {
+            "estimate": 0.05393936571940442,
+            "ci95": [
+              0.026313293198497154,
+              0.09138729244850313
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_dense_rms_C": {
+            "estimate": 0.10071553005163168,
+            "ci95": [
+              0.06737801847367203,
+              0.14951093991470885
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_dense_centered_rms_C": {
+            "estimate": 0.047361644773015715,
+            "ci95": [
+              0.027884023207446224,
+              0.0698992842320456
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired": {
+            "estimate": 0.009254159125410371,
+            "ci95": [
+              -0.06226925358820479,
+              0.08586201339729202
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_decoy": {
+            "estimate": -0.04286023929141929,
+            "ci95": [
+              -0.1035234986664379,
+              0.01903103317814792
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_dense": {
+            "estimate": -0.048812889412586644,
+            "ci95": [
+              -0.1209950310627411,
+              0.02461023095534126
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired_minus_decoy": {
+            "estimate": 0.05211439841682966,
+            "ci95": [
+              -0.046224475120505,
+              0.15061045531324835
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired_minus_dense": {
+            "estimate": 0.05806704853799702,
+            "ci95": [
+              -0.034257040071967816,
+              0.15050723723943407
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_small_rms_C": {
+            "estimate": 0.009339299765465898,
+            "ci95": [
+              0.006116379204533986,
+              0.012999140730268666
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_small_centered_rms_C": {
+            "estimate": 0.009068157565357594,
+            "ci95": [
+              0.005955842294095342,
+              0.012606437759873567
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired_rms_C": {
+            "estimate": 0.08812862128971313,
+            "ci95": [
+              0.05253289638363998,
+              0.12766556401140644
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired_centered_rms_C": {
+            "estimate": 0.019851088451555435,
+            "ci95": [
+              0.010101194986060099,
+              0.037778924053620086
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_decoy_rms_C": {
+            "estimate": 0.07738554857655773,
+            "ci95": [
+              0.04960039178716118,
+              0.10882502302847571
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_decoy_centered_rms_C": {
+            "estimate": 0.021825915263413972,
+            "ci95": [
+              0.010333751824152627,
+              0.04370565020847639
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_dense_rms_C": {
+            "estimate": 0.058074004610782264,
+            "ci95": [
+              0.04030631992515097,
+              0.08094983691204619
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_dense_centered_rms_C": {
+            "estimate": 0.016741357234882216,
+            "ci95": [
+              0.00861167484575825,
+              0.03022979059124955
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future1_paired": {
+            "estimate": 0.025734681762869253,
+            "ci95": [
+              -0.07589664872782728,
+              0.12674346690605753
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future1_paired_minus_decoy": {
+            "estimate": 0.02405123996303635,
+            "ci95": [
+              -0.10859199048358348,
+              0.16689382433665914
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future1_paired_minus_dense": {
+            "estimate": 0.022506339005085727,
+            "ci95": [
+              -0.10856366968900145,
+              0.1625452155286686
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future2_paired": {
+            "estimate": -0.0006469746151967708,
+            "ci95": [
+              -0.11333042137336487,
+              0.11174823783813151
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future2_paired_minus_decoy": {
+            "estimate": -0.022521047879051008,
+            "ci95": [
+              -0.1819707583438929,
+              0.12727589928103245
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future2_paired_minus_dense": {
+            "estimate": 0.002846655238509851,
+            "ci95": [
+              -0.12935538956096154,
+              0.1284855700662114
+            ],
+            "defined_bootstraps": 3000
+          }
+        },
+        "defined_cases": {
+          "previous_paired": 288,
+          "previous_decoy": 288,
+          "previous_dense": 288,
+          "previous_paired_minus_decoy": 288,
+          "previous_paired_minus_dense": 288,
+          "previous_small_rms_C": 288,
+          "previous_small_centered_rms_C": 288,
+          "previous_paired_rms_C": 288,
+          "previous_paired_centered_rms_C": 288,
+          "previous_decoy_rms_C": 288,
+          "previous_decoy_centered_rms_C": 288,
+          "previous_dense_rms_C": 288,
+          "previous_dense_centered_rms_C": 288,
+          "edited_paired": 288,
+          "edited_decoy": 288,
+          "edited_dense": 288,
+          "edited_paired_minus_decoy": 288,
+          "edited_paired_minus_dense": 288,
+          "edited_small_rms_C": 288,
+          "edited_small_centered_rms_C": 288,
+          "edited_paired_rms_C": 288,
+          "edited_paired_centered_rms_C": 288,
+          "edited_decoy_rms_C": 288,
+          "edited_decoy_centered_rms_C": 288,
+          "edited_dense_rms_C": 288,
+          "edited_dense_centered_rms_C": 288,
+          "future1_paired": 288,
+          "future1_decoy": 288,
+          "future1_dense": 288,
+          "future1_paired_minus_decoy": 288,
+          "future1_paired_minus_dense": 288,
+          "future1_small_rms_C": 288,
+          "future1_small_centered_rms_C": 288,
+          "future1_paired_rms_C": 288,
+          "future1_paired_centered_rms_C": 288,
+          "future1_decoy_rms_C": 288,
+          "future1_decoy_centered_rms_C": 288,
+          "future1_dense_rms_C": 288,
+          "future1_dense_centered_rms_C": 288,
+          "future2_paired": 288,
+          "future2_decoy": 288,
+          "future2_dense": 288,
+          "future2_paired_minus_decoy": 288,
+          "future2_paired_minus_dense": 288,
+          "future2_small_rms_C": 288,
+          "future2_small_centered_rms_C": 288,
+          "future2_paired_rms_C": 288,
+          "future2_paired_centered_rms_C": 288,
+          "future2_decoy_rms_C": 288,
+          "future2_decoy_centered_rms_C": 288,
+          "future2_dense_rms_C": 288,
+          "future2_dense_centered_rms_C": 288,
+          "edited_minus_future1_paired": 288,
+          "edited_minus_future1_paired_minus_decoy": 288,
+          "edited_minus_future1_paired_minus_dense": 288,
+          "edited_minus_future2_paired": 288,
+          "edited_minus_future2_paired_minus_decoy": 288,
+          "edited_minus_future2_paired_minus_dense": 288
+        },
+        "sampled_distinct_source_atoms": 137,
+        "positive_dose_quantiles": [
+          0.805486261844635,
+          1.4207292079925538,
+          2.293196201324463,
+          4.308686828613281,
+          10.120820999145508
+        ],
+        "target_write_norm_quantiles": [
+          0.5502820611000061,
+          1.0885557055473327,
+          2.2950873374938965,
+          6.75613059997559,
+          15.302128791809082
+        ],
+        "full_graph_check": {
+          "small": {
+            "ordinary": 4.291534423828125e-06,
+            "small": 5.7220458984375e-06,
+            "zero_cached_vs_direct": 4.291534423828125e-06
+          },
+          "large": {
+            "ordinary": 7.62939453125e-06,
+            "paired": 7.62939453125e-06,
+            "decoy": 1.1444091796875e-05,
+            "dense": 7.62939453125e-06,
+            "zero_cached_vs_direct": 7.62939453125e-06
+          }
+        }
+      },
+      "22112402": {
+        "response_size_by_slot": {
+          "small": {
+            "centered_rms_C_min_p10_median_p90_max": [
+              [
+                0.0005973016873020451,
+                0.006883866182587801,
+                0.0004790763730595098,
+                0.0003376047279299075
+              ],
+              [
+                0.002343608787890351,
+                0.04935257446606986,
+                0.0025366808278339576,
+                0.0010803494496701633
+              ],
+              [
+                0.009037428565727802,
+                0.10678590268694996,
+                0.007969384585597306,
+                0.003528599440915882
+              ],
+              [
+                0.026528452482748502,
+                0.27307905888019096,
+                0.021449894590295802,
+                0.01287076517954813
+              ],
+              [
+                0.10068863611477759,
+                0.6630462840233112,
+                0.07353813268693606,
+                0.03923177919997759
+              ]
+            ],
+            "counts_below_full_call_audit_tolerance_0p0002C": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "paired": {
+            "centered_rms_C_min_p10_median_p90_max": [
+              [
+                0.0006905086836044061,
+                0.0007391744619821952,
+                0.0005847132531572575,
+                0.00028754703381158437
+              ],
+              [
+                0.002360253227370886,
+                0.0029473828215587725,
+                0.002643224224135959,
+                0.0013706115797397565
+              ],
+              [
+                0.010989091350894493,
+                0.009328148570801647,
+                0.011086551765741167,
+                0.005724544598908098
+              ],
+              [
+                0.04474703879309106,
+                0.048684584657807374,
+                0.06751936198293013,
+                0.025203968493211094
+              ],
+              [
+                0.20551228641332278,
+                0.22987753004378333,
+                0.7742431089501344,
+                0.5368995610743924
+              ]
+            ],
+            "counts_below_full_call_audit_tolerance_0p0002C": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "decoy": {
+            "centered_rms_C_min_p10_median_p90_max": [
+              [
+                0.0006106390406432076,
+                0.0011935749794836207,
+                0.0004055277864850964,
+                0.00019169506137811152
+              ],
+              [
+                0.002618734925636,
+                0.0036509082168776023,
+                0.0026394606829899096,
+                0.001716582860363235
+              ],
+              [
+                0.009362897559478221,
+                0.0105808412369014,
+                0.010527668781950494,
+                0.005187627189211761
+              ],
+              [
+                0.05593377839868331,
+                0.056660619181266914,
+                0.06061921131643122,
+                0.022598631742285585
+              ],
+              [
+                0.26256126914537975,
+                0.5147115968266724,
+                0.9358500579457064,
+                0.1611813485685832
+              ]
+            ],
+            "counts_below_full_call_audit_tolerance_0p0002C": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "dense": {
+            "centered_rms_C_min_p10_median_p90_max": [
+              [
+                0.0006314781846640552,
+                0.0012938227226768771,
+                0.0007379125123314987,
+                0.00042289884849755813
+              ],
+              [
+                0.0021934102227619324,
+                0.003930164832128682,
+                0.002577981291705626,
+                0.0014282436509589866
+              ],
+              [
+                0.009656489873381125,
+                0.0108013160504815,
+                0.01152964793513828,
+                0.005502005497617753
+              ],
+              [
+                0.04767264985968387,
+                0.05374173086951955,
+                0.05234899878506269,
+                0.025877942685906707
+              ],
+              [
+                0.2906457767740693,
+                0.2380655278750665,
+                0.43266695382946696,
+                0.2484627600306201
+              ]
+            ],
+            "counts_below_full_call_audit_tolerance_0p0002C": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "metrics": {
+          "previous_paired": {
+            "estimate": -0.03336094001941234,
+            "ci95": [
+              -0.12536565718204118,
+              0.06818591557727868
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_decoy": {
+            "estimate": 0.04772018340519944,
+            "ci95": [
+              -0.037362229044604026,
+              0.13213827347896853
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_dense": {
+            "estimate": -0.04424356424696097,
+            "ci95": [
+              -0.12674956331575757,
+              0.045006775788119985
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_paired_minus_decoy": {
+            "estimate": -0.0810811234246118,
+            "ci95": [
+              -0.20119596358298075,
+              0.047617838899815565
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_paired_minus_dense": {
+            "estimate": 0.010882624227548623,
+            "ci95": [
+              -0.12008337581423527,
+              0.12977056615186922
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_small_rms_C": {
+            "estimate": 0.018197124233652495,
+            "ci95": [
+              0.013275657683069243,
+              0.023573762328547698
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_small_centered_rms_C": {
+            "estimate": 0.017837065954531012,
+            "ci95": [
+              0.012976375560579541,
+              0.023193841052939587
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_paired_rms_C": {
+            "estimate": 0.09032924312938745,
+            "ci95": [
+              0.06701280715587786,
+              0.11534378059660597
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_paired_centered_rms_C": {
+            "estimate": 0.03110283156553504,
+            "ci95": [
+              0.020071029242239437,
+              0.043816444558344166
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_decoy_rms_C": {
+            "estimate": 0.14575830285411528,
+            "ci95": [
+              0.09267173419654054,
+              0.20216509529681823
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_decoy_centered_rms_C": {
+            "estimate": 0.041962929937471534,
+            "ci95": [
+              0.02539602619007128,
+              0.05948787645961508
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_dense_rms_C": {
+            "estimate": 0.11580504432562413,
+            "ci95": [
+              0.06642735486307214,
+              0.1671948099713285
+            ],
+            "defined_bootstraps": 3000
+          },
+          "previous_dense_centered_rms_C": {
+            "estimate": 0.04137728624128831,
+            "ci95": [
+              0.022046388983503425,
+              0.06142509863778985
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired": {
+            "estimate": -0.028051186250525106,
+            "ci95": [
+              -0.10853363965493391,
+              0.05873026605704063
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_decoy": {
+            "estimate": -0.009863956291101046,
+            "ci95": [
+              -0.0772164017688606,
+              0.05868147130167793
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_dense": {
+            "estimate": 0.02365000026987274,
+            "ci95": [
+              -0.050400579073392196,
+              0.09300607995778358
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired_minus_decoy": {
+            "estimate": -0.018187229959424074,
+            "ci95": [
+              -0.13560680140169779,
+              0.1046031390679626
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired_minus_dense": {
+            "estimate": -0.05170118652039784,
+            "ci95": [
+              -0.14218463306443302,
+              0.04030270292566085
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_small_rms_C": {
+            "estimate": 0.18652748163110397,
+            "ci95": [
+              0.1511085908715443,
+              0.23125660705748774
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_small_centered_rms_C": {
+            "estimate": 0.17636829293282502,
+            "ci95": [
+              0.14214265663709974,
+              0.21979111087180278
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired_rms_C": {
+            "estimate": 0.09126104156445121,
+            "ci95": [
+              0.0686986948024419,
+              0.11400715944802993
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_paired_centered_rms_C": {
+            "estimate": 0.03557763891130322,
+            "ci95": [
+              0.022749058254245266,
+              0.04837711851781717
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_decoy_rms_C": {
+            "estimate": 0.11079336513867603,
+            "ci95": [
+              0.07629328378770686,
+              0.1496064974486743
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_decoy_centered_rms_C": {
+            "estimate": 0.049008051445615645,
+            "ci95": [
+              0.024822809028407226,
+              0.08312132493909587
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_dense_rms_C": {
+            "estimate": 0.08613578617117523,
+            "ci95": [
+              0.06110117077715501,
+              0.11408781158576835
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_dense_centered_rms_C": {
+            "estimate": 0.03592509312603304,
+            "ci95": [
+              0.02521499592662693,
+              0.049196779378709546
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired": {
+            "estimate": -0.051394364138645954,
+            "ci95": [
+              -0.11597313610946514,
+              0.014331385742981147
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_decoy": {
+            "estimate": 0.0027770952204685473,
+            "ci95": [
+              -0.04660575515740869,
+              0.054887528356196036
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_dense": {
+            "estimate": -0.014726001938655007,
+            "ci95": [
+              -0.08259671297796055,
+              0.0551518536984033
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired_minus_decoy": {
+            "estimate": -0.05417145935911451,
+            "ci95": [
+              -0.14594987923530622,
+              0.03479696771693844
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired_minus_dense": {
+            "estimate": -0.03666836219999095,
+            "ci95": [
+              -0.1243567091800653,
+              0.04993392477745387
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_small_rms_C": {
+            "estimate": 0.015828751717298393,
+            "ci95": [
+              0.011948425231792972,
+              0.02057567680710322
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_small_centered_rms_C": {
+            "estimate": 0.014982774734788299,
+            "ci95": [
+              0.011266765141712206,
+              0.019422993447044394
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired_rms_C": {
+            "estimate": 0.15592655874158057,
+            "ci95": [
+              0.08124528197923145,
+              0.29336066283182494
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_paired_centered_rms_C": {
+            "estimate": 0.06520872208994959,
+            "ci95": [
+              0.029564615227722406,
+              0.12106634576744338
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_decoy_rms_C": {
+            "estimate": 0.1723492887999183,
+            "ci95": [
+              0.1073004412987786,
+              0.2551081183731445
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_decoy_centered_rms_C": {
+            "estimate": 0.07169067412355139,
+            "ci95": [
+              0.02895930855369384,
+              0.14186898207552745
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_dense_rms_C": {
+            "estimate": 0.13334116219916017,
+            "ci95": [
+              0.08031579893813652,
+              0.1865861202386802
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future1_dense_centered_rms_C": {
+            "estimate": 0.0553271463372766,
+            "ci95": [
+              0.030450895721635826,
+              0.08631390644446117
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired": {
+            "estimate": -0.017076183758536825,
+            "ci95": [
+              -0.09173443006792663,
+              0.05529116496132839
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_decoy": {
+            "estimate": 0.016517771299693368,
+            "ci95": [
+              -0.05161745490281132,
+              0.08614684939028301
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_dense": {
+            "estimate": -0.08156637230208255,
+            "ci95": [
+              -0.14896546393820362,
+              -0.009466160138701827
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired_minus_decoy": {
+            "estimate": -0.033593955058230186,
+            "ci95": [
+              -0.13329991814138736,
+              0.07468841537594434
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired_minus_dense": {
+            "estimate": 0.06449018854354573,
+            "ci95": [
+              -0.027392562727024908,
+              0.1539485759210994
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_small_rms_C": {
+            "estimate": 0.008559170753866458,
+            "ci95": [
+              0.006115285304442499,
+              0.011173867427384751
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_small_centered_rms_C": {
+            "estimate": 0.00820635502253413,
+            "ci95": [
+              0.005860435487924876,
+              0.010594465663380863
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired_rms_C": {
+            "estimate": 0.08064210458132022,
+            "ci95": [
+              0.047083665749627246,
+              0.13994839921347738
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_paired_centered_rms_C": {
+            "estimate": 0.03552884109574641,
+            "ci95": [
+              0.010588334336454959,
+              0.07937372298852263
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_decoy_rms_C": {
+            "estimate": 0.09614099556574301,
+            "ci95": [
+              0.05871595644010842,
+              0.14601813692726115
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_decoy_centered_rms_C": {
+            "estimate": 0.02173453531401858,
+            "ci95": [
+              0.012335634677438404,
+              0.03141860595460563
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_dense_rms_C": {
+            "estimate": 0.09346656007815528,
+            "ci95": [
+              0.048431945088399035,
+              0.1550335653227228
+            ],
+            "defined_bootstraps": 3000
+          },
+          "future2_dense_centered_rms_C": {
+            "estimate": 0.025093434720290086,
+            "ci95": [
+              0.013296138404352094,
+              0.042082838503537764
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future1_paired": {
+            "estimate": 0.023343177888120854,
+            "ci95": [
+              -0.08239785750998474,
+              0.13365891093832552
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future1_paired_minus_decoy": {
+            "estimate": 0.03598422939969042,
+            "ci95": [
+              -0.11456390733150795,
+              0.19723184149681797
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future1_paired_minus_dense": {
+            "estimate": -0.015032824320406887,
+            "ci95": [
+              -0.14698329648306893,
+              0.11993680424837722
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future2_paired": {
+            "estimate": -0.01097500249198828,
+            "ci95": [
+              -0.1177784656667993,
+              0.10101218865010585
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future2_paired_minus_decoy": {
+            "estimate": 0.015406725098806119,
+            "ci95": [
+              -0.13953670717088157,
+              0.17927141997724907
+            ],
+            "defined_bootstraps": 3000
+          },
+          "edited_minus_future2_paired_minus_dense": {
+            "estimate": -0.11619137506394356,
+            "ci95": [
+              -0.23319507667759445,
+              -0.003555222643856847
+            ],
+            "defined_bootstraps": 3000
+          }
+        },
+        "defined_cases": {
+          "previous_paired": 288,
+          "previous_decoy": 288,
+          "previous_dense": 288,
+          "previous_paired_minus_decoy": 288,
+          "previous_paired_minus_dense": 288,
+          "previous_small_rms_C": 288,
+          "previous_small_centered_rms_C": 288,
+          "previous_paired_rms_C": 288,
+          "previous_paired_centered_rms_C": 288,
+          "previous_decoy_rms_C": 288,
+          "previous_decoy_centered_rms_C": 288,
+          "previous_dense_rms_C": 288,
+          "previous_dense_centered_rms_C": 288,
+          "edited_paired": 288,
+          "edited_decoy": 288,
+          "edited_dense": 288,
+          "edited_paired_minus_decoy": 288,
+          "edited_paired_minus_dense": 288,
+          "edited_small_rms_C": 288,
+          "edited_small_centered_rms_C": 288,
+          "edited_paired_rms_C": 288,
+          "edited_paired_centered_rms_C": 288,
+          "edited_decoy_rms_C": 288,
+          "edited_decoy_centered_rms_C": 288,
+          "edited_dense_rms_C": 288,
+          "edited_dense_centered_rms_C": 288,
+          "future1_paired": 288,
+          "future1_decoy": 288,
+          "future1_dense": 288,
+          "future1_paired_minus_decoy": 288,
+          "future1_paired_minus_dense": 288,
+          "future1_small_rms_C": 288,
+          "future1_small_centered_rms_C": 288,
+          "future1_paired_rms_C": 288,
+          "future1_paired_centered_rms_C": 288,
+          "future1_decoy_rms_C": 288,
+          "future1_decoy_centered_rms_C": 288,
+          "future1_dense_rms_C": 288,
+          "future1_dense_centered_rms_C": 288,
+          "future2_paired": 288,
+          "future2_decoy": 288,
+          "future2_dense": 288,
+          "future2_paired_minus_decoy": 288,
+          "future2_paired_minus_dense": 288,
+          "future2_small_rms_C": 288,
+          "future2_small_centered_rms_C": 288,
+          "future2_paired_rms_C": 288,
+          "future2_paired_centered_rms_C": 288,
+          "future2_decoy_rms_C": 288,
+          "future2_decoy_centered_rms_C": 288,
+          "future2_dense_rms_C": 288,
+          "future2_dense_centered_rms_C": 288,
+          "edited_minus_future1_paired": 288,
+          "edited_minus_future1_paired_minus_decoy": 288,
+          "edited_minus_future1_paired_minus_dense": 288,
+          "edited_minus_future2_paired": 288,
+          "edited_minus_future2_paired_minus_decoy": 288,
+          "edited_minus_future2_paired_minus_dense": 288
+        },
+        "sampled_distinct_source_atoms": 142,
+        "positive_dose_quantiles": [
+          0.7084599733352661,
+          1.3324912071228028,
+          2.0354974269866943,
+          5.8319573402404785,
+          10.618547439575195
+        ],
+        "target_write_norm_quantiles": [
+          0.48453858494758606,
+          1.0917155385017396,
+          2.1450488567352295,
+          11.502665901184082,
+          20.787019729614258
+        ],
+        "full_graph_check": {
+          "small": {
+            "ordinary": 4.291534423828125e-06,
+            "small": 9.5367431640625e-06,
+            "zero_cached_vs_direct": 4.291534423828125e-06
+          },
+          "large": {
+            "ordinary": 7.62939453125e-06,
+            "paired": 7.62939453125e-06,
+            "decoy": 7.62939453125e-06,
+            "dense": 7.62939453125e-06,
+            "zero_cached_vs_direct": 7.62939453125e-06
+          }
+        }
+      },
+      "fixed_seed_mean": {
+        "previous_paired": {
+          "estimate": 0.010201879232204558,
+          "ci95": [
+            -0.05715778812180119,
+            0.08061742911788987
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_decoy": {
+          "estimate": -0.0002903073941246115,
+          "ci95": [
+            -0.05816479545406954,
+            0.05457580355925306
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_dense": {
+          "estimate": -0.03643142503767906,
+          "ci95": [
+            -0.09635128597147709,
+            0.02857604661729605
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_paired_minus_decoy": {
+          "estimate": 0.010492186626329135,
+          "ci95": [
+            -0.07464509110724792,
+            0.09026550219149408
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_paired_minus_dense": {
+          "estimate": 0.04663330426988362,
+          "ci95": [
+            -0.03407094197507348,
+            0.13223895155387386
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_small_rms_C": {
+          "estimate": 0.01885718579396118,
+          "ci95": [
+            0.014177047057268419,
+            0.02332048513284056
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_small_centered_rms_C": {
+          "estimate": 0.01827692289364881,
+          "ci95": [
+            0.01373002471232912,
+            0.02252816951541167
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_paired_rms_C": {
+          "estimate": 0.09097290539346992,
+          "ci95": [
+            0.07576626680471353,
+            0.10638878592976353
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_paired_centered_rms_C": {
+          "estimate": 0.0280469994420765,
+          "ci95": [
+            0.021122862592805106,
+            0.035201609737391525
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_decoy_rms_C": {
+          "estimate": 0.12261173335994063,
+          "ci95": [
+            0.09146421906830643,
+            0.15342134862443252
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_decoy_centered_rms_C": {
+          "estimate": 0.03591845804983726,
+          "ci95": [
+            0.025493399386461498,
+            0.046707941296889495
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_dense_rms_C": {
+          "estimate": 0.09230823496065432,
+          "ci95": [
+            0.062378635309183354,
+            0.12339912185523182
+          ],
+          "defined_bootstraps": 3000
+        },
+        "previous_dense_centered_rms_C": {
+          "estimate": 0.032335055807099694,
+          "ci95": [
+            0.01994831875614204,
+            0.045790963181015554
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_paired": {
+          "estimate": -0.009722000870155744,
+          "ci95": [
+            -0.0651920960065132,
+            0.04727045817651641
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_decoy": {
+          "estimate": -0.01542506115933304,
+          "ci95": [
+            -0.06311054106625667,
+            0.03246312298036865
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_dense": {
+          "estimate": -0.014328259498210275,
+          "ci95": [
+            -0.07179261597212404,
+            0.035848106667903695
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_paired_minus_decoy": {
+          "estimate": 0.005703060289177293,
+          "ci95": [
+            -0.06949032231875249,
+            0.0784761513432418
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_paired_minus_dense": {
+          "estimate": 0.00460625862805452,
+          "ci95": [
+            -0.06372600373428568,
+            0.0743910705296889
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_small_rms_C": {
+          "estimate": 0.1806239702184554,
+          "ci95": [
+            0.15497167810899315,
+            0.20882682547716022
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_small_centered_rms_C": {
+          "estimate": 0.16888558350261207,
+          "ci95": [
+            0.14412762566666318,
+            0.19587958124827368
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_paired_rms_C": {
+          "estimate": 0.08084855663321436,
+          "ci95": [
+            0.061946610273437584,
+            0.10079549606702183
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_paired_centered_rms_C": {
+          "estimate": 0.03301534766815419,
+          "ci95": [
+            0.02218677638227495,
+            0.04581439874412393
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_decoy_rms_C": {
+          "estimate": 0.10195828970273943,
+          "ci95": [
+            0.07167265006188575,
+            0.13242886788870623
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_decoy_centered_rms_C": {
+          "estimate": 0.0386741641702979,
+          "ci95": [
+            0.023505974937135094,
+            0.061747881099212906
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_dense_rms_C": {
+          "estimate": 0.07299327781365761,
+          "ci95": [
+            0.05616651708966243,
+            0.09010789940282395
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_dense_centered_rms_C": {
+          "estimate": 0.03460474386282136,
+          "ci95": [
+            0.023794978883358905,
+            0.04881596483532834
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_paired": {
+          "estimate": -0.034260930695650796,
+          "ci95": [
+            -0.08080127206648975,
+            0.01434751991909808
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_decoy": {
+          "estimate": -0.009946256303464698,
+          "ci95": [
+            -0.04847500375218549,
+            0.03048291814126827
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_dense": {
+          "estimate": -0.03513043198136591,
+          "ci95": [
+            -0.0821909732273076,
+            0.012219834014504565
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_paired_minus_decoy": {
+          "estimate": -0.0243146743921861,
+          "ci95": [
+            -0.08866437635889242,
+            0.03693949835829289
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_paired_minus_dense": {
+          "estimate": 0.000869501285715106,
+          "ci95": [
+            -0.05922168333491115,
+            0.058701100393139145
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_small_rms_C": {
+          "estimate": 0.015168262998319967,
+          "ci95": [
+            0.011815047303899841,
+            0.019031322943441713
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_small_centered_rms_C": {
+          "estimate": 0.01431557328630825,
+          "ci95": [
+            0.011192754222179484,
+            0.017804554465758023
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_paired_rms_C": {
+          "estimate": 0.16135416641643505,
+          "ci95": [
+            0.09588424381742487,
+            0.2726387324925837
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_paired_centered_rms_C": {
+          "estimate": 0.06208285725310442,
+          "ci95": [
+            0.03309919211954257,
+            0.10264941569374575
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_decoy_rms_C": {
+          "estimate": 0.155433705771865,
+          "ci95": [
+            0.10834503878075365,
+            0.2088055346318179
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_decoy_centered_rms_C": {
+          "estimate": 0.06281501992147791,
+          "ci95": [
+            0.031104029877588393,
+            0.11357888535119381
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_dense_rms_C": {
+          "estimate": 0.11702834612539592,
+          "ci95": [
+            0.08167953052547806,
+            0.15537521237174584
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future1_dense_centered_rms_C": {
+          "estimate": 0.05134439555514616,
+          "ci95": [
+            0.032753847094996576,
+            0.07214768946888968
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_paired": {
+          "estimate": -0.003911012316563227,
+          "ci95": [
+            -0.060604578683073125,
+            0.05273115755508432
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_decoy": {
+          "estimate": -0.013171233995862962,
+          "ci95": [
+            -0.05735789341942837,
+            0.026516885215152098
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_dense": {
+          "estimate": -0.06518963085733459,
+          "ci95": [
+            -0.11932208265968633,
+            -0.011413838677441576
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_paired_minus_decoy": {
+          "estimate": 0.009260221679299737,
+          "ci95": [
+            -0.06322413563649405,
+            0.08614132132113149
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_paired_minus_dense": {
+          "estimate": 0.06127861854077137,
+          "ci95": [
+            -0.007585102270083748,
+            0.13147515883146824
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_small_rms_C": {
+          "estimate": 0.008949235259666177,
+          "ci95": [
+            0.006428766060151017,
+            0.01141202166742547
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_small_centered_rms_C": {
+          "estimate": 0.008637256293945862,
+          "ci95": [
+            0.0062354386948203855,
+            0.010994516651971379
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_paired_rms_C": {
+          "estimate": 0.08438536293551668,
+          "ci95": [
+            0.0545307148760846,
+            0.12802748736674957
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_paired_centered_rms_C": {
+          "estimate": 0.027689964773650922,
+          "ci95": [
+            0.011037032353852809,
+            0.05866089187436701
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_decoy_rms_C": {
+          "estimate": 0.08676327207115037,
+          "ci95": [
+            0.05994077692740928,
+            0.11901352267136005
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_decoy_centered_rms_C": {
+          "estimate": 0.021780225288716277,
+          "ci95": [
+            0.012306651353560584,
+            0.036941299908213175
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_dense_rms_C": {
+          "estimate": 0.07577028234446877,
+          "ci95": [
+            0.0488779320138374,
+            0.11239421066341201
+          ],
+          "defined_bootstraps": 3000
+        },
+        "future2_dense_centered_rms_C": {
+          "estimate": 0.02091739597758615,
+          "ci95": [
+            0.011619137989954096,
+            0.03588163824899736
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_minus_future1_paired": {
+          "estimate": 0.024538929825495055,
+          "ci95": [
+            -0.05260190653449309,
+            0.10135675843833174
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_minus_future1_paired_minus_decoy": {
+          "estimate": 0.030017734681363387,
+          "ci95": [
+            -0.0694248375724166,
+            0.13358515733935927
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_minus_future1_paired_minus_dense": {
+          "estimate": 0.00373675734233942,
+          "ci95": [
+            -0.08868829435821259,
+            0.09919538996276688
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_minus_future2_paired": {
+          "estimate": -0.005810988553592525,
+          "ci95": [
+            -0.08454536960822914,
+            0.07880826571295517
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_minus_future2_paired_minus_decoy": {
+          "estimate": -0.0035571613901224444,
+          "ci95": [
+            -0.11373411363147135,
+            0.10767560112436615
+          ],
+          "defined_bootstraps": 3000
+        },
+        "edited_minus_future2_paired_minus_dense": {
+          "estimate": -0.05667235991271685,
+          "ci95": [
+            -0.14891002663527345,
+            0.03147224553098873
+          ],
+          "defined_bootstraps": 3000
+        }
+      }
+    }
+  },
+  "paired_family_comparisons": {
+    "masked_minus_shuffled": {
+      "previous_paired": {
+        "estimate": -0.044555408529549596,
+        "ci95": [
+          -0.13753454262223577,
+          0.047789949226811054
+        ],
+        "defined_bootstraps": 3000
+      },
+      "previous_decoy": {
+        "estimate": -0.023224699328470308,
+        "ci95": [
+          -0.10616181307157052,
+          0.06371385208305262
+        ],
+        "defined_bootstraps": 3000
+      },
+      "previous_dense": {
+        "estimate": -0.010143480096677739,
+        "ci95": [
+          -0.0923221924945297,
+          0.06949092442817681
+        ],
+        "defined_bootstraps": 3000
+      },
+      "previous_paired_minus_decoy": {
+        "estimate": -0.02133070920107926,
+        "ci95": [
+          -0.13449246403106888,
+          0.09466741895143309
+        ],
+        "defined_bootstraps": 3000
+      },
+      "previous_paired_minus_dense": {
+        "estimate": -0.034411928432871886,
+        "ci95": [
+          -0.12702620720743873,
+          0.06502955240501487
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_paired": {
+        "estimate": -0.04171707238555686,
+        "ci95": [
+          -0.11356473152029418,
+          0.030323605231861197
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_decoy": {
+        "estimate": 0.007027339191042382,
+        "ci95": [
+          -0.06282894930575987,
+          0.07690770096961017
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_dense": {
+        "estimate": -0.01974233152008354,
+        "ci95": [
+          -0.0928757674644513,
+          0.05368182171563902
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_paired_minus_decoy": {
+        "estimate": -0.04874441157659924,
+        "ci95": [
+          -0.1530342009765167,
+          0.05209843286383709
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_paired_minus_dense": {
+        "estimate": -0.021974740865473318,
+        "ci95": [
+          -0.09668732429003236,
+          0.05389774236754051
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future1_paired": {
+        "estimate": 0.02459951064719883,
+        "ci95": [
+          -0.036020126357872495,
+          0.08666407745068153
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future1_decoy": {
+        "estimate": 0.005644209266879615,
+        "ci95": [
+          -0.051644353022518734,
+          0.061095624513651865
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future1_dense": {
+        "estimate": 0.025066862108204316,
+        "ci95": [
+          -0.0369767605245058,
+          0.08625533018219358
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future1_paired_minus_decoy": {
+        "estimate": 0.01895530138031922,
+        "ci95": [
+          -0.057111973020289156,
+          0.09985304872489299
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future1_paired_minus_dense": {
+        "estimate": -0.00046735146100547855,
+        "ci95": [
+          -0.0669681252068663,
+          0.06845128928040276
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future2_paired": {
+        "estimate": -0.01875597467404682,
+        "ci95": [
+          -0.09339099187436242,
+          0.05558713261843659
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future2_decoy": {
+        "estimate": 0.003472223840251889,
+        "ci95": [
+          -0.050285472554585,
+          0.060004948085416364
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future2_dense": {
+        "estimate": 0.03770312576861638,
+        "ci95": [
+          -0.03596702185483069,
+          0.11181532361369913
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future2_paired_minus_decoy": {
+        "estimate": -0.022228198514298712,
+        "ci95": [
+          -0.11189278213841375,
+          0.06566991358333775
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future2_paired_minus_dense": {
+        "estimate": -0.0564591004426632,
+        "ci95": [
+          -0.1316521689718659,
+          0.01968361218304316
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_minus_future1_paired": {
+        "estimate": -0.0663165830327557,
+        "ci95": [
+          -0.16029740961168143,
+          0.02116550058297206
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_minus_future1_paired_minus_decoy": {
+        "estimate": -0.06769971295691847,
+        "ci95": [
+          -0.20987795032568196,
+          0.057703444487517914
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_minus_future1_paired_minus_dense": {
+        "estimate": -0.02150738940446785,
+        "ci95": [
+          -0.12798532137207966,
+          0.08727141762325823
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_minus_future2_paired": {
+        "estimate": -0.022961097711510045,
+        "ci95": [
+          -0.13053942528098497,
+          0.0741069474089144
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_minus_future2_paired_minus_decoy": {
+        "estimate": -0.026516213062300557,
+        "ci95": [
+          -0.169922519562892,
+          0.10373309881766023
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_minus_future2_paired_minus_dense": {
+        "estimate": 0.034484359577189885,
+        "ci95": [
+          -0.05720971692061746,
+          0.12814947237471405
+        ],
+        "defined_bootstraps": 3000
+      }
+    },
+    "joint_minus_shuffled": {
+      "previous_paired": {
+        "estimate": -0.049560029119373766,
+        "ci95": [
+          -0.13727019670737955,
+          0.03645068122876253
+        ],
+        "defined_bootstraps": 3000
+      },
+      "previous_decoy": {
+        "estimate": -0.03668573916219996,
+        "ci95": [
+          -0.12691173366037817,
+          0.05158462504600071
+        ],
+        "defined_bootstraps": 3000
+      },
+      "previous_dense": {
+        "estimate": -0.019933974886797143,
+        "ci95": [
+          -0.10960584719133924,
+          0.06788685965890302
+        ],
+        "defined_bootstraps": 3000
+      },
+      "previous_paired_minus_decoy": {
+        "estimate": -0.012874289957173757,
+        "ci95": [
+          -0.13491001757619867,
+          0.10537975349827641
+        ],
+        "defined_bootstraps": 3000
+      },
+      "previous_paired_minus_dense": {
+        "estimate": -0.02962605423257663,
+        "ci95": [
+          -0.11941446017728582,
+          0.06359700950243742
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_paired": {
+        "estimate": 0.000757441417709644,
+        "ci95": [
+          -0.07711047656179541,
+          0.07340091343464723
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_decoy": {
+        "estimate": 0.024082352886088274,
+        "ci95": [
+          -0.04914432717308776,
+          0.10245570942357668
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_dense": {
+        "estimate": 0.0017293997482315804,
+        "ci95": [
+          -0.0747002133933548,
+          0.07842558730764175
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_paired_minus_decoy": {
+        "estimate": -0.02332491146837862,
+        "ci95": [
+          -0.12673451791536222,
+          0.07479392204779263
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_paired_minus_dense": {
+        "estimate": -0.0009719583305219338,
+        "ci95": [
+          -0.08193442308849512,
+          0.07605378845060423
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future1_paired": {
+        "estimate": 0.018962636007532604,
+        "ci95": [
+          -0.0411588964837206,
+          0.07661622430370135
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future1_decoy": {
+        "estimate": 0.0008240837920965062,
+        "ci95": [
+          -0.0532812500501152,
+          0.05373069322742445
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future1_dense": {
+        "estimate": 0.019053093727872308,
+        "ci95": [
+          -0.047865167445050025,
+          0.08228204787618401
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future1_paired_minus_decoy": {
+        "estimate": 0.018138552215436095,
+        "ci95": [
+          -0.056181136176350524,
+          0.09344417974742786
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future1_paired_minus_dense": {
+        "estimate": -9.045772033969897e-05,
+        "ci95": [
+          -0.070409726361691,
+          0.07594237991370338
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future2_paired": {
+        "estimate": -0.04981954694671631,
+        "ci95": [
+          -0.12175248601574341,
+          0.028921356633303613
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future2_decoy": {
+        "estimate": 0.017745007756614896,
+        "ci95": [
+          -0.04302273502859285,
+          0.08291064265318585
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future2_dense": {
+        "estimate": 0.012294039019908137,
+        "ci95": [
+          -0.0553017360554263,
+          0.07895332439589511
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future2_paired_minus_decoy": {
+        "estimate": -0.0675645547033312,
+        "ci95": [
+          -0.17142315418628998,
+          0.039904357524205125
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future2_paired_minus_dense": {
+        "estimate": -0.06211358596662445,
+        "ci95": [
+          -0.13537433516066513,
+          0.0174069630897766
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_minus_future1_paired": {
+        "estimate": -0.01820519458982296,
+        "ci95": [
+          -0.11152721748108292,
+          0.07958506266571723
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_minus_future1_paired_minus_decoy": {
+        "estimate": -0.0414634636838147,
+        "ci95": [
+          -0.1700953214117493,
+          0.0836914798176272
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_minus_future1_paired_minus_dense": {
+        "estimate": -0.0008815006101822371,
+        "ci95": [
+          -0.11458393470478956,
+          0.10932612099155149
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_minus_future2_paired": {
+        "estimate": 0.050576988364425965,
+        "ci95": [
+          -0.045450449264024105,
+          0.1464080315534249
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_minus_future2_paired_minus_decoy": {
+        "estimate": 0.044239643234952615,
+        "ci95": [
+          -0.11118631912614184,
+          0.2000563771116742
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_minus_future2_paired_minus_dense": {
+        "estimate": 0.06114162763610253,
+        "ci95": [
+          -0.037976248337523014,
+          0.164935081752573
+        ],
+        "defined_bootstraps": 3000
+      }
+    },
+    "masked_minus_joint": {
+      "previous_paired": {
+        "estimate": 0.00500462058982417,
+        "ci95": [
+          -0.0926645745870583,
+          0.11022189802151627
+        ],
+        "defined_bootstraps": 3000
+      },
+      "previous_decoy": {
+        "estimate": 0.013461039833729649,
+        "ci95": [
+          -0.07193414472846518,
+          0.1001526906547285
+        ],
+        "defined_bootstraps": 3000
+      },
+      "previous_dense": {
+        "estimate": 0.009790494790119404,
+        "ci95": [
+          -0.08349412982900548,
+          0.11874274359165464
+        ],
+        "defined_bootstraps": 3000
+      },
+      "previous_paired_minus_decoy": {
+        "estimate": -0.008456419243905503,
+        "ci95": [
+          -0.12901912180574288,
+          0.11985733836965629
+        ],
+        "defined_bootstraps": 3000
+      },
+      "previous_paired_minus_dense": {
+        "estimate": -0.004785874200295253,
+        "ci95": [
+          -0.0634689972119929,
+          0.05508175582644644
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_paired": {
+        "estimate": -0.04247451380326651,
+        "ci95": [
+          -0.11395767447543692,
+          0.03303598137711427
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_decoy": {
+        "estimate": -0.017055013695045893,
+        "ci95": [
+          -0.0911513710163668,
+          0.054048067669626415
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_dense": {
+        "estimate": -0.02147173126831512,
+        "ci95": [
+          -0.0949402504681421,
+          0.052134161952587674
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_paired_minus_decoy": {
+        "estimate": -0.025419500108220625,
+        "ci95": [
+          -0.12683080329321805,
+          0.07903362284828465
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_paired_minus_dense": {
+        "estimate": -0.021002782534951383,
+        "ci95": [
+          -0.07434628960243264,
+          0.030717929471669486
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future1_paired": {
+        "estimate": 0.005636874639666226,
+        "ci95": [
+          -0.05972891434920668,
+          0.07130712385661366
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future1_decoy": {
+        "estimate": 0.004820125474783108,
+        "ci95": [
+          -0.056780259737676496,
+          0.06506246536986814
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future1_dense": {
+        "estimate": 0.006013768380332008,
+        "ci95": [
+          -0.05580310846759009,
+          0.06852724341106493
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future1_paired_minus_decoy": {
+        "estimate": 0.0008167491648831248,
+        "ci95": [
+          -0.0766429812184408,
+          0.07818067721385474
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future1_paired_minus_dense": {
+        "estimate": -0.0003768937406657796,
+        "ci95": [
+          -0.038629067211708244,
+          0.03881902517350002
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future2_paired": {
+        "estimate": 0.03106357227266949,
+        "ci95": [
+          -0.0253863334087262,
+          0.08665740560019365
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future2_decoy": {
+        "estimate": -0.014272783916363005,
+        "ci95": [
+          -0.08657772982090946,
+          0.058472673205168704
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future2_dense": {
+        "estimate": 0.025409086748708246,
+        "ci95": [
+          -0.03394922053315305,
+          0.08464378452490895
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future2_paired_minus_decoy": {
+        "estimate": 0.04533635618903248,
+        "ci95": [
+          -0.04411095201445065,
+          0.1289766805423027
+        ],
+        "defined_bootstraps": 3000
+      },
+      "future2_paired_minus_dense": {
+        "estimate": 0.005654485523961252,
+        "ci95": [
+          -0.03679133635085251,
+          0.05025490134788449
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_minus_future1_paired": {
+        "estimate": -0.04811138844293275,
+        "ci95": [
+          -0.1528575082076162,
+          0.05416313695754526
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_minus_future1_paired_minus_decoy": {
+        "estimate": -0.026236249273103772,
+        "ci95": [
+          -0.15500049376139735,
+          0.10344270926246901
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_minus_future1_paired_minus_dense": {
+        "estimate": -0.02062588879428561,
+        "ci95": [
+          -0.08034824903697269,
+          0.03795935982985245
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_minus_future2_paired": {
+        "estimate": -0.07353808607593601,
+        "ci95": [
+          -0.1690194050916247,
+          0.019148866413852564
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_minus_future2_paired_minus_decoy": {
+        "estimate": -0.07075585629725317,
+        "ci95": [
+          -0.20843589582815222,
+          0.05987576240483228
+        ],
+        "defined_bootstraps": 3000
+      },
+      "edited_minus_future2_paired_minus_dense": {
+        "estimate": -0.026657268058912643,
+        "ci95": [
+          -0.09913921745133536,
+          0.047593598356432065
+        ],
+        "defined_bootstraps": 3000
+      }
+    }
+  }
+}

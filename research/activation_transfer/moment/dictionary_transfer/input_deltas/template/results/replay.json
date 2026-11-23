@@ -1,0 +1,28 @@
+{
+  "indices": [
+    0,
+    135,
+    384
+  ],
+  "stations": [
+    "WY_Lander_11_SSE",
+    "GA_Brunswick_23_S",
+    "ME_Limestone_4_NNW"
+  ],
+  "dates": [
+    "2026-01-01",
+    "2026-04-01",
+    "2026-11-01"
+  ],
+  "native_patched_zero_vs_ordinary_max_c": 0.0,
+  "matched_zero_full_vs_cached_effect_max_c": {
+    "reference": 1.9073486328125e-06,
+    "mapped": 2.384185791015625e-06,
+    "historical_fixed": 2.86102294921875e-06,
+    "historical_matched": 2.384185791015625e-06
+  },
+  "context_sha256": "dae56b90fada336391aef9a4d27f7d8b100fbba13aa823e698543196ca37be45",
+  "reference_source": "physical large ramp last-state substitution",
+  "map_file_sha256": "61d492e75c7c3c7771db5db78156bd2d8faa587995a9af15dda9a3344c3c9f15",
+  "historical_small_state_file_sha256": "9b613a36b486cc6fd392e6bff84c40a80e73e40ca0b83fc1410aba076ba55a95"
+}

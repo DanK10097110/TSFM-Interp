@@ -1,0 +1,266 @@
+{
+  "daily": {
+    "all_observed_coordinates": {
+      "patch32_adv": {
+        "mean": 0.7703644026694911,
+        "history_atom_95": [
+          0.7252422994197935,
+          0.8094554099882283
+        ],
+        "equal_atom": 0.6915615519492583,
+        "n_atoms": 530,
+        "atoms_at_least_8": 145,
+        "equal_atom_min8": 0.794293628587242
+      },
+      "bins4_adv": {
+        "mean": 0.7241333950384738,
+        "history_atom_95": [
+          0.6659354402921118,
+          0.7785083278619727
+        ],
+        "equal_atom": 0.6280656476932525,
+        "n_atoms": 530,
+        "atoms_at_least_8": 145,
+        "equal_atom_min8": 0.7553498174316554
+      },
+      "level_adv": {
+        "mean": 0.20504662298387097,
+        "history_atom_95": [
+          0.13065279559064114,
+          0.2734776031640667
+        ],
+        "equal_atom": 0.1776496282306693,
+        "n_atoms": 530,
+        "atoms_at_least_8": 145,
+        "equal_atom_min8": 0.2492621561356834
+      },
+      "forecast16_adv": {
+        "mean": 0.025582990764340827,
+        "history_atom_95": [
+          -0.024689335338881034,
+          0.07295845958979308
+        ],
+        "equal_atom": 0.044091376064976026,
+        "n_atoms": 530,
+        "atoms_at_least_8": 145,
+        "equal_atom_min8": 0.015056067789226059
+      },
+      "patch_minus_forecast_adv": {
+        "mean": 0.7447814119051503,
+        "history_atom_95": [
+          0.679946660865006,
+          0.8098002433986904
+        ],
+        "equal_atom": 0.6474701758842821,
+        "n_atoms": 530,
+        "atoms_at_least_8": 145,
+        "equal_atom_min8": 0.779237560798016
+      },
+      "bins_minus_forecast_adv": {
+        "mean": 0.6985504042741331,
+        "history_atom_95": [
+          0.6225932764083336,
+          0.7729107946546622
+        ],
+        "equal_atom": 0.5839742716282764,
+        "n_atoms": 530,
+        "atoms_at_least_8": 145,
+        "equal_atom_min8": 0.7402937496424291
+      }
+    },
+    "minimum_eight_histories": {
+      "patch32_adv": {
+        "mean": 0.8040520393948003,
+        "history_atom_95": [
+          0.7438294171119323,
+          0.8528164553763993
+        ],
+        "equal_atom": 0.794293628587242,
+        "eligible_atoms": 145,
+        "events": 3056
+      },
+      "bins4_adv": {
+        "mean": 0.7643779887831179,
+        "history_atom_95": [
+          0.686772856606408,
+          0.8309995024987176
+        ],
+        "equal_atom": 0.7553498174316554,
+        "eligible_atoms": 145,
+        "events": 3056
+      },
+      "level_adv": {
+        "mean": 0.22522589089680797,
+        "history_atom_95": [
+          0.1363191881241859,
+          0.3127709914319846
+        ],
+        "equal_atom": 0.2492621561356834,
+        "eligible_atoms": 145,
+        "events": 3056
+      },
+      "forecast16_adv": {
+        "mean": 0.015698848421998885,
+        "history_atom_95": [
+          -0.04394360859816717,
+          0.07521543055529557
+        ],
+        "equal_atom": 0.015056067789226059,
+        "eligible_atoms": 145,
+        "events": 3056
+      },
+      "patch_minus_forecast_adv": {
+        "mean": 0.7883531909728014,
+        "history_atom_95": [
+          0.7051704698372295,
+          0.8639393150309892
+        ],
+        "equal_atom": 0.779237560798016,
+        "eligible_atoms": 145,
+        "events": 3056
+      },
+      "bins_minus_forecast_adv": {
+        "mean": 0.748679140361119,
+        "history_atom_95": [
+          0.6522455554421929,
+          0.8386568583915543
+        ],
+        "equal_atom": 0.7402937496424291,
+        "eligible_atoms": 145,
+        "events": 3056
+      }
+    }
+  },
+  "monash_traffic": {
+    "all_observed_coordinates": {
+      "patch32_adv": {
+        "mean": 0.6812469152066465,
+        "history_atom_95": [
+          0.6118687035307863,
+          0.7461399294543204
+        ],
+        "equal_atom": 0.6422696474046237,
+        "n_atoms": 306,
+        "atoms_at_least_8": 102,
+        "equal_atom_min8": 0.7032112822478794
+      },
+      "bins4_adv": {
+        "mean": 0.6186628084007229,
+        "history_atom_95": [
+          0.521510843958754,
+          0.7104610964698359
+        ],
+        "equal_atom": 0.5538684938284861,
+        "n_atoms": 306,
+        "atoms_at_least_8": 102,
+        "equal_atom_min8": 0.6335597503458911
+      },
+      "level_adv": {
+        "mean": 0.18417653729838707,
+        "history_atom_95": [
+          0.08296794448542368,
+          0.2806309681813231
+        ],
+        "equal_atom": 0.15928462871827598,
+        "n_atoms": 306,
+        "atoms_at_least_8": 102,
+        "equal_atom_min8": 0.19909797518829084
+      },
+      "forecast16_adv": {
+        "mean": 0.17986147923219414,
+        "history_atom_95": [
+          0.047822530977906494,
+          0.3095647618680008
+        ],
+        "equal_atom": 0.10210047419262404,
+        "n_atoms": 306,
+        "atoms_at_least_8": 102,
+        "equal_atom_min8": 0.11141226283708773
+      },
+      "patch_minus_forecast_adv": {
+        "mean": 0.5013854359744523,
+        "history_atom_95": [
+          0.37816925504946075,
+          0.6244229375274521
+        ],
+        "equal_atom": 0.5401691732119996,
+        "n_atoms": 306,
+        "atoms_at_least_8": 102,
+        "equal_atom_min8": 0.5917990194107915
+      },
+      "bins_minus_forecast_adv": {
+        "mean": 0.43880132916852865,
+        "history_atom_95": [
+          0.3003173573461249,
+          0.5737101243730981
+        ],
+        "equal_atom": 0.45176801963586216,
+        "n_atoms": 306,
+        "atoms_at_least_8": 102,
+        "equal_atom_min8": 0.5221474875088035
+      }
+    },
+    "minimum_eight_histories": {
+      "patch32_adv": {
+        "mean": 0.6879469383099956,
+        "history_atom_95": [
+          0.6082822604067699,
+          0.7562789961018471
+        ],
+        "equal_atom": 0.7032112822478794,
+        "eligible_atoms": 102,
+        "events": 3602
+      },
+      "bins4_adv": {
+        "mean": 0.6269234582140136,
+        "history_atom_95": [
+          0.5128709726346489,
+          0.7253308500700901
+        ],
+        "equal_atom": 0.6335597503458911,
+        "eligible_atoms": 102,
+        "events": 3602
+      },
+      "level_adv": {
+        "mean": 0.1926528272823342,
+        "history_atom_95": [
+          0.080469556420655,
+          0.3052066312991769
+        ],
+        "equal_atom": 0.19909797518829084,
+        "eligible_atoms": 102,
+        "events": 3602
+      },
+      "forecast16_adv": {
+        "mean": 0.1835642851240679,
+        "history_atom_95": [
+          0.027267847034192612,
+          0.3266173148179923
+        ],
+        "equal_atom": 0.11141226283708773,
+        "eligible_atoms": 102,
+        "events": 3602
+      },
+      "patch_minus_forecast_adv": {
+        "mean": 0.5043826531859279,
+        "history_atom_95": [
+          0.3715476466379438,
+          0.6477126457700355
+        ],
+        "equal_atom": 0.5917990194107915,
+        "eligible_atoms": 102,
+        "events": 3602
+      },
+      "bins_minus_forecast_adv": {
+        "mean": 0.44335917308994577,
+        "history_atom_95": [
+          0.2876543402409874,
+          0.5990385658974445
+        ],
+        "equal_atom": 0.5221474875088035,
+        "eligible_atoms": 102,
+        "events": 3602
+      }
+    }
+  }
+}

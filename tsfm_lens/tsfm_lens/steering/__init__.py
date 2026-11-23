@@ -7,8 +7,9 @@ from .api import ForecastSteerer, SteeringBatch
 from .model import SteeringModel, SteeringUnavailable
 from .requests import SteeringRequest, TASKS
 from .dynamic import DynamicSteerer, SearchConfig, DynamicSteeringResult
+from .contrast import ActivationContrast
 
-__all__ = ["SteeringSolution", "solve_direction", "response_metrics",
+__all__ = ["ActivationContrast", "SteeringSolution", "solve_direction", "response_metrics",
            "interval_shift", "seasonal_shift", "quantile_shift", "steer_hidden",
            "trust_region_direction", "ForecastSteerer", "SteeringBatch",
            "SteeringModel", "SteeringRequest", "DynamicSteerer", "SearchConfig",

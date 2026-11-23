@@ -1,0 +1,107 @@
+{
+  "source": "bolt",
+  "seed": 1,
+  "checkpoint": "dea8d1ead6911ac8058938acefcee249d4b3a46f1fc4cff99eaa16a349c953ba",
+  "weight": 8.509701981480681,
+  "finite_difference_error": 0.007457911968231201,
+  "memory_count": 1024,
+  "calibration_count": 96,
+  "fits": {
+    "raw": {
+      "k": 4,
+      "mix": 0.8505687807849961,
+      "relative_generic_cal_loss": 0.5288187304729336,
+      "median_train_nearest_squared_distance_by_domain": {
+        "cal": 22.258610778830985,
+        "daily": 20.74169034219028,
+        "extra_daily": 26.524227994124487,
+        "extra_monash_traffic": 733.6902088514569,
+        "machines": 660.3702608285134
+      }
+    },
+    "raw_shuffled": {
+      "k": 256,
+      "mix": 1.0,
+      "relative_generic_cal_loss": 0.9965534138575326,
+      "median_train_nearest_squared_distance_by_domain": {
+        "cal": 22.258610778830985,
+        "daily": 20.74169034219028,
+        "extra_daily": 26.524227994124487,
+        "extra_monash_traffic": 733.6902088514569,
+        "machines": 660.3702608285134
+      }
+    },
+    "dense": {
+      "k": 4,
+      "mix": 0.9555659188979625,
+      "relative_generic_cal_loss": 0.39313638780294197,
+      "median_train_nearest_squared_distance_by_domain": {
+        "cal": 0.8857289940544675,
+        "daily": 0.7014556066993904,
+        "extra_daily": 0.9686249187333758,
+        "extra_monash_traffic": 8.082102200362147,
+        "machines": 9.595777315414345
+      }
+    },
+    "dense_shuffled": {
+      "k": 256,
+      "mix": 0.22188353344900036,
+      "relative_generic_cal_loss": 0.9998387644361929,
+      "median_train_nearest_squared_distance_by_domain": {
+        "cal": 0.8857289940544675,
+        "daily": 0.7014556066993904,
+        "extra_daily": 0.9686249187333758,
+        "extra_monash_traffic": 8.082102200362147,
+        "machines": 9.595777315414345
+      }
+    },
+    "amplitude": {
+      "k": 4,
+      "mix": 0.9640829893792975,
+      "relative_generic_cal_loss": 0.4118858674359852,
+      "median_train_nearest_squared_distance_by_domain": {
+        "cal": 0.537897873993046,
+        "daily": 0.5082743521596917,
+        "extra_daily": 0.61280303946827,
+        "extra_monash_traffic": 3.3309695731333413,
+        "machines": 3.329988202456024
+      }
+    },
+    "amplitude_shuffled": {
+      "k": 256,
+      "mix": 0.5029953191012787,
+      "relative_generic_cal_loss": 0.9991628453018127,
+      "median_train_nearest_squared_distance_by_domain": {
+        "cal": 0.537897873993046,
+        "daily": 0.5082743521596917,
+        "extra_daily": 0.61280303946827,
+        "extra_monash_traffic": 3.3309695731333413,
+        "machines": 3.329988202456024
+      }
+    },
+    "support": {
+      "k": 4,
+      "mix": 0.9822243362514391,
+      "relative_generic_cal_loss": 0.38183102490895937,
+      "median_train_nearest_squared_distance_by_domain": {
+        "cal": 12.0,
+        "daily": 12.0,
+        "extra_daily": 14.0,
+        "extra_monash_traffic": 38.0,
+        "machines": 42.0
+      }
+    },
+    "support_shuffled": {
+      "k": 4,
+      "mix": 0.027338425821952544,
+      "relative_generic_cal_loss": 0.9997805160214387,
+      "median_train_nearest_squared_distance_by_domain": {
+        "cal": 12.0,
+        "daily": 12.0,
+        "extra_daily": 14.0,
+        "extra_monash_traffic": 38.0,
+        "machines": 42.0
+      }
+    }
+  }
+}

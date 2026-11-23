@@ -51,6 +51,8 @@ TimesFM within its point head's output patch; TimesFM contexts must be multiples
 of32. The separate TimesFM long-horizon spread head and autoregressive extension
 are outside this interface. Experiments so far use context128,horizon32,float32.
 
+For a worked example and an explanation of what a verified result means, see [How forecast steering works](../tsfm_lens/steering/README.md).
+
 ## SAE combinations and alternative bases
 
 ```python

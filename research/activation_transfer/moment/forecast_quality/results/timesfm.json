@@ -1,0 +1,24 @@
+{
+  "model": "timesfm",
+  "path": "/common/home/djk255/.cache/huggingface/hub/models--google--timesfm-2.5-200m-pytorch/snapshots/1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+  "hashes": {
+    "config.json": "cd3315b760d5cc7e278d7afdf41b897031ced888fc6c115bd9b3ac0ea2c47408",
+    "model.safetensors": "2f776efe6245e42b24bc4153ffdf61810140210e4bd3b01fb21f7aa779ab6ce8"
+  },
+  "versions": {
+    "momentfm": "0.1.4",
+    "torch": "2.12.0",
+    "transformers": "4.57.6",
+    "chronos-forecasting": "2.3.1",
+    "timesfm": "2.0.2"
+  },
+  "seconds": {
+    "raw_8": 83.37176986201666,
+    "standardized_8": 71.18911013007164,
+    "raw_16": 71.20227192994207,
+    "standardized_16": 71.94347235979512
+  },
+  "batch": 16,
+  "torch_threads": 2,
+  "device": "cpu-float32"
+}

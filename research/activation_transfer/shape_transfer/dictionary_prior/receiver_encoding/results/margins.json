@@ -1,0 +1,118 @@
+{
+  "bolt": {
+    "daily": {
+      "n": 360,
+      "median_deployment_fraction": 0.005699254270973305,
+      "deployed": {
+        "reaches_by_cap": 260,
+        "at_deployed_length": 0,
+        "counts_at_cap_fraction": {
+          "0.01": 2,
+          "0.05": 18,
+          "0.25": 97,
+          "1.0": 260
+        },
+        "median_first_fraction_if_reached": 0.3460273742675781,
+        "median_first_over_natural_if_reached": 57.029435178470735
+      },
+      "isotropic": {
+        "reaches_by_cap": 197,
+        "at_deployed_length": 0,
+        "counts_at_cap_fraction": {
+          "0.01": 1,
+          "0.05": 11,
+          "0.25": 70,
+          "1.0": 197
+        },
+        "median_first_fraction_if_reached": 0.36701202392578125,
+        "median_first_over_natural_if_reached": 53.40935932891684
+      }
+    },
+    "monash_traffic": {
+      "n": 242,
+      "median_deployment_fraction": 0.0066128478992520685,
+      "deployed": {
+        "reaches_by_cap": 157,
+        "at_deployed_length": 4,
+        "counts_at_cap_fraction": {
+          "0.01": 3,
+          "0.05": 15,
+          "0.25": 49,
+          "1.0": 157
+        },
+        "median_first_fraction_if_reached": 0.48333740234375,
+        "median_first_over_natural_if_reached": 49.54473026967574
+      },
+      "isotropic": {
+        "reaches_by_cap": 140,
+        "at_deployed_length": 6,
+        "counts_at_cap_fraction": {
+          "0.01": 5,
+          "0.05": 9,
+          "0.25": 40,
+          "1.0": 140
+        },
+        "median_first_fraction_if_reached": 0.43808746337890625,
+        "median_first_over_natural_if_reached": 47.385103698148214
+      }
+    }
+  },
+  "timesfm": {
+    "daily": {
+      "n": 455,
+      "median_deployment_fraction": 0.5426378364458521,
+      "deployed": {
+        "reaches_by_cap": 455,
+        "at_deployed_length": 440,
+        "counts_at_cap_fraction": {
+          "0.01": 48,
+          "0.05": 191,
+          "0.25": 438,
+          "1.0": 455
+        },
+        "median_first_fraction_if_reached": 0.0651702880859375,
+        "median_first_over_natural_if_reached": 0.12231014120850286
+      },
+      "isotropic": {
+        "reaches_by_cap": 455,
+        "at_deployed_length": 439,
+        "counts_at_cap_fraction": {
+          "0.01": 47,
+          "0.05": 189,
+          "0.25": 438,
+          "1.0": 455
+        },
+        "median_first_fraction_if_reached": 0.06731414794921875,
+        "median_first_over_natural_if_reached": 0.13720045113864457
+      }
+    },
+    "monash_traffic": {
+      "n": 142,
+      "median_deployment_fraction": 0.999999999844659,
+      "deployed": {
+        "reaches_by_cap": 142,
+        "at_deployed_length": 142,
+        "counts_at_cap_fraction": {
+          "0.01": 18,
+          "0.05": 61,
+          "0.25": 138,
+          "1.0": 142
+        },
+        "median_first_fraction_if_reached": 0.0592193603515625,
+        "median_first_over_natural_if_reached": 0.06234741226900486
+      },
+      "isotropic": {
+        "reaches_by_cap": 142,
+        "at_deployed_length": 142,
+        "counts_at_cap_fraction": {
+          "0.01": 16,
+          "0.05": 64,
+          "0.25": 137,
+          "1.0": 142
+        },
+        "median_first_fraction_if_reached": 0.060909271240234375,
+        "median_first_over_natural_if_reached": 0.06284817250471465
+      }
+    }
+  }
+}

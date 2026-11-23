@@ -1,0 +1,146 @@
+{
+  "bolt_to_bolt": {
+    "cases": [
+      {
+        "series": "daily/2915",
+        "donor": 2629,
+        "candidate": 2629
+      },
+      {
+        "series": "daily/94",
+        "donor": 4813,
+        "candidate": 4813
+      },
+      {
+        "series": "daily/447",
+        "donor": 4869,
+        "candidate": 4869
+      },
+      {
+        "series": "daily/1581",
+        "donor": 6065,
+        "candidate": 6065
+      },
+      {
+        "series": "daily/3498",
+        "donor": 41,
+        "candidate": 41
+      },
+      {
+        "series": "daily/764",
+        "donor": 5876,
+        "candidate": 5876
+      }
+    ],
+    "physical_writes": 60,
+    "max_abs_error": 1.7881393432617188e-06
+  },
+  "bolt_to_timesfm": {
+    "cases": [
+      {
+        "series": "daily/2915",
+        "donor": 2629,
+        "candidate": 6125
+      },
+      {
+        "series": "daily/94",
+        "donor": 4813,
+        "candidate": 918
+      },
+      {
+        "series": "daily/447",
+        "donor": 4869,
+        "candidate": 2111
+      },
+      {
+        "series": "daily/1581",
+        "donor": 6065,
+        "candidate": 4280
+      },
+      {
+        "series": "daily/3498",
+        "donor": 41,
+        "candidate": 5545
+      },
+      {
+        "series": "daily/764",
+        "donor": 5876,
+        "candidate": 4053
+      }
+    ],
+    "physical_writes": 54,
+    "max_abs_error": 2.0265579223632812e-06
+  },
+  "timesfm_to_bolt": {
+    "cases": [
+      {
+        "series": "daily/2829",
+        "donor": 1641,
+        "candidate": 4773
+      },
+      {
+        "series": "daily/542",
+        "donor": 478,
+        "candidate": 5432
+      },
+      {
+        "series": "daily/1286",
+        "donor": 2362,
+        "candidate": 2071
+      },
+      {
+        "series": "daily/1581",
+        "donor": 742,
+        "candidate": 3440
+      },
+      {
+        "series": "daily/3498",
+        "donor": 4107,
+        "candidate": 3480
+      },
+      {
+        "series": "daily/2837",
+        "donor": 1310,
+        "candidate": 2830
+      }
+    ],
+    "physical_writes": 54,
+    "max_abs_error": 1.9073486328125e-06
+  },
+  "timesfm_to_timesfm": {
+    "cases": [
+      {
+        "series": "daily/2829",
+        "donor": 1641,
+        "candidate": 1641
+      },
+      {
+        "series": "daily/542",
+        "donor": 478,
+        "candidate": 742
+      },
+      {
+        "series": "daily/1286",
+        "donor": 2362,
+        "candidate": 2362
+      },
+      {
+        "series": "daily/1581",
+        "donor": 742,
+        "candidate": 742
+      },
+      {
+        "series": "daily/3498",
+        "donor": 4107,
+        "candidate": 4107
+      },
+      {
+        "series": "daily/2837",
+        "donor": 1310,
+        "candidate": 1310
+      }
+    ],
+    "physical_writes": 60,
+    "max_abs_error": 1.9073486328125e-06
+  }
+}

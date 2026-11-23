@@ -1,0 +1,36 @@
+{
+  "bolt": {
+    "4813": {
+      "selected_source": {
+        "n_series": 416,
+        "firings": 154,
+        "max_activation_change": 1.1920928955078125e-07,
+        "max_forecast_change": 1.6689300537109375e-06
+      }
+    },
+    "5432": {
+      "selected_target": {
+        "n_series": 416,
+        "firings": 148,
+        "max_activation_change": 2.384185791015625e-07,
+        "max_forecast_change": 9.5367431640625e-07
+      }
+    }
+  },
+  "timesfm": {
+    "742": {
+      "selected_source": {
+        "n_series": 416,
+        "firings": 168,
+        "max_activation_change": 1.1444091796875e-05,
+        "max_forecast_change": 2.384185791015625e-06
+      },
+      "selected_target": {
+        "n_series": 416,
+        "firings": 168,
+        "max_activation_change": 1.1444091796875e-05,
+        "max_forecast_change": 2.384185791015625e-06
+      }
+    }
+  }
+}

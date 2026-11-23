@@ -1,0 +1,10 @@
+{
+  "bolt": {
+    "n_active_source_with_zero_target": 273,
+    "max_observed_numerical_noop": 1.6689300537109375e-06
+  },
+  "timesfm": {
+    "n_active_source_with_zero_target": 537,
+    "max_observed_numerical_noop": 7.152557373046875e-07
+  }
+}

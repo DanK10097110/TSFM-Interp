@@ -1,0 +1,126 @@
+{
+  "bolt": {
+    "calibration": {
+      "pc_relative_error": 0.005514604266414789,
+      "random_relative_error": 0.005200208204871182
+    },
+    "cases": [
+      {
+        "id": "daily/2321",
+        "atom": 2186,
+        "half_difference_abs_max": 1.7881393432617188e-07,
+        "pc_current_abs_max": 1.7881393432617188e-06,
+        "pc_mean_abs_max": 1.430511474609375e-06,
+        "random_current_abs_max": 7.152557373046875e-07,
+        "random_mean_abs_max": 7.152557373046875e-07
+      },
+      {
+        "id": "daily/1629",
+        "atom": 1567,
+        "half_difference_abs_max": 8.940696716308594e-08,
+        "pc_current_abs_max": 2.980232238769531e-07,
+        "pc_mean_abs_max": 2.384185791015625e-07,
+        "random_current_abs_max": 4.172325134277344e-07,
+        "random_mean_abs_max": 8.940696716308594e-07
+      },
+      {
+        "id": "daily/375",
+        "atom": 41,
+        "half_difference_abs_max": 2.384185791015625e-07,
+        "pc_current_abs_max": 4.76837158203125e-07,
+        "pc_mean_abs_max": 4.76837158203125e-07,
+        "random_current_abs_max": 7.152557373046875e-07,
+        "random_mean_abs_max": 5.960464477539062e-07
+      },
+      {
+        "id": "machines/fastStorage_797",
+        "atom": 5876,
+        "half_difference_abs_max": 8.940696716308594e-08,
+        "pc_current_abs_max": 8.940696716308594e-08,
+        "pc_mean_abs_max": 6.705522537231445e-08,
+        "random_current_abs_max": 1.043081283569336e-07,
+        "random_mean_abs_max": 9.685754776000977e-08
+      },
+      {
+        "id": "machines/fastStorage_901",
+        "atom": 1608,
+        "half_difference_abs_max": 1.7881393432617188e-07,
+        "pc_current_abs_max": 5.587935447692871e-07,
+        "pc_mean_abs_max": 7.450580596923828e-07,
+        "random_current_abs_max": 1.2516975402832031e-06,
+        "random_mean_abs_max": 7.487833499908447e-07
+      },
+      {
+        "id": "machines/fastStorage_133",
+        "atom": 5876,
+        "half_difference_abs_max": 8.940696716308594e-08,
+        "pc_current_abs_max": 3.5762786865234375e-07,
+        "pc_mean_abs_max": 2.384185791015625e-07,
+        "random_current_abs_max": 2.086162567138672e-07,
+        "random_mean_abs_max": 2.384185791015625e-07
+      }
+    ]
+  },
+  "timesfm": {
+    "calibration": {
+      "pc_relative_error": 0.00011218586281975181,
+      "random_relative_error": 0.0006037983725415408
+    },
+    "cases": [
+      {
+        "id": "daily/2321",
+        "atom": 742,
+        "half_difference_abs_max": 2.980232238769531e-07,
+        "pc_current_abs_max": 3.5762786865234375e-07,
+        "pc_mean_abs_max": 3.5762786865234375e-07,
+        "random_current_abs_max": 3.5762786865234375e-07,
+        "random_mean_abs_max": 2.384185791015625e-07
+      },
+      {
+        "id": "daily/1629",
+        "atom": 4002,
+        "half_difference_abs_max": 2.086162567138672e-07,
+        "pc_current_abs_max": 1.7881393432617188e-07,
+        "pc_mean_abs_max": 1.1920928955078125e-07,
+        "random_current_abs_max": 1.7881393432617188e-07,
+        "random_mean_abs_max": 1.1920928955078125e-07
+      },
+      {
+        "id": "daily/375",
+        "atom": 1725,
+        "half_difference_abs_max": 2.384185791015625e-07,
+        "pc_current_abs_max": 2.384185791015625e-07,
+        "pc_mean_abs_max": 4.76837158203125e-07,
+        "random_current_abs_max": 3.5762786865234375e-07,
+        "random_mean_abs_max": 5.960464477539062e-07
+      },
+      {
+        "id": "machines/fastStorage_797",
+        "atom": 2362,
+        "half_difference_abs_max": 2.9802322387695312e-08,
+        "pc_current_abs_max": 1.1920928955078125e-07,
+        "pc_mean_abs_max": 1.1920928955078125e-07,
+        "random_current_abs_max": 1.341104507446289e-07,
+        "random_mean_abs_max": 1.1920928955078125e-07
+      },
+      {
+        "id": "machines/fastStorage_901",
+        "atom": 2362,
+        "half_difference_abs_max": 3.725290298461914e-07,
+        "pc_current_abs_max": 2.682209014892578e-07,
+        "pc_mean_abs_max": 2.2351741790771484e-07,
+        "random_current_abs_max": 3.8743019104003906e-07,
+        "random_mean_abs_max": 1.4901161193847656e-07
+      },
+      {
+        "id": "machines/fastStorage_133",
+        "atom": 2362,
+        "half_difference_abs_max": 1.341104507446289e-07,
+        "pc_current_abs_max": 2.682209014892578e-07,
+        "pc_mean_abs_max": 2.086162567138672e-07,
+        "random_current_abs_max": 1.1920928955078125e-07,
+        "random_mean_abs_max": 2.384185791015625e-07
+      }
+    ]
+  }
+}

@@ -1,0 +1,139 @@
+{
+  "name": "MOMENT-1-large",
+  "site": "encoder.block.1",
+  "steering_recipe_and_data_match": true,
+  "SAE": {
+    "n_train_rows": 9240,
+    "n_benchmark_rows": 11520,
+    "dict_size": 384,
+    "k": 32,
+    "reconstruction_fidelity": 0.938711418902284,
+    "reconstruction_fidelity_heldout": 0.9284710983686659,
+    "dead_feature_rate": 0.2552083432674408,
+    "dead_feature_rate_heldout": 0.2942708432674408,
+    "admission": {
+      "passed": true,
+      "reason": "cleared every bar",
+      "checks": [
+        {
+          "check": "reconstruction fidelity",
+          "split": "heldout",
+          "value": 0.9284710983686659,
+          "threshold": 0.85,
+          "rule": "fidelity >= 0.85 on the heldout split",
+          "passed": true
+        },
+        {
+          "check": "forecast preservation",
+          "split": "heldout",
+          "value": 0.013926267623901367,
+          "threshold": 0.25,
+          "rule": "|dMASE| <= 0.25 at TOKEN granularity (window is architecture-confounded)",
+          "passed": true
+        },
+        {
+          "check": "dead-feature rate",
+          "split": "train",
+          "value": null,
+          "threshold": null,
+          "rule": "the dead-rate gate recorded for this target",
+          "passed": true
+        }
+      ],
+      "failed_checks": [],
+      "unmeasured_checks": []
+    },
+    "heldout_token_preservation": {
+      "granularity": "token",
+      "split": "heldout",
+      "n_series": 8,
+      "n_requested": 8,
+      "n_realized": 8,
+      "limited_by": null,
+      "rows": [
+        1,
+        35,
+        36,
+        48,
+        116,
+        137,
+        153,
+        156
+      ],
+      "mase_clean": 1.8661720752716064,
+      "mase_reconstructed": 1.8800983428955078,
+      "mase_delta": 0.013926267623901367
+    },
+    "feature_ablation_count": 2,
+    "feature_steering_count": 3,
+    "ground_truth_matched": 34
+  },
+  "ablation": {
+    "null": "profile_matched",
+    "candidate_count": 4,
+    "scorable_candidates": 2,
+    "n_null": 6,
+    "selected_feature": 309,
+    "replay_ids": [
+      "505f806985c40eb6",
+      "f5ba1847f7b9ac29",
+      "d9cc8d6c0776c03b",
+      "76e969cfc135b283"
+    ],
+    "replay_error_in_history_sd": {
+      "with_feature": 4.810288630145245e-07,
+      "without_feature": 8.017147716908742e-07,
+      "unpatched": 5.211146015990682e-07
+    },
+    "max_ablation_effect_in_history_sd": 1.1412868355869001,
+    "peak_active_code": 104.25206756591797,
+    "reach": {
+      "reachable": true,
+      "reason": "encoder.block.1 reaches the forecast: cross-patch delta 0.142124, relative reach 0.209597 (measured) (self-patch control 0, exactly 0.0 as required)",
+      "target_layer": "encoder.block.1",
+      "other_layer": "encoder.block.0",
+      "self_patch_delta": 0.0,
+      "cross_patch_delta": 0.14212417602539062,
+      "forecast_scale": 0.6780819296836853,
+      "relative_reach": 0.20959735070906454,
+      "min_relative_reach": 0.001,
+      "reach_method": "measured",
+      "declared_reads_patched_positions": false,
+      "n_series": 8,
+      "n_requested": 8,
+      "n_realized": 8,
+      "limited_by": null
+    }
+  },
+  "steering": {
+    "kind": "level",
+    "verified": 2,
+    "total": 4,
+    "ci": [
+      0.15003898915214953,
+      0.8499610108478505
+    ],
+    "improved": 4,
+    "median_relative_error": 0.1354325329967626,
+    "p90_relative_error": 0.20450200245071984,
+    "replay_matches": 4,
+    "completed": 4,
+    "zero_targets": 0,
+    "unavailable": 0,
+    "misses_at_radius": 1,
+    "median_seconds": 70.18206975515932,
+    "median_calls": 25.5,
+    "baseline_mae": 0.2804164692061022,
+    "steered_mae": 0.27838585228892043,
+    "mae_delta_ci": [
+      -0.017295963363721967,
+      0.01564447657437995
+    ],
+    "baseline_pinball": 0.1402082346030511,
+    "steered_pinball": 0.13919292614446022,
+    "pinball_delta_ci": [
+      -0.008647981681860983,
+      0.007822238287189975
+    ]
+  }
+}

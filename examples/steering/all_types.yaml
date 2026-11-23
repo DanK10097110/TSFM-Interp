@@ -1,0 +1,31 @@
+# Shared held-out test set for both pretrained models and all 19 requests.
+run: {name: steering_all_types, device: cpu, dtype: float32, seed: 731}
+data: {source: smoke, context_len: 64, horizon: 8, smoke_series_per_family: 24}
+models:
+  - {name: Chronos-Bolt, adapter: chronos_bolt, checkpoint: amazon/chronos-bolt-small, batch_size: 128}
+  - {name: TimesFM, adapter: timesfm, checkpoint: google/timesfm-2.5-200m-pytorch, batch_size: 128}
+steering:
+  enabled: true
+  max_series: 24
+  quantiles: [0.1, 0.5, 0.9]
+  search: {max_candidates: 3, screen_candidates: 8, rank: 16, refinement_steps: 1, calibration_samples: 4, validation_samples: 4}
+  requests:
+    - {kind: level, strength: 0.2}
+    - {kind: trend, strength: -0.2}
+    - {kind: detrend, strength: 0.5}
+    - {kind: amplitude, strength: 0.2}
+    - {kind: seasonality, strength: 0.2, period: 8, phase: 0}
+    - {kind: deseasonalize, strength: 0.5, period: 8}
+    - {kind: smooth, strength: 0.5}
+    - {kind: roughness, strength: 0.2}
+    - {kind: uncertainty, strength: 0.2}
+    - {kind: asymmetry, strength: 0.2}
+    - {kind: quantile, strength: 0.2, quantile: 0.9}
+    - {kind: anchor, strength: 0.25, value: 0}
+    - {kind: mean_revert, strength: 0.5}
+    - {kind: bounds, lower: -0.5, upper: 0.5}
+    - {kind: delay, delay: 1}
+    - {kind: context_ignore, strength: 0.75}
+    - {kind: context_emphasize, strength: 0.5}
+    - {kind: context_focus, outside_weight: 0.25}
+    - {kind: context_recency, strength: 1}

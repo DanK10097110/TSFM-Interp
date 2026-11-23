@@ -1,0 +1,312 @@
+{
+  "bolt_donor1": {
+    "daily": {
+      "histories": 96,
+      "events": 215,
+      "features": 11,
+      "eligible_atoms": [
+        2224,
+        2724,
+        1574,
+        2241,
+        3805,
+        149,
+        2916,
+        2049,
+        3875,
+        3492,
+        6045
+      ],
+      "per_feature_gain": [
+        5.93449161228452,
+        4.099601756105171,
+        0.31400877122910803,
+        0.8347318294207828,
+        0.3294372452328674,
+        1.8982808712920887,
+        0.6043109772925441,
+        1.0826516772558863,
+        2.024876865285265,
+        1.8467989201079043,
+        1.2386652621961407
+      ],
+      "equal_feature": 1.8370777988820253,
+      "event_energy_pooled": 1.368888754478774,
+      "leave_one_feature_out_range": [
+        1.4273364175417758,
+        1.989384701647317
+      ],
+      "positive_features": 11,
+      "strong_historical_features": 6,
+      "strong_historical_gain": 1.2805862471237845,
+      "stable_events": 14,
+      "improved": 173,
+      "degraded": 28,
+      "ties": 14
+    },
+    "weekly": {
+      "histories": 62,
+      "events": 147,
+      "features": 6,
+      "eligible_atoms": [
+        2224,
+        1277,
+        2916,
+        3875,
+        3492,
+        6045
+      ],
+      "per_feature_gain": [
+        2.9384536522824334,
+        1.6506415807694013,
+        0.273013001998534,
+        0.27474797472727014,
+        5.228692130521193,
+        1.1449997428594194
+      ],
+      "equal_feature": 1.918424680526375,
+      "event_energy_pooled": 0.8474794805543902,
+      "leave_one_feature_out_range": [
+        1.2563711905274115,
+        2.2475070162319435
+      ],
+      "positive_features": 6,
+      "strong_historical_features": 3,
+      "strong_historical_gain": 0.5642535731950745,
+      "stable_events": 4,
+      "improved": 122,
+      "degraded": 21,
+      "ties": 4
+    }
+  },
+  "bolt_donor2": {
+    "daily": {
+      "histories": 96,
+      "events": 178,
+      "features": 11,
+      "eligible_atoms": [
+        2780,
+        3448,
+        4517,
+        1941,
+        3327,
+        3838,
+        102,
+        1879,
+        5485,
+        2054,
+        4494
+      ],
+      "per_feature_gain": [
+        1.5375247088174804,
+        1.1718722045002576,
+        2.0875686313850794,
+        1.01400023760627,
+        1.324496268575824,
+        9.579992780272253,
+        2.2038317371119103,
+        3.393019421905504,
+        10.83227949322063,
+        5.075256283106847,
+        1.5559368388007695
+      ],
+      "equal_feature": 3.6159798732093478,
+      "event_energy_pooled": 2.075256110691063,
+      "leave_one_feature_out_range": [
+        2.894349911208219,
+        3.8761778367696555
+      ],
+      "positive_features": 11,
+      "strong_historical_features": 6,
+      "strong_historical_gain": 3.3478678528632404,
+      "stable_events": 8,
+      "improved": 150,
+      "degraded": 20,
+      "ties": 8
+    },
+    "weekly": {
+      "histories": 62,
+      "events": 132,
+      "features": 8,
+      "eligible_atoms": [
+        4517,
+        1941,
+        1152,
+        3327,
+        102,
+        5485,
+        2054,
+        4494
+      ],
+      "per_feature_gain": [
+        2.5100395871617196,
+        1.2707228125351915,
+        2.7590140465823136,
+        1.579622578890617,
+        2.0079907306349436,
+        3.7457147085847393,
+        2.9826399146694778,
+        0.7841118425019011
+      ],
+      "equal_feature": 2.204982027695113,
+      "event_energy_pooled": 1.9772704681528037,
+      "leave_one_feature_out_range": [
+        1.9848773589965951,
+        2.4079634827227148
+      ],
+      "positive_features": 8,
+      "strong_historical_features": 4,
+      "strong_historical_gain": 1.654274287149297,
+      "stable_events": 5,
+      "improved": 110,
+      "degraded": 17,
+      "ties": 5
+    }
+  },
+  "timesfm_donor1": {
+    "daily": {
+      "histories": 96,
+      "events": 154,
+      "features": 10,
+      "eligible_atoms": [
+        2599,
+        5901,
+        4003,
+        5734,
+        5193,
+        5009,
+        974,
+        4599,
+        4459,
+        423
+      ],
+      "per_feature_gain": [
+        0.2045871242217199,
+        0.4697535438068212,
+        0.18301640533322772,
+        0.32537761789002073,
+        0.4215566246582614,
+        0.8229530687642089,
+        0.493713718253943,
+        0.3662809809174914,
+        0.5117286665362659,
+        0.27482430157612325
+      ],
+      "equal_feature": 0.40737920519580834,
+      "event_energy_pooled": 0.4195913194277222,
+      "leave_one_feature_out_range": [
+        0.361204331465986,
+        0.4323084051805395
+      ],
+      "positive_features": 10,
+      "strong_historical_features": 5,
+      "strong_historical_gain": 0.40882882349899263,
+      "stable_events": 52,
+      "improved": 89,
+      "degraded": 13,
+      "ties": 52
+    },
+    "weekly": {
+      "histories": 62,
+      "events": 70,
+      "features": 3,
+      "eligible_atoms": [
+        2136,
+        5901,
+        4459
+      ],
+      "per_feature_gain": [
+        0.21520729840084055,
+        0.6362391442884376,
+        0.3929389124537059
+      ],
+      "equal_feature": 0.41479511838099464,
+      "event_energy_pooled": 0.34604620606192443,
+      "leave_one_feature_out_range": [
+        0.30407310542727317,
+        0.5145890283710717
+      ],
+      "positive_features": 3,
+      "strong_historical_features": 2,
+      "strong_historical_gain": 0.5145890283710718,
+      "stable_events": 15,
+      "improved": 48,
+      "degraded": 7,
+      "ties": 15
+    }
+  },
+  "timesfm_donor2": {
+    "daily": {
+      "histories": 96,
+      "events": 169,
+      "features": 9,
+      "eligible_atoms": [
+        4210,
+        2221,
+        1611,
+        649,
+        3313,
+        607,
+        1332,
+        4154,
+        5101
+      ],
+      "per_feature_gain": [
+        0.9807683293746192,
+        -0.014178500703028273,
+        0.3205220616472362,
+        0.6235553657101276,
+        -0.2598580858039444,
+        0.2686637428521135,
+        2.419873045307199,
+        0.6732306502885291,
+        1.0307529179485815
+      ],
+      "equal_feature": 0.6714810585134926,
+      "event_energy_pooled": 0.2404404962662311,
+      "leave_one_feature_out_range": [
+        0.45293206016427934,
+        0.7878984515531723
+      ],
+      "positive_features": 7,
+      "strong_historical_features": 5,
+      "strong_historical_gain": 0.33016183404500205,
+      "stable_events": 37,
+      "improved": 105,
+      "degraded": 27,
+      "ties": 37
+    },
+    "weekly": {
+      "histories": 62,
+      "events": 86,
+      "features": 5,
+      "eligible_atoms": [
+        4260,
+        4210,
+        1611,
+        3313,
+        1332
+      ],
+      "per_feature_gain": [
+        0.25303821090598855,
+        0.4580640512569011,
+        0.3135648490533647,
+        0.3775972721127092,
+        0.09231653542280092
+      ],
+      "equal_feature": 0.2989161837503529,
+      "event_energy_pooled": 0.32934129546827307,
+      "leave_one_feature_out_range": [
+        0.2591292168737158,
+        0.3505660958322409
+      ],
+      "positive_features": 5,
+      "strong_historical_features": 3,
+      "strong_historical_gain": 0.38307539080765834,
+      "stable_events": 24,
+      "improved": 40,
+      "degraded": 22,
+      "ties": 24
+    }
+  }
+}

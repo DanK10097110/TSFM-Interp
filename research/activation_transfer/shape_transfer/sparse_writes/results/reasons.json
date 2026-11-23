@@ -1,0 +1,34 @@
+{
+  "bolt": {
+    "daily": {
+      "firing": 520,
+      "improves": 13,
+      "no_favorable_sign": 0,
+      "all_favorable_candidates_overshoot": 507,
+      "rejected_best_full_to_optimal_fraction_median": 10.829511910689671
+    },
+    "machines": {
+      "firing": 127,
+      "improves": 33,
+      "no_favorable_sign": 0,
+      "all_favorable_candidates_overshoot": 94,
+      "rejected_best_full_to_optimal_fraction_median": 10.275545497795054
+    }
+  },
+  "timesfm": {
+    "daily": {
+      "firing": 691,
+      "improves": 690,
+      "no_favorable_sign": 0,
+      "all_favorable_candidates_overshoot": 1,
+      "rejected_best_full_to_optimal_fraction_median": 2.3795293892550644
+    },
+    "machines": {
+      "firing": 156,
+      "improves": 156,
+      "no_favorable_sign": 0,
+      "all_favorable_candidates_overshoot": 0,
+      "rejected_best_full_to_optimal_fraction_median": null
+    }
+  }
+}

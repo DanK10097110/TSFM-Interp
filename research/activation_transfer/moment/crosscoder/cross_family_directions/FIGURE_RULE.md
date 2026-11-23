@@ -1,0 +1,3 @@
+# Choosing an example without choosing its agreement
+
+Before inspecting individual example trajectories, fix the following readout for a companion figure. From the four-per-history finite sample for the first masked seed on M4 daily, select the event closest to the median centered RMS of the **source-only** TimesFM true forecast change. Resolve ties in archived row/slot order. No paired, other, dense, or probed-patch outcome enters this selection. Show source and paired probe-inferred 32-point input patch changes and actual source/paired/dense H16 native changes, all at the genuine source dose. Caption the concrete series ID, feature ID, scales, and the selection rule. This example supplements the complete primary intervals.

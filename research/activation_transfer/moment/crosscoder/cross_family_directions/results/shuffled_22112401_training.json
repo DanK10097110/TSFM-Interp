@@ -1,0 +1,52 @@
+{
+  "method": "shuffled",
+  "seed": 22112401,
+  "training_histories": 768,
+  "physical_intervals": 15,
+  "training_rows": 11520,
+  "trained_updates": 1000,
+  "masked_steps": 500,
+  "normalized_mse_every_250": [
+    [
+      0.37852574211359025,
+      0.5260460454225541
+    ],
+    [
+      0.22416606163978578,
+      0.4071786847114563
+    ],
+    [
+      0.19859851342439652,
+      0.33487613302469255
+    ],
+    [
+      0.18660561168193818,
+      0.2907335121035576
+    ]
+  ],
+  "validation": {
+    "all": {
+      "source_only": {
+        "timesfm": 0.7985967541965915,
+        "bolt": 0.06310028108419319
+      },
+      "both": {
+        "timesfm": 0.7732877959539222,
+        "bolt": 0.7112332052012847
+      }
+    },
+    "endpoint": {
+      "source_only": {
+        "timesfm": 0.8081647673217117,
+        "bolt": 0.2085434852476048
+      },
+      "both": {
+        "timesfm": 0.7837312755634638,
+        "bolt": 0.8162917137511322
+      }
+    }
+  },
+  "positive_slots_min": 32,
+  "positive_slots_max": 32,
+  "decoder_unit_max_error": 1.7881393432617188e-07
+}

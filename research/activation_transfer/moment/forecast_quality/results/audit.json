@@ -1,0 +1,109 @@
+{
+  "both_origins_from_original_arrays": [
+    "bitbrains_fast_storage/fastStorage_186",
+    "bitbrains_fast_storage/fastStorage_1219",
+    "m4_daily/1487",
+    "m4_daily/2270",
+    "m4_hourly/T000263",
+    "m4_hourly/T000171",
+    "m4_weekly/261",
+    "m4_weekly/12",
+    "monash_electricity_hourly/T000195",
+    "monash_electricity_hourly/T000110",
+    "monash_traffic/T000677",
+    "monash_traffic/T000853"
+  ],
+  "weather": {
+    "verified_measured_context_and_future_values": 91044
+  },
+  "score_replay": {
+    "independently_recomputed_mase1_endpoints": 60,
+    "max_absolute_error": 1.4210854715202004e-14
+  },
+  "native_model_replay": {
+    "moment_small": {
+      "six_domain": {
+        "ids": [
+          "bitbrains_fast_storage/fastStorage_261",
+          "m4_daily/2971",
+          "m4_hourly/T000349",
+          "m4_weekly/276",
+          "monash_electricity_hourly/T000304",
+          "monash_traffic/T000279"
+        ],
+        "max_sd_error_by_horizon": {
+          "8": 8.216483172578825e-07,
+          "16": 8.216483172578825e-07
+        }
+      },
+      "weather": {
+        "ids": [
+          "MO_Chillicothe_22_ENE",
+          "NH_Durham_2_N",
+          "FL_Titusville_7_E",
+          "MT_Lewistown_42_WSW"
+        ],
+        "max_sd_error_by_horizon": {
+          "8": 3.757806950021553e-07,
+          "16": 4.6531551431589476e-07
+        }
+      }
+    },
+    "moment_base": {
+      "six_domain": {
+        "ids": [
+          "bitbrains_fast_storage/fastStorage_261",
+          "m4_daily/2971",
+          "m4_hourly/T000349",
+          "m4_weekly/276",
+          "monash_electricity_hourly/T000304",
+          "monash_traffic/T000279"
+        ],
+        "max_sd_error_by_horizon": {
+          "8": 8.216483172578825e-07,
+          "16": 8.216483172578825e-07
+        }
+      },
+      "weather": {
+        "ids": [
+          "MO_Chillicothe_22_ENE",
+          "NH_Durham_2_N",
+          "FL_Titusville_7_E",
+          "MT_Lewistown_42_WSW"
+        ],
+        "max_sd_error_by_horizon": {
+          "8": 3.757806950021553e-07,
+          "16": 3.757806950021553e-07
+        }
+      }
+    },
+    "moment_large": {
+      "six_domain": {
+        "ids": [
+          "bitbrains_fast_storage/fastStorage_261",
+          "m4_daily/2971",
+          "m4_hourly/T000349",
+          "m4_weekly/276",
+          "monash_electricity_hourly/T000304",
+          "monash_traffic/T000279"
+        ],
+        "max_sd_error_by_horizon": {
+          "8": 8.216483172578825e-07,
+          "16": 1.011790907005752e-06
+        }
+      },
+      "weather": {
+        "ids": [
+          "MO_Chillicothe_22_ENE",
+          "NH_Durham_2_N",
+          "FL_Titusville_7_E",
+          "MT_Lewistown_42_WSW"
+        ],
+        "max_sd_error_by_horizon": {
+          "8": 3.757806950021553e-07,
+          "16": 3.757806950021553e-07
+        }
+      }
+    }
+  }
+}

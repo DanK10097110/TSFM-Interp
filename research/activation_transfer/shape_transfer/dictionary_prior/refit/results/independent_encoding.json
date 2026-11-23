@@ -1,0 +1,110 @@
+{
+  "bolt": {
+    "cases": [
+      {
+        "seed": 1,
+        "series": "daily/307",
+        "source_atom": 2916,
+        "entrants": 0
+      },
+      {
+        "seed": 1,
+        "series": "daily/2123",
+        "source_atom": 2916,
+        "entrants": 1
+      },
+      {
+        "seed": 2,
+        "series": "daily/1076",
+        "source_atom": 4517,
+        "entrants": 0
+      },
+      {
+        "seed": 2,
+        "series": "daily/1062",
+        "source_atom": 4517,
+        "entrants": 2
+      }
+    ],
+    "real_writes": 20,
+    "max_abs_error": 6.556510925292969e-07,
+    "endpoint_counts": {
+      "1": {
+        "switch": {
+          "events": 340,
+          "switched": 324
+        },
+        "switch_eighth": {
+          "events": 340,
+          "switched": 124
+        }
+      },
+      "2": {
+        "switch": {
+          "events": 300,
+          "switched": 285
+        },
+        "switch_eighth": {
+          "events": 300,
+          "switched": 108
+        }
+      }
+    },
+    "independent_macro_scores": 80,
+    "macro_max_error": 3.552713678800501e-15
+  },
+  "timesfm": {
+    "cases": [
+      {
+        "seed": 1,
+        "series": "daily/2819",
+        "source_atom": 5901,
+        "entrants": 0
+      },
+      {
+        "seed": 1,
+        "series": "daily/3517",
+        "source_atom": 4459,
+        "entrants": 2
+      },
+      {
+        "seed": 2,
+        "series": "daily/1187",
+        "source_atom": 1332,
+        "entrants": 0
+      },
+      {
+        "seed": 2,
+        "series": "daily/958",
+        "source_atom": 649,
+        "entrants": 2
+      }
+    ],
+    "real_writes": 20,
+    "max_abs_error": 5.7220458984375e-06,
+    "endpoint_counts": {
+      "1": {
+        "switch": {
+          "events": 254,
+          "switched": 166
+        },
+        "switch_eighth": {
+          "events": 254,
+          "switched": 25
+        }
+      },
+      "2": {
+        "switch": {
+          "events": 316,
+          "switched": 242
+        },
+        "switch_eighth": {
+          "events": 316,
+          "switched": 42
+        }
+      }
+    },
+    "independent_macro_scores": 120,
+    "macro_max_error": 3.3306690738754696e-16
+  }
+}

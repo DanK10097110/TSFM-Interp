@@ -90,6 +90,8 @@ the `dev` branch (grouped here by the `ROADMAP.md` item they belong to; grep
 | Null / random-weight floors | `null_chronos_random.yaml`, `null_chronos_small_random.yaml`, `null_timesfm_random.yaml` | `random_init` causal-floor measurements |
 | SAE revival / panel | `sae_revival.yaml`, `sae_revival_searchfix.yaml`, `sae_stage0_panel.yaml`, `sae_stage0_panel_revived.yaml` | The dead-feature-revival recipe search |
 | Distillation-lineage controls | `distill_negative_random_architecture.yaml`, `distill_positive_chronos_small_base.yaml`, `lineage_pair_l0.yaml` | A model-lineage detectability study |
+| MOMENT large forecast and SAE workflow | `moment_large.yaml` | Pinned published large masked-patch point head, admitted early-layer SAE, ablation, feature steering and a level-steering replay on the sealed benchmark. |
+| MOMENT small forecast diagnostics | `moment.yaml` | Pinned published small point head and a middle-block SAE on the same benchmark. The released small/base heads have an initialization-like fingerprint. |
 | Zero-code probe sweep | `generic_hf_{lagllama,moirai,moment,timemoe,toto,ttm}.yaml` | Throwaway `generic_hf` probes behind `docs/probe_sweep.md` (Timer and TimeMoE resolve; the rest crash upstream in `AutoConfig`) |
 | Adapter / report dev checks | `lag_llama_dev.yaml`, `smoke_demo_probe.yaml`, `smoke_mde_unsatisfiable_check.yaml` | Lag-Llama adapter development; a `--new-adapter` scaffold; the multiplicity p-floor warning |
 | Untrained-twin causal floor | `null_4model_causal_floor.yaml` | The causal-agreement rate's `random_init` floor |

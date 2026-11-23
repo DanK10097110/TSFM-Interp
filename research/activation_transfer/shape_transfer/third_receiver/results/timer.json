@@ -1,0 +1,45 @@
+{
+  "checkpoint": [
+    "generic_hf",
+    "thuml/timer-base-84m",
+    "70077a71acce1b4c00d98332fcaabc694255d8e5"
+  ],
+  "site": "model.layers.4",
+  "site_side": "output",
+  "token_spans": [
+    [
+      0.0,
+      96.0
+    ],
+    [
+      96.0,
+      192.0
+    ],
+    [
+      192.0,
+      288.0
+    ],
+    [
+      288.0,
+      384.0
+    ],
+    [
+      384.0,
+      480.0
+    ]
+  ],
+  "patch_index": 4,
+  "selected_span": [
+    384.0,
+    480.0
+  ],
+  "radius": 11.43222713470459,
+  "cap": 2.286445379257202,
+  "patch_replay_max": 0.0,
+  "fd_relative_error": 0.0003489931987132877,
+  "n_jacobians": 416,
+  "horizon": 8,
+  "width": 1024,
+  "patch_count": 1,
+  "point_strategy": "forward_field"
+}

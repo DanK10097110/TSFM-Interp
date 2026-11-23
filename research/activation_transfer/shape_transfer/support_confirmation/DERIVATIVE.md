@@ -1,0 +1,20 @@
+# Is matching the current forecast derivative more important than matching the active feature IDs?
+
+**Yes for the early centered response, in both receivers.** Giving the controller the wrong 32 features and the correct derivative scored .688 on Bolt and .434 on TimesFM. Keeping the correct features and supplying another history’s derivative reduced skill to .274 and .207. The differences were +.414 [.339, .487] and +.227 [.169, .323]. This follow-up tests a mechanism on the already scored 160 short-context M4 histories. [Frozen follow-up design](DERIVATIVE_PROTOCOL.md) · [Scores, paired intervals and norm checks](results/derivative.json)
+
+For every intervention we froze the current donor, original current target dense response request, hidden norm budget and live recipient input waveform. The two factors changed which receiver history provided its 32 SAE axes and which provided the first eight forecast derivatives used to set their coefficients. Each reassignment used the same four fixed one-to-one cycles as before. The both-reassigned policy gives the controller a naturally matched set of axes and derivative for someone else’s history. The control using a historical derivative averages 96 earlier CAL M4 histories, keeping native axes. We physically applied each solution to the original current recipient. Only ordinary forecasts were differentiated. The eight withheld leads entered scoring after each physical patch. [Implementation](derivative.py) · [Bolt raw effects](results/bolt_derivative.npz) · [TimesFM raw effects](results/timesfm_derivative.npz)
+
+| Receiver | Current axes + derivative | Other axes, current derivative | Current axes, other derivative | Both from same other history | Current axes, CAL mean derivative |
+|---|---:|---:|---:|---:|---:|
+| Bolt, early dense shape | .689 | .688 | .274 | .254 | .481 |
+| TimesFM, early dense shape | .437 | .434 | .207 | .205 | .281 |
+| Bolt, early donor shape | .476 | .478 | .203 | .175 | .339 |
+| TimesFM, early donor shape | .433 | .430 | .208 | .205 | .282 |
+| Bolt, withheld donor shape | .021 | .005 | −.037 | −.066 | −.057 |
+| TimesFM, withheld donor shape | −.006 | −.014 | −.033 | −.039 | −.024 |
+
+The direct comparison also equals the difference between the wrong-derivative cost averaged over the two axis assignments and the wrong-axis cost averaged over the two derivative assignments. It uses pairs of physical outcomes on the same firing events. Bolt had 349 eligible events across eight donor features, TimesFM 291 across eleven. The paired crossed intervals include variation across both histories and donor features. At the withheld donor leads, the difference in costs was +.042 [−.045, .141] and +.019 [−.057, .076]. [Full contrasts](results/derivative.json)
+
+An extra controller saw only the **mean** of the eight requested changes and the average of the eight derivative rows. It fit nearly all the mean dense response with current axes and derivative, scoring .987 in Bolt and .963 in TimesFM. Its early centered shape scores were −.001 and −.152. It could score .910 and .933 on the uncentered waveform through that mean response alone. A large uncentered score would therefore miss the history dependence of the coefficients for forecast shape. All methods use the same cap per case, while the mean-only solutions can choose shorter writes. [Actual norms and separated mean, full and centered outcomes](results/derivative.json)
+
+The result locates useful current-history information in the forecast sensitivity used to set the signed coefficients. The observed early fit does not identify a unique latent representation or imply reliable recovery of the donor’s later changes. An independent kernel explicitly held the requested eight-lead waveform fixed while swapping derivatives and repeated 60 singleton interventions through a separate additive hook. All 16 forecast leads agreed within 0.000003815 observed-history SD. [Per-item derivative-factorial replay](results/derivative_replay.json)

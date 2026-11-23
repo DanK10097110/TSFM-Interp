@@ -1,0 +1,8 @@
+{
+  "revision": "6c1067e5a57161249b17289a565178dc7a3fb3ca",
+  "train_sha256": "6aa668d4f04654c0bf5f07b266a51c556f0df2faf4709f852653755396a249e4",
+  "test_sha256": "6dc2dd45b3af320389e2d3735cb4b3cdf320b63cbcda15d1a17193ab99702306",
+  "eligible": 23000,
+  "holdout": 256,
+  "median_history": 29.0
+}

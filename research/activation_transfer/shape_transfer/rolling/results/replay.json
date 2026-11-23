@@ -1,0 +1,16 @@
+{
+  "bolt": {
+    "receiver_actions": 90,
+    "target_abs_max": 1.9073486328125e-06,
+    "source_actions": 18,
+    "source_abs_max": 1.6689300537109375e-06,
+    "donor_stopped_samples": 8
+  },
+  "timesfm": {
+    "receiver_actions": 90,
+    "target_abs_max": 2.86102294921875e-06,
+    "source_actions": 18,
+    "source_abs_max": 3.814697265625e-06,
+    "donor_stopped_samples": 8
+  }
+}

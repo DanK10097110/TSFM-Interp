@@ -1,0 +1,6 @@
+# The checked research record includes compact metrics and forecast effects.
+!**/results/*.json
+!**/results/*.npz
+!**/results/*.csv
+!verification.json
+!transfer_results.png

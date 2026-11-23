@@ -1,0 +1,155 @@
+{
+  "research_revision": "3ab637e413f35f2c317573c0ace280d825c558de",
+  "versions": {
+    "torch": "2.12.0",
+    "transformers": "4.57.6",
+    "huggingface-hub": "0.36.2",
+    "numpy": "2.1.0",
+    "scipy": "1.18.0"
+  },
+  "models": {
+    "small": {
+      "checkpoint": "small",
+      "canonical_flan_config_differences": {},
+      "research_num_state_keys": 80,
+      "head": "PretrainHead",
+      "cases": [
+        {
+          "length": 480,
+          "horizon": 8,
+          "max_forecast_error": 0.0,
+          "block_max_error": {
+            "patches": 0.0,
+            "first": 0.0,
+            "middle": 0.0,
+            "last": 0.0,
+            "head": 0.0
+          }
+        },
+        {
+          "length": 477,
+          "horizon": 17,
+          "max_forecast_error": 0.0,
+          "block_max_error": {
+            "patches": 0.0,
+            "first": 0.0,
+            "middle": 0.0,
+            "last": 0.0,
+            "head": 0.0
+          }
+        },
+        {
+          "length": 512,
+          "horizon": 64,
+          "max_forecast_error": 0.0,
+          "block_max_error": {
+            "patches": 0.0,
+            "first": 0.0,
+            "middle": 0.0,
+            "last": 0.0,
+            "head": 0.0
+          }
+        }
+      ]
+    },
+    "base": {
+      "checkpoint": "base",
+      "canonical_flan_config_differences": {},
+      "research_num_state_keys": 116,
+      "head": "PretrainHead",
+      "cases": [
+        {
+          "length": 480,
+          "horizon": 8,
+          "max_forecast_error": 0.0,
+          "block_max_error": {
+            "patches": 0.0,
+            "first": 0.0,
+            "middle": 0.0,
+            "last": 0.0,
+            "head": 0.0
+          }
+        },
+        {
+          "length": 477,
+          "horizon": 17,
+          "max_forecast_error": 0.0,
+          "block_max_error": {
+            "patches": 0.0,
+            "first": 0.0,
+            "middle": 0.0,
+            "last": 0.0,
+            "head": 0.0
+          }
+        },
+        {
+          "length": 512,
+          "horizon": 64,
+          "max_forecast_error": 0.0,
+          "block_max_error": {
+            "patches": 0.0,
+            "first": 0.0,
+            "middle": 0.0,
+            "last": 0.0,
+            "head": 0.0
+          }
+        }
+      ]
+    },
+    "large": {
+      "checkpoint": "large",
+      "canonical_flan_config_differences": {},
+      "research_num_state_keys": 224,
+      "head": "PretrainHead",
+      "cases": [
+        {
+          "length": 480,
+          "horizon": 8,
+          "max_forecast_error": 0.0,
+          "block_max_error": {
+            "patches": 0.0,
+            "first": 0.0,
+            "middle": 0.0,
+            "last": 0.0,
+            "head": 0.0
+          }
+        },
+        {
+          "length": 477,
+          "horizon": 17,
+          "max_forecast_error": 0.0,
+          "block_max_error": {
+            "patches": 0.0,
+            "first": 0.0,
+            "middle": 0.0,
+            "last": 0.0,
+            "head": 0.0
+          }
+        },
+        {
+          "length": 512,
+          "horizon": 64,
+          "max_forecast_error": 0.0,
+          "block_max_error": {
+            "patches": 0.0,
+            "first": 0.0,
+            "middle": 0.0,
+            "last": 0.0,
+            "head": 0.0
+          }
+        }
+      ]
+    }
+  },
+  "max_forecast_difference_from_other_environment": {
+    "small_480_8": 7.62939453125e-06,
+    "small_477_17": 7.62939453125e-06,
+    "small_512_64": 7.62939453125e-06,
+    "base_480_8": 7.62939453125e-06,
+    "base_477_17": 7.62939453125e-06,
+    "base_512_64": 7.62939453125e-06,
+    "large_480_8": 7.62939453125e-06,
+    "large_477_17": 3.814697265625e-06,
+    "large_512_64": 7.62939453125e-06
+  }
+}

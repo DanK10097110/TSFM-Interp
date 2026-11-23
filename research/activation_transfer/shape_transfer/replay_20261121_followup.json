@@ -1,0 +1,30 @@
+{
+  "conditional": {
+    "blind_conditional.npz": {
+      "identical_values": true,
+      "arrays": 22,
+      "max_numeric_discrepancy": 0.0,
+      "differences": {}
+    }
+  },
+  "lead_placement": {
+    "timesfm.npz": {
+      "identical_values": true,
+      "arrays": 22,
+      "max_numeric_discrepancy": 0.0,
+      "differences": {}
+    }
+  },
+  "last_block": {
+    "last_block.npz": {
+      "identical_values": true,
+      "arrays": 18,
+      "max_numeric_discrepancy": 0.0,
+      "differences": {}
+    }
+  },
+  "copied_sources": {
+    "source_files": 293,
+    "sha256": "ff0e7f0d5d04f262149d4a0e5b4671d4ccc6f5509c1c9ca103e8c34b15961992"
+  }
+}

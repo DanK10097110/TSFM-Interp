@@ -1,0 +1,56 @@
+# Published MOMENT-1-large reconstruction head, with an observed early-block SAE.
+# Run from tsfm_lens/ with the moment extra. Every requested interval repeats the point.
+run: {name: moment_large, out_dir: runs, device: cpu, dtype: float32, seed: 0}
+data: {source: sealed, path: ../benchmark_medium/public_dev, context_len: 480, horizon: 16, max_series: 192}
+alignment: {window: 8, sanity_check: true}
+models:
+  - name: MOMENT-1-large
+    adapter: moment
+    checkpoint: AutonLab/MOMENT-1-large
+    kwargs: {revision: ca58581bc7bea2ebed4e80dc0a3e4b8b609c6ecc}
+    batch_size: 8
+    capture_layer_stride: 1
+l0: {enabled: true, quantiles: [0.5]}
+l3: {patching: {max_series: 8}}
+lens: {max_series: 8}
+attention: {ablation_max_series: 8}
+sae:
+  enabled: true
+  targets: [{model: MOMENT-1-large, layer: encoder.block.1, dict_size: 384}]
+  k: 32
+  batch_size: 256
+  epochs: 80
+  resample_dead_every_epochs: 8
+  aux_k: 32
+  holdout_frac: 0.2
+  forecast_preservation_max_series: 8
+  ground_truth_max_series: 64
+  feature_ablation_enabled: true
+  feature_ablation_top_k: 2
+  feature_ablation_max_series: 8
+  feature_steering_enabled: true
+  feature_steering_top_k: 2
+  feature_steering_max_series: 8
+  layer_substitution_attempts: 0
+  persist_features: true
+  candidate_rules: [variance, random]
+  ablation_null: profile_matched
+  concepts_enabled: false
+  transfer_enabled: false
+steering:
+  enabled: true
+  max_series: 4
+  quantiles: [0.5]
+  requests: [{kind: level, strength: 0.05}]
+  search:
+    module_pattern: 'encoder\.final_layer_norm$'
+    include_input: false
+    calibration_samples: 2
+    validation_samples: 2
+    max_candidates: 2
+    screen_candidates: 2
+    rank: 16
+    token_modes: [shared]
+    probe_batch: 8
+    radius: 0.2
+    max_seconds: 180

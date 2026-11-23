@@ -1,0 +1,14 @@
+{
+  "training_ids_and_all_native_history_samples_exact": 1152,
+  "deterministic_hole_sets_exact": 1152,
+  "raw_forecast_panel_items_by_domain": {
+    "bitbrains_fast_storage": 8,
+    "m4_daily": 96,
+    "m4_hourly": 8,
+    "m4_weekly": 8,
+    "monash_electricity_hourly": 8,
+    "monash_traffic": 8
+  },
+  "origins_per_item": 2,
+  "forecast_target_leads": 16
+}

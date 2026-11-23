@@ -1,0 +1,47 @@
+{
+  "moment_small": {
+    "model": "AutonLab/MOMENT-1-small",
+    "revision": "411e288267f82cce86296dbe4d6c8bc533cc162f",
+    "revision_last_modified": "2025-03-26T01:42:59.000Z",
+    "safetensors_lfs_sha256": "785e6c6f57ffa7cac7e2a1fff6369618d49f2f441563ddea76c866231e5aa877",
+    "safetensors_bytes": 151615328,
+    "config_git_blob": "8001b2ca08030badec2c1380b5914c8a4cf1c0ca",
+    "publisher_url": "https://huggingface.co/api/models/AutonLab/MOMENT-1-small/revision/411e288267f82cce86296dbe4d6c8bc533cc162f?blobs=true"
+  },
+  "moment_base": {
+    "model": "AutonLab/MOMENT-1-base",
+    "revision": "5e44b0ea26376a176360f87831124e018f876d96",
+    "revision_last_modified": "2025-03-26T01:43:26.000Z",
+    "safetensors_lfs_sha256": "1a436826ffe618273ec62b9656dc4cab8edc470364f104e90542a4ebc14fb825",
+    "safetensors_bytes": 453940120,
+    "config_git_blob": "fb2e5e04eef5c982e04bd0775189ec90162f3573",
+    "publisher_url": "https://huggingface.co/api/models/AutonLab/MOMENT-1-base/revision/5e44b0ea26376a176360f87831124e018f876d96?blobs=true"
+  },
+  "moment_large": {
+    "model": "AutonLab/MOMENT-1-large",
+    "revision": "ca58581bc7bea2ebed4e80dc0a3e4b8b609c6ecc",
+    "revision_last_modified": "2025-03-26T01:44:19.000Z",
+    "safetensors_lfs_sha256": "a56928052ac6f5d09b97c3834bea6ce3aef9f02b513b5fac98954e7377801572",
+    "safetensors_bytes": 1385501256,
+    "config_git_blob": "fac0e22b696e5ce0e2dde01e1c771760c1569228",
+    "publisher_url": "https://huggingface.co/api/models/AutonLab/MOMENT-1-large/revision/ca58581bc7bea2ebed4e80dc0a3e4b8b609c6ecc?blobs=true"
+  },
+  "bolt": {
+    "model": "amazon/chronos-bolt-small",
+    "revision": "772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+    "revision_last_modified": "2025-11-21T12:54:10.000Z",
+    "safetensors_lfs_sha256": "06a6a19bbe74bc10a9cd193bd4bf2bf638ae07f7e0d51653ae7ab8ea968a21dd",
+    "safetensors_bytes": 190888824,
+    "config_git_blob": "d8f9b65552d4d211e28d332ad5666484092bbf77",
+    "publisher_url": "https://huggingface.co/api/models/amazon/chronos-bolt-small/revision/772f3d25d38aec6d914c8949dab4462e2d46f5d8?blobs=true"
+  },
+  "timesfm": {
+    "model": "google/timesfm-2.5-200m-pytorch",
+    "revision": "1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+    "revision_last_modified": "2025-10-02T17:21:38.000Z",
+    "safetensors_lfs_sha256": "2f776efe6245e42b24bc4153ffdf61810140210e4bd3b01fb21f7aa779ab6ce8",
+    "safetensors_bytes": 925181104,
+    "config_git_blob": "94445b5415c93256bbab9cf759df2ffce2671b16",
+    "publisher_url": "https://huggingface.co/api/models/google/timesfm-2.5-200m-pytorch/revision/1d952420fba87f3c6dee4f240de0f1a0fbc790e3?blobs=true"
+  }
+}

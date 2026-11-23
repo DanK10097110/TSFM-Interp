@@ -1,0 +1,733 @@
+{
+  "source": "https://www.ncei.noaa.gov/pub/data/uscrn/products/daily01/snapshots/CRND0103-202611160850.zip",
+  "archive_sha256": "d9da9621c3f69f52194ef6e885ad2f3246f5968cc298db40ec36414bfc27b26c",
+  "variable": "T_DAILY_AVG (degC)",
+  "origins": [
+    "2026-01-10",
+    "2026-04-10",
+    "2026-07-10",
+    "2026-10-10"
+  ],
+  "ranges": [
+    {
+      "history_first": "2024-09-17",
+      "history_last": "2026-01-09",
+      "target_first": "2026-01-10",
+      "target_last": "2026-01-25"
+    },
+    {
+      "history_first": "2024-12-16",
+      "history_last": "2026-04-09",
+      "target_first": "2026-04-10",
+      "target_last": "2026-04-25"
+    },
+    {
+      "history_first": "2025-03-17",
+      "history_last": "2026-07-09",
+      "target_first": "2026-07-10",
+      "target_last": "2026-07-25"
+    },
+    {
+      "history_first": "2025-06-17",
+      "history_last": "2026-10-09",
+      "target_first": "2026-10-10",
+      "target_last": "2026-10-25"
+    }
+  ],
+  "ordered_candidate_disposition": {
+    "GA_Brunswick_23_S": "missing_future",
+    "OH_Wooster_3_SSE": "short_climatology",
+    "AR_Batesville_8_WNW": "accepted",
+    "NE_Lincoln_11_SW": "accepted",
+    "KY_Bowling_Green_21_NNE": "missing_future",
+    "OR_Riley_10_WSW": "accepted",
+    "ND_Medora_7_E": "accepted",
+    "MO_Joplin_24_N": "missing_future",
+    "WY_Sundance_8_NNW": "accepted",
+    "IL_Shabbona_5_NNE": "missing_future",
+    "SD_Sioux_Falls_14_NNE": "missing_future",
+    "VA_Cape_Charles_5_ENE": "missing_future",
+    "ME_Limestone_4_NNW": "missing_future",
+    "AL_Gadsden_19_N": "missing_future",
+    "GA_Watkinsville_5_SSE": "missing_future",
+    "NE_Lincoln_8_ENE": "closer_than_200km",
+    "CA_Santa_Barbara_11_W": "accepted",
+    "KS_Manhattan_6_SSW": "closer_than_200km",
+    "TX_Palestine_6_WNW": "missing_future",
+    "NM_Los_Alamos_13_W": "accepted",
+    "SC_McClellanville_7_NE": "accepted",
+    "NV_Denio_52_WSW": "closer_than_200km",
+    "TX_Bronte_11_NNE": "missing_future",
+    "MI_Chatham_1_SE": "missing_future",
+    "IL_Champaign_9_SW": "missing_future",
+    "ID_Arco_17_SW": "accepted",
+    "PA_Avondale_2_N": "missing_future",
+    "KY_Versailles_3_NNW": "missing_future",
+    "AL_Valley_Head_1_SSW": "missing_context",
+    "NH_Durham_2_SSW": "missing_future",
+    "AL_Thomasville_2_S": "accepted",
+    "CA_Stovepipe_Wells_1_SW": "accepted",
+    "NY_Millbrook_3_W": "missing_future",
+    "IN_Bedford_5_WNW": "missing_future",
+    "IA_Des_Moines_17_E": "missing_future",
+    "CA_Merced_23_WSW": "missing_future",
+    "TX_Port_Aransas_32_NNE": "accepted",
+    "UT_Torrey_7_E": "accepted",
+    "WY_Moose_1_NNE": "accepted",
+    "GA_Newton_8_W": "missing_future",
+    "AL_Russellville_4_SSE": "missing_future",
+    "NM_Las_Cruces_20_N": "accepted",
+    "ME_Old_Town_2_W": "missing_future",
+    "AZ_Tucson_11_W": "accepted",
+    "AL_Gainesville_2_NE": "missing_future",
+    "AL_Muscle_Shoals_2_N": "missing_future",
+    "SD_Pierre_24_S": "accepted",
+    "CO_La_Junta_17_WSW": "accepted",
+    "ND_Northgate_5_ESE": "accepted",
+    "UT_Brigham_City_28_WNW": "accepted",
+    "KS_Oakley_19_SSW": "accepted",
+    "NC_Asheville_13_S": "missing_future",
+    "MT_Dillon_18_WSW": "closer_than_200km",
+    "CA_Fallbrook_5_NE": "accepted",
+    "MT_St._Mary_1_SSW": "missing_future",
+    "CO_Nunn_7_NNE": "missing_future",
+    "AL_Selma_13_WNW": "missing_context",
+    "AL_Highland_Home_2_S": "missing_future",
+    "TX_Austin_33_NW": "missing_future",
+    "NC_Asheville_8_SSW": "missing_future",
+    "AL_Talladega_10_NNE": "missing_context",
+    "MS_Newton_5_ENE": "missing_future",
+    "NC_Durham_11_W": "missing_future",
+    "WA_Quinault_4_NE": "missing_context",
+    "AL_Clanton_2_NE": "missing_future",
+    "MN_Goodridge_12_NNW": "accepted",
+    "MT_Wolf_Point_29_ENE": "accepted",
+    "WY_Lander_11_SSE": "missing_future",
+    "AL_Brewton_3_NNE": "missing_future",
+    "MS_Holly_Springs_4_N": "missing_future",
+    "NE_Harrison_20_SSE": "accepted",
+    "TN_Crossville_7_NW": "missing_future",
+    "NV_Mercury_3_SSW": "closer_than_200km",
+    "MO_Salem_10_W": "missing_future",
+    "ND_Jamestown_38_WSW": "accepted",
+    "AL_Greensboro_2_WNW": "missing_future",
+    "NY_Ithaca_13_E": "missing_future",
+    "NH_Durham_2_N": "accepted",
+    "LA_Monroe_26_N": "missing_future",
+    "RI_Kingston_1_W": "closer_than_200km",
+    "TX_Muleshoe_19_S": "accepted",
+    "AZ_Yuma_27_ENE": "accepted",
+    "OK_Stillwater_2_W": "accepted",
+    "CA_Bodega_6_WSW": "missing_context",
+    "CO_Montrose_11_ENE": "missing_context",
+    "WA_Darrington_21_NNE": "accepted",
+    "CO_Boulder_14_W": "accepted",
+    "SD_Buffalo_13_ESE": "closer_than_200km",
+    "OR_John_Day_35_WNW": "closer_than_200km",
+    "AZ_Elgin_5_S": "closer_than_200km",
+    "OK_Goodwell_2_E": "accepted",
+    "MN_Sandstone_6_W": "accepted",
+    "AL_Fairhope_3_NE": "missing_context",
+    "TX_Edinburg_17_NNE": "missing_future",
+    "RI_Kingston_1_NW": "missing_context",
+    "OK_Stillwater_5_WNW": "closer_than_200km",
+    "LA_Lafayette_13_SE": "missing_future",
+    "CO_Cortez_8_SE": "missing_future",
+    "AZ_Williams_35_NNW": "accepted",
+    "ID_Murphy_10_W": "accepted",
+    "OK_Goodwell_2_SE": "missing_future",
+    "CA_Redding_12_WNW": "accepted",
+    "AL_Troy_2_W": "missing_context",
+    "FL_Everglades_City_5_NE": "missing_future",
+    "CO_Dinosaur_2_E": "accepted",
+    "MO_Chillicothe_22_ENE": "accepted",
+    "OR_Corvallis_10_SSW": "missing_context",
+    "TX_Panther_Junction_2_N": "accepted",
+    "AL_Selma_6_SSE": "missing_context",
+    "CA_Yosemite_Village_12_W": "accepted",
+    "AL_Scottsboro_2_NE": "missing_context",
+    "SC_Blackville_3_W": "missing_future",
+    "VA_Charlottesville_2_SSE": "accepted",
+    "NE_Whitman_5_ENE": "missing_future",
+    "WV_Elkins_21_ENE": "missing_context",
+    "WI_Necedah_5_WNW": "missing_future",
+    "TX_Monahans_6_ENE": "accepted",
+    "MI_Gaylord_9_SSW": "missing_future",
+    "FL_Sebring_23_SSE": "missing_future",
+    "NV_Baker_5_W": "accepted",
+    "MT_Lewistown_42_WSW": "accepted",
+    "AL_Cullman_3_ENE": "missing_context",
+    "AL_Northport_2_S": "missing_future",
+    "MA_Blue_Hill_0_W": "short_climatology",
+    "MT_Wolf_Point_34_NE": "closer_than_200km",
+    "NM_Socorro_20_N": "closer_than_200km",
+    "WA_Spokane_17_SSW": "missing_future",
+    "SD_Aberdeen_35_WNW": "missing_context",
+    "GA_Newton_11_SW": "missing_future",
+    "OR_Coos_Bay_8_SW": "missing_context",
+    "FL_Titusville_7_E": "accepted",
+    "AL_Courtland_2_WSW": "missing_future"
+  },
+  "accepted": [
+    "AR_Batesville_8_WNW",
+    "NE_Lincoln_11_SW",
+    "OR_Riley_10_WSW",
+    "ND_Medora_7_E",
+    "WY_Sundance_8_NNW",
+    "CA_Santa_Barbara_11_W",
+    "NM_Los_Alamos_13_W",
+    "SC_McClellanville_7_NE",
+    "ID_Arco_17_SW",
+    "AL_Thomasville_2_S",
+    "CA_Stovepipe_Wells_1_SW",
+    "TX_Port_Aransas_32_NNE",
+    "UT_Torrey_7_E",
+    "WY_Moose_1_NNE",
+    "NM_Las_Cruces_20_N",
+    "AZ_Tucson_11_W",
+    "SD_Pierre_24_S",
+    "CO_La_Junta_17_WSW",
+    "ND_Northgate_5_ESE",
+    "UT_Brigham_City_28_WNW",
+    "KS_Oakley_19_SSW",
+    "CA_Fallbrook_5_NE",
+    "MN_Goodridge_12_NNW",
+    "MT_Wolf_Point_29_ENE",
+    "NE_Harrison_20_SSE",
+    "ND_Jamestown_38_WSW",
+    "NH_Durham_2_N",
+    "TX_Muleshoe_19_S",
+    "AZ_Yuma_27_ENE",
+    "OK_Stillwater_2_W",
+    "WA_Darrington_21_NNE",
+    "CO_Boulder_14_W",
+    "OK_Goodwell_2_E",
+    "MN_Sandstone_6_W",
+    "AZ_Williams_35_NNW",
+    "ID_Murphy_10_W",
+    "CA_Redding_12_WNW",
+    "CO_Dinosaur_2_E",
+    "MO_Chillicothe_22_ENE",
+    "TX_Panther_Junction_2_N",
+    "CA_Yosemite_Village_12_W",
+    "VA_Charlottesville_2_SSE",
+    "TX_Monahans_6_ENE",
+    "NV_Baker_5_W",
+    "MT_Lewistown_42_WSW",
+    "FL_Titusville_7_E"
+  ],
+  "coordinates_lonlat": [
+    [
+      -91.78,
+      35.82
+    ],
+    [
+      -96.85,
+      40.7
+    ],
+    [
+      -119.69,
+      43.47
+    ],
+    [
+      -103.38,
+      46.89
+    ],
+    [
+      -104.44,
+      44.52
+    ],
+    [
+      -119.88,
+      34.41
+    ],
+    [
+      -106.52,
+      35.86
+    ],
+    [
+      -79.36,
+      33.15
+    ],
+    [
+      -113.56,
+      43.46
+    ],
+    [
+      -87.74,
+      31.88
+    ],
+    [
+      -117.14,
+      36.6
+    ],
+    [
+      -96.82,
+      28.3
+    ],
+    [
+      -111.29,
+      38.3
+    ],
+    [
+      -110.71,
+      43.66
+    ],
+    [
+      -106.74,
+      32.61
+    ],
+    [
+      -111.17,
+      32.24
+    ],
+    [
+      -100.35,
+      44.02
+    ],
+    [
+      -103.82,
+      37.86
+    ],
+    [
+      -102.17,
+      48.97
+    ],
+    [
+      -112.54,
+      41.62
+    ],
+    [
+      -100.96,
+      38.87
+    ],
+    [
+      -117.19,
+      33.44
+    ],
+    [
+      -95.87,
+      48.31
+    ],
+    [
+      -105.1,
+      48.31
+    ],
+    [
+      -103.74,
+      42.42
+    ],
+    [
+      -99.48,
+      46.77
+    ],
+    [
+      -70.93,
+      43.17
+    ],
+    [
+      -102.77,
+      33.96
+    ],
+    [
+      -114.19,
+      32.84
+    ],
+    [
+      -97.09,
+      36.12
+    ],
+    [
+      -121.45,
+      48.54
+    ],
+    [
+      -105.54,
+      40.04
+    ],
+    [
+      -101.59,
+      36.6
+    ],
+    [
+      -92.99,
+      46.11
+    ],
+    [
+      -112.34,
+      35.76
+    ],
+    [
+      -116.75,
+      43.2
+    ],
+    [
+      -122.61,
+      40.65
+    ],
+    [
+      -108.97,
+      40.24
+    ],
+    [
+      -93.15,
+      39.87
+    ],
+    [
+      -103.21,
+      29.35
+    ],
+    [
+      -119.82,
+      37.76
+    ],
+    [
+      -78.47,
+      38.0
+    ],
+    [
+      -102.81,
+      31.62
+    ],
+    [
+      -114.21,
+      39.01
+    ],
+    [
+      -110.29,
+      46.88
+    ],
+    [
+      -80.69,
+      28.62
+    ]
+  ],
+  "regions": [
+    "South",
+    "Midwest",
+    "West",
+    "Midwest",
+    "West",
+    "West",
+    "West",
+    "South",
+    "West",
+    "South",
+    "West",
+    "South",
+    "West",
+    "West",
+    "West",
+    "West",
+    "Midwest",
+    "West",
+    "Midwest",
+    "West",
+    "Midwest",
+    "West",
+    "Midwest",
+    "West",
+    "Midwest",
+    "Midwest",
+    "Northeast",
+    "South",
+    "West",
+    "South",
+    "West",
+    "West",
+    "South",
+    "Midwest",
+    "West",
+    "West",
+    "West",
+    "West",
+    "Midwest",
+    "South",
+    "West",
+    "South",
+    "South",
+    "West",
+    "West",
+    "South"
+  ],
+  "filled_context_days": [
+    [
+      1,
+      1,
+      5,
+      4
+    ],
+    [
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      1,
+      1,
+      1,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      1,
+      1,
+      2,
+      1
+    ],
+    [
+      2,
+      1,
+      1,
+      0
+    ],
+    [
+      1,
+      1,
+      0,
+      0
+    ],
+    [
+      1,
+      1,
+      1,
+      2
+    ],
+    [
+      2,
+      1,
+      0,
+      0
+    ],
+    [
+      1,
+      1,
+      1,
+      0
+    ],
+    [
+      1,
+      1,
+      2,
+      1
+    ],
+    [
+      2,
+      1,
+      1,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      1,
+      0,
+      1,
+      1
+    ],
+    [
+      1,
+      1,
+      1,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      1,
+      1,
+      1,
+      2
+    ],
+    [
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      1,
+      1,
+      1,
+      2
+    ],
+    [
+      1,
+      1,
+      1,
+      2
+    ],
+    [
+      2,
+      1,
+      2,
+      1
+    ],
+    [
+      5,
+      5,
+      5,
+      5
+    ],
+    [
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      1,
+      1,
+      1,
+      1
+    ],
+    [
+      0,
+      0,
+      1,
+      1
+    ],
+    [
+      1,
+      1,
+      1,
+      0
+    ],
+    [
+      1,
+      1,
+      1,
+      0
+    ],
+    [
+      9,
+      2,
+      2,
+      3
+    ],
+    [
+      2,
+      1,
+      3,
+      3
+    ],
+    [
+      1,
+      1,
+      1,
+      2
+    ],
+    [
+      2,
+      4,
+      3,
+      4
+    ],
+    [
+      1,
+      1,
+      1,
+      1
+    ],
+    [
+      2,
+      1,
+      1,
+      0
+    ],
+    [
+      1,
+      1,
+      1,
+      2
+    ],
+    [
+      2,
+      1,
+      1,
+      1
+    ],
+    [
+      1,
+      1,
+      1,
+      1
+    ],
+    [
+      5,
+      5,
+      4,
+      4
+    ],
+    [
+      1,
+      1,
+      1,
+      0
+    ],
+    [
+      1,
+      0,
+      1,
+      1
+    ],
+    [
+      0,
+      0,
+      1,
+      1
+    ],
+    [
+      1,
+      1,
+      1,
+      0
+    ],
+    [
+      2,
+      1,
+      1,
+      1
+    ],
+    [
+      1,
+      1,
+      0,
+      1
+    ],
+    [
+      1,
+      2,
+      1,
+      1
+    ]
+  ],
+  "sha256_context": "53c57574063cb50ddf300b6490c383c4f7d1a6c7866e16ae515b48b5300334fb",
+  "sha256_future": "61463a7b53cd0af1d00ad9182e04a5e85d6d5e957e7741e13a7825a5759d2653"
+}

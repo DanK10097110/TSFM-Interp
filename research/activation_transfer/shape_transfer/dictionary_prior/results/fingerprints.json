@@ -1,0 +1,170 @@
+{
+  "bolt": {
+    "daily": {
+      "shape_only": {
+        "numerator": 514,
+        "denominator": 527,
+        "value": 0.9753320683111955,
+        "ci95": [
+          0.9594004065040651,
+          0.9884393063583815
+        ],
+        "defined_bootstraps": 4000
+      },
+      "rms_only": {
+        "numerator": 261,
+        "denominator": 527,
+        "value": 0.4952561669829222,
+        "ci95": [
+          0.45260653056405376,
+          0.5390658610181644
+        ],
+        "defined_bootstraps": 4000
+      },
+      "natural": {
+        "numerator": 525,
+        "denominator": 527,
+        "value": 0.9962049335863378,
+        "ci95": [
+          0.9901185770750988,
+          1.0
+        ],
+        "defined_bootstraps": 4000
+      },
+      "shape_minus_rms": {
+        "value": 0.48007590132827327,
+        "ci95": [
+          0.43339269707977546,
+          0.5262196924896511
+        ],
+        "defined_bootstraps": 4000
+      },
+      "degenerate_cases": 0
+    },
+    "extra_daily": {
+      "shape_only": {
+        "numerator": 338,
+        "denominator": 350,
+        "value": 0.9657142857142857,
+        "ci95": [
+          0.945401121160731,
+          0.9829557526397116
+        ],
+        "defined_bootstraps": 4000
+      },
+      "rms_only": {
+        "numerator": 178,
+        "denominator": 350,
+        "value": 0.5085714285714286,
+        "ci95": [
+          0.45399906993223793,
+          0.5641025641025641
+        ],
+        "defined_bootstraps": 4000
+      },
+      "natural": {
+        "numerator": 348,
+        "denominator": 350,
+        "value": 0.9942857142857143,
+        "ci95": [
+          0.9855491329479769,
+          1.0
+        ],
+        "defined_bootstraps": 4000
+      },
+      "shape_minus_rms": {
+        "value": 0.45714285714285713,
+        "ci95": [
+          0.39534712217877477,
+          0.5157241714872682
+        ],
+        "defined_bootstraps": 4000
+      },
+      "degenerate_cases": 0
+    }
+  },
+  "timesfm": {
+    "daily": {
+      "shape_only": {
+        "numerator": 586,
+        "denominator": 701,
+        "value": 0.8359486447931527,
+        "ci95": [
+          0.8093841642228738,
+          0.861518790316208
+        ],
+        "defined_bootstraps": 4000
+      },
+      "rms_only": {
+        "numerator": 451,
+        "denominator": 701,
+        "value": 0.6433666191155493,
+        "ci95": [
+          0.6082474226804123,
+          0.6772344118417606
+        ],
+        "defined_bootstraps": 4000
+      },
+      "natural": {
+        "numerator": 682,
+        "denominator": 701,
+        "value": 0.9728958630527818,
+        "ci95": [
+          0.9582131489526432,
+          0.9857142857142858
+        ],
+        "defined_bootstraps": 4000
+      },
+      "shape_minus_rms": {
+        "value": 0.19258202567760344,
+        "ci95": [
+          0.15151403743315509,
+          0.23222317514770346
+        ],
+        "defined_bootstraps": 4000
+      },
+      "degenerate_cases": 0
+    },
+    "extra_daily": {
+      "shape_only": {
+        "numerator": 351,
+        "denominator": 423,
+        "value": 0.8297872340425532,
+        "ci95": [
+          0.7912838469760399,
+          0.8651175855761692
+        ],
+        "defined_bootstraps": 4000
+      },
+      "rms_only": {
+        "numerator": 240,
+        "denominator": 423,
+        "value": 0.5673758865248227,
+        "ci95": [
+          0.5197999701362248,
+          0.6153891509433963
+        ],
+        "defined_bootstraps": 4000
+      },
+      "natural": {
+        "numerator": 407,
+        "denominator": 423,
+        "value": 0.9621749408983451,
+        "ci95": [
+          0.9391711824133746,
+          0.9812206572769953
+        ],
+        "defined_bootstraps": 4000
+      },
+      "shape_minus_rms": {
+        "value": 0.2624113475177305,
+        "ci95": [
+          0.20531102955015998,
+          0.3177592943810982
+        ],
+        "defined_bootstraps": 4000
+      },
+      "degenerate_cases": 0
+    }
+  }
+}

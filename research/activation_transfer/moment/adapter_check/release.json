@@ -1,0 +1,380 @@
+{
+  "small": {
+    "state_keys": 80,
+    "archive_sha256": "785e6c6f57ffa7cac7e2a1fff6369618d49f2f441563ddea76c866231e5aa877",
+    "head_bias_norm": 0.0,
+    "head_row_norm_q0_q50_q100": [
+      1.4099997899331835,
+      1.4100000039807887,
+      1.4100001672227582
+    ],
+    "head_row_gram_max_departure_from_141_squared_identity": 5.923883801273178e-07,
+    "head_adjacent_row_dot_median": -1.3597181745123033e-08,
+    "head_adjacent_row_cosine_median": -6.839284867631273e-09,
+    "value_column_gram_max_departure_from_141_squared_identity": 3.6108802834304767,
+    "mask_embedding_norm": 2.90934706961685,
+    "encoder_norm_layers": 17,
+    "encoder_norm_layers_identically_one": 0,
+    "alternative_official_pytorch_archive": {
+      "sha256": "90c566d82684b1136e0e4ea6ad15c9f7c94c65d8939704dcea7904caea8895b8",
+      "total": 80,
+      "missing": [],
+      "extra": [],
+      "equal": 80,
+      "unequal": []
+    },
+    "canonical_flan_small": {
+      "compared": 75,
+      "equal": 0,
+      "relative_l2_min_median_max": [
+        1.0007637739181519,
+        1.0049190521240234,
+        8.362550735473633
+      ],
+      "by_key": {
+        "encoder.block.0.layer.0.SelfAttention.k.weight": {
+          "exact": false,
+          "relative_l2": 1.001782774925232
+        },
+        "encoder.block.0.layer.0.SelfAttention.o.weight": {
+          "exact": false,
+          "relative_l2": 1.002813458442688
+        },
+        "encoder.block.0.layer.0.SelfAttention.q.weight": {
+          "exact": false,
+          "relative_l2": 1.0367947816848755
+        },
+        "encoder.block.0.layer.0.SelfAttention.relative_attention_bias.weight": {
+          "exact": false,
+          "relative_l2": 1.006727695465088
+        },
+        "encoder.block.0.layer.0.SelfAttention.v.weight": {
+          "exact": false,
+          "relative_l2": 1.0082911252975464
+        },
+        "encoder.block.0.layer.0.layer_norm.weight": {
+          "exact": false,
+          "relative_l2": 7.717452526092529
+        },
+        "encoder.block.0.layer.1.DenseReluDense.wi_0.weight": {
+          "exact": false,
+          "relative_l2": 1.0029982328414917
+        },
+        "encoder.block.0.layer.1.DenseReluDense.wi_1.weight": {
+          "exact": false,
+          "relative_l2": 1.002422571182251
+        },
+        "encoder.block.0.layer.1.DenseReluDense.wo.weight": {
+          "exact": false,
+          "relative_l2": 1.0028560161590576
+        },
+        "encoder.block.0.layer.1.layer_norm.weight": {
+          "exact": false,
+          "relative_l2": 8.362550735473633
+        },
+        "encoder.block.1.layer.0.SelfAttention.k.weight": {
+          "exact": false,
+          "relative_l2": 1.0028350353240967
+        },
+        "encoder.block.1.layer.0.SelfAttention.o.weight": {
+          "exact": false,
+          "relative_l2": 1.0030815601348877
+        },
+        "encoder.block.1.layer.0.SelfAttention.q.weight": {
+          "exact": false,
+          "relative_l2": 1.0280143022537231
+        },
+        "encoder.block.1.layer.0.SelfAttention.v.weight": {
+          "exact": false,
+          "relative_l2": 1.0047651529312134
+        },
+        "encoder.block.1.layer.0.layer_norm.weight": {
+          "exact": false,
+          "relative_l2": 4.992412090301514
+        },
+        "encoder.block.1.layer.1.DenseReluDense.wi_0.weight": {
+          "exact": false,
+          "relative_l2": 1.0033847093582153
+        },
+        "encoder.block.1.layer.1.DenseReluDense.wi_1.weight": {
+          "exact": false,
+          "relative_l2": 1.00216543674469
+        },
+        "encoder.block.1.layer.1.DenseReluDense.wo.weight": {
+          "exact": false,
+          "relative_l2": 1.002821445465088
+        },
+        "encoder.block.1.layer.1.layer_norm.weight": {
+          "exact": false,
+          "relative_l2": 6.716246128082275
+        },
+        "encoder.block.2.layer.0.SelfAttention.k.weight": {
+          "exact": false,
+          "relative_l2": 1.0042973756790161
+        },
+        "encoder.block.2.layer.0.SelfAttention.o.weight": {
+          "exact": false,
+          "relative_l2": 1.0029451847076416
+        },
+        "encoder.block.2.layer.0.SelfAttention.q.weight": {
+          "exact": false,
+          "relative_l2": 1.0484765768051147
+        },
+        "encoder.block.2.layer.0.SelfAttention.v.weight": {
+          "exact": false,
+          "relative_l2": 1.0027801990509033
+        },
+        "encoder.block.2.layer.0.layer_norm.weight": {
+          "exact": false,
+          "relative_l2": 5.406993389129639
+        },
+        "encoder.block.2.layer.1.DenseReluDense.wi_0.weight": {
+          "exact": false,
+          "relative_l2": 1.005225658416748
+        },
+        "encoder.block.2.layer.1.DenseReluDense.wi_1.weight": {
+          "exact": false,
+          "relative_l2": 1.001535415649414
+        },
+        "encoder.block.2.layer.1.DenseReluDense.wo.weight": {
+          "exact": false,
+          "relative_l2": 1.002071499824524
+        },
+        "encoder.block.2.layer.1.layer_norm.weight": {
+          "exact": false,
+          "relative_l2": 6.913550853729248
+        },
+        "encoder.block.3.layer.0.SelfAttention.k.weight": {
+          "exact": false,
+          "relative_l2": 1.0049190521240234
+        },
+        "encoder.block.3.layer.0.SelfAttention.o.weight": {
+          "exact": false,
+          "relative_l2": 1.0035396814346313
+        },
+        "encoder.block.3.layer.0.SelfAttention.q.weight": {
+          "exact": false,
+          "relative_l2": 1.0568416118621826
+        },
+        "encoder.block.3.layer.0.SelfAttention.v.weight": {
+          "exact": false,
+          "relative_l2": 1.0032154321670532
+        },
+        "encoder.block.3.layer.0.layer_norm.weight": {
+          "exact": false,
+          "relative_l2": 3.8268187046051025
+        },
+        "encoder.block.3.layer.1.DenseReluDense.wi_0.weight": {
+          "exact": false,
+          "relative_l2": 1.0064433813095093
+        },
+        "encoder.block.3.layer.1.DenseReluDense.wi_1.weight": {
+          "exact": false,
+          "relative_l2": 1.0011367797851562
+        },
+        "encoder.block.3.layer.1.DenseReluDense.wo.weight": {
+          "exact": false,
+          "relative_l2": 1.0020233392715454
+        },
+        "encoder.block.3.layer.1.layer_norm.weight": {
+          "exact": false,
+          "relative_l2": 7.30607271194458
+        },
+        "encoder.block.4.layer.0.SelfAttention.k.weight": {
+          "exact": false,
+          "relative_l2": 1.0074764490127563
+        },
+        "encoder.block.4.layer.0.SelfAttention.o.weight": {
+          "exact": false,
+          "relative_l2": 1.0025144815444946
+        },
+        "encoder.block.4.layer.0.SelfAttention.q.weight": {
+          "exact": false,
+          "relative_l2": 1.0909234285354614
+        },
+        "encoder.block.4.layer.0.SelfAttention.v.weight": {
+          "exact": false,
+          "relative_l2": 1.0018558502197266
+        },
+        "encoder.block.4.layer.0.layer_norm.weight": {
+          "exact": false,
+          "relative_l2": 3.454270839691162
+        },
+        "encoder.block.4.layer.1.DenseReluDense.wi_0.weight": {
+          "exact": false,
+          "relative_l2": 1.0076135396957397
+        },
+        "encoder.block.4.layer.1.DenseReluDense.wi_1.weight": {
+          "exact": false,
+          "relative_l2": 1.00110924243927
+        },
+        "encoder.block.4.layer.1.DenseReluDense.wo.weight": {
+          "exact": false,
+          "relative_l2": 1.0017626285552979
+        },
+        "encoder.block.4.layer.1.layer_norm.weight": {
+          "exact": false,
+          "relative_l2": 7.1484694480896
+        },
+        "encoder.block.5.layer.0.SelfAttention.k.weight": {
+          "exact": false,
+          "relative_l2": 1.006636381149292
+        },
+        "encoder.block.5.layer.0.SelfAttention.o.weight": {
+          "exact": false,
+          "relative_l2": 1.002182126045227
+        },
+        "encoder.block.5.layer.0.SelfAttention.q.weight": {
+          "exact": false,
+          "relative_l2": 1.0898094177246094
+        },
+        "encoder.block.5.layer.0.SelfAttention.v.weight": {
+          "exact": false,
+          "relative_l2": 1.0021880865097046
+        },
+        "encoder.block.5.layer.0.layer_norm.weight": {
+          "exact": false,
+          "relative_l2": 3.4981799125671387
+        },
+        "encoder.block.5.layer.1.DenseReluDense.wi_0.weight": {
+          "exact": false,
+          "relative_l2": 1.009276032447815
+        },
+        "encoder.block.5.layer.1.DenseReluDense.wi_1.weight": {
+          "exact": false,
+          "relative_l2": 1.0009071826934814
+        },
+        "encoder.block.5.layer.1.DenseReluDense.wo.weight": {
+          "exact": false,
+          "relative_l2": 1.0017884969711304
+        },
+        "encoder.block.5.layer.1.layer_norm.weight": {
+          "exact": false,
+          "relative_l2": 6.999428749084473
+        },
+        "encoder.block.6.layer.0.SelfAttention.k.weight": {
+          "exact": false,
+          "relative_l2": 1.0085209608078003
+        },
+        "encoder.block.6.layer.0.SelfAttention.o.weight": {
+          "exact": false,
+          "relative_l2": 1.0015716552734375
+        },
+        "encoder.block.6.layer.0.SelfAttention.q.weight": {
+          "exact": false,
+          "relative_l2": 1.1213970184326172
+        },
+        "encoder.block.6.layer.0.SelfAttention.v.weight": {
+          "exact": false,
+          "relative_l2": 1.0015212297439575
+        },
+        "encoder.block.6.layer.0.layer_norm.weight": {
+          "exact": false,
+          "relative_l2": 3.6766517162323
+        },
+        "encoder.block.6.layer.1.DenseReluDense.wi_0.weight": {
+          "exact": false,
+          "relative_l2": 1.0124285221099854
+        },
+        "encoder.block.6.layer.1.DenseReluDense.wi_1.weight": {
+          "exact": false,
+          "relative_l2": 1.0009135007858276
+        },
+        "encoder.block.6.layer.1.DenseReluDense.wo.weight": {
+          "exact": false,
+          "relative_l2": 1.0016640424728394
+        },
+        "encoder.block.6.layer.1.layer_norm.weight": {
+          "exact": false,
+          "relative_l2": 6.161633491516113
+        },
+        "encoder.block.7.layer.0.SelfAttention.k.weight": {
+          "exact": false,
+          "relative_l2": 1.0151679515838623
+        },
+        "encoder.block.7.layer.0.SelfAttention.o.weight": {
+          "exact": false,
+          "relative_l2": 1.0014688968658447
+        },
+        "encoder.block.7.layer.0.SelfAttention.q.weight": {
+          "exact": false,
+          "relative_l2": 1.194456696510315
+        },
+        "encoder.block.7.layer.0.SelfAttention.v.weight": {
+          "exact": false,
+          "relative_l2": 1.0014594793319702
+        },
+        "encoder.block.7.layer.0.layer_norm.weight": {
+          "exact": false,
+          "relative_l2": 3.045088291168213
+        },
+        "encoder.block.7.layer.1.DenseReluDense.wi_0.weight": {
+          "exact": false,
+          "relative_l2": 1.014148235321045
+        },
+        "encoder.block.7.layer.1.DenseReluDense.wi_1.weight": {
+          "exact": false,
+          "relative_l2": 1.0007637739181519
+        },
+        "encoder.block.7.layer.1.DenseReluDense.wo.weight": {
+          "exact": false,
+          "relative_l2": 1.0016990900039673
+        },
+        "encoder.block.7.layer.1.layer_norm.weight": {
+          "exact": false,
+          "relative_l2": 6.063195705413818
+        },
+        "encoder.embed_tokens.weight": {
+          "exact": false,
+          "relative_l2": 1.0027230978012085
+        },
+        "encoder.final_layer_norm.weight": {
+          "exact": false,
+          "relative_l2": 3.543445110321045
+        }
+      }
+    }
+  },
+  "base": {
+    "state_keys": 116,
+    "archive_sha256": "1a436826ffe618273ec62b9656dc4cab8edc470364f104e90542a4ebc14fb825",
+    "head_bias_norm": 0.0,
+    "head_row_norm_q0_q50_q100": [
+      1.409999930115687,
+      1.4099999872599058,
+      1.410000247392366
+    ],
+    "head_row_gram_max_departure_from_141_squared_identity": 6.97646532543672e-07,
+    "head_adjacent_row_dot_median": 5.535873042958328e-09,
+    "head_adjacent_row_cosine_median": 2.7845039437648206e-09,
+    "value_column_gram_max_departure_from_141_squared_identity": 3.608920742590628,
+    "mask_embedding_norm": 3.1567972528761175,
+    "encoder_norm_layers": 25,
+    "encoder_norm_layers_identically_one": 0,
+    "alternative_official_pytorch_archive": {
+      "sha256": "23c3d65bbb6dcd323352029e9fbe4ee3a3da0fff55b45ee4e00f38fff4e9bfb9",
+      "total": 116,
+      "missing": [],
+      "extra": [],
+      "equal": 116,
+      "unequal": []
+    }
+  },
+  "large": {
+    "state_keys": 224,
+    "archive_sha256": "a56928052ac6f5d09b97c3834bea6ce3aef9f02b513b5fac98954e7377801572",
+    "head_bias_norm": 0.029970994347341875,
+    "head_row_norm_q0_q50_q100": [
+      0.8236580489009723,
+      0.8359412244799487,
+      0.8768495971816751
+    ],
+    "head_row_gram_max_departure_from_141_squared_identity": 1.3096874184806437,
+    "head_adjacent_row_dot_median": 0.49190384619973193,
+    "head_adjacent_row_cosine_median": 0.709322983326225,
+    "value_column_gram_max_departure_from_141_squared_identity": 15.713655899916546,
+    "mask_embedding_norm": 3.7174095102201514,
+    "encoder_norm_layers": 49,
+    "encoder_norm_layers_identically_one": 0
+  }
+}
