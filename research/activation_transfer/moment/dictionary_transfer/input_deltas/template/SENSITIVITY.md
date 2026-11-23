@@ -1,1 +1,0 @@
-Before scoring the new arm waves, retain all eleven fixed-date scores and, for the primary matched-length contrast, the range after leaving each one of the eleven dates and each one of the 35 stations out. These are descriptive dominance checks, with no case exclusion in the main outcome or search for favorable subsets.

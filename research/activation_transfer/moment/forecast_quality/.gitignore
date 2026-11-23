@@ -1,5 +1,0 @@
-!results/*.npz
-!results/*.json
-!results/*.png
-**/.passes/
-/results/partial_summary.json

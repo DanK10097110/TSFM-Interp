@@ -1,9 +1,0 @@
-{
-  "leaking_mask": {
-    "hidden_max": 2.20259428024292,
-    "raw_max": 4302.603515625,
-    "mu_max": 1036.93359375
-  },
-  "direct_forecast_max_error_in_history_sd": 6.619646993070943e-07,
-  "reversed_output_rows_error_in_history_sd": 0.22942904791032542
-}

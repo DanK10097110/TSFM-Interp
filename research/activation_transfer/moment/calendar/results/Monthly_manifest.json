@@ -1,8 +1,0 @@
-{
-  "revision": "6c1067e5a57161249b17289a565178dc7a3fb3ca",
-  "train_sha256": "63aaa56198b4a22279a2fec541f56921f3bed6d8e0f84e550206df9276f2e9b9",
-  "test_sha256": "5e3538bf23b4a09f4078180c3e2b34859f0382e1c4f22564affc1797e8f3f48f",
-  "eligible": 48000,
-  "holdout": 256,
-  "median_history": 193.0
-}

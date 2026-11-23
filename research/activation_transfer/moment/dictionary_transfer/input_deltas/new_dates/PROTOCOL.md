@@ -1,7 +1,0 @@
-# Confirm the transfer of a physically defined ramp across checkpoint sizes
-
-After the original 46-station analysis, freeze the small-to-large map and compare the same eight-day, zero-mean warming ramp on 35 different stations and eleven additional forecast dates. Ordinary forecasts and other dictionary studies on this panel are known. These input-edit activations and forecast effects have not been evaluated. Choose small to large because the large checkpoint gives the more substantial response in degrees. Include all 385 station/dates.
-
-The reference replaces only the receiving last observed middle-layer token with the one independently obtained after applying the actual ramp to the large checkpoint's input. The candidates add a mapped small-checkpoint delta for the same ramp and history, the same ramp at another station on the same date, or a constant +2°C on the latest patch of the correct station. The two controls match the correct map's hidden norm in each history. Keep the clean receiving inputs, normalization, other tokens and unmodified suffix fixed.
-
-Primary outcomes are the first eight leads' centered squared-error recovery over all contexts and its paired difference from the wrong-edit control. Report the same-station advantage over another station separately. Resample stations and dates independently, keeping pairings and all eight leads intact. Report the later eight leads and physical RMS magnitude. Verify sampled cached-prefix interventions with independent full native passes. No parameters will be fitted on this panel.
