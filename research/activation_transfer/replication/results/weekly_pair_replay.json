@@ -1,0 +1,10 @@
+{
+  "timesfm": {
+    "forecast_max_abs": 0.0,
+    "coefficient_max_abs": 0.0
+  },
+  "bolt": {
+    "forecast_max_abs": 0.0,
+    "coefficient_max_abs": 0.0
+  }
+}

@@ -1,0 +1,686 @@
+{
+  "independent_input_max_abs": {
+    "native_low": 0.0,
+    "native_high": 0.0,
+    "joint_low": 0.0,
+    "joint_high": 0.0
+  },
+  "models": {
+    "bolt": [
+      {
+        "id": "daily/1489",
+        "domain": "daily",
+        "condition": "clean",
+        "errors": {
+          "pre": 8.940696716308594e-08,
+          "cutoff": 5.960464477539063e-08,
+          "margin": 1.564621925354004e-07,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "daily/1489",
+        "domain": "daily",
+        "condition": "minus",
+        "errors": {
+          "pre": 1.4901161193847656e-08,
+          "cutoff": 2.9802322387695312e-08,
+          "margin": 4.470348358154297e-08,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "daily/1489",
+        "domain": "daily",
+        "condition": "plus",
+        "errors": {
+          "pre": 1.1920928955078125e-07,
+          "cutoff": 5.960464477539063e-08,
+          "margin": 1.7881393432617188e-07,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "daily/1489",
+        "domain": "daily",
+        "condition": "native_low",
+        "errors": {
+          "pre": 0.0,
+          "cutoff": 0.0,
+          "margin": 2.9802322387695312e-08,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "daily/1489",
+        "domain": "daily",
+        "condition": "native_high",
+        "errors": {
+          "pre": 2.384185791015625e-07,
+          "cutoff": 0.0,
+          "margin": 2.3096799850463867e-07,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "daily/1489",
+        "domain": "daily",
+        "condition": "joint_low",
+        "errors": {
+          "pre": 5.960464477539063e-08,
+          "cutoff": 2.9802322387695312e-08,
+          "margin": 5.960464477539063e-08,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "daily/1489",
+        "domain": "daily",
+        "condition": "joint_high",
+        "errors": {
+          "pre": 3.725290298461914e-08,
+          "cutoff": 2.9802322387695312e-08,
+          "margin": 0.0,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "daily/915",
+        "domain": "daily",
+        "condition": "clean",
+        "errors": {
+          "pre": 3.725290298461914e-08,
+          "cutoff": 0.0,
+          "margin": 2.9802322387695312e-08,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "daily/915",
+        "domain": "daily",
+        "condition": "minus",
+        "errors": {
+          "pre": 8.940696716308594e-08,
+          "cutoff": 5.960464477539063e-08,
+          "margin": 1.4901161193847656e-07,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "daily/915",
+        "domain": "daily",
+        "condition": "plus",
+        "errors": {
+          "pre": 1.341104507446289e-07,
+          "cutoff": 2.9802322387695312e-08,
+          "margin": 1.7136335372924805e-07,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "daily/915",
+        "domain": "daily",
+        "condition": "native_low",
+        "errors": {
+          "pre": 5.960464477539063e-08,
+          "cutoff": 0.0,
+          "margin": 2.9802322387695312e-08,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "daily/915",
+        "domain": "daily",
+        "condition": "native_high",
+        "errors": {
+          "pre": 5.960464477539063e-08,
+          "cutoff": 5.960464477539063e-08,
+          "margin": 0.0,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "daily/915",
+        "domain": "daily",
+        "condition": "joint_low",
+        "errors": {
+          "pre": 1.1920928955078125e-07,
+          "cutoff": 1.1920928955078125e-07,
+          "margin": 2.980232238769531e-07,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "daily/915",
+        "domain": "daily",
+        "condition": "joint_high",
+        "errors": {
+          "pre": 8.940696716308594e-08,
+          "cutoff": 0.0,
+          "margin": 8.195638656616211e-08,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000523",
+        "domain": "monash_traffic",
+        "condition": "clean",
+        "errors": {
+          "pre": 2.9802322387695312e-08,
+          "cutoff": 5.960464477539063e-08,
+          "margin": 0.0,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000523",
+        "domain": "monash_traffic",
+        "condition": "minus",
+        "errors": {
+          "pre": 0.0,
+          "cutoff": 5.960464477539063e-08,
+          "margin": 8.940696716308594e-08,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000523",
+        "domain": "monash_traffic",
+        "condition": "plus",
+        "errors": {
+          "pre": 2.9802322387695312e-08,
+          "cutoff": 1.1920928955078125e-07,
+          "margin": 1.4901161193847656e-07,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000523",
+        "domain": "monash_traffic",
+        "condition": "native_low",
+        "errors": {
+          "pre": 2.9802322387695312e-08,
+          "cutoff": 2.9802322387695312e-08,
+          "margin": 2.9802322387695312e-08,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000523",
+        "domain": "monash_traffic",
+        "condition": "native_high",
+        "errors": {
+          "pre": 7.450580596923828e-08,
+          "cutoff": 2.9802322387695312e-08,
+          "margin": 4.470348358154297e-08,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000523",
+        "domain": "monash_traffic",
+        "condition": "joint_low",
+        "errors": {
+          "pre": 5.960464477539063e-08,
+          "cutoff": 2.9802322387695312e-08,
+          "margin": 2.9802322387695312e-08,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000523",
+        "domain": "monash_traffic",
+        "condition": "joint_high",
+        "errors": {
+          "pre": 1.4901161193847656e-08,
+          "cutoff": 5.960464477539063e-08,
+          "margin": 4.470348358154297e-08,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000022",
+        "domain": "monash_traffic",
+        "condition": "clean",
+        "errors": {
+          "pre": 7.450580596923828e-08,
+          "cutoff": 5.960464477539063e-08,
+          "margin": 1.341104507446289e-07,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000022",
+        "domain": "monash_traffic",
+        "condition": "minus",
+        "errors": {
+          "pre": 7.450580596923828e-09,
+          "cutoff": 5.960464477539063e-08,
+          "margin": 4.470348358154297e-08,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000022",
+        "domain": "monash_traffic",
+        "condition": "plus",
+        "errors": {
+          "pre": 2.9802322387695312e-08,
+          "cutoff": 0.0,
+          "margin": 2.9802322387695312e-08,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000022",
+        "domain": "monash_traffic",
+        "condition": "native_low",
+        "errors": {
+          "pre": 2.9802322387695312e-08,
+          "cutoff": 5.960464477539063e-08,
+          "margin": 8.940696716308594e-08,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000022",
+        "domain": "monash_traffic",
+        "condition": "native_high",
+        "errors": {
+          "pre": 4.470348358154297e-08,
+          "cutoff": 2.9802322387695312e-08,
+          "margin": 0.0,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000022",
+        "domain": "monash_traffic",
+        "condition": "joint_low",
+        "errors": {
+          "pre": 5.960464477539063e-08,
+          "cutoff": 0.0,
+          "margin": 5.960464477539063e-08,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000022",
+        "domain": "monash_traffic",
+        "condition": "joint_high",
+        "errors": {
+          "pre": 2.2351741790771484e-08,
+          "cutoff": 0.0,
+          "margin": 1.4901161193847656e-08,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      }
+    ],
+    "timesfm": [
+      {
+        "id": "daily/1489",
+        "domain": "daily",
+        "condition": "clean",
+        "errors": {
+          "pre": 7.62939453125e-06,
+          "cutoff": 1.9073486328125e-06,
+          "margin": 9.5367431640625e-06,
+          "rank": 0.0,
+          "z": 7.62939453125e-06
+        }
+      },
+      {
+        "id": "daily/1489",
+        "domain": "daily",
+        "condition": "minus",
+        "errors": {
+          "pre": 4.76837158203125e-06,
+          "cutoff": 1.9073486328125e-06,
+          "margin": 2.86102294921875e-06,
+          "rank": 0.0,
+          "z": 4.76837158203125e-06
+        }
+      },
+      {
+        "id": "daily/1489",
+        "domain": "daily",
+        "condition": "plus",
+        "errors": {
+          "pre": 0.0,
+          "cutoff": 2.86102294921875e-06,
+          "margin": 2.86102294921875e-06,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "daily/1489",
+        "domain": "daily",
+        "condition": "native_low",
+        "errors": {
+          "pre": 1.9073486328125e-06,
+          "cutoff": 2.384185791015625e-06,
+          "margin": 7.152557373046875e-07,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "daily/1489",
+        "domain": "daily",
+        "condition": "native_high",
+        "errors": {
+          "pre": 2.86102294921875e-06,
+          "cutoff": 5.7220458984375e-06,
+          "margin": 2.86102294921875e-06,
+          "rank": 0.0,
+          "z": 2.86102294921875e-06
+        }
+      },
+      {
+        "id": "daily/1489",
+        "domain": "daily",
+        "condition": "joint_low",
+        "errors": {
+          "pre": 1.5497207641601562e-06,
+          "cutoff": 9.5367431640625e-07,
+          "margin": 5.960464477539062e-07,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "daily/1489",
+        "domain": "daily",
+        "condition": "joint_high",
+        "errors": {
+          "pre": 4.76837158203125e-07,
+          "cutoff": 1.430511474609375e-06,
+          "margin": 9.5367431640625e-07,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "daily/915",
+        "domain": "daily",
+        "condition": "clean",
+        "errors": {
+          "pre": 0.0,
+          "cutoff": 1.9073486328125e-06,
+          "margin": 1.9073486328125e-06,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "daily/915",
+        "domain": "daily",
+        "condition": "minus",
+        "errors": {
+          "pre": 1.0728836059570312e-06,
+          "cutoff": 3.337860107421875e-06,
+          "margin": 4.410743713378906e-06,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "daily/915",
+        "domain": "daily",
+        "condition": "plus",
+        "errors": {
+          "pre": 1.9073486328125e-06,
+          "cutoff": 7.152557373046875e-06,
+          "margin": 5.245208740234375e-06,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "daily/915",
+        "domain": "daily",
+        "condition": "native_low",
+        "errors": {
+          "pre": 1.430511474609375e-06,
+          "cutoff": 3.814697265625e-06,
+          "margin": 2.86102294921875e-06,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "daily/915",
+        "domain": "daily",
+        "condition": "native_high",
+        "errors": {
+          "pre": 6.198883056640625e-06,
+          "cutoff": 9.5367431640625e-07,
+          "margin": 7.152557373046875e-06,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "daily/915",
+        "domain": "daily",
+        "condition": "joint_low",
+        "errors": {
+          "pre": 3.814697265625e-06,
+          "cutoff": 2.86102294921875e-06,
+          "margin": 9.5367431640625e-07,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "daily/915",
+        "domain": "daily",
+        "condition": "joint_high",
+        "errors": {
+          "pre": 2.8908252716064453e-06,
+          "cutoff": 9.5367431640625e-07,
+          "margin": 3.635883331298828e-06,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000523",
+        "domain": "monash_traffic",
+        "condition": "clean",
+        "errors": {
+          "pre": 9.5367431640625e-07,
+          "cutoff": 5.7220458984375e-06,
+          "margin": 4.76837158203125e-06,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000523",
+        "domain": "monash_traffic",
+        "condition": "minus",
+        "errors": {
+          "pre": 9.5367431640625e-07,
+          "cutoff": 1.9073486328125e-06,
+          "margin": 9.5367431640625e-07,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000523",
+        "domain": "monash_traffic",
+        "condition": "plus",
+        "errors": {
+          "pre": 0.0,
+          "cutoff": 4.76837158203125e-06,
+          "margin": 5.7220458984375e-06,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000523",
+        "domain": "monash_traffic",
+        "condition": "native_low",
+        "errors": {
+          "pre": 9.5367431640625e-07,
+          "cutoff": 1.9073486328125e-06,
+          "margin": 1.9073486328125e-06,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000523",
+        "domain": "monash_traffic",
+        "condition": "native_high",
+        "errors": {
+          "pre": 1.9073486328125e-06,
+          "cutoff": 2.86102294921875e-06,
+          "margin": 4.76837158203125e-06,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000523",
+        "domain": "monash_traffic",
+        "condition": "joint_low",
+        "errors": {
+          "pre": 9.5367431640625e-07,
+          "cutoff": 6.67572021484375e-06,
+          "margin": 6.67572021484375e-06,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000523",
+        "domain": "monash_traffic",
+        "condition": "joint_high",
+        "errors": {
+          "pre": 1.9073486328125e-06,
+          "cutoff": 9.5367431640625e-07,
+          "margin": 2.86102294921875e-06,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000022",
+        "domain": "monash_traffic",
+        "condition": "clean",
+        "errors": {
+          "pre": 1.430511474609375e-06,
+          "cutoff": 1.9073486328125e-06,
+          "margin": 4.76837158203125e-07,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000022",
+        "domain": "monash_traffic",
+        "condition": "minus",
+        "errors": {
+          "pre": 1.430511474609375e-06,
+          "cutoff": 2.384185791015625e-06,
+          "margin": 3.814697265625e-06,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000022",
+        "domain": "monash_traffic",
+        "condition": "plus",
+        "errors": {
+          "pre": 2.384185791015625e-06,
+          "cutoff": 9.5367431640625e-07,
+          "margin": 1.9073486328125e-06,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000022",
+        "domain": "monash_traffic",
+        "condition": "native_low",
+        "errors": {
+          "pre": 2.384185791015625e-06,
+          "cutoff": 8.58306884765625e-06,
+          "margin": 1.1444091796875e-05,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000022",
+        "domain": "monash_traffic",
+        "condition": "native_high",
+        "errors": {
+          "pre": 1.9073486328125e-06,
+          "cutoff": 3.814697265625e-06,
+          "margin": 5.245208740234375e-06,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000022",
+        "domain": "monash_traffic",
+        "condition": "joint_low",
+        "errors": {
+          "pre": 0.0,
+          "cutoff": 0.0,
+          "margin": 4.76837158203125e-07,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "id": "monash_traffic/T000022",
+        "domain": "monash_traffic",
+        "condition": "joint_high",
+        "errors": {
+          "pre": 6.198883056640625e-06,
+          "cutoff": 1.9073486328125e-06,
+          "margin": 8.106231689453125e-06,
+          "rank": 0.0,
+          "z": 0.0
+        }
+      }
+    ]
+  }
+}

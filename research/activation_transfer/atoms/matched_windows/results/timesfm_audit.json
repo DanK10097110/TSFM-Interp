@@ -1,0 +1,79 @@
+{
+  "source": "timesfm",
+  "target": "bolt",
+  "feature_ids": [
+    1907,
+    5434,
+    1310,
+    4107,
+    1725,
+    4002,
+    4053,
+    742,
+    4042,
+    4775,
+    5545,
+    1641,
+    2106,
+    478,
+    2362,
+    499
+  ],
+  "n_series": 160,
+  "active_cases": 588,
+  "active_counts": [
+    14,
+    27,
+    18,
+    14,
+    29,
+    3,
+    13,
+    86,
+    9,
+    2,
+    56,
+    21,
+    81,
+    59,
+    147,
+    9
+  ],
+  "source_sae_sha256": "fd3dfbbdfd8a0c0439a76e948e7134a044f833da463668ececcc3052c4d22e38",
+  "target_sae_sha256": "26cb4e369bef44636e129dccd0641563dc1908acbcc301dd220325b4465d553a",
+  "archived_atom_effects_sha256": "6ce5cdf3a0943dac013209614ef5ab343470e3b7a9526edbd5a0010d21ffdf78",
+  "vector_sha256": "b20e238f770757df9d90c6f4713725c115eaa53289fbf02031eaf8be7baca4d5",
+  "max_atom_map_abs_error": 6.938893903907228e-18,
+  "max_source_dose_abs_error": 1.2764835588541246e-07,
+  "max_source_dose_relative_error": 8.116294081261799e-09,
+  "source_hidden_replay_max": 2.288818359375e-05,
+  "source_native_spans": [
+    [
+      448.0,
+      480.0
+    ]
+  ],
+  "zero_window_series": [],
+  "zero_window_active_cases": 0,
+  "replays": {
+    "source": {
+      "model": "timesfm",
+      "site": "stacked_xf.10",
+      "positions": [
+        14
+      ],
+      "clean_forecast_absmax": 1.430511474609375e-06,
+      "archived_atom_forecast_absmax": 1.9073486328125e-06
+    },
+    "target": {
+      "model": "bolt",
+      "site": "encoder.block.3",
+      "positions": [
+        28,
+        29
+      ],
+      "clean_forecast_absmax": 2.384185791015625e-07,
+      "archived_atom_forecast_absmax": 7.152557373046875e-07
+    }
+  }
+}

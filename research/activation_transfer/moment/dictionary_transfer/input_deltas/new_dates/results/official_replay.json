@@ -1,0 +1,50 @@
+{
+  "models": [
+    "small",
+    "large"
+  ],
+  "stations": 35,
+  "origins": 11,
+  "model_api": "MOMENTPipeline.short_forecast",
+  "clean_recipients_per_arm": 385,
+  "whole_graph": true,
+  "reference_write": "absolute independently measured state",
+  "source_and_map_fingerprint": "8ddf483dd6a35cc32d36c653dd31b38500826b32e2e50a473e1a9a97fb86b080",
+  "checks": {
+    "ramp_reference": {
+      "scalars": 6160,
+      "maximum_absolute_C": 1.1444091796875e-05,
+      "rms_difference_C": 1.3513742951925297e-06
+    },
+    "ramp_correct": {
+      "scalars": 6160,
+      "maximum_absolute_C": 1.1444091796875e-05,
+      "rms_difference_C": 1.3299170224953685e-06
+    },
+    "ramp_wrong_step": {
+      "scalars": 6160,
+      "maximum_absolute_C": 7.62939453125e-06,
+      "rms_difference_C": 1.3187325933371707e-06
+    },
+    "ramp_wrong_order": {
+      "scalars": 6160,
+      "maximum_absolute_C": 9.5367431640625e-06,
+      "rms_difference_C": 1.3118984478003198e-06
+    },
+    "permuted_reference": {
+      "scalars": 6160,
+      "maximum_absolute_C": 9.5367431640625e-06,
+      "rms_difference_C": 1.3444188768700261e-06
+    },
+    "permuted_correct": {
+      "scalars": 6160,
+      "maximum_absolute_C": 9.5367431640625e-06,
+      "rms_difference_C": 1.338963740359381e-06
+    },
+    "permuted_swapped": {
+      "scalars": 6160,
+      "maximum_absolute_C": 1.1444091796875e-05,
+      "rms_difference_C": 1.3588614642049004e-06
+    }
+  }
+}

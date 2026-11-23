@@ -1,0 +1,842 @@
+{
+  "test_moment_small_h8": {
+    "bitbrains_fast_storage": {
+      "value": {
+        "value": 3.1838580489619313,
+        "ci95": [
+          2.589755461893488,
+          3.9219850170012154
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 2.2938125096067656,
+        "ci95": [
+          1.7642636500238358,
+          3.1021016194725464
+        ]
+      }
+    },
+    "m4_daily": {
+      "value": {
+        "value": 19.172079815298915,
+        "ci95": [
+          15.99038965449461,
+          22.716915003401773
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 10.14492707353909,
+        "ci95": [
+          8.594582646320514,
+          11.848552563962336
+        ]
+      }
+    },
+    "m4_hourly": {
+      "value": {
+        "value": 4.109315350560005,
+        "ci95": [
+          3.852465373868974,
+          4.386900800175013
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 4.518699624131153,
+        "ci95": [
+          3.4720578318070037,
+          6.195872372169655
+        ]
+      }
+    },
+    "m4_weekly": {
+      "value": {
+        "value": 35.29966864805879,
+        "ci95": [
+          28.857119349868945,
+          42.94095853647687
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 17.291127656207706,
+        "ci95": [
+          14.417314632970994,
+          20.584390020536997
+        ]
+      }
+    },
+    "monash_electricity_hourly": {
+      "value": {
+        "value": 3.685323129147,
+        "ci95": [
+          3.3982362292432473,
+          4.033113060609141
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 2.374362282529301,
+        "ci95": [
+          2.007745741246443,
+          2.835545236628505
+        ]
+      }
+    },
+    "monash_traffic": {
+      "value": {
+        "value": 2.9617790841957836,
+        "ci95": [
+          2.7729596337652618,
+          3.15132456427544
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 3.530028754729177,
+        "ci95": [
+          3.047446117012328,
+          4.133157357299254
+        ]
+      }
+    },
+    "equal_domain_comparator_ratio": {
+      "value": 6.692159650123866,
+      "ci95": [
+        6.1246532629822585,
+        7.41442776276097
+      ]
+    },
+    "independent_max_error_in_history_sd": 0.0,
+    "independent_max_error_native_units": 0.0,
+    "number_of_forecast_values_compared": 11520,
+    "numerically_identical_every_value": true,
+    "bit_identical_at_native_float32_precision": true
+  },
+  "test_moment_small_h16": {
+    "bitbrains_fast_storage": {
+      "value": {
+        "value": 3.135966345146602,
+        "ci95": [
+          2.5469531104505996,
+          3.8725533163843644
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 2.056095613658298,
+        "ci95": [
+          1.5480361646139154,
+          2.8461820285244586
+        ]
+      }
+    },
+    "m4_daily": {
+      "value": {
+        "value": 19.232098185561473,
+        "ci95": [
+          16.03119808501563,
+          22.822739339739964
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 7.413076333889053,
+        "ci95": [
+          6.266902714133878,
+          8.650964070003786
+        ]
+      }
+    },
+    "m4_hourly": {
+      "value": {
+        "value": 4.040456671364733,
+        "ci95": [
+          3.8307729516951565,
+          4.248904849691044
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 4.086931582856463,
+        "ci95": [
+          3.015762321672235,
+          5.717113568788833
+        ]
+      }
+    },
+    "m4_weekly": {
+      "value": {
+        "value": 35.56785190186623,
+        "ci95": [
+          28.875320308677075,
+          43.621860121416546
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 12.883175050675497,
+        "ci95": [
+          10.85488908601621,
+          15.4745624929816
+        ]
+      }
+    },
+    "monash_electricity_hourly": {
+      "value": {
+        "value": 3.661693715394634,
+        "ci95": [
+          3.391177678075702,
+          4.0261771751309485
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 2.1510815729957407,
+        "ci95": [
+          1.8714753992948057,
+          2.485613857085951
+        ]
+      }
+    },
+    "monash_traffic": {
+      "value": {
+        "value": 2.987467461414948,
+        "ci95": [
+          2.8209534025738447,
+          3.155884602467687
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 3.218402589121699,
+        "ci95": [
+          2.7963925423636424,
+          3.6953957819523104
+        ]
+      }
+    },
+    "equal_domain_comparator_ratio": {
+      "value": 5.301460457199458,
+      "ci95": [
+        4.878399409967893,
+        5.884692213732521
+      ]
+    },
+    "independent_max_error_in_history_sd": 0.0,
+    "independent_max_error_native_units": 0.0,
+    "number_of_forecast_values_compared": 23040,
+    "numerically_identical_every_value": true,
+    "bit_identical_at_native_float32_precision": true
+  },
+  "test_moment_base_h8": {
+    "bitbrains_fast_storage": {
+      "value": {
+        "value": 2.6276920775733044,
+        "ci95": [
+          2.118208066396184,
+          3.252158590043927
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 1.8931223899562444,
+        "ci95": [
+          1.4819746392806943,
+          2.5408266409549864
+        ]
+      }
+    },
+    "m4_daily": {
+      "value": {
+        "value": 19.810198312952764,
+        "ci95": [
+          16.618965889143535,
+          23.439967913412048
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 10.482588176838314,
+        "ci95": [
+          8.893476969966086,
+          12.112558492514625
+        ]
+      }
+    },
+    "m4_hourly": {
+      "value": {
+        "value": 3.9685323136203534,
+        "ci95": [
+          3.6578701695024036,
+          4.300707015283989
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 4.3638912918826795,
+        "ci95": [
+          3.3174015305263445,
+          6.0522812675144015
+        ]
+      }
+    },
+    "m4_weekly": {
+      "value": {
+        "value": 37.65071882764614,
+        "ci95": [
+          30.54502241874745,
+          45.90117445995016
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 18.442761944526456,
+        "ci95": [
+          15.328974547319435,
+          22.026519068671572
+        ]
+      }
+    },
+    "monash_electricity_hourly": {
+      "value": {
+        "value": 3.415172748804667,
+        "ci95": [
+          3.186151066005924,
+          3.65718527285874
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 2.200311093198653,
+        "ci95": [
+          1.8633931446756533,
+          2.6140641652898253
+        ]
+      }
+    },
+    "monash_traffic": {
+      "value": {
+        "value": 2.4456168488127417,
+        "ci95": [
+          2.272110308774872,
+          2.628862096197992
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 2.9148351561484858,
+        "ci95": [
+          2.539760939298335,
+          3.3827052663615556
+        ]
+      }
+    },
+    "equal_domain_comparator_ratio": {
+      "value": 6.716251675425139,
+      "ci95": [
+        6.116462017558191,
+        7.460784725569888
+      ]
+    },
+    "independent_max_error_in_history_sd": 0.0,
+    "independent_max_error_native_units": 0.0,
+    "number_of_forecast_values_compared": 11520,
+    "numerically_identical_every_value": true,
+    "bit_identical_at_native_float32_precision": true
+  },
+  "test_moment_base_h16": {
+    "bitbrains_fast_storage": {
+      "value": {
+        "value": 2.6303407709281172,
+        "ci95": [
+          2.119053730580284,
+          3.250865096142858
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 1.7245823220972931,
+        "ci95": [
+          1.2899714687620296,
+          2.3779949403636325
+        ]
+      }
+    },
+    "m4_daily": {
+      "value": {
+        "value": 20.27167148296069,
+        "ci95": [
+          16.980553153049843,
+          23.97910621667941
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 7.813783325603496,
+        "ci95": [
+          6.637445844647048,
+          9.015695850663368
+        ]
+      }
+    },
+    "m4_hourly": {
+      "value": {
+        "value": 3.8921318067518698,
+        "ci95": [
+          3.6449912641075035,
+          4.1378713327094845
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 3.936900627691074,
+        "ci95": [
+          2.9031832265394204,
+          5.554073323647383
+        ]
+      }
+    },
+    "m4_weekly": {
+      "value": {
+        "value": 38.53011683565872,
+        "ci95": [
+          31.117907500823417,
+          47.22037051212884
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 13.956148976506645,
+        "ci95": [
+          11.688137342470126,
+          16.795439738509565
+        ]
+      }
+    },
+    "monash_electricity_hourly": {
+      "value": {
+        "value": 3.4221910006662424,
+        "ci95": [
+          3.2004198064409644,
+          3.6827119907744823
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 2.010384421246342,
+        "ci95": [
+          1.7479667346310184,
+          2.332369114104629
+        ]
+      }
+    },
+    "monash_traffic": {
+      "value": {
+        "value": 2.4567045026870966,
+        "ci95": [
+          2.308676989830986,
+          2.6142424997018963
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 2.6466109620522094,
+        "ci95": [
+          2.2963932526907938,
+          3.039210290555034
+        ]
+      }
+    },
+    "equal_domain_comparator_ratio": {
+      "value": 5.348068439199509,
+      "ci95": [
+        4.899566162399256,
+        5.954756823573284
+      ]
+    },
+    "independent_max_error_in_history_sd": 0.0,
+    "independent_max_error_native_units": 0.0,
+    "number_of_forecast_values_compared": 23040,
+    "numerically_identical_every_value": true,
+    "bit_identical_at_native_float32_precision": true
+  },
+  "test_moment_large_h8": {
+    "bitbrains_fast_storage": {
+      "value": {
+        "value": 1.4293910568636,
+        "ci95": [
+          1.150916177103384,
+          1.7488069730687719
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 1.0298056750434492,
+        "ci95": [
+          0.8756630646377797,
+          1.2516640050009558
+        ]
+      }
+    },
+    "m4_daily": {
+      "value": {
+        "value": 6.807824246743415,
+        "ci95": [
+          5.33649578020197,
+          8.750844254215137
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 3.602367671011406,
+        "ci95": [
+          2.9204981448580227,
+          4.357377454607571
+        ]
+      }
+    },
+    "m4_hourly": {
+      "value": {
+        "value": 1.4595340293370973,
+        "ci95": [
+          1.3035365125324696,
+          1.6257468634812358
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 1.6049378806796601,
+        "ci95": [
+          1.2450188913728932,
+          2.1660050638221016
+        ]
+      }
+    },
+    "m4_weekly": {
+      "value": {
+        "value": 12.782287264253231,
+        "ci95": [
+          10.22076333064802,
+          15.663119779612739
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 6.261253130393761,
+        "ci95": [
+          5.115326938078487,
+          7.596922681144606
+        ]
+      }
+    },
+    "monash_electricity_hourly": {
+      "value": {
+        "value": 1.6970182101652593,
+        "ci95": [
+          1.5287114642888149,
+          1.878670694537418
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 1.0933467405107564,
+        "ci95": [
+          0.9447397156977152,
+          1.2648637420371203
+        ]
+      }
+    },
+    "monash_traffic": {
+      "value": {
+        "value": 1.0619201492018924,
+        "ci95": [
+          0.9480133700371531,
+          1.179811299178842
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 1.2656611297958582,
+        "ci95": [
+          1.1035666300399776,
+          1.4549148105451584
+        ]
+      }
+    },
+    "equal_domain_comparator_ratio": {
+      "value": 2.4762287045724825,
+      "ci95": [
+        2.2402416185290774,
+        2.7549176100849233
+      ]
+    },
+    "independent_max_error_in_history_sd": 0.0,
+    "independent_max_error_native_units": 0.0,
+    "number_of_forecast_values_compared": 11520,
+    "numerically_identical_every_value": true,
+    "bit_identical_at_native_float32_precision": true
+  },
+  "test_moment_large_h16": {
+    "bitbrains_fast_storage": {
+      "value": {
+        "value": 1.6303912227445283,
+        "ci95": [
+          1.2984772195042904,
+          1.9993373677062762
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 1.0689656305846935,
+        "ci95": [
+          0.820127560168153,
+          1.4141741030867274
+        ]
+      }
+    },
+    "m4_daily": {
+      "value": {
+        "value": 11.94301568319041,
+        "ci95": [
+          9.686482612569497,
+          14.613898730927314
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 4.603475193507072,
+        "ci95": [
+          3.84139210631552,
+          5.421143769820493
+        ]
+      }
+    },
+    "m4_hourly": {
+      "value": {
+        "value": 1.5423549370570608,
+        "ci95": [
+          1.3776607023210221,
+          1.7208256086232185
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 1.5600957062370824,
+        "ci95": [
+          1.164144707839804,
+          2.1268224654480545
+        ]
+      }
+    },
+    "m4_weekly": {
+      "value": {
+        "value": 21.593948394983933,
+        "ci95": [
+          17.16913032684097,
+          26.79405997166335
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 7.821631117206554,
+        "ci95": [
+          6.529486002462325,
+          9.419363534077336
+        ]
+      }
+    },
+    "monash_electricity_hourly": {
+      "value": {
+        "value": 1.9594025061829807,
+        "ci95": [
+          1.7833387469615134,
+          2.144090959716615
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 1.151061490318459,
+        "ci95": [
+          1.0259745452351074,
+          1.2969637904580766
+        ]
+      }
+    },
+    "monash_traffic": {
+      "value": {
+        "value": 1.1382735634192813,
+        "ci95": [
+          1.038877415979334,
+          1.2491101863499132
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 1.2262635931446424,
+        "ci95": [
+          1.105292891919307,
+          1.3790342156167987
+        ]
+      }
+    },
+    "equal_domain_comparator_ratio": {
+      "value": 2.9052487884997507,
+      "ci95": [
+        2.653797851857366,
+        3.2363764463055276
+      ]
+    },
+    "independent_max_error_in_history_sd": 0.0,
+    "independent_max_error_native_units": 0.0,
+    "number_of_forecast_values_compared": 23040,
+    "numerically_identical_every_value": true,
+    "bit_identical_at_native_float32_precision": true
+  },
+  "external_moment_small_h8": {
+    "noaa": {
+      "value": {
+        "value": 8.054904748969104,
+        "ci95": [
+          7.483234187452041,
+          8.598901365703863
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 2.2192381126212886,
+        "ci95": [
+          2.057299691054077,
+          2.4026458337083905
+        ]
+      }
+    },
+    "equal_domain_comparator_ratio": {
+      "value": 2.2192381126212886,
+      "ci95": [
+        2.057299691054077,
+        2.4026458337083905
+      ]
+    },
+    "independent_max_error_in_history_sd": 0.0,
+    "independent_max_error_native_units": 0.0,
+    "number_of_forecast_values_compared": 1472,
+    "numerically_identical_every_value": true,
+    "bit_identical_at_native_float32_precision": true
+  },
+  "external_moment_small_h16": {
+    "noaa": {
+      "value": {
+        "value": 8.472343391819818,
+        "ci95": [
+          7.849432791532827,
+          9.083278157269664
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 2.3186053341540767,
+        "ci95": [
+          2.1756918408241646,
+          2.478858983273717
+        ]
+      }
+    },
+    "equal_domain_comparator_ratio": {
+      "value": 2.3186053341540767,
+      "ci95": [
+        2.1756918408241646,
+        2.478858983273717
+      ]
+    },
+    "independent_max_error_in_history_sd": 0.0,
+    "independent_max_error_native_units": 0.0,
+    "number_of_forecast_values_compared": 2944,
+    "numerically_identical_every_value": true,
+    "bit_identical_at_native_float32_precision": true
+  },
+  "external_moment_base_h8": {
+    "noaa": {
+      "value": {
+        "value": 7.697653670123089,
+        "ci95": [
+          7.136771693411486,
+          8.218128388982427
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 2.1208104794389575,
+        "ci95": [
+          1.9743763623227493,
+          2.2822920120501564
+        ]
+      }
+    },
+    "equal_domain_comparator_ratio": {
+      "value": 2.1208104794389575,
+      "ci95": [
+        1.9743763623227493,
+        2.2822920120501564
+      ]
+    },
+    "independent_max_error_in_history_sd": 0.0,
+    "independent_max_error_native_units": 0.0,
+    "number_of_forecast_values_compared": 1472,
+    "numerically_identical_every_value": true,
+    "bit_identical_at_native_float32_precision": true
+  },
+  "external_moment_base_h16": {
+    "noaa": {
+      "value": {
+        "value": 8.064563499455865,
+        "ci95": [
+          7.434181172263241,
+          8.68389958871751
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 2.2070092160707713,
+        "ci95": [
+          2.0842602742055054,
+          2.341444826760131
+        ]
+      }
+    },
+    "equal_domain_comparator_ratio": {
+      "value": 2.2070092160707713,
+      "ci95": [
+        2.0842602742055054,
+        2.341444826760131
+      ]
+    },
+    "independent_max_error_in_history_sd": 0.0,
+    "independent_max_error_native_units": 0.0,
+    "number_of_forecast_values_compared": 2944,
+    "numerically_identical_every_value": true,
+    "bit_identical_at_native_float32_precision": true
+  },
+  "external_moment_large_h8": {
+    "noaa": {
+      "value": {
+        "value": 4.626154142294241,
+        "ci95": [
+          4.1839946377111366,
+          5.087786747032534
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 1.274569707202829,
+        "ci95": [
+          1.217946247816687,
+          1.3411478833103385
+        ]
+      }
+    },
+    "equal_domain_comparator_ratio": {
+      "value": 1.274569707202829,
+      "ci95": [
+        1.217946247816687,
+        1.3411478833103385
+      ]
+    },
+    "independent_max_error_in_history_sd": 0.0,
+    "independent_max_error_native_units": 0.0,
+    "number_of_forecast_values_compared": 1472,
+    "numerically_identical_every_value": true,
+    "bit_identical_at_native_float32_precision": true
+  },
+  "external_moment_large_h16": {
+    "noaa": {
+      "value": {
+        "value": 5.661487320105991,
+        "ci95": [
+          5.129566497779451,
+          6.220733194659951
+        ]
+      },
+      "vs_history_select_or_climate_anomaly": {
+        "value": 1.5493652809584548,
+        "ci95": [
+          1.4836129933655828,
+          1.625890883139389
+        ]
+      }
+    },
+    "equal_domain_comparator_ratio": {
+      "value": 1.5493652809584548,
+      "ci95": [
+        1.4836129933655828,
+        1.625890883139389
+      ]
+    },
+    "independent_max_error_in_history_sd": 0.0,
+    "independent_max_error_native_units": 0.0,
+    "number_of_forecast_values_compared": 2944,
+    "numerically_identical_every_value": true,
+    "bit_identical_at_native_float32_precision": true
+  }
+}

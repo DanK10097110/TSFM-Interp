@@ -1,0 +1,786 @@
+{
+  "bitbrains_fast_storage": {
+    "moment_small": {
+      "8": {
+        "corr_forecast_actual_level": -0.0759769293174422,
+        "corr_forecast_last_level": -0.3726841558888999,
+        "corr_last_actual_level": 0.41054772776406956,
+        "forecast_to_actual_level_sd": 0.0717238359131661,
+        "normalized_level_bias": 0.08369387589929755,
+        "fraction_forecast_error_energy_in_level": 0.4872965830561297,
+        "normalized_waveform_mae": 0.619663702664936,
+        "normalized_level_mae": 0.5486719712813691
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.049290293993635846,
+        "corr_forecast_last_level": -0.18530171762349174,
+        "corr_last_actual_level": 0.43282760698106204,
+        "forecast_to_actual_level_sd": 0.055510889436099844,
+        "normalized_level_bias": 0.09963298106257586,
+        "fraction_forecast_error_energy_in_level": 0.4092261035089982,
+        "normalized_waveform_mae": 0.6369753387327185,
+        "normalized_level_mae": 0.46404748891906794
+      }
+    },
+    "moment_base": {
+      "8": {
+        "corr_forecast_actual_level": 0.08163069662326108,
+        "corr_forecast_last_level": -0.08248246476740773,
+        "corr_last_actual_level": 0.41054772776406956,
+        "forecast_to_actual_level_sd": 0.06484831617013731,
+        "normalized_level_bias": -0.1501622741934309,
+        "fraction_forecast_error_energy_in_level": 0.5384450530521785,
+        "normalized_waveform_mae": 0.5039043379164381,
+        "normalized_level_mae": 0.517460403874843
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.08996454616052797,
+        "corr_forecast_last_level": 0.1255655867295499,
+        "corr_last_actual_level": 0.43282760698106204,
+        "forecast_to_actual_level_sd": 0.05948166596908399,
+        "normalized_level_bias": -0.1528962590044318,
+        "fraction_forecast_error_energy_in_level": 0.4619431418851273,
+        "normalized_waveform_mae": 0.5373666404063198,
+        "normalized_level_mae": 0.44951170611647573
+      }
+    },
+    "moment_large": {
+      "8": {
+        "corr_forecast_actual_level": 0.5568950124002137,
+        "corr_forecast_last_level": 0.6291852699286498,
+        "corr_last_actual_level": 0.41054772776406956,
+        "forecast_to_actual_level_sd": 0.594577801036106,
+        "normalized_level_bias": -0.15015926318216974,
+        "fraction_forecast_error_energy_in_level": 0.5334493454633742,
+        "normalized_waveform_mae": 0.34553823748776374,
+        "normalized_level_mae": 0.3382163580997384
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.6092634382906006,
+        "corr_forecast_last_level": 0.5197074768267584,
+        "corr_last_actual_level": 0.43282760698106204,
+        "forecast_to_actual_level_sd": 0.44162973561391083,
+        "normalized_level_bias": -0.10634911494518873,
+        "fraction_forecast_error_energy_in_level": 0.43425999832993556,
+        "normalized_waveform_mae": 0.39009547990896093,
+        "normalized_level_mae": 0.30792612363411737
+      }
+    },
+    "bolt": {
+      "8": {
+        "corr_forecast_actual_level": 0.5851406237846838,
+        "corr_forecast_last_level": 0.6627761884211878,
+        "corr_last_actual_level": 0.41054772776406956,
+        "forecast_to_actual_level_sd": 0.6610498241836307,
+        "normalized_level_bias": -0.12117993402301468,
+        "fraction_forecast_error_energy_in_level": 0.5553335521215234,
+        "normalized_waveform_mae": 0.29732330823858794,
+        "normalized_level_mae": 0.2587608486765472
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.6251890827869442,
+        "corr_forecast_last_level": 0.588961594938345,
+        "corr_last_actual_level": 0.43282760698106204,
+        "forecast_to_actual_level_sd": 0.6751381417870086,
+        "normalized_level_bias": -0.11046508023202062,
+        "fraction_forecast_error_energy_in_level": 0.46441693362396946,
+        "normalized_waveform_mae": 0.329074508963934,
+        "normalized_level_mae": 0.245817715816426
+      }
+    },
+    "timesfm": {
+      "8": {
+        "corr_forecast_actual_level": 0.6104920828728989,
+        "corr_forecast_last_level": 0.6779506200873209,
+        "corr_last_actual_level": 0.41054772776406956,
+        "forecast_to_actual_level_sd": 0.6490928286782427,
+        "normalized_level_bias": -0.137747665639016,
+        "fraction_forecast_error_energy_in_level": 0.5485994160403498,
+        "normalized_waveform_mae": 0.2902996744127048,
+        "normalized_level_mae": 0.26839577891765254
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.6319949768428909,
+        "corr_forecast_last_level": 0.601329674832926,
+        "corr_last_actual_level": 0.43282760698106204,
+        "forecast_to_actual_level_sd": 0.6705594337092841,
+        "normalized_level_bias": -0.1280415178227189,
+        "fraction_forecast_error_energy_in_level": 0.47296758657453647,
+        "normalized_waveform_mae": 0.32038938067330824,
+        "normalized_level_mae": 0.25088269284768794
+      }
+    }
+  },
+  "m4_daily": {
+    "moment_small": {
+      "8": {
+        "corr_forecast_actual_level": -0.7301630063553886,
+        "corr_forecast_last_level": -0.7350563754050267,
+        "corr_last_actual_level": 0.9888983274346387,
+        "forecast_to_actual_level_sd": 0.033374674324965,
+        "normalized_level_bias": -0.8387155196896788,
+        "fraction_forecast_error_energy_in_level": 0.9025121853605889,
+        "normalized_waveform_mae": 0.4239996611776921,
+        "normalized_level_mae": 1.338859932800491
+      },
+      "16": {
+        "corr_forecast_actual_level": -0.6164634152897329,
+        "corr_forecast_last_level": -0.6304291456664641,
+        "corr_last_actual_level": 0.9798101958124932,
+        "forecast_to_actual_level_sd": 0.021419173767059124,
+        "normalized_level_bias": -0.8366272385480146,
+        "fraction_forecast_error_energy_in_level": 0.8961878857261557,
+        "normalized_waveform_mae": 0.44409725829896357,
+        "normalized_level_mae": 1.3449515507544134
+      }
+    },
+    "moment_base": {
+      "8": {
+        "corr_forecast_actual_level": 0.5856457517114988,
+        "corr_forecast_last_level": 0.5812708140485163,
+        "corr_last_actual_level": 0.9888983274346387,
+        "forecast_to_actual_level_sd": 0.020808114578008893,
+        "normalized_level_bias": -1.0490192874438888,
+        "fraction_forecast_error_energy_in_level": 0.9457035806452739,
+        "normalized_waveform_mae": 0.32529702118112763,
+        "normalized_level_mae": 1.4083814277039302
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.6026175291081952,
+        "corr_forecast_last_level": 0.5894152715336514,
+        "corr_last_actual_level": 0.9798101958124932,
+        "forecast_to_actual_level_sd": 0.020277981448832298,
+        "normalized_level_bias": -1.0802204490326117,
+        "fraction_forecast_error_energy_in_level": 0.939673929146561,
+        "normalized_waveform_mae": 0.3506237954133189,
+        "normalized_level_mae": 1.4411041671095939
+      }
+    },
+    "moment_large": {
+      "8": {
+        "corr_forecast_actual_level": 0.8904676254763305,
+        "corr_forecast_last_level": 0.9053353431400416,
+        "corr_last_actual_level": 0.9888983274346387,
+        "forecast_to_actual_level_sd": 0.6539419365257034,
+        "normalized_level_bias": -0.39458853226429147,
+        "fraction_forecast_error_energy_in_level": 0.8659158805545333,
+        "normalized_waveform_mae": 0.21273235967521806,
+        "normalized_level_mae": 0.48766151629292315
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.8673161648510386,
+        "corr_forecast_last_level": 0.8922699778145333,
+        "corr_last_actual_level": 0.9798101958124932,
+        "forecast_to_actual_level_sd": 0.36489151716558726,
+        "normalized_level_bias": -0.6267985675518207,
+        "fraction_forecast_error_energy_in_level": 0.8830744918744108,
+        "normalized_waveform_mae": 0.3025613662661058,
+        "normalized_level_mae": 0.8688120927650261
+      }
+    },
+    "bolt": {
+      "8": {
+        "corr_forecast_actual_level": 0.9744002586924214,
+        "corr_forecast_last_level": 0.9852315618653376,
+        "corr_last_actual_level": 0.9888983274346387,
+        "forecast_to_actual_level_sd": 0.9295556935105428,
+        "normalized_level_bias": 0.02862652023358542,
+        "fraction_forecast_error_energy_in_level": 0.8118826523052081,
+        "normalized_waveform_mae": 0.0971579951789897,
+        "normalized_level_mae": 0.17620208834875237
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.9523232011872822,
+        "corr_forecast_last_level": 0.9722137314613362,
+        "corr_last_actual_level": 0.9798101958124932,
+        "forecast_to_actual_level_sd": 0.8983807713920285,
+        "normalized_level_bias": 0.022408796583979002,
+        "fraction_forecast_error_energy_in_level": 0.7954390709713969,
+        "normalized_waveform_mae": 0.13676104503036876,
+        "normalized_level_mae": 0.23354458334907716
+      }
+    },
+    "timesfm": {
+      "8": {
+        "corr_forecast_actual_level": 0.9862877554263156,
+        "corr_forecast_last_level": 0.9988467962069897,
+        "corr_last_actual_level": 0.9888983274346387,
+        "forecast_to_actual_level_sd": 0.966706245872301,
+        "normalized_level_bias": 0.012012600411850899,
+        "fraction_forecast_error_energy_in_level": 0.7107584690760655,
+        "normalized_waveform_mae": 0.09867839752347861,
+        "normalized_level_mae": 0.16316327221800792
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.9736967366603227,
+        "corr_forecast_last_level": 0.9966358941370345,
+        "corr_last_actual_level": 0.9798101958124932,
+        "forecast_to_actual_level_sd": 0.9324130361436642,
+        "normalized_level_bias": -0.010490656552758569,
+        "fraction_forecast_error_energy_in_level": 0.7011927783670927,
+        "normalized_waveform_mae": 0.1418486384338016,
+        "normalized_level_mae": 0.23042426846132777
+      }
+    }
+  },
+  "m4_hourly": {
+    "moment_small": {
+      "8": {
+        "corr_forecast_actual_level": -0.012390290044379105,
+        "corr_forecast_last_level": -0.7908478369561087,
+        "corr_last_actual_level": 0.49804803037873197,
+        "forecast_to_actual_level_sd": 0.12706201239895998,
+        "normalized_level_bias": -0.15329670299550543,
+        "fraction_forecast_error_energy_in_level": 0.483536985914736,
+        "normalized_waveform_mae": 0.714417040726827,
+        "normalized_level_mae": 0.7337733202227276
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.033812984983103554,
+        "corr_forecast_last_level": -0.8237688768865192,
+        "corr_last_actual_level": -0.07124911192354322,
+        "forecast_to_actual_level_sd": 0.09880061701486578,
+        "normalized_level_bias": -0.08944600725853809,
+        "fraction_forecast_error_energy_in_level": 0.21832327067502658,
+        "normalized_waveform_mae": 0.8658801060312521,
+        "normalized_level_mae": 0.4814584085455776
+      }
+    },
+    "moment_base": {
+      "8": {
+        "corr_forecast_actual_level": -0.19786555420874544,
+        "corr_forecast_last_level": -0.8049889521403132,
+        "corr_last_actual_level": 0.49804803037873197,
+        "forecast_to_actual_level_sd": 0.08611745656747692,
+        "normalized_level_bias": -0.3970870493787128,
+        "fraction_forecast_error_energy_in_level": 0.6442834657146421,
+        "normalized_waveform_mae": 0.5687035025787958,
+        "normalized_level_mae": 0.7786372042735598
+      },
+      "16": {
+        "corr_forecast_actual_level": -0.3423551478087779,
+        "corr_forecast_last_level": -0.4636712742655164,
+        "corr_last_actual_level": -0.07124911192354322,
+        "forecast_to_actual_level_sd": 0.08470885012214405,
+        "normalized_level_bias": -0.3568855067867282,
+        "fraction_forecast_error_energy_in_level": 0.34050546273347193,
+        "normalized_waveform_mae": 0.7895819928155569,
+        "normalized_level_mae": 0.562800363394738
+      }
+    },
+    "moment_large": {
+      "8": {
+        "corr_forecast_actual_level": 0.9173970035522733,
+        "corr_forecast_last_level": 0.6181356101524031,
+        "corr_last_actual_level": 0.49804803037873197,
+        "forecast_to_actual_level_sd": 0.8702014098838522,
+        "normalized_level_bias": -0.2016338942507715,
+        "fraction_forecast_error_energy_in_level": 0.5671165191539408,
+        "normalized_waveform_mae": 0.21225694268437975,
+        "normalized_level_mae": 0.3083965071287375
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.818091745287152,
+        "corr_forecast_last_level": 0.13278949194179257,
+        "corr_last_actual_level": -0.07124911192354322,
+        "forecast_to_actual_level_sd": 0.7118998509919237,
+        "normalized_level_bias": -0.24521041712568759,
+        "fraction_forecast_error_energy_in_level": 0.5312294906264405,
+        "normalized_waveform_mae": 0.2568894592054414,
+        "normalized_level_mae": 0.3126891291232177
+      }
+    },
+    "bolt": {
+      "8": {
+        "corr_forecast_actual_level": 0.9786855655994944,
+        "corr_forecast_last_level": 0.5090667363169825,
+        "corr_last_actual_level": 0.49804803037873197,
+        "forecast_to_actual_level_sd": 1.008168575453584,
+        "normalized_level_bias": 0.020063295851575506,
+        "fraction_forecast_error_energy_in_level": 0.4879323782727043,
+        "normalized_waveform_mae": 0.09098925045083918,
+        "normalized_level_mae": 0.0942034398787235
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.9485768170208878,
+        "corr_forecast_last_level": -0.0801460110542396,
+        "corr_last_actual_level": -0.07124911192354322,
+        "forecast_to_actual_level_sd": 0.9514402906593902,
+        "normalized_level_bias": 0.023129058272606185,
+        "fraction_forecast_error_energy_in_level": 0.40625877896243,
+        "normalized_waveform_mae": 0.11334378412316178,
+        "normalized_level_mae": 0.09262824385088148
+      }
+    },
+    "timesfm": {
+      "8": {
+        "corr_forecast_actual_level": 0.9797192907474764,
+        "corr_forecast_last_level": 0.5030375418343088,
+        "corr_last_actual_level": 0.49804803037873197,
+        "forecast_to_actual_level_sd": 0.9822952115841114,
+        "normalized_level_bias": 0.0075732162368150795,
+        "fraction_forecast_error_energy_in_level": 0.4814487716222501,
+        "normalized_waveform_mae": 0.08790643810840687,
+        "normalized_level_mae": 0.08803154620590166
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.9408777973645094,
+        "corr_forecast_last_level": -0.08021998905564089,
+        "corr_last_actual_level": -0.07124911192354322,
+        "forecast_to_actual_level_sd": 0.9393319504773975,
+        "normalized_level_bias": 0.0025259333034982553,
+        "fraction_forecast_error_energy_in_level": 0.43794711081693555,
+        "normalized_waveform_mae": 0.11309915558456778,
+        "normalized_level_mae": 0.09745843801736583
+      }
+    }
+  },
+  "m4_weekly": {
+    "moment_small": {
+      "8": {
+        "corr_forecast_actual_level": -0.6699524814341506,
+        "corr_forecast_last_level": -0.6892347941152959,
+        "corr_last_actual_level": 0.9852976090864984,
+        "forecast_to_actual_level_sd": 0.032893108904559036,
+        "normalized_level_bias": -1.0425981605773764,
+        "fraction_forecast_error_energy_in_level": 0.9021634899274612,
+        "normalized_waveform_mae": 0.4361655272028786,
+        "normalized_level_mae": 1.5165132213096424
+      },
+      "16": {
+        "corr_forecast_actual_level": -0.5803624689146049,
+        "corr_forecast_last_level": -0.6172141125306205,
+        "corr_last_actual_level": 0.9801935718720087,
+        "forecast_to_actual_level_sd": 0.022931234332352265,
+        "normalized_level_bias": -1.0588663216665124,
+        "fraction_forecast_error_energy_in_level": 0.8972267844618776,
+        "normalized_waveform_mae": 0.4529908126796221,
+        "normalized_level_mae": 1.5253050544566076
+      }
+    },
+    "moment_base": {
+      "8": {
+        "corr_forecast_actual_level": 0.20406820019772123,
+        "corr_forecast_last_level": 0.187000921328365,
+        "corr_last_actual_level": 0.9852976090864984,
+        "forecast_to_actual_level_sd": 0.02148331352699616,
+        "normalized_level_bias": -1.2467769965446476,
+        "fraction_forecast_error_energy_in_level": 0.9428516855772616,
+        "normalized_waveform_mae": 0.3436639855290096,
+        "normalized_level_mae": 1.6000345061656296
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.17951736443058142,
+        "corr_forecast_last_level": 0.1575026383876042,
+        "corr_last_actual_level": 0.9801935718720087,
+        "forecast_to_actual_level_sd": 0.0201068768516859,
+        "normalized_level_bias": -1.2943357209203235,
+        "fraction_forecast_error_energy_in_level": 0.9392049897538578,
+        "normalized_waveform_mae": 0.3581556606759569,
+        "normalized_level_mae": 1.630755794843864
+      }
+    },
+    "moment_large": {
+      "8": {
+        "corr_forecast_actual_level": 0.9723818130383154,
+        "corr_forecast_last_level": 0.9781589558738305,
+        "corr_last_actual_level": 0.9852976090864984,
+        "forecast_to_actual_level_sd": 0.7368829767816761,
+        "normalized_level_bias": -0.46671031330227547,
+        "fraction_forecast_error_energy_in_level": 0.7019181875514535,
+        "normalized_waveform_mae": 0.29597133664035463,
+        "normalized_level_mae": 0.5235470355762298
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.9639910451248884,
+        "corr_forecast_last_level": 0.9782277082137484,
+        "corr_last_actual_level": 0.9801935718720087,
+        "forecast_to_actual_level_sd": 0.446233165235898,
+        "normalized_level_bias": -0.7463034762755405,
+        "fraction_forecast_error_energy_in_level": 0.8258527566159506,
+        "normalized_waveform_mae": 0.3500590602875157,
+        "normalized_level_mae": 0.9156542867742195
+      }
+    },
+    "bolt": {
+      "8": {
+        "corr_forecast_actual_level": 0.9916685288832898,
+        "corr_forecast_last_level": 0.9930864468644525,
+        "corr_last_actual_level": 0.9852976090864984,
+        "forecast_to_actual_level_sd": 1.0024675842830477,
+        "normalized_level_bias": 0.011504114664931822,
+        "fraction_forecast_error_energy_in_level": 0.54754081958625,
+        "normalized_waveform_mae": 0.07873985578358576,
+        "normalized_level_mae": 0.09902683785787032
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.9883877389488879,
+        "corr_forecast_last_level": 0.9915152326646252,
+        "corr_last_actual_level": 0.9801935718720087,
+        "forecast_to_actual_level_sd": 0.9894471701575392,
+        "normalized_level_bias": 0.011880674540269165,
+        "fraction_forecast_error_energy_in_level": 0.5398197653022986,
+        "normalized_waveform_mae": 0.09759612380309968,
+        "normalized_level_mae": 0.12269394394604238
+      }
+    },
+    "timesfm": {
+      "8": {
+        "corr_forecast_actual_level": 0.9899572627251371,
+        "corr_forecast_last_level": 0.9942969880982082,
+        "corr_last_actual_level": 0.9852976090864984,
+        "forecast_to_actual_level_sd": 0.9827132796285637,
+        "normalized_level_bias": -0.014599088737014836,
+        "fraction_forecast_error_energy_in_level": 0.5693244496967056,
+        "normalized_waveform_mae": 0.08406142770190289,
+        "normalized_level_mae": 0.10289179620528931
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.984968774979717,
+        "corr_forecast_last_level": 0.992755953528714,
+        "corr_last_actual_level": 0.9801935718720087,
+        "forecast_to_actual_level_sd": 0.9704260883347193,
+        "normalized_level_bias": -0.03387100979122192,
+        "fraction_forecast_error_energy_in_level": 0.5844886860575056,
+        "normalized_waveform_mae": 0.10537573954891545,
+        "normalized_level_mae": 0.13140294980704612
+      }
+    }
+  },
+  "monash_electricity_hourly": {
+    "moment_small": {
+      "8": {
+        "corr_forecast_actual_level": 0.08818225297781752,
+        "corr_forecast_last_level": -0.6024052510764272,
+        "corr_last_actual_level": 0.5029937746449473,
+        "forecast_to_actual_level_sd": 0.11437264186266119,
+        "normalized_level_bias": 0.13782971082726383,
+        "fraction_forecast_error_energy_in_level": 0.504603838998696,
+        "normalized_waveform_mae": 0.7030513361429239,
+        "normalized_level_mae": 0.7669131503606507
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.07649546090595821,
+        "corr_forecast_last_level": -0.6344184672006001,
+        "corr_last_actual_level": 0.13687771380550035,
+        "forecast_to_actual_level_sd": 0.0908554351733914,
+        "normalized_level_bias": 0.15886065334001942,
+        "fraction_forecast_error_energy_in_level": 0.2635269197825824,
+        "normalized_waveform_mae": 0.8792921815117326,
+        "normalized_level_mae": 0.4957811699978872
+      }
+    },
+    "moment_base": {
+      "8": {
+        "corr_forecast_actual_level": -0.205900785025293,
+        "corr_forecast_last_level": -0.7131419410802047,
+        "corr_last_actual_level": 0.5029937746449473,
+        "forecast_to_actual_level_sd": 0.08862184023351334,
+        "normalized_level_bias": -0.12585203048177865,
+        "fraction_forecast_error_energy_in_level": 0.6257072276940261,
+        "normalized_waveform_mae": 0.5593852910889291,
+        "normalized_level_mae": 0.8023351173240897
+      },
+      "16": {
+        "corr_forecast_actual_level": -0.09294932085434311,
+        "corr_forecast_last_level": -0.43126296976120587,
+        "corr_last_actual_level": 0.13687771380550035,
+        "forecast_to_actual_level_sd": 0.07687144549419443,
+        "normalized_level_bias": -0.12235852153591116,
+        "fraction_forecast_error_energy_in_level": 0.31111074359790925,
+        "normalized_waveform_mae": 0.7999584750195042,
+        "normalized_level_mae": 0.5182383706732646
+      }
+    },
+    "moment_large": {
+      "8": {
+        "corr_forecast_actual_level": 0.7738818750090192,
+        "corr_forecast_last_level": 0.5634029523696045,
+        "corr_last_actual_level": 0.5029937746449473,
+        "forecast_to_actual_level_sd": 0.7798284566104694,
+        "normalized_level_bias": -0.1971321806191367,
+        "fraction_forecast_error_energy_in_level": 0.700956305010625,
+        "normalized_waveform_mae": 0.2804781289576194,
+        "normalized_level_mae": 0.42138526950877137
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.5325291610941233,
+        "corr_forecast_last_level": 0.373612595303153,
+        "corr_last_actual_level": 0.13687771380550035,
+        "forecast_to_actual_level_sd": 0.5853913149645934,
+        "normalized_level_bias": -0.20819648755780637,
+        "fraction_forecast_error_energy_in_level": 0.5469009283472057,
+        "normalized_waveform_mae": 0.37980809857583536,
+        "normalized_level_mae": 0.4272341908211028
+      }
+    },
+    "bolt": {
+      "8": {
+        "corr_forecast_actual_level": 0.9359754735124295,
+        "corr_forecast_last_level": 0.49750957621807784,
+        "corr_last_actual_level": 0.5029937746449473,
+        "forecast_to_actual_level_sd": 0.9540714682448544,
+        "normalized_level_bias": -0.02338354226747361,
+        "fraction_forecast_error_energy_in_level": 0.5778113711378166,
+        "normalized_waveform_mae": 0.17865172554355443,
+        "normalized_level_mae": 0.20308556605023653
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.7784772880660499,
+        "corr_forecast_last_level": 0.15059885670891815,
+        "corr_last_actual_level": 0.13687771380550035,
+        "forecast_to_actual_level_sd": 0.8359217687861777,
+        "normalized_level_bias": 0.025581068653013007,
+        "fraction_forecast_error_energy_in_level": 0.5053814104261862,
+        "normalized_waveform_mae": 0.2506413605431122,
+        "normalized_level_mae": 0.22819044985830225
+      }
+    },
+    "timesfm": {
+      "8": {
+        "corr_forecast_actual_level": 0.9155377077806887,
+        "corr_forecast_last_level": 0.5002928484143783,
+        "corr_last_actual_level": 0.5029937746449473,
+        "forecast_to_actual_level_sd": 0.9329745333617073,
+        "normalized_level_bias": 0.004575139388133341,
+        "fraction_forecast_error_energy_in_level": 0.6102946051095445,
+        "normalized_waveform_mae": 0.190492999507793,
+        "normalized_level_mae": 0.23572511379823805
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.6991728763822823,
+        "corr_forecast_last_level": 0.16094123369378208,
+        "corr_last_actual_level": 0.13687771380550035,
+        "forecast_to_actual_level_sd": 0.8271217873092035,
+        "normalized_level_bias": 0.04220877008768309,
+        "fraction_forecast_error_energy_in_level": 0.5440464973190036,
+        "normalized_waveform_mae": 0.2716059063411009,
+        "normalized_level_mae": 0.2734160889260408
+      }
+    }
+  },
+  "monash_traffic": {
+    "moment_small": {
+      "8": {
+        "corr_forecast_actual_level": 0.050893924801637846,
+        "corr_forecast_last_level": -0.5367448014370931,
+        "corr_last_actual_level": 0.5790655770167381,
+        "forecast_to_actual_level_sd": 0.13414132671886791,
+        "normalized_level_bias": 0.38392464175146346,
+        "fraction_forecast_error_energy_in_level": 0.5009065297205393,
+        "normalized_waveform_mae": 0.5941122449314485,
+        "normalized_level_mae": 0.6532340986498546
+      },
+      "16": {
+        "corr_forecast_actual_level": -0.060561894586046876,
+        "corr_forecast_last_level": -0.6252207392612334,
+        "corr_last_actual_level": 0.2003228360608939,
+        "forecast_to_actual_level_sd": 0.1180744384278305,
+        "normalized_level_bias": 0.4272110595692143,
+        "fraction_forecast_error_energy_in_level": 0.316269333287072,
+        "normalized_waveform_mae": 0.6877473070116823,
+        "normalized_level_mae": 0.525544956058463
+      }
+    },
+    "moment_base": {
+      "8": {
+        "corr_forecast_actual_level": -0.2963611580705562,
+        "corr_forecast_last_level": -0.6561310981788726,
+        "corr_last_actual_level": 0.5790655770167381,
+        "forecast_to_actual_level_sd": 0.08524207635991317,
+        "normalized_level_bias": 0.12463192513604911,
+        "fraction_forecast_error_energy_in_level": 0.5732625546487827,
+        "normalized_waveform_mae": 0.442681504817495,
+        "normalized_level_mae": 0.5752857861647115
+      },
+      "16": {
+        "corr_forecast_actual_level": -0.1697029760072112,
+        "corr_forecast_last_level": -0.3807137782834374,
+        "corr_last_actual_level": 0.2003228360608939,
+        "forecast_to_actual_level_sd": 0.08461513824639373,
+        "normalized_level_bias": 0.15153638103455228,
+        "fraction_forecast_error_energy_in_level": 0.2637453811457587,
+        "normalized_waveform_mae": 0.5977981913516431,
+        "normalized_level_mae": 0.3770850784304553
+      }
+    },
+    "moment_large": {
+      "8": {
+        "corr_forecast_actual_level": 0.8639639656956158,
+        "corr_forecast_last_level": 0.647031129888334,
+        "corr_last_actual_level": 0.5790655770167381,
+        "forecast_to_actual_level_sd": 0.9196894881222442,
+        "normalized_level_bias": 0.02534083548120188,
+        "fraction_forecast_error_energy_in_level": 0.5007354671256953,
+        "normalized_waveform_mae": 0.21177320392510543,
+        "normalized_level_mae": 0.23436493611020906
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.7306574907331179,
+        "corr_forecast_last_level": 0.2141753191003473,
+        "corr_last_actual_level": 0.2003228360608939,
+        "forecast_to_actual_level_sd": 0.7269934818323625,
+        "normalized_level_bias": 0.009179363630738858,
+        "fraction_forecast_error_energy_in_level": 0.3248683255588919,
+        "normalized_waveform_mae": 0.2809245835312591,
+        "normalized_level_mae": 0.22104397538092138
+      }
+    },
+    "bolt": {
+      "8": {
+        "corr_forecast_actual_level": 0.9422763381994869,
+        "corr_forecast_last_level": 0.6154291936300347,
+        "corr_last_actual_level": 0.5790655770167381,
+        "forecast_to_actual_level_sd": 0.9866774340597089,
+        "normalized_level_bias": 0.008617401936749975,
+        "fraction_forecast_error_energy_in_level": 0.4216872740924797,
+        "normalized_waveform_mae": 0.1424334072940359,
+        "normalized_level_mae": 0.13707598647520813
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.8488256067168147,
+        "corr_forecast_last_level": 0.23151164562142962,
+        "corr_last_actual_level": 0.2003228360608939,
+        "forecast_to_actual_level_sd": 0.95971080002211,
+        "normalized_level_bias": 0.015595671085403143,
+        "fraction_forecast_error_energy_in_level": 0.3014758583108344,
+        "normalized_waveform_mae": 0.18858042250338136,
+        "normalized_level_mae": 0.13664120767304586
+      }
+    },
+    "timesfm": {
+      "8": {
+        "corr_forecast_actual_level": 0.9324711374487986,
+        "corr_forecast_last_level": 0.5797553441656987,
+        "corr_last_actual_level": 0.5790655770167381,
+        "forecast_to_actual_level_sd": 0.9771206734611482,
+        "normalized_level_bias": 0.048790257593069326,
+        "fraction_forecast_error_energy_in_level": 0.4050099082894926,
+        "normalized_waveform_mae": 0.16577815748276606,
+        "normalized_level_mae": 0.15438426376708708
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.8308532218285558,
+        "corr_forecast_last_level": 0.17412832487101207,
+        "corr_last_actual_level": 0.2003228360608939,
+        "forecast_to_actual_level_sd": 0.9578362614328241,
+        "normalized_level_bias": 0.068028654971156,
+        "fraction_forecast_error_energy_in_level": 0.2895685465558295,
+        "normalized_waveform_mae": 0.22086014918750266,
+        "normalized_level_mae": 0.16160942411450496
+      }
+    }
+  },
+  "noaa": {
+    "moment_small": {
+      "8": {
+        "corr_forecast_actual_level": -0.6312736993983953,
+        "corr_forecast_last_level": -0.5741534323597824,
+        "corr_last_actual_level": 0.788295474076589,
+        "forecast_to_actual_level_sd": 0.0458200693782845,
+        "normalized_level_bias": 0.0236358974898408,
+        "fraction_forecast_error_energy_in_level": 0.6916785708236498,
+        "normalized_waveform_mae": 0.5048056287051658,
+        "normalized_level_mae": 0.7766825980031732
+      },
+      "16": {
+        "corr_forecast_actual_level": -0.3290797679255858,
+        "corr_forecast_last_level": -0.2955019300490218,
+        "corr_last_actual_level": 0.8236737458635255,
+        "forecast_to_actual_level_sd": 0.025367327758120502,
+        "normalized_level_bias": 0.11324357383308215,
+        "fraction_forecast_error_energy_in_level": 0.6983504238407023,
+        "normalized_waveform_mae": 0.5293408352168812,
+        "normalized_level_mae": 0.8225374161751511
+      }
+    },
+    "moment_base": {
+      "8": {
+        "corr_forecast_actual_level": 0.23503975522538348,
+        "corr_forecast_last_level": 0.10275046934846734,
+        "corr_last_actual_level": 0.788295474076589,
+        "forecast_to_actual_level_sd": 0.03067172289552668,
+        "normalized_level_bias": -0.211505835356024,
+        "fraction_forecast_error_energy_in_level": 0.7422541022306555,
+        "normalized_waveform_mae": 0.4331796743221471,
+        "normalized_level_mae": 0.7426912857865944
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.40444067349868534,
+        "corr_forecast_last_level": 0.4375640788986463,
+        "corr_last_actual_level": 0.8236737458635255,
+        "forecast_to_actual_level_sd": 0.024618628085826127,
+        "normalized_level_bias": -0.14713445811489412,
+        "fraction_forecast_error_energy_in_level": 0.7423763833185788,
+        "normalized_waveform_mae": 0.4608225961030528,
+        "normalized_level_mae": 0.7949184057133051
+      }
+    },
+    "moment_large": {
+      "8": {
+        "corr_forecast_actual_level": 0.8337804490908901,
+        "corr_forecast_last_level": 0.9572141170983639,
+        "corr_last_actual_level": 0.788295474076589,
+        "forecast_to_actual_level_sd": 0.7630886542049883,
+        "normalized_level_bias": -0.009040691670229804,
+        "fraction_forecast_error_energy_in_level": 0.6119276359473776,
+        "normalized_waveform_mae": 0.30181903943148447,
+        "normalized_level_mae": 0.41423296925577646
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.8717518963737063,
+        "corr_forecast_last_level": 0.9450159532315882,
+        "corr_last_actual_level": 0.8236737458635255,
+        "forecast_to_actual_level_sd": 0.44206232837530895,
+        "normalized_level_bias": -0.00831945775294232,
+        "fraction_forecast_error_energy_in_level": 0.6482354774357527,
+        "normalized_waveform_mae": 0.363048403449986,
+        "normalized_level_mae": 0.5514843650137552
+      }
+    },
+    "bolt": {
+      "8": {
+        "corr_forecast_actual_level": 0.9015108427678775,
+        "corr_forecast_last_level": 0.9485518561500292,
+        "corr_last_actual_level": 0.788295474076589,
+        "forecast_to_actual_level_sd": 0.9488945043611741,
+        "normalized_level_bias": 0.029731130438471406,
+        "fraction_forecast_error_energy_in_level": 0.5079462224445372,
+        "normalized_waveform_mae": 0.2931023145854507,
+        "normalized_level_mae": 0.32114614534665004
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.9521982662574094,
+        "corr_forecast_last_level": 0.9189101055968065,
+        "corr_last_actual_level": 0.8236737458635255,
+        "forecast_to_actual_level_sd": 0.8819804867898206,
+        "normalized_level_bias": 0.08890361301410214,
+        "fraction_forecast_error_energy_in_level": 0.334875305451062,
+        "normalized_waveform_mae": 0.34483257593282607,
+        "normalized_level_mae": 0.2491952354678185
+      }
+    },
+    "timesfm": {
+      "8": {
+        "corr_forecast_actual_level": 0.8989377594684259,
+        "corr_forecast_last_level": 0.9445142984946405,
+        "corr_last_actual_level": 0.788295474076589,
+        "forecast_to_actual_level_sd": 0.911339232662352,
+        "normalized_level_bias": 0.053358121396831805,
+        "fraction_forecast_error_energy_in_level": 0.5145301592779501,
+        "normalized_waveform_mae": 0.2918010694521133,
+        "normalized_level_mae": 0.31791187562951706
+      },
+      "16": {
+        "corr_forecast_actual_level": 0.9452709354964984,
+        "corr_forecast_last_level": 0.9134398921971458,
+        "corr_last_actual_level": 0.8236737458635255,
+        "forecast_to_actual_level_sd": 0.8393608588471523,
+        "normalized_level_bias": 0.10506342515582645,
+        "fraction_forecast_error_energy_in_level": 0.375477864009792,
+        "normalized_waveform_mae": 0.34837133133063214,
+        "normalized_level_mae": 0.2766276654377052
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "small": {
+    "model_id": "AutonLab/MOMENT-1-small",
+    "revision": "411e288267f82cce86296dbe4d6c8bc533cc162f",
+    "state_tensors": 80,
+    "license": "MIT",
+    "offline_id_load_passed": true
+  },
+  "base": {
+    "model_id": "AutonLab/MOMENT-1-base",
+    "revision": "5e44b0ea26376a176360f87831124e018f876d96",
+    "state_tensors": 116,
+    "license": "MIT",
+    "offline_id_load_passed": true
+  },
+  "large": {
+    "model_id": "AutonLab/MOMENT-1-large",
+    "revision": "ca58581bc7bea2ebed4e80dc0a3e4b8b609c6ecc",
+    "state_tensors": 224,
+    "license": "MIT",
+    "offline_id_load_passed": true
+  }
+}

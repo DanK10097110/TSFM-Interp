@@ -1,0 +1,82 @@
+{
+  "n": 24,
+  "ids": [
+    "daily/2249",
+    "daily/846",
+    "daily/2327",
+    "daily/2515",
+    "daily/2498",
+    "daily/2498",
+    "daily/318",
+    "daily/3012",
+    "daily/3398",
+    "daily/2909",
+    "daily/2290",
+    "daily/770",
+    "monash_traffic/T000429",
+    "monash_traffic/T000414",
+    "monash_traffic/T000383",
+    "monash_traffic/T000545",
+    "monash_traffic/T000022",
+    "monash_traffic/T000671",
+    "monash_traffic/T000821",
+    "monash_traffic/T000775",
+    "monash_traffic/T000704",
+    "monash_traffic/T000344",
+    "monash_traffic/T000601",
+    "monash_traffic/T000404"
+  ],
+  "atoms": [
+    1867,
+    1867,
+    187,
+    1236,
+    3875,
+    1867,
+    3663,
+    4025,
+    361,
+    3175,
+    1867,
+    1236,
+    1867,
+    361,
+    1236,
+    1236,
+    361,
+    1867,
+    1236,
+    361,
+    3663,
+    1236,
+    1236,
+    3875
+  ],
+  "heads": {
+    "published": {
+      "max_forecast_gap": 9.035385152289521e-07,
+      "max_effect_gap": 9.204766513041043e-07,
+      "rms_relative_effect_gap": 9.102938760823294e-06
+    },
+    "interior": {
+      "max_forecast_gap": 8.673404046088962e-07,
+      "max_effect_gap": 9.863483745702062e-07,
+      "rms_relative_effect_gap": 1.8838448591321534e-05
+    },
+    "terminal": {
+      "max_forecast_gap": 8.457631213154571e-07,
+      "max_effect_gap": 1.3421414837254397e-06,
+      "rms_relative_effect_gap": 1.4914292617155775e-05
+    },
+    "half1": {
+      "max_forecast_gap": 8.499809303064154e-07,
+      "max_effect_gap": 9.211573300839382e-07,
+      "rms_relative_effect_gap": 1.6169088531126417e-05
+    },
+    "half2": {
+      "max_forecast_gap": 8.636733754840975e-07,
+      "max_effect_gap": 1.1602451551258504e-06,
+      "rms_relative_effect_gap": 2.080340700829118e-05
+    }
+  }
+}

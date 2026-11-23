@@ -1,0 +1,571 @@
+{
+  "source_sha256": "d1a309c06fdc72accb27d6611e0cb7a05b6c05aebf416c3ecdcef7850195f93e",
+  "calibration_sensors": [
+    {
+      "item": "LOOP_SEATTLE/237",
+      "grid_sha256": "3992a6e359caa839f91b887f10e48079a4b26ae4952e9896b3e4a8c2ea57f2d4"
+    },
+    {
+      "item": "LOOP_SEATTLE/162",
+      "grid_sha256": "377d36a9b473f4313f9b86dc885a8df0eb1950f046eba0759234dc4cc8654ad7"
+    },
+    {
+      "item": "LOOP_SEATTLE/164",
+      "grid_sha256": "f4b061c0f4e0ab389e4847f990df1b46e23387161c83c4740e86369220fdd705"
+    },
+    {
+      "item": "LOOP_SEATTLE/310",
+      "grid_sha256": "5b5d21a63898565f6ffd4a3381070d45bdc3acbf1f4573f8d79498ef5ef9f9e2"
+    },
+    {
+      "item": "LOOP_SEATTLE/272",
+      "grid_sha256": "c4884439c0f58fa37f9f075a64c436a788c32541af0e8faca40ee2d638cc1b1f"
+    },
+    {
+      "item": "LOOP_SEATTLE/22",
+      "grid_sha256": "819545f08e3081a587643f5a666349a3865061086609d2a6cdb089dd8a864f8d"
+    },
+    {
+      "item": "LOOP_SEATTLE/117",
+      "grid_sha256": "8c1ec341b4567b612f36cc739331ea0043c71d8e371652990245f03791e69b27"
+    },
+    {
+      "item": "LOOP_SEATTLE/43",
+      "grid_sha256": "56b5754543524bddb7da714f217e4c6af38bd494aae0bda7fc3ec155ecbb54f5"
+    },
+    {
+      "item": "LOOP_SEATTLE/311",
+      "grid_sha256": "9514c53d999b1fff517ed789cef237d7609a705b28949f3c1d5dcf0ba2076ee4"
+    },
+    {
+      "item": "LOOP_SEATTLE/247",
+      "grid_sha256": "eb3f873e81a0c5eb7c99364316059e776372ef2f8cb3d687906f8b772d593598"
+    },
+    {
+      "item": "LOOP_SEATTLE/15",
+      "grid_sha256": "32d9362e2a89cb71a85e8bde8ab8aa30bc3074aea0fb033e66f4447d98b16af3"
+    },
+    {
+      "item": "LOOP_SEATTLE/111",
+      "grid_sha256": "185c3b86dab3c4ef8f29927240c780558dcaa9ec1bc4871ba19904840c0e5c69"
+    },
+    {
+      "item": "LOOP_SEATTLE/137",
+      "grid_sha256": "b2328c08399d6977af39f4da0a20f4d8d30cdfd8a2b8611cef306428e7bc2458"
+    },
+    {
+      "item": "LOOP_SEATTLE/55",
+      "grid_sha256": "042b4878d35eb932b1957056feebe6d8e8a972782208ceae6bc616b89c83f488"
+    },
+    {
+      "item": "LOOP_SEATTLE/7",
+      "grid_sha256": "07374c69055cee9d96536490e6fabdaf684813c5718c668066ee8093cf5bc782"
+    },
+    {
+      "item": "LOOP_SEATTLE/308",
+      "grid_sha256": "9f0b8a0c7177d2f8fc3f7c6c1a9b3afa69cf11aab6f5a8e1a307549de3200b15"
+    },
+    {
+      "item": "LOOP_SEATTLE/243",
+      "grid_sha256": "3cbb2cd3bbb1087863b48b4bd594ae2835c892ce970a9fd9d75b4a1041f3b6b0"
+    },
+    {
+      "item": "LOOP_SEATTLE/263",
+      "grid_sha256": "108bcdd96d529415365bf7374897114e1d6ac65edfb2575fa4071957ceb3a08a"
+    },
+    {
+      "item": "LOOP_SEATTLE/51",
+      "grid_sha256": "1658d8e951c135eabf47574900b97a7858ad93983d093e30b7c262b363486360"
+    },
+    {
+      "item": "LOOP_SEATTLE/154",
+      "grid_sha256": "6286f59dca800d48e01e920f898b8abd53c5c4da534be4cffc9492d830d27e88"
+    },
+    {
+      "item": "LOOP_SEATTLE/60",
+      "grid_sha256": "26fbfbb0e1aeb3b344daedef3a0539c4d36a76d4c513bffa705ca59aa5e401a1"
+    },
+    {
+      "item": "LOOP_SEATTLE/312",
+      "grid_sha256": "6dddd4981bbea93bacf5d923068cbc2b51747e7262e4e99d1acf1044127053a2"
+    },
+    {
+      "item": "LOOP_SEATTLE/90",
+      "grid_sha256": "1812b3ea36fccc7e08a9a790d2dfe2e6726ee864d1e5042baeb85537b20e660a"
+    },
+    {
+      "item": "LOOP_SEATTLE/68",
+      "grid_sha256": "4990a176085a3a29a46fc1be9e08fccc67bf3d0bf1b81e41119e05798cae6854"
+    },
+    {
+      "item": "LOOP_SEATTLE/255",
+      "grid_sha256": "3d1f02975cff577b424d8ed453142920956c30937abd0cfc8cc4685f08564964"
+    },
+    {
+      "item": "LOOP_SEATTLE/319",
+      "grid_sha256": "cd4f6d7209718d2011275565a8cbacd90b440ad2a5f0479b22ea57facb4215de"
+    },
+    {
+      "item": "LOOP_SEATTLE/175",
+      "grid_sha256": "cd5fc4ccaf27d1b70ae0462e825cd11a6e3baf0ba1a1dbf317a3e698a56a3d01"
+    },
+    {
+      "item": "LOOP_SEATTLE/197",
+      "grid_sha256": "f51bda5c0aab00d1827edf6f86fa4cc4673f8e54e345ed185a04b1e6c948698c"
+    },
+    {
+      "item": "LOOP_SEATTLE/155",
+      "grid_sha256": "b7e90a2c61961f860db220974cbcc9b608b0b54d82b74fb7d873b4e38c9f834c"
+    },
+    {
+      "item": "LOOP_SEATTLE/83",
+      "grid_sha256": "7ec18d804328d70d5c5f1928b35211028389887ed0f619447b787078ccf7185e"
+    },
+    {
+      "item": "LOOP_SEATTLE/134",
+      "grid_sha256": "fff973982d405865b21718b109a39e3fbb6492da71a9a9c25f469591c4799e19"
+    },
+    {
+      "item": "LOOP_SEATTLE/257",
+      "grid_sha256": "d156f283dba70f03373da11a50edee7478813c4d15093221517b678c5d2e6f5e"
+    },
+    {
+      "item": "LOOP_SEATTLE/129",
+      "grid_sha256": "7f22c84e92268bf1f22ee41496940bd6be21d8bc1e0af91074c2ace144b4ba71"
+    },
+    {
+      "item": "LOOP_SEATTLE/233",
+      "grid_sha256": "04f3b7aec9deb80e9be2469ae7657a8d67fdcd87544dbb63b2f5b23a6d0c82e0"
+    },
+    {
+      "item": "LOOP_SEATTLE/292",
+      "grid_sha256": "2a83e97653aaecc2ba6a04a7db0dd8d70a8c0d7e4bf75bd6f4c239e8eb150499"
+    },
+    {
+      "item": "LOOP_SEATTLE/52",
+      "grid_sha256": "2a5a7e9949ef252b9194629e5176d299321c95f01c255dd7ac9b2d9430fec01e"
+    },
+    {
+      "item": "LOOP_SEATTLE/213",
+      "grid_sha256": "47fd83a440f7c8c57858598a49ba4d8b7aa50a2c67f0ad1046e1705e98cc86a1"
+    },
+    {
+      "item": "LOOP_SEATTLE/203",
+      "grid_sha256": "cea0d2ff386f459e03e24b1b6f1719c1c4c058117de4f187655218295d5f6468"
+    },
+    {
+      "item": "LOOP_SEATTLE/248",
+      "grid_sha256": "5a1071e408def42d6f66af963b81af1b489df400d1b34474ccf4c6febc21de22"
+    },
+    {
+      "item": "LOOP_SEATTLE/287",
+      "grid_sha256": "5f244bb5cee1ffb2535edaf311e55803e198a976a7ce5df121b38ecccca5bdfd"
+    },
+    {
+      "item": "LOOP_SEATTLE/300",
+      "grid_sha256": "3c2fa9a0b8a3a65cabd6538d562cd555493edc0e8e839577a0a44b6370925386"
+    },
+    {
+      "item": "LOOP_SEATTLE/186",
+      "grid_sha256": "b0cb1234992ea8b43b7ac5c03b35ee1b9191fc905c67a38761da60708d19cb40"
+    },
+    {
+      "item": "LOOP_SEATTLE/306",
+      "grid_sha256": "b6798308dafdc238578c980f0c837f810fc9980b81711b6a10f99c4b8443399b"
+    },
+    {
+      "item": "LOOP_SEATTLE/229",
+      "grid_sha256": "feab0889c61fd03a48c9da1ec76dfe26f0d406b0c6b5c5ef038d5c932d4c7269"
+    },
+    {
+      "item": "LOOP_SEATTLE/195",
+      "grid_sha256": "2a5d470b92fe57c71ba10c3e4234fb83b6293fcb4cabe1e7bec8ec63ec3e9152"
+    },
+    {
+      "item": "LOOP_SEATTLE/198",
+      "grid_sha256": "6044906fc4f8fc33c6a0cda3b56faa0e826c65d75a74edefed3042d5d12e8574"
+    },
+    {
+      "item": "LOOP_SEATTLE/26",
+      "grid_sha256": "df78d77c5842e5e06aa3649b9dc73396b9a7dfe681151fed9152e271e8361b4b"
+    },
+    {
+      "item": "LOOP_SEATTLE/181",
+      "grid_sha256": "a10d188a371a98b357a760ff7eb3bf14d102a6c3ea2c2ac253891a519d3086bb"
+    },
+    {
+      "item": "LOOP_SEATTLE/136",
+      "grid_sha256": "d420fcba9f2757267b6d2f40b4cfc03b3b180f559934a4540e05159aface487a"
+    },
+    {
+      "item": "LOOP_SEATTLE/81",
+      "grid_sha256": "f81dd8e0d39614cec694be2d3e12a39fe4af3065a4508ac56d72dee4ff5bf3d1"
+    },
+    {
+      "item": "LOOP_SEATTLE/116",
+      "grid_sha256": "ddb74bbb3ff3487b2ba4cb0205f73a169ed5fe3dcbc27f4e985fea79c77f220a"
+    },
+    {
+      "item": "LOOP_SEATTLE/296",
+      "grid_sha256": "cd718e2ba0ce4c2e6da402d2249ebe126454ec02dd8ba77619223ef757047313"
+    },
+    {
+      "item": "LOOP_SEATTLE/188",
+      "grid_sha256": "89654e56ae8611bc7acc0816fa065f827488bfec3a7f1a785cc37bc5528bb443"
+    },
+    {
+      "item": "LOOP_SEATTLE/1",
+      "grid_sha256": "f1a071ac91f3109b8dd0fd0a559732f44f59b8180212ccb5bd53bee6e14be32d"
+    },
+    {
+      "item": "LOOP_SEATTLE/265",
+      "grid_sha256": "2f6eb6ff4094f70ba9c241a8331ccaa9c8d1052a887dc92f7309c1571416fc9a"
+    },
+    {
+      "item": "LOOP_SEATTLE/278",
+      "grid_sha256": "afd97e53ed21520290f2370b11ead29567d7453ebe7b6ce3db408008363ac630"
+    },
+    {
+      "item": "LOOP_SEATTLE/36",
+      "grid_sha256": "98469676c8dd3ed61c6953dfa5216e6c9a1d6edc0d5c98c32084b55ee3225103"
+    },
+    {
+      "item": "LOOP_SEATTLE/62",
+      "grid_sha256": "de52644861b595d1946e41c5a36e610006b5936a6a1fdea2a093ae00c1ab74b4"
+    },
+    {
+      "item": "LOOP_SEATTLE/78",
+      "grid_sha256": "f6972713a40eae94e3d8f715ed18c19e370ca6b5b9aa92b9084c00bf160b2214"
+    },
+    {
+      "item": "LOOP_SEATTLE/70",
+      "grid_sha256": "a85b5c61693566dfd573ec00a80b2e808ade1f607d661a7aea1029419716c175"
+    },
+    {
+      "item": "LOOP_SEATTLE/148",
+      "grid_sha256": "5e78601a4cffe828bb21662d14b3ab6ba926aa6828daae52b3573a8b7286d1ce"
+    },
+    {
+      "item": "LOOP_SEATTLE/130",
+      "grid_sha256": "ac933f199ea050dabb6adba35b4034943bbe320d81a4e52cb1f5523acf9ea0e1"
+    },
+    {
+      "item": "LOOP_SEATTLE/172",
+      "grid_sha256": "c600ca62f2c3cfa34be010d9e3eb989b680cd7cbc86abfd2a27f3c58594498e2"
+    },
+    {
+      "item": "LOOP_SEATTLE/217",
+      "grid_sha256": "7f01c6920e029c9ed31dfdda7bbed981b3578e0dd49eb9843eab17f9ca2e6c4c"
+    },
+    {
+      "item": "LOOP_SEATTLE/112",
+      "grid_sha256": "fc88bb3afc9c96a9053ead23338b7b3f5ae6adf732a79236920cf10c30044921"
+    },
+    {
+      "item": "LOOP_SEATTLE/240",
+      "grid_sha256": "61816ae9d357357f4abadc78d0338fa552978dcb89a4a733fd3f546222debbe1"
+    },
+    {
+      "item": "LOOP_SEATTLE/66",
+      "grid_sha256": "55d4e310a4edf4eabb39431da92bb16ad1910ee8a91154b3e0d510a43cca5eb8"
+    },
+    {
+      "item": "LOOP_SEATTLE/156",
+      "grid_sha256": "1618abdef69e3aeb282056ae1c2d62fd5ad6a87fd39a642bd46c9d52ac5d3adc"
+    },
+    {
+      "item": "LOOP_SEATTLE/42",
+      "grid_sha256": "598542de81d1f9408194ab4ea1d51b29dc46743849775efd62750c0b1645cbe6"
+    },
+    {
+      "item": "LOOP_SEATTLE/288",
+      "grid_sha256": "3693b9c80e9cf29e32b046a604231af85aee1c888b5b67071d91ef31fef3b72e"
+    },
+    {
+      "item": "LOOP_SEATTLE/138",
+      "grid_sha256": "179a126591b82b187443990b501693310a5433c93d50cac1d5be4bbfee629a52"
+    },
+    {
+      "item": "LOOP_SEATTLE/219",
+      "grid_sha256": "ec479331e6432978b8a681f75f1da8c90b83c2fc023bd6c9145ba519c24b1780"
+    },
+    {
+      "item": "LOOP_SEATTLE/140",
+      "grid_sha256": "5c18d9bca9abb59e37f91a7abd18d84b122ca821aae923c42812d4075174f125"
+    },
+    {
+      "item": "LOOP_SEATTLE/176",
+      "grid_sha256": "549a1b91d61e8ba82499c89dd34f0b60498d42ba3e59943bc415630173c63c51"
+    },
+    {
+      "item": "LOOP_SEATTLE/85",
+      "grid_sha256": "3cad8b1278e1625006509e3d87ec0051a862eec10a690c6602f5c71c2b18596a"
+    },
+    {
+      "item": "LOOP_SEATTLE/94",
+      "grid_sha256": "bdd427b09258bd33a70f33b2faea9b80f88a1cbfdf053b36b105c1144bae219a"
+    },
+    {
+      "item": "LOOP_SEATTLE/304",
+      "grid_sha256": "b8566c0be2facf29f3dc81626338a8d4fa1bde43c545c98f59f38da452557e78"
+    },
+    {
+      "item": "LOOP_SEATTLE/211",
+      "grid_sha256": "621e6acd3e97eed56765eac087e9f4e8fac385ae544f7bcb9ad98153b1adf635"
+    },
+    {
+      "item": "LOOP_SEATTLE/101",
+      "grid_sha256": "e57c776adbce48a4eff933d3d0334f784577e501e7040d686cd7d3a2d04036dd"
+    },
+    {
+      "item": "LOOP_SEATTLE/262",
+      "grid_sha256": "0a8c49da90d1bbecf260ffaad749295dfe018c73402f1c8a774eb6b20e980405"
+    }
+  ],
+  "test_sensors": [
+    {
+      "item": "LOOP_SEATTLE/286",
+      "grid_sha256": "8b09da0be615dc71850b534183f21cff252136812ffc9478a2ff158157255342"
+    },
+    {
+      "item": "LOOP_SEATTLE/313",
+      "grid_sha256": "9aa2dc8f667c661f17783ae3d6c6cc907831028eea0cb75e55c3582abc196242"
+    },
+    {
+      "item": "LOOP_SEATTLE/305",
+      "grid_sha256": "235ebfb4ad17483067de326e6292846d4cb85f1595cb10e2357df6378656c754"
+    },
+    {
+      "item": "LOOP_SEATTLE/145",
+      "grid_sha256": "e132111fc2a1c4d0bfa65a520592285feb56b1145936c7dfa8fae5c9ef6b8767"
+    },
+    {
+      "item": "LOOP_SEATTLE/72",
+      "grid_sha256": "d7f4b9671ab9b1001936fd6589e365f2dbb809d485c503bb449510331c174508"
+    },
+    {
+      "item": "LOOP_SEATTLE/182",
+      "grid_sha256": "9c9df6211d00c09ed62cfcf4cf6b5a0526ccbc989c9a5eca409b4ac272dc5b82"
+    },
+    {
+      "item": "LOOP_SEATTLE/25",
+      "grid_sha256": "03cc7f5b6287dd29800235f5852409665fca39c99ae0861e4255f5e0a4ffaecc"
+    },
+    {
+      "item": "LOOP_SEATTLE/170",
+      "grid_sha256": "1a44644833e407fa060bac51197d7e3502e6d19e255266240f1bd2091ad2177d"
+    },
+    {
+      "item": "LOOP_SEATTLE/6",
+      "grid_sha256": "115bfa118d3ea4318c57f75fa23d5e9f8d4482dd077f1fc0cd41bbdd2a7a4ae3"
+    },
+    {
+      "item": "LOOP_SEATTLE/320",
+      "grid_sha256": "e17a1dcbc360a850125ab2fb0fa7b766d42f77bbb71a086af5a16d47d9f9ecb2"
+    },
+    {
+      "item": "LOOP_SEATTLE/276",
+      "grid_sha256": "dbc48574f6dbd39370d846d70de0cb2c269ea83f65e689dd4765b4d77a18969a"
+    },
+    {
+      "item": "LOOP_SEATTLE/109",
+      "grid_sha256": "3637239b03db8a138814032fd2fdd6fef2f88121762c37f623dc2bf545bdbe36"
+    },
+    {
+      "item": "LOOP_SEATTLE/234",
+      "grid_sha256": "0b8a50ca5b395ee7d5080c2175bbbe07a9fd3ba8c5e61d97059f6e4b8d192179"
+    },
+    {
+      "item": "LOOP_SEATTLE/128",
+      "grid_sha256": "fb1cb00f71012d9f83ee73d47f7217179c536075796d14f11b16c51475271778"
+    },
+    {
+      "item": "LOOP_SEATTLE/302",
+      "grid_sha256": "84cdc0aef70c88229282e65edced4091714898b31e6ab9097eadca5d28ab0eb8"
+    },
+    {
+      "item": "LOOP_SEATTLE/289",
+      "grid_sha256": "f1ae82e6ba3f6fb8544a61863e6024a8414f3a38f8bdcaa811ec0146a62f9e0f"
+    },
+    {
+      "item": "LOOP_SEATTLE/48",
+      "grid_sha256": "5063de1b29a846bff6d276f910e0219f1daa957c228fecd973085cbd4271ff53"
+    },
+    {
+      "item": "LOOP_SEATTLE/256",
+      "grid_sha256": "cccbb8d6601b3b265549997b7b215a8213c9eadf6d705c11514a948a178ea57f"
+    },
+    {
+      "item": "LOOP_SEATTLE/71",
+      "grid_sha256": "b7125f550b36cb789e6cb6ce48b21a1399a629db4f74267d9fcc2e884a812d8a"
+    },
+    {
+      "item": "LOOP_SEATTLE/89",
+      "grid_sha256": "4da7695b75a20773bcacb0c0882f1df9cd083f448b91fd2cc8f0067cee0e07a0"
+    },
+    {
+      "item": "LOOP_SEATTLE/273",
+      "grid_sha256": "05a72e49748133b5254e103ad79350b9a2d8efb29df30fcc54c81c5856d3f5f9"
+    },
+    {
+      "item": "LOOP_SEATTLE/82",
+      "grid_sha256": "a1dd3595fa12d6be38942bc035978b39c43ab366d8c0a92561efc60848d1b678"
+    },
+    {
+      "item": "LOOP_SEATTLE/65",
+      "grid_sha256": "a29119f19c3128d2c9b89a9b41d0a606c1c9a888f99d3260ac41c78bc1092f7c"
+    },
+    {
+      "item": "LOOP_SEATTLE/271",
+      "grid_sha256": "1b8959888513f093efdba6b4ffd0ec825ff3eaeaa70765513851953a533f3220"
+    },
+    {
+      "item": "LOOP_SEATTLE/110",
+      "grid_sha256": "6359bb342d9bebced2664dafdd221f8fdbe136e93861b7ef97b8fda16a2f37a6"
+    },
+    {
+      "item": "LOOP_SEATTLE/244",
+      "grid_sha256": "119863877c737692d47ac9e6484686bb745437acf2ef7acdb930b97f029862eb"
+    },
+    {
+      "item": "LOOP_SEATTLE/127",
+      "grid_sha256": "f544d0c5504a9f03ab933ee5f8530514f2d535944a756894cd3d5d7f1c2b493c"
+    },
+    {
+      "item": "LOOP_SEATTLE/207",
+      "grid_sha256": "08d44a1502bee2f3e4a9c79daf34898f435194a828965a00399f841bce1c9374"
+    },
+    {
+      "item": "LOOP_SEATTLE/64",
+      "grid_sha256": "e2d40e28e4340b5b90d5458ce668481d66d0d0eb34fa51ed3986f7cf6f78a856"
+    },
+    {
+      "item": "LOOP_SEATTLE/201",
+      "grid_sha256": "dab25e12ad5b2882ef892793fe26aaaff8a313b1f0d75f8c79838b1c90f166a9"
+    },
+    {
+      "item": "LOOP_SEATTLE/12",
+      "grid_sha256": "230abc8e91c1e6cfff6f1e40afc17b102bd15da339562b3713a0bd7663c58109"
+    },
+    {
+      "item": "LOOP_SEATTLE/280",
+      "grid_sha256": "79a42156ea7f9563bbe27e923708d928ca3c8bbdbba47e52ed12749abf02018d"
+    },
+    {
+      "item": "LOOP_SEATTLE/258",
+      "grid_sha256": "f29ff7e1d8a11b72d1dceaa8b6f4c123625f8898b19a5297acba1b02a884aba3"
+    },
+    {
+      "item": "LOOP_SEATTLE/104",
+      "grid_sha256": "c26e794c1ef539f5cfe00596b40d5bbc6c145a2d269494200037d1a76155359c"
+    },
+    {
+      "item": "LOOP_SEATTLE/199",
+      "grid_sha256": "37026a1a7ef2235acee1d8434448e31a80a6656769e1bc85263a7a6b7e218f19"
+    },
+    {
+      "item": "LOOP_SEATTLE/157",
+      "grid_sha256": "132bc9781115e443c42e9c2eafe0cfa8a6d93ecb114ddf31f713f0150985eef0"
+    },
+    {
+      "item": "LOOP_SEATTLE/299",
+      "grid_sha256": "24ba2ee4509aec6233f0a3067f23150ffe0666946b24c4c511d9cfb31fb442bb"
+    },
+    {
+      "item": "LOOP_SEATTLE/146",
+      "grid_sha256": "d4998885afc13fed05ad7e241c8a2c7508aded92fb6227982e93c4c0ae1ef8cd"
+    },
+    {
+      "item": "LOOP_SEATTLE/118",
+      "grid_sha256": "80b038bc2c335afb305386a8ae2ccc8632a7c4fdc0310b599015d2348dd19f4c"
+    },
+    {
+      "item": "LOOP_SEATTLE/124",
+      "grid_sha256": "81a087be9bca188974017aac91e4f1b3bee23db36c4eb3d991f93b647b39c983"
+    },
+    {
+      "item": "LOOP_SEATTLE/270",
+      "grid_sha256": "523c184c5bd8bfe8029440d38d6ac2576f18b3943dc2d666d1afb6f52a86faa6"
+    },
+    {
+      "item": "LOOP_SEATTLE/246",
+      "grid_sha256": "c9618e0ac1e6dc9e5d7cf72feaad373929cd2b2be757b25d5adcbaae6365cd36"
+    },
+    {
+      "item": "LOOP_SEATTLE/141",
+      "grid_sha256": "ca945e340a0bc37bcefa8d4ff059eed172edf2e6480cd75269d6428b43ff731b"
+    },
+    {
+      "item": "LOOP_SEATTLE/120",
+      "grid_sha256": "b83484d76b258e5a6cc1b582bd06d3d328bd24c3f9c37bf3876c9d11436c6a9b"
+    },
+    {
+      "item": "LOOP_SEATTLE/35",
+      "grid_sha256": "3bfffa529e614e7b8fa6b2ab359f8a5ff11b08a58705d7032be16f87934f895a"
+    },
+    {
+      "item": "LOOP_SEATTLE/168",
+      "grid_sha256": "b535b4cec24cf7bd17e4bbdba203d54f5eb29a16dbeb91f85b2a97d8d5aab07c"
+    },
+    {
+      "item": "LOOP_SEATTLE/115",
+      "grid_sha256": "fe5aae806405ad39960f64d5c450c37470aa09c20b828b145f1d96e4ec0d040e"
+    },
+    {
+      "item": "LOOP_SEATTLE/79",
+      "grid_sha256": "f25f3f6e511e3e59c02b765a01d294f884d7b8ed05cf51b6721b157b22bed07c"
+    }
+  ],
+  "end_indices": [
+    229,
+    593,
+    931,
+    1281,
+    1673,
+    2035,
+    2378,
+    2726,
+    3148,
+    3493,
+    3806,
+    4176,
+    4555,
+    4896,
+    5250,
+    5672,
+    6025,
+    6365,
+    6701,
+    7113,
+    7478,
+    7828,
+    8162,
+    8524
+  ],
+  "end_exclusive_shard_time": [
+    "2015-01-10 13:00:00",
+    "2015-01-25 17:00:00",
+    "2015-02-08 19:00:00",
+    "2015-02-23 09:00:00",
+    "2015-03-11 17:00:00",
+    "2015-03-26 19:00:00",
+    "2015-04-10 02:00:00",
+    "2015-04-24 14:00:00",
+    "2015-05-12 04:00:00",
+    "2015-05-26 13:00:00",
+    "2015-06-08 14:00:00",
+    "2015-06-24 00:00:00",
+    "2015-07-09 19:00:00",
+    "2015-07-24 00:00:00",
+    "2015-08-07 18:00:00",
+    "2015-08-25 08:00:00",
+    "2015-09-09 01:00:00",
+    "2015-09-23 05:00:00",
+    "2015-10-07 05:00:00",
+    "2015-10-24 09:00:00",
+    "2015-11-08 14:00:00",
+    "2015-11-23 04:00:00",
+    "2015-12-07 02:00:00",
+    "2015-12-22 04:00:00"
+  ]
+}

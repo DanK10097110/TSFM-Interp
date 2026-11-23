@@ -1,0 +1,38 @@
+[
+  {
+    "id": "WY_Lander_11_SSE/2026-01-01",
+    "other_station": "TX_Palestine_6_WNW/2026-01-01",
+    "max_raw_celsius": {
+      "truth": 2.86102294921875e-06,
+      "mapped": 2.86102294921875e-06,
+      "wrong_step": 4.76837158203125e-06,
+      "other_station": 3.814697265625e-06,
+      "historical": 3.814697265625e-06,
+      "donor_native": 6.67572021484375e-06
+    }
+  },
+  {
+    "id": "MT_Dillon_18_WSW/2026-06-01",
+    "other_station": "AL_Courtland_2_WSW/2026-06-01",
+    "max_raw_celsius": {
+      "truth": 1.9073486328125e-06,
+      "mapped": 2.86102294921875e-06,
+      "wrong_step": 3.814697265625e-06,
+      "other_station": 2.86102294921875e-06,
+      "historical": 2.86102294921875e-06,
+      "donor_native": 4.76837158203125e-06
+    }
+  },
+  {
+    "id": "ME_Limestone_4_NNW/2026-11-01",
+    "other_station": "NE_Whitman_5_ENE/2026-11-01",
+    "max_raw_celsius": {
+      "truth": 0.0,
+      "mapped": 0.0,
+      "wrong_step": 0.0,
+      "other_station": 9.5367431640625e-07,
+      "historical": 0.0,
+      "donor_native": 0.0
+    }
+  }
+]

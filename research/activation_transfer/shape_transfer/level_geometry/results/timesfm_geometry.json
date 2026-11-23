@@ -1,0 +1,218 @@
+{
+  "source": "bolt",
+  "target": "timesfm",
+  "site": {
+    "module": "stacked_xf.10",
+    "path": [
+      "args",
+      0
+    ],
+    "occurrence": 0,
+    "shape": [
+      6,
+      1280
+    ],
+    "mode": "last",
+    "source": "module_input",
+    "module_type": "",
+    "occurrences": null,
+    "batch_multiplier": 1,
+    "invocation_multipliers": null
+  },
+  "target_checkpoint": [
+    "timesfm",
+    "google/timesfm-2.5-200m-pytorch",
+    "1d952420fba87f3c6dee4f240de0f1a0fbc790e3"
+  ],
+  "fit_sha256": "20a2ac4ce8c3ae55b85af276e341b0864f0fddaa1b21a0a37b7d4699eedd89a1",
+  "jac_sha256": "e426e8f6a472d4a4fa02db1b84f84ce12a0fc8a65f8ee453244728df254df05b",
+  "source_fit_sha256": "d691e746882c62f66ea84b4b81f672582b963ab94b6233abb488314d77ab1dbf",
+  "fit_reprobe_abs_max": 0.0,
+  "native_effect_archive_max_abs_error": 2.1457672119140625e-06,
+  "radius": 125.37899614230426,
+  "step": 1.2537899614230426,
+  "geometry": {
+    "fit_histories": 64,
+    "leads": 8,
+    "basis_rank": 24,
+    "dc_fraction_all": 0.9900955071715682,
+    "dc_fraction_mean": 0.9986984934292177,
+    "shared_dc_gradient_fraction": 0.9734734085195815,
+    "shared_shape_response_fraction": 0.12681800327207585,
+    "rms_sensitivity_dc_as_output_norm": 0.22660139357623946,
+    "rms_sensitivity_shape_as_output_norm": 0.02266418739641253,
+    "rms_sensitivity_per_orthogonal_shape_axis": 0.008566257645467432,
+    "mean_jac_singular_values": [
+      0.22361364378251594,
+      0.006535177274856444,
+      0.0016530589376048412,
+      0.001039141061795501,
+      0.0008502702626913808,
+      0.0007060084518038646,
+      0.0005541988283436027,
+      0.00036041544417066314
+    ],
+    "mean_centered_jac_singular_values": [
+      0.007663951002053122,
+      0.0018812088305199997,
+      0.0010469624343006298,
+      0.0008683390516599934,
+      0.0007060188889436024,
+      0.0005879916314669618,
+      0.00041543669705560013,
+      2.415236087437121e-18
+    ],
+    "pooled_output_rms_singular_values": [
+      0.22660802457826107,
+      0.020240847375462466,
+      0.0069325979212099586,
+      0.004090103043380325,
+      0.0037117906364822297,
+      0.003123341764392549,
+      0.0027128771326093313,
+      0.0022991395367425757
+    ],
+    "mean_top_left_vector_abs_cosine_dc": 0.9998302353816257,
+    "pooled_top_output_axis_abs_cosine_dc": 0.9999705569894364
+  },
+  "directions": {
+    "level": {
+      "original_mapped": {
+        "fit_mean_shift": 0.021965994142634754,
+        "mean_item_dc_rms": 0.022070248228817924,
+        "centered_rms": 0.0012512367598563516,
+        "centered_cosine_to_native": 0.611868732903851,
+        "mean_response_centered_cosine_to_native": 0.8904308478405111
+      },
+      "pc_projected_mapped": {
+        "fit_mean_shift": 0.019779641013876654,
+        "mean_item_dc_rms": 0.019853028747650558,
+        "centered_rms": 0.0010066643273146712,
+        "centered_cosine_to_native": 0.5183412892551826,
+        "mean_response_centered_cosine_to_native": 0.915681299644828
+      },
+      "native": {
+        "fit_mean_shift": 0.049197351257173706,
+        "mean_item_dc_rms": 0.049295680385706156,
+        "centered_rms": 0.0018280504204260671,
+        "centered_cosine_to_native": 1.0,
+        "mean_response_centered_cosine_to_native": 1.0
+      },
+      "mapped_norm_fraction_in_recipient_pc": 0.9578569360683593
+    },
+    "tilt": {
+      "original_mapped": {
+        "fit_mean_shift": -0.005451535246232073,
+        "mean_item_dc_rms": 0.006114722770946731,
+        "centered_rms": 0.0018848368855327808,
+        "centered_cosine_to_native": 0.45623814784533795,
+        "mean_response_centered_cosine_to_native": 0.9626023478794588
+      },
+      "pc_projected_mapped": {
+        "fit_mean_shift": -0.0029937570058609737,
+        "mean_item_dc_rms": 0.0037991800449683633,
+        "centered_rms": 0.0015029355778157537,
+        "centered_cosine_to_native": 0.13165804399276557,
+        "mean_response_centered_cosine_to_native": 0.8494215029593142
+      },
+      "native": {
+        "fit_mean_shift": -0.000809647450739949,
+        "mean_item_dc_rms": 0.003524625278510386,
+        "centered_rms": 0.003996110760483343,
+        "centered_cosine_to_native": 1.0,
+        "mean_response_centered_cosine_to_native": 0.9999999999999999
+      },
+      "mapped_norm_fraction_in_recipient_pc": 0.9328191010381652,
+      "corrected": {
+        "fit_mean_shift": -2.168404344971009e-18,
+        "mean_item_dc_rms": 0.0027590984470803573,
+        "centered_rms": 0.0018028776721253654,
+        "centered_cosine_to_native": 0.4303581723890415,
+        "mean_response_centered_cosine_to_native": 0.9612848751423989
+      },
+      "norm_of_min_correction_over_budget": 0.04563511867554817,
+      "norm_restoring_gain": 1.0001023914824163,
+      "corrected_mapped_hidden_cosine": 0.998958616594795
+    },
+    "sine": {
+      "original_mapped": {
+        "fit_mean_shift": -0.0022508288480965408,
+        "mean_item_dc_rms": 0.0029851666915595943,
+        "centered_rms": 0.0012219177179516383,
+        "centered_cosine_to_native": 0.32101477621238594,
+        "mean_response_centered_cosine_to_native": 0.8334547996927124
+      },
+      "pc_projected_mapped": {
+        "fit_mean_shift": 0.0017010519378374677,
+        "mean_item_dc_rms": 0.002261883240164475,
+        "centered_rms": 0.000948897438326526,
+        "centered_cosine_to_native": 0.1624389163915199,
+        "mean_response_centered_cosine_to_native": 0.688676909233725
+      },
+      "native": {
+        "fit_mean_shift": 0.0006361246404024922,
+        "mean_item_dc_rms": 0.0024966461205749558,
+        "centered_rms": 0.002878290338097848,
+        "centered_cosine_to_native": 1.0,
+        "mean_response_centered_cosine_to_native": 1.0000000000000002
+      },
+      "mapped_norm_fraction_in_recipient_pc": 0.9110515918352664,
+      "corrected": {
+        "fit_mean_shift": -4.472333961502706e-19,
+        "mean_item_dc_rms": 0.0018618147833026368,
+        "centered_rms": 0.001212608891258001,
+        "centered_cosine_to_native": 0.34772505347492366,
+        "mean_response_centered_cosine_to_native": 0.850690438490258
+      },
+      "norm_of_min_correction_over_budget": 0.02562880322300995,
+      "norm_restoring_gain": 0.9991762013292759,
+      "corrected_mapped_hidden_cosine": 0.9996721923746952
+    }
+  },
+  "random_orientation_signs": [
+    -1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    -1.0,
+    1.0
+  ],
+  "labels": [
+    "level/native",
+    "level/mapped",
+    "tilt/native",
+    "tilt/mapped",
+    "tilt/corrected",
+    "sine/native",
+    "sine/mapped",
+    "sine/corrected",
+    "level/random0",
+    "level/random1",
+    "level/random2",
+    "level/random3",
+    "level/random4",
+    "level/random5",
+    "level/random6",
+    "level/random7"
+  ],
+  "cal_scalar": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+  ]
+}

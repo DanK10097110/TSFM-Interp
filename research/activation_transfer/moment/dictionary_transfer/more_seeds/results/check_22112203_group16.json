@@ -1,0 +1,34 @@
+[
+  {
+    "event": 0,
+    "station_date": "AR_Batesville_8_WNW/2026-01-10",
+    "atom": 3586,
+    "target": 702,
+    "local_target_active": false,
+    "max_abs_celsius": 3.814697265625e-06
+  },
+  {
+    "event": 1,
+    "station_date": "AR_Batesville_8_WNW/2026-01-10",
+    "atom": 2596,
+    "target": 2862,
+    "local_target_active": true,
+    "max_abs_celsius": 3.814697265625e-06
+  },
+  {
+    "event": 334,
+    "station_date": "MT_Wolf_Point_29_ENE/2026-04-10",
+    "atom": 187,
+    "target": 2194,
+    "local_target_active": true,
+    "max_abs_celsius": 3.814697265625e-06
+  },
+  {
+    "event": 668,
+    "station_date": "FL_Titusville_7_E/2026-10-10",
+    "atom": 1867,
+    "target": 466,
+    "local_target_active": true,
+    "max_abs_celsius": 1.9073486328125e-06
+  }
+]

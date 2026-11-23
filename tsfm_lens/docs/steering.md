@@ -1,6 +1,6 @@
 # Steer forecasts in a toolkit run
 
-For a worked example of the mechanism and the evidence on dose and mixed steering, see [How forecast steering works](../tsfm_lens/steering/README.md).
+For a worked example and an explanation of what a verified result means, see [How forecast steering works](../tsfm_lens/steering/README.md).
 
 Add this block to your run YAML. The enabled stage runs each request independently on every configured model, using the same evaluation contexts and forecast horizon.
 
@@ -62,7 +62,7 @@ Open the [generated validation report](../../examples/steering/validation/report
 - **Audit data** in the collapsed details include per-series ordinary and replayed forecasts, target changes, observed futures, scores and timings. A four-step known-answer check tests the intended transformation for each of the 19 request types.
 - **Context policies** define the desired output by changing the model input. Close agreement for a full-horizon context policy checks that the requested transformation was executed. Learned output directions are evaluated against targets defined in forecast space.
 
-The [steering module README](../tsfm_lens/steering/README.md) compares the original search and the readout-based controller at the same edit radius, explains remaining misses and reports the three-dose tests.
+The validation archive includes the matched comparisons, three-dose tests and per-case measurements. [Validation evidence and reproduction instructions](../../examples/steering/validation/README.md)
 
 ## Compare your own inputs
 

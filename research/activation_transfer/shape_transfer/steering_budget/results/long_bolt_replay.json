@@ -1,0 +1,59 @@
+{
+  "events": [
+    3,
+    10,
+    15,
+    20,
+    23,
+    25,
+    29,
+    30,
+    36,
+    37,
+    38,
+    40,
+    47,
+    54,
+    57,
+    58,
+    61,
+    68
+  ],
+  "ids": [
+    "daily/140",
+    "daily/3544",
+    "daily/3155",
+    "daily/2641",
+    "daily/3005",
+    "daily/3005",
+    "daily/2361",
+    "daily/2361",
+    "daily/1304",
+    "daily/1304",
+    "daily/1304",
+    "daily/3056",
+    "daily/3841",
+    "daily/153",
+    "daily/153",
+    "daily/1316",
+    "daily/993",
+    "daily/1549"
+  ],
+  "methods": {
+    "sae": {
+      "max_abs_forecast_gap": 1.0728836059570312e-06,
+      "max_abs_norm_gap": 0.0,
+      "relative_forecast_error": 2.314971933657559e-06
+    },
+    "response32": {
+      "max_abs_forecast_gap": 1.1920928955078125e-06,
+      "max_abs_norm_gap": 0.0,
+      "relative_forecast_error": 2.2415306356989037e-06
+    },
+    "pca": {
+      "max_abs_forecast_gap": 1.430511474609375e-06,
+      "max_abs_norm_gap": 0.0,
+      "relative_forecast_error": 2.290080284698384e-06
+    }
+  }
+}

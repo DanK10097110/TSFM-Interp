@@ -1,0 +1,370 @@
+{
+  "final_quantile_archives_sha256": {
+    "bolt": "a2242ffab9531edc7d78c7c561ff20d593f0ba4c28ee1e716c16609d47eacc92",
+    "timesfm": "5727d4c2651227703afcea4fc36aa343811cc83cffd12adc1cb802324bf53968"
+  },
+  "self_transfer": {
+    "bolt": {
+      "width": 512,
+      "rank": 8,
+      "n": 339,
+      "observed_visible_median": 0.16308911781303126,
+      "isotropic_visible_median": 0.1199219673147649,
+      "other_selected_atom_visible_median": 0.1762873969635854,
+      "correct_beats_other_fraction": 0.44228121927236974,
+      "separately_applied_sum_late_skill": 0.9940099144364455,
+      "projected_late_skill": 0.35880724062913344,
+      "null_late_skill": 0.5667825332867389
+    },
+    "timesfm": {
+      "width": 1280,
+      "rank": 8,
+      "n": 405,
+      "observed_visible_median": 0.15201672064526264,
+      "isotropic_visible_median": 0.07578623242660969,
+      "other_selected_atom_visible_median": 0.10284630108724788,
+      "correct_beats_other_fraction": 0.6992592592592592,
+      "separately_applied_sum_late_skill": 0.9548999845890831,
+      "projected_late_skill": -0.04896147027813384,
+      "null_late_skill": 0.4414238856061599
+    },
+    "timer": {
+      "width": 1024,
+      "rank": 8,
+      "n": 210,
+      "observed_visible_median": 0.12149914045044835,
+      "isotropic_visible_median": 0.08474258308334646,
+      "other_selected_atom_visible_median": 0.12649519929870182,
+      "correct_beats_other_fraction": 0.4434920634920635,
+      "separately_applied_sum_late_skill": 0.9962521572902799,
+      "projected_late_skill": 0.4566634487911531,
+      "null_late_skill": 0.11278856255620988
+    }
+  },
+  "five_anchor_cubic": {
+    "bolt": {
+      "daily": {
+        "physical": {
+          "skill": -0.9395200858775204,
+          "crossed95": [
+            -1.4907390058694125,
+            -0.5588400822027281
+          ]
+        },
+        "matched_cubic": {
+          "skill": 0.5711902124071837,
+          "crossed95": [
+            0.47858917237460763,
+            0.6512365265316408
+          ]
+        },
+        "privileged_cubic": {
+          "skill": 0.6072392851071738,
+          "crossed95": [
+            0.528412697329131,
+            0.6750178665351168
+          ]
+        },
+        "physical_minus_matched_cubic": {
+          "skill": -1.510710298284704,
+          "crossed95": [
+            -2.0355670619140858,
+            -1.1532796911429886
+          ]
+        },
+        "n_atoms": 15,
+        "rms": 0.00012091431027115881
+      },
+      "monash_traffic": {
+        "physical": {
+          "skill": -0.25522196825547183,
+          "crossed95": [
+            -0.87151939274932,
+            0.11253071510209123
+          ]
+        },
+        "matched_cubic": {
+          "skill": 0.6879554213558096,
+          "crossed95": [
+            0.6181044731293165,
+            0.7313870836794192
+          ]
+        },
+        "privileged_cubic": {
+          "skill": 0.7051102380380748,
+          "crossed95": [
+            0.6337799874751944,
+            0.7404587024653576
+          ]
+        },
+        "physical_minus_matched_cubic": {
+          "skill": -0.9431773896112814,
+          "crossed95": [
+            -1.5324912843184648,
+            -0.5829138853050418
+          ]
+        },
+        "n_atoms": 6,
+        "rms": 0.0002467855734595951
+      }
+    },
+    "timesfm": {
+      "daily": {
+        "physical": {
+          "skill": 0.03678384088128842,
+          "crossed95": [
+            -0.04010801931646811,
+            0.10715156992053386
+          ]
+        },
+        "matched_cubic": {
+          "skill": -0.028162808473503848,
+          "crossed95": [
+            -0.10587838357292506,
+            0.045484855024255866
+          ]
+        },
+        "privileged_cubic": {
+          "skill": -0.01351639417475378,
+          "crossed95": [
+            -0.09455864812008852,
+            0.06402254383322369
+          ]
+        },
+        "physical_minus_matched_cubic": {
+          "skill": 0.06494664935479227,
+          "crossed95": [
+            0.0247573791504629,
+            0.10607488228649609
+          ]
+        },
+        "n_atoms": 15,
+        "rms": 0.003414166578485327
+      },
+      "monash_traffic": {
+        "physical": {
+          "skill": 0.14408792606217255,
+          "crossed95": [
+            0.07441940667840523,
+            0.23172870709417923
+          ]
+        },
+        "matched_cubic": {
+          "skill": 0.2799298484073933,
+          "crossed95": [
+            0.1473699720772898,
+            0.3978929260186105
+          ]
+        },
+        "privileged_cubic": {
+          "skill": 0.3142675250982646,
+          "crossed95": [
+            0.17733016198377372,
+            0.42676185253563736
+          ]
+        },
+        "physical_minus_matched_cubic": {
+          "skill": -0.13584192234522077,
+          "crossed95": [
+            -0.21430328261569398,
+            -0.046349856426225584
+          ]
+        },
+        "n_atoms": 2,
+        "rms": 0.008423657674945424
+      }
+    }
+  },
+  "interactions": {
+    "bolt": {
+      "daily": {
+        "n_pairs": 21,
+        "n_all_cofirings": 671,
+        "n_eligible_cofirings": 489,
+        "self_clipped": 0,
+        "cross_clipped": 0,
+        "leave_one_source_atom_out_cross_skill_range": [
+          -0.014179742487288234,
+          0.009201111111865501
+        ],
+        "source_raw_interaction_rms": 8.800473843381742e-05,
+        "source_zero_rms": 1.3063600791368717e-07,
+        "target_raw_interaction_rms": 8.152831647477144e-06,
+        "target_zero_rms": 2.7195200645841356e-07,
+        "target_raw_interaction_skill": -0.002581062992484057,
+        "target_zero_adjusted_interaction_skill": -0.002665395764351134,
+        "measurable_unadjusted": 21,
+        "measurable_zero_adjusted": 21,
+        "native_interaction_over_rms_of_singleton_sum": 0.0667829861964113,
+        "native_interaction_over_quadrature": 0.062045487970293314,
+        "both_unclipped_pairs_frequent_after_filter": 21,
+        "both_unclipped_rms_rows_all_domain_eligible": 489,
+        "both_unclipped_rms_rows_stratum_eligible": 489
+      },
+      "extra_daily": {
+        "n_pairs": 16,
+        "n_all_cofirings": 472,
+        "n_eligible_cofirings": 278,
+        "self_clipped": 0,
+        "cross_clipped": 0,
+        "leave_one_source_atom_out_cross_skill_range": [
+          -0.017577379725818427,
+          0.0007434043515743752
+        ],
+        "source_raw_interaction_rms": 0.00012077197603346547,
+        "source_zero_rms": 1.2194199422542292e-07,
+        "target_raw_interaction_rms": 1.2623893802651516e-05,
+        "target_zero_rms": 2.4810891831570216e-07,
+        "target_raw_interaction_skill": -0.010606022045726693,
+        "target_zero_adjusted_interaction_skill": -0.010375165299304566,
+        "measurable_unadjusted": 16,
+        "measurable_zero_adjusted": 16,
+        "native_interaction_over_rms_of_singleton_sum": 0.07301200579663665,
+        "native_interaction_over_quadrature": 0.07001831875028199,
+        "both_unclipped_pairs_frequent_after_filter": 16,
+        "both_unclipped_rms_rows_all_domain_eligible": 278,
+        "both_unclipped_rms_rows_stratum_eligible": 278
+      },
+      "extra_monash_traffic": {
+        "n_pairs": 6,
+        "n_all_cofirings": 178,
+        "n_eligible_cofirings": 156,
+        "self_clipped": 0,
+        "cross_clipped": 0,
+        "leave_one_source_atom_out_cross_skill_range": [
+          0.027156876606418152,
+          0.07715247382603313
+        ],
+        "source_raw_interaction_rms": 0.000483167770203326,
+        "source_zero_rms": 4.9367740986237385e-08,
+        "target_raw_interaction_rms": 7.387703680622168e-05,
+        "target_zero_rms": 1.7713540226428784e-07,
+        "target_raw_interaction_skill": 0.0563779606754408,
+        "target_zero_adjusted_interaction_skill": 0.05634556704123098,
+        "measurable_unadjusted": 6,
+        "measurable_zero_adjusted": 6,
+        "native_interaction_over_rms_of_singleton_sum": 0.03586705810341123,
+        "native_interaction_over_quadrature": 0.03278432057923524,
+        "both_unclipped_pairs_frequent_after_filter": 6,
+        "both_unclipped_rms_rows_all_domain_eligible": 156,
+        "both_unclipped_rms_rows_stratum_eligible": 156
+      },
+      "machines": {
+        "n_pairs": 4,
+        "n_all_cofirings": 83,
+        "n_eligible_cofirings": 45,
+        "self_clipped": 0,
+        "cross_clipped": 0,
+        "leave_one_source_atom_out_cross_skill_range": [
+          -10.862445982174165,
+          0.6077906390000547
+        ],
+        "source_raw_interaction_rms": 0.003236907109991377,
+        "source_zero_rms": 1.0977879666006671e-07,
+        "target_raw_interaction_rms": 0.011499989992113137,
+        "target_zero_rms": 1.7810173749346913e-07,
+        "target_raw_interaction_skill": -7.458656640517315,
+        "target_zero_adjusted_interaction_skill": -7.458453877856757,
+        "measurable_unadjusted": 4,
+        "measurable_zero_adjusted": 4,
+        "native_interaction_over_rms_of_singleton_sum": 0.08897171933451277,
+        "native_interaction_over_quadrature": 0.07759971278182617,
+        "both_unclipped_pairs_frequent_after_filter": 4,
+        "both_unclipped_rms_rows_all_domain_eligible": 45,
+        "both_unclipped_rms_rows_stratum_eligible": 45
+      }
+    },
+    "timesfm": {
+      "daily": {
+        "n_pairs": 31,
+        "n_all_cofirings": 1089,
+        "n_eligible_cofirings": 957,
+        "self_clipped": 0,
+        "cross_clipped": 333,
+        "leave_one_source_atom_out_cross_skill_range": [
+          -0.06599029906227227,
+          -0.033928242604268306
+        ],
+        "source_raw_interaction_rms": 0.005471468061329794,
+        "source_zero_rms": 2.702195167353139e-07,
+        "target_raw_interaction_rms": 0.0015588558146439676,
+        "target_zero_rms": 1.2715547757981516e-07,
+        "target_raw_interaction_skill": -0.055218583141915814,
+        "target_zero_adjusted_interaction_skill": -0.05521800068095327,
+        "measurable_unadjusted": 31,
+        "measurable_zero_adjusted": 31,
+        "native_interaction_over_rms_of_singleton_sum": 0.1539470988203432,
+        "native_interaction_over_quadrature": 0.16574855741137437,
+        "both_unclipped_pairs_frequent_after_filter": 25,
+        "both_unclipped_rms_rows_all_domain_eligible": 624,
+        "both_unclipped_rms_rows_stratum_eligible": 601
+      },
+      "extra_daily": {
+        "n_pairs": 25,
+        "n_all_cofirings": 604,
+        "n_eligible_cofirings": 475,
+        "self_clipped": 0,
+        "cross_clipped": 168,
+        "leave_one_source_atom_out_cross_skill_range": [
+          -0.06124815106770881,
+          -0.02149655261760206
+        ],
+        "source_raw_interaction_rms": 0.005519205287856886,
+        "source_zero_rms": 2.4345344933634756e-07,
+        "target_raw_interaction_rms": 0.0015983072543502732,
+        "target_zero_rms": 1.260528088112708e-07,
+        "target_raw_interaction_skill": -0.04576522926854727,
+        "target_zero_adjusted_interaction_skill": -0.04576504733079148,
+        "measurable_unadjusted": 25,
+        "measurable_zero_adjusted": 25,
+        "native_interaction_over_rms_of_singleton_sum": 0.1405771876411446,
+        "native_interaction_over_quadrature": 0.14607435800463017,
+        "both_unclipped_pairs_frequent_after_filter": 20,
+        "both_unclipped_rms_rows_all_domain_eligible": 307,
+        "both_unclipped_rms_rows_stratum_eligible": 298
+      },
+      "extra_monash_traffic": {
+        "n_pairs": 1,
+        "n_all_cofirings": 10,
+        "n_eligible_cofirings": 10,
+        "self_clipped": 0,
+        "cross_clipped": 10,
+        "leave_one_source_atom_out_cross_skill_range": null,
+        "source_raw_interaction_rms": 0.02508223070282264,
+        "source_zero_rms": 4.1569066307400337e-07,
+        "target_raw_interaction_rms": 0.016049941267440755,
+        "target_zero_rms": 8.301758542340038e-08,
+        "target_raw_interaction_skill": -0.21158659397586077,
+        "target_zero_adjusted_interaction_skill": -0.21159135336700596,
+        "measurable_unadjusted": 1,
+        "measurable_zero_adjusted": 1,
+        "native_interaction_over_rms_of_singleton_sum": 0.16190008979770806,
+        "native_interaction_over_quadrature": 0.10609186595388909,
+        "both_unclipped_pairs_frequent_after_filter": 0,
+        "both_unclipped_rms_rows_all_domain_eligible": 0,
+        "both_unclipped_rms_rows_stratum_eligible": 0
+      },
+      "machines": {
+        "n_pairs": 1,
+        "n_all_cofirings": 32,
+        "n_eligible_cofirings": 28,
+        "self_clipped": 0,
+        "cross_clipped": 26,
+        "leave_one_source_atom_out_cross_skill_range": null,
+        "source_raw_interaction_rms": 0.02191725832352628,
+        "source_zero_rms": 4.143967348679243e-07,
+        "target_raw_interaction_rms": 0.006811030062934852,
+        "target_zero_rms": 7.962054243999321e-08,
+        "target_raw_interaction_skill": 0.03619553273065479,
+        "target_zero_adjusted_interaction_skill": 0.036199537709569185,
+        "measurable_unadjusted": 1,
+        "measurable_zero_adjusted": 1,
+        "native_interaction_over_rms_of_singleton_sum": 0.14717849396474944,
+        "native_interaction_over_quadrature": 0.1367950324094532,
+        "both_unclipped_pairs_frequent_after_filter": 0,
+        "both_unclipped_rms_rows_all_domain_eligible": 2,
+        "both_unclipped_rms_rows_stratum_eligible": 0
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "finite_difference_relative_error": [
+    0.0028108805418014526,
+    0.0032388707622885704
+  ],
+  "native_ordinary_max_abs": 7.152557373046875e-07,
+  "zero_patch_max_abs": 7.152557373046875e-07,
+  "source_dictionary_sha256": "26cb4e369bef44636e129dccd0641563dc1908acbcc301dd220325b4465d553a"
+}

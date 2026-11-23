@@ -1,0 +1,246 @@
+{
+  "bolt": {
+    "cases": [
+      {
+        "donor": 1,
+        "receiver": 1,
+        "series": "daily/198",
+        "atom": 149
+      },
+      {
+        "donor": 1,
+        "receiver": 1,
+        "series": "daily/2943",
+        "atom": 3492
+      },
+      {
+        "donor": 1,
+        "receiver": 1,
+        "series": "daily/1581",
+        "atom": 2724
+      },
+      {
+        "donor": 1,
+        "receiver": 1,
+        "series": "daily/182",
+        "atom": 2224
+      },
+      {
+        "donor": 1,
+        "receiver": 2,
+        "series": "daily/3176",
+        "atom": 6045
+      },
+      {
+        "donor": 1,
+        "receiver": 2,
+        "series": "daily/1970",
+        "atom": 2916
+      },
+      {
+        "donor": 1,
+        "receiver": 2,
+        "series": "daily/3479",
+        "atom": 2724
+      },
+      {
+        "donor": 1,
+        "receiver": 2,
+        "series": "daily/868",
+        "atom": 2224
+      },
+      {
+        "donor": 2,
+        "receiver": 2,
+        "series": "daily/657",
+        "atom": 3331
+      },
+      {
+        "donor": 2,
+        "receiver": 2,
+        "series": "daily/1422",
+        "atom": 102
+      },
+      {
+        "donor": 2,
+        "receiver": 2,
+        "series": "daily/1925",
+        "atom": 1463
+      },
+      {
+        "donor": 2,
+        "receiver": 2,
+        "series": "daily/1295",
+        "atom": 102
+      },
+      {
+        "donor": 2,
+        "receiver": 1,
+        "series": "daily/2764",
+        "atom": 3327
+      },
+      {
+        "donor": 2,
+        "receiver": 1,
+        "series": "daily/49",
+        "atom": 1152
+      },
+      {
+        "donor": 2,
+        "receiver": 1,
+        "series": "daily/221",
+        "atom": 2054
+      },
+      {
+        "donor": 2,
+        "receiver": 1,
+        "series": "daily/3517",
+        "atom": 1463
+      }
+    ],
+    "receiver_replays": 96,
+    "source_replays": 16,
+    "receiver_max_error": 1.6689300537109375e-06,
+    "source_max_error": 1.6689300537109375e-06,
+    "max_capture_error": 3.5762786865234375e-07,
+    "independent_macro_scores": 192,
+    "macro_max_error": 2.220446049250313e-16,
+    "model_layer": "encoder.block.3",
+    "observed_span": [
+      [
+        448.0,
+        464.0
+      ],
+      [
+        464.0,
+        480.0
+      ]
+    ],
+    "radius": 5.638598442077637,
+    "training_rows": 34515,
+    "seed1": "dea8d1ead6911ac8058938acefcee249d4b3a46f1fc4cff99eaa16a349c953ba",
+    "seed2": "dbe48a6731120e8a783ac9ee17d701fd8e6d343dd3bb510aa85bcee37e5f7e3d",
+    "training_state_hash": "b91f59046d82ba58c78eb504c1f7fbb5526a4baa290864d2990572453436738b",
+    "training_item_hash": "c6bb935a0fd39015030ec2cadbc63a0b789528a5619a63ef189e608c9442ab17"
+  },
+  "timesfm": {
+    "cases": [
+      {
+        "donor": 1,
+        "receiver": 1,
+        "series": "daily/2894",
+        "atom": 4459
+      },
+      {
+        "donor": 1,
+        "receiver": 1,
+        "series": "daily/1463",
+        "atom": 4459
+      },
+      {
+        "donor": 1,
+        "receiver": 1,
+        "series": "daily/1581",
+        "atom": 5009
+      },
+      {
+        "donor": 1,
+        "receiver": 1,
+        "series": "daily/411",
+        "atom": 2599
+      },
+      {
+        "donor": 1,
+        "receiver": 2,
+        "series": "daily/1314",
+        "atom": 974
+      },
+      {
+        "donor": 1,
+        "receiver": 2,
+        "series": "daily/1370",
+        "atom": 4459
+      },
+      {
+        "donor": 1,
+        "receiver": 2,
+        "series": "daily/929",
+        "atom": 4599
+      },
+      {
+        "donor": 1,
+        "receiver": 2,
+        "series": "daily/1076",
+        "atom": 4003
+      },
+      {
+        "donor": 2,
+        "receiver": 2,
+        "series": "daily/3313",
+        "atom": 3313
+      },
+      {
+        "donor": 2,
+        "receiver": 2,
+        "series": "daily/1366",
+        "atom": 1611
+      },
+      {
+        "donor": 2,
+        "receiver": 2,
+        "series": "daily/780",
+        "atom": 6054
+      },
+      {
+        "donor": 2,
+        "receiver": 2,
+        "series": "daily/1961",
+        "atom": 1611
+      },
+      {
+        "donor": 2,
+        "receiver": 1,
+        "series": "daily/3284",
+        "atom": 649
+      },
+      {
+        "donor": 2,
+        "receiver": 1,
+        "series": "daily/397",
+        "atom": 1611
+      },
+      {
+        "donor": 2,
+        "receiver": 1,
+        "series": "daily/451",
+        "atom": 4260
+      },
+      {
+        "donor": 2,
+        "receiver": 1,
+        "series": "daily/1377",
+        "atom": 1611
+      }
+    ],
+    "receiver_replays": 96,
+    "source_replays": 16,
+    "receiver_max_error": 3.337860107421875e-06,
+    "source_max_error": 1.9073486328125e-06,
+    "max_capture_error": 4.57763671875e-05,
+    "independent_macro_scores": 192,
+    "macro_max_error": 2.220446049250313e-16,
+    "model_layer": "stacked_xf.10",
+    "observed_span": [
+      [
+        448.0,
+        480.0
+      ]
+    ],
+    "radius": 106.8477783203125,
+    "training_rows": 34515,
+    "seed1": "b7ecf7314585b3864dc444c3efdd4473ba9a5194a3a6ef5eefefa6c16a738935",
+    "seed2": "74057aa54730dbc9aa7872bdfe11cd3961a04ccb2ec64ba485e1d797e2aeb55f",
+    "training_state_hash": "0a2ab0b8b8d988a2b10c10cb766318027176cefaee7493e6aa7bbc8be04d126a",
+    "training_item_hash": "c6bb935a0fd39015030ec2cadbc63a0b789528a5619a63ef189e608c9442ab17"
+  }
+}

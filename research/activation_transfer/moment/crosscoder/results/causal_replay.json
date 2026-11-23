@@ -1,0 +1,262 @@
+{
+  "input_patch_gate": {
+    "native_checks": 4,
+    "rows": [
+      134,
+      130,
+      124,
+      127
+    ],
+    "columns": [
+      1,
+      0,
+      1,
+      0
+    ],
+    "native_max_celsius": 1.9073486328125e-06,
+    "primary_crossed95": [
+      -1.1733428150103178,
+      0.23632429713928607
+    ]
+  },
+  "joint1": {
+    "native_checks": 4,
+    "rows": [
+      127,
+      146,
+      117,
+      128
+    ],
+    "columns": [
+      3,
+      0,
+      2,
+      3
+    ],
+    "native_max_celsius": 3.814697265625e-06,
+    "primary_crossed95": [
+      -0.8892698855332102,
+      0.5667940219821828
+    ]
+  },
+  "joint2": {
+    "native_checks": 4,
+    "rows": [
+      125,
+      161,
+      112,
+      137
+    ],
+    "columns": [
+      0,
+      3,
+      3,
+      1
+    ],
+    "native_max_celsius": 1.9073486328125e-06,
+    "primary_crossed95": [
+      -3.250079436214348,
+      0.5126228768330852
+    ]
+  },
+  "map_all_exactgate": {
+    "native_checks": 4,
+    "rows": [
+      124,
+      147,
+      119,
+      127
+    ],
+    "columns": [
+      0,
+      2,
+      2,
+      2
+    ],
+    "native_max_celsius": 1.9073486328125e-06,
+    "primary_crossed95": [
+      0.23396704340062538,
+      0.6425785895456659
+    ]
+  },
+  "map_last_exactgate": {
+    "native_checks": 4,
+    "rows": [
+      130,
+      141,
+      103,
+      128
+    ],
+    "columns": [
+      0,
+      1,
+      1,
+      2
+    ],
+    "native_max_celsius": 3.814697265625e-06,
+    "primary_crossed95": [
+      0.02346203993110773,
+      0.7827775160925985
+    ]
+  },
+  "masked1": {
+    "native_checks": 4,
+    "rows": [
+      130,
+      142,
+      121,
+      128
+    ],
+    "columns": [
+      0,
+      0,
+      3,
+      1
+    ],
+    "native_max_celsius": 3.814697265625e-06,
+    "primary_crossed95": [
+      -1.6135001783905887,
+      0.6056994739534448
+    ]
+  },
+  "masked2": {
+    "native_checks": 4,
+    "rows": [
+      132,
+      127,
+      122,
+      128
+    ],
+    "columns": [
+      1,
+      1,
+      0,
+      1
+    ],
+    "native_max_celsius": 3.814697265625e-06,
+    "primary_crossed95": [
+      -0.1771259038112339,
+      0.6220050723260417
+    ]
+  },
+  "middle_gate": {
+    "native_checks": 4,
+    "rows": [
+      131,
+      137,
+      114,
+      128
+    ],
+    "columns": [
+      2,
+      3,
+      1,
+      1
+    ],
+    "native_max_celsius": 1.9073486328125e-06,
+    "primary_crossed95": [
+      -0.8418662121665016,
+      0.689294423489775
+    ]
+  },
+  "raw": {
+    "native_checks": 4,
+    "rows": [
+      131,
+      147,
+      128,
+      125
+    ],
+    "columns": [
+      0,
+      1,
+      0,
+      1
+    ],
+    "native_max_celsius": 1.9073486328125e-06,
+    "primary_crossed95": [
+      -2.4481311077277907,
+      0.6605295597338058
+    ]
+  },
+  "sae": {
+    "native_checks": 4,
+    "rows": [
+      131,
+      153,
+      116,
+      130
+    ],
+    "columns": [
+      1,
+      0,
+      0,
+      2
+    ],
+    "native_max_celsius": 3.814697265625e-06,
+    "primary_crossed95": [
+      -1.641133874108733,
+      0.6122177272392333
+    ]
+  },
+  "shuffled1": {
+    "native_checks": 4,
+    "rows": [
+      132,
+      141,
+      124,
+      128
+    ],
+    "columns": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "native_max_celsius": 1.9073486328125e-06,
+    "primary_crossed95": [
+      -0.4022002044976546,
+      0.6090145751487981
+    ]
+  },
+  "shuffled2": {
+    "native_checks": 4,
+    "rows": [
+      131,
+      181,
+      125,
+      127
+    ],
+    "columns": [
+      0,
+      2,
+      2,
+      2
+    ],
+    "native_max_celsius": 1.9073486328125e-06,
+    "primary_crossed95": [
+      -0.6157920523802214,
+      0.5997989694357528
+    ]
+  },
+  "three_layer_gate": {
+    "native_checks": 4,
+    "rows": [
+      127,
+      143,
+      114,
+      128
+    ],
+    "columns": [
+      3,
+      2,
+      1,
+      0
+    ],
+    "native_max_celsius": 1.430511474609375e-06,
+    "primary_crossed95": [
+      -0.9322682743782524,
+      0.6428513404821191
+    ]
+  }
+}

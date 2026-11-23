@@ -1,0 +1,292 @@
+{
+  "versions": {
+    "torch": "2.12.0",
+    "transformers": "4.57.6",
+    "momentfm": "0.1.4",
+    "numpy": "2.1.0"
+  },
+  "checkpoint": {
+    "safetensors_sha256": "a56928052ac6f5d09b97c3834bea6ce3aef9f02b513b5fac98954e7377801572",
+    "all_exact_nonhead_state_keys": 222,
+    "new_weight_shape": [
+      16,
+      65536
+    ],
+    "requires_gradient_parameters": 0
+  },
+  "production_replay": {
+    "test": {
+      "ids": [
+        "bitbrains_fast_storage/fastStorage_580",
+        "bitbrains_fast_storage/fastStorage_186",
+        "bitbrains_fast_storage/fastStorage_446",
+        "bitbrains_fast_storage/fastStorage_914",
+        "bitbrains_fast_storage/fastStorage_230",
+        "bitbrains_fast_storage/fastStorage_1120",
+        "bitbrains_fast_storage/fastStorage_800",
+        "bitbrains_fast_storage/fastStorage_708",
+        "m4_daily/2017",
+        "m4_daily/1487",
+        "m4_daily/1176",
+        "m4_daily/1564",
+        "m4_daily/1468",
+        "m4_daily/2302",
+        "m4_daily/1581",
+        "m4_daily/659",
+        "m4_hourly/T000283",
+        "m4_hourly/T000263",
+        "m4_hourly/T000408",
+        "m4_hourly/T000295",
+        "m4_hourly/T000005",
+        "m4_hourly/T000352",
+        "m4_hourly/T000157",
+        "m4_hourly/T000117",
+        "m4_weekly/158",
+        "m4_weekly/261",
+        "m4_weekly/227",
+        "m4_weekly/101",
+        "m4_weekly/67",
+        "m4_weekly/66",
+        "m4_weekly/245",
+        "m4_weekly/105",
+        "monash_electricity_hourly/T000170",
+        "monash_electricity_hourly/T000195",
+        "monash_electricity_hourly/T000000",
+        "monash_electricity_hourly/T000073",
+        "monash_electricity_hourly/T000140",
+        "monash_electricity_hourly/T000142",
+        "monash_electricity_hourly/T000003",
+        "monash_electricity_hourly/T000096",
+        "monash_traffic/T000779",
+        "monash_traffic/T000677",
+        "monash_traffic/T000593",
+        "monash_traffic/T000101",
+        "monash_traffic/T000586",
+        "monash_traffic/T000387",
+        "monash_traffic/T000364",
+        "monash_traffic/T000542"
+      ],
+      "n_origins": 96,
+      "direct_max_sd": 2.1971478587076497e-06,
+      "residual_max_sd": 1.9705912935659437e-06
+    },
+    "weather": {
+      "ids": [
+        "AR_Batesville_8_WNW",
+        "NE_Lincoln_11_SW",
+        "OR_Riley_10_WSW",
+        "ND_Medora_7_E",
+        "WY_Sundance_8_NNW",
+        "CA_Santa_Barbara_11_W",
+        "NM_Los_Alamos_13_W",
+        "SC_McClellanville_7_NE"
+      ],
+      "n_origins": 32,
+      "direct_max_sd": 6.638376966129376e-07,
+      "residual_max_sd": 5.741902381412445e-07
+    }
+  },
+  "padding_length_sensitivity": {
+    "bitbrains_fast_storage": {
+      "edge480": {
+        "error": 2.7877829469003155,
+        "mean_absolute_change_history_sd": 0.0
+      },
+      "edge464": {
+        "error": 2.742071152809725,
+        "mean_absolute_change_history_sd": 0.048445041815737125
+      },
+      "zero480": {
+        "error": 2.846217723074561,
+        "mean_absolute_change_history_sd": 0.02664602780679797
+      }
+    },
+    "m4_daily": {
+      "edge480": {
+        "error": 3.3305941880927934,
+        "mean_absolute_change_history_sd": 0.0
+      },
+      "edge464": {
+        "error": 3.347049159003173,
+        "mean_absolute_change_history_sd": 0.040238460465639364
+      },
+      "zero480": {
+        "error": 3.5241555347930413,
+        "mean_absolute_change_history_sd": 0.07257984306389952
+      }
+    },
+    "m4_hourly": {
+      "edge480": {
+        "error": 4.431873599942797,
+        "mean_absolute_change_history_sd": 0.0
+      },
+      "edge464": {
+        "error": 4.491554959003842,
+        "mean_absolute_change_history_sd": 0.054639303350399356
+      },
+      "zero480": {
+        "error": 4.5060838447608695,
+        "mean_absolute_change_history_sd": 0.05615373827031496
+      }
+    },
+    "m4_weekly": {
+      "edge480": {
+        "error": 5.040050106060439,
+        "mean_absolute_change_history_sd": 0.0
+      },
+      "edge464": {
+        "error": 4.947225760956577,
+        "mean_absolute_change_history_sd": 0.049594639421995615
+      },
+      "zero480": {
+        "error": 5.157783183986065,
+        "mean_absolute_change_history_sd": 0.0581627525050295
+      }
+    },
+    "monash_electricity_hourly": {
+      "edge480": {
+        "error": 3.899974388022496,
+        "mean_absolute_change_history_sd": 0.0
+      },
+      "edge464": {
+        "error": 3.882571426478046,
+        "mean_absolute_change_history_sd": 0.04531710049250961
+      },
+      "zero480": {
+        "error": 3.889592781903215,
+        "mean_absolute_change_history_sd": 0.049743484683503064
+      }
+    },
+    "monash_traffic": {
+      "edge480": {
+        "error": 2.8882784133052533,
+        "mean_absolute_change_history_sd": 0.0
+      },
+      "edge464": {
+        "error": 2.901865339808234,
+        "mean_absolute_change_history_sd": 0.04129796248594191
+      },
+      "zero480": {
+        "error": 2.9142585900470843,
+        "mean_absolute_change_history_sd": 0.03760055747147591
+      }
+    },
+    "NOAA": {
+      "edge480": {
+        "error": 6.758333223313094,
+        "mean_absolute_change_history_sd": 0.0
+      },
+      "edge464": {
+        "error": 6.667481682356447,
+        "mean_absolute_change_history_sd": 0.03717242731174039
+      },
+      "zero480": {
+        "error": 6.887879324518145,
+        "mean_absolute_change_history_sd": 0.03153725745647684
+      }
+    }
+  },
+  "site": {
+    "actual_unit_write": [
+      {
+        "slot": 0,
+        "observed_first_lead_sd": 0.02602050335385704,
+        "analytic_first_lead_sd": 0.026020506485963282,
+        "max_gap_sd": 6.044424162472695e-07
+      },
+      {
+        "slot": 63,
+        "observed_first_lead_sd": 0.30376442316836644,
+        "analytic_first_lead_sd": 0.30376438448235216,
+        "max_gap_sd": 5.738961382784069e-07
+      }
+    ],
+    "head_squared_weight_fraction_64slots": [
+      0.004455565849023385,
+      0.004080581338635569,
+      0.003988953371353148,
+      0.00495558958787493,
+      0.006177074147479179,
+      0.008895474414206087,
+      0.013129572085330197,
+      0.0167702326813682,
+      0.01752854099613155,
+      0.016166472606649808,
+      0.015157429716172122,
+      0.014268219126796449,
+      0.012372146572436855,
+      0.011870724438811306,
+      0.010688494971919425,
+      0.0111004427550898,
+      0.009402709758520185,
+      0.00888466006486417,
+      0.007611471161069092,
+      0.009176558350242243,
+      0.008595747896875913,
+      0.010569092278135381,
+      0.010914698673906473,
+      0.011462450421245223,
+      0.009124292851845338,
+      0.009245257540256164,
+      0.010770291874716719,
+      0.013312800484540456,
+      0.012261297241843681,
+      0.013518085358449007,
+      0.012615481362861874,
+      0.010549562041362549,
+      0.012332800082987648,
+      0.01070473222127106,
+      0.01311700694174645,
+      0.012972646236439983,
+      0.012375191776368808,
+      0.011477978762065473,
+      0.010432827905442761,
+      0.012505516519672754,
+      0.014949948173123357,
+      0.01025214185370073,
+      0.012103525194626518,
+      0.012180119947592218,
+      0.010129859206176933,
+      0.012228155424195392,
+      0.01467037824088098,
+      0.011716489153942829,
+      0.01719899242545425,
+      0.016741192141214487,
+      0.012013290917903211,
+      0.011133776940884374,
+      0.011404807032700175,
+      0.01344760063346602,
+      0.010635858158259886,
+      0.011814139224470704,
+      0.01516296313784921,
+      0.01565251520932351,
+      0.015073368847784697,
+      0.01648151585911326,
+      0.025478524440700007,
+      0.03389106397258843,
+      0.09365746488466682,
+      0.14644363651337458
+    ]
+  },
+  "masking": {
+    "corrupt_label_fit_ids": [
+      "2251",
+      "2514"
+    ],
+    "contaminated_label_increment": 10000000.0,
+    "altered_training_state_or_forecast_coordinates": 0,
+    "padding_switch_max_hidden_change": 0.49863481521606445,
+    "observed_slot_max_hidden_change": 0.0,
+    "padding_only_linear_replay_max_sd": 7.453186420813829e-07
+  },
+  "original_public_graph": {
+    "paper_revision": "3ab637e413f35f2c317573c0ace280d825c558de",
+    "exact_original_padding_lengths": [
+      464,
+      480
+    ],
+    "paper_head": "ForecastingHead",
+    "public_dispatch_max_sd": 0.0,
+    "paper_long_forecast_max_sd": 0.0
+  }
+}

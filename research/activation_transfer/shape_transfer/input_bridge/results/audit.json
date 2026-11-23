@@ -1,0 +1,116 @@
+{
+  "bolt": {
+    "samples": [
+      {
+        "domain": "daily",
+        "id": "daily/25",
+        "atom": 4813,
+        "finite_difference": [
+          {
+            "fd_max": 5.795191670265876e-06,
+            "fd_norm_relative": 8.64429412178808e-06
+          },
+          {
+            "fd_max": 6.84886288301878e-06,
+            "fd_norm_relative": 1.0508193629935389e-05
+          }
+        ],
+        "max_hidden_knockout_error": 7.152557373046875e-07,
+        "actual_effect_errors": {
+          "s_donor": 3.5762786865234375e-07,
+          "t_donor": 8.344650268554688e-07,
+          "s_recipient": 4.76837158203125e-07,
+          "t_recipient": 9.5367431640625e-07,
+          "s_joint": 5.960464477539062e-07,
+          "t_joint": 1.3113021850585938e-06,
+          "s_scrambled": 5.960464477539062e-07,
+          "t_scrambled": 9.5367431640625e-07
+        }
+      },
+      {
+        "domain": "monash_traffic",
+        "id": "monash_traffic/T000736",
+        "atom": 5876,
+        "finite_difference": [
+          {
+            "fd_max": 1.0536712127806602e-06,
+            "fd_norm_relative": 3.5764235595805905e-06
+          },
+          {
+            "fd_max": 3.42443144150939e-06,
+            "fd_norm_relative": 1.1918840620986494e-05
+          }
+        ],
+        "max_hidden_knockout_error": 4.76837158203125e-07,
+        "actual_effect_errors": {
+          "s_donor": 2.384185791015625e-07,
+          "t_donor": 4.76837158203125e-07,
+          "s_recipient": 2.384185791015625e-07,
+          "t_recipient": 6.556510925292969e-07,
+          "s_joint": 2.384185791015625e-07,
+          "t_joint": 5.960464477539062e-07,
+          "s_scrambled": 2.980232238769531e-07,
+          "t_scrambled": 5.960464477539062e-07
+        }
+      }
+    ],
+    "max_population_replay_error": 8.326672684688674e-17
+  },
+  "timesfm": {
+    "samples": [
+      {
+        "domain": "daily",
+        "id": "daily/448",
+        "atom": 5545,
+        "finite_difference": [
+          {
+            "fd_max": 6.32202727662845e-06,
+            "fd_norm_relative": 8.448607306000412e-06
+          },
+          {
+            "fd_max": 3.161013638314225e-06,
+            "fd_norm_relative": 5.74520046891841e-06
+          }
+        ],
+        "max_hidden_knockout_error": 9.5367431640625e-07,
+        "actual_effect_errors": {
+          "s_donor": 9.5367431640625e-07,
+          "t_donor": 5.960464477539062e-07,
+          "s_recipient": 1.430511474609375e-06,
+          "t_recipient": 5.960464477539062e-07,
+          "s_joint": 1.430511474609375e-06,
+          "t_joint": 4.76837158203125e-07,
+          "s_scrambled": 7.152557373046875e-07,
+          "t_scrambled": 4.76837158203125e-07
+        }
+      },
+      {
+        "domain": "monash_traffic",
+        "id": "monash_traffic/T000661",
+        "atom": 2362,
+        "finite_difference": [
+          {
+            "fd_max": 4.2146848510810075e-06,
+            "fd_norm_relative": 1.3267562716007675e-05
+          },
+          {
+            "fd_max": 1.0536712127806602e-06,
+            "fd_norm_relative": 3.0953128228966064e-06
+          }
+        ],
+        "max_hidden_knockout_error": 7.152557373046875e-07,
+        "actual_effect_errors": {
+          "s_donor": 7.152557373046875e-07,
+          "t_donor": 5.960464477539062e-07,
+          "s_recipient": 9.5367431640625e-07,
+          "t_recipient": 2.384185791015625e-07,
+          "s_joint": 4.76837158203125e-07,
+          "t_joint": 3.5762786865234375e-07,
+          "s_scrambled": 1.1920928955078125e-06,
+          "t_scrambled": 4.76837158203125e-07
+        }
+      }
+    ],
+    "max_population_replay_error": 4.440892098500626e-16
+  }
+}

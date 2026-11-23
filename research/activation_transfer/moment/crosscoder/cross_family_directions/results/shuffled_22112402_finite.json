@@ -1,0 +1,150 @@
+{
+  "metrics": {
+    "daily": {
+      "source": {
+        "cos": {
+          "value": 1.0,
+          "history95": [
+            1.0,
+            1.0
+          ],
+          "cases": 32
+        },
+        "finite_linear_median": 0.9991706768250648,
+        "rms_history_sd": 0.00280584701651436,
+        "skill_against_source": 1.0
+      },
+      "paired": {
+        "cos": {
+          "value": -0.007010204427742004,
+          "history95": [
+            -0.24855619277460642,
+            0.23690301000771832
+          ],
+          "cases": 32
+        },
+        "finite_linear_median": 0.9978468170157393,
+        "rms_history_sd": 0.0016234689826389332,
+        "skill_against_source": -0.2018555798498436
+      },
+      "dense": {
+        "cos": {
+          "value": -0.05139744042741458,
+          "history95": [
+            -0.2704293434767901,
+            0.17089458865795434
+          ],
+          "cases": 32
+        },
+        "finite_linear_median": 0.9978637913674235,
+        "rms_history_sd": 0.0018599551624199576,
+        "skill_against_source": -0.43959844463065356
+      },
+      "other": {
+        "cos": {
+          "value": -0.16474480282090662,
+          "history95": [
+            -0.3958006788610439,
+            0.07736607578270417
+          ],
+          "cases": 32
+        },
+        "finite_linear_median": 0.99832309276359,
+        "rms_history_sd": 0.001857277013749768,
+        "skill_against_source": -0.5550652350364369
+      },
+      "paired_minus_other": {
+        "value": 0.15773459839316462,
+        "history95": [
+          -0.15182758135118002,
+          0.458246140574874
+        ],
+        "cases": 32
+      },
+      "paired_minus_dense": {
+        "value": 0.04438723599967259,
+        "history95": [
+          -0.29633201870948395,
+          0.37639014526661246
+        ],
+        "cases": 32
+      }
+    },
+    "monash_traffic": {
+      "source": {
+        "cos": {
+          "value": 1.0,
+          "history95": [
+            1.0,
+            1.0
+          ],
+          "cases": 32
+        },
+        "finite_linear_median": 0.999823406130916,
+        "rms_history_sd": 0.008522587575573644,
+        "skill_against_source": 1.0
+      },
+      "paired": {
+        "cos": {
+          "value": 0.30826617737964224,
+          "history95": [
+            0.07779497274158748,
+            0.5355020336863565
+          ],
+          "cases": 32
+        },
+        "finite_linear_median": 0.999861969357635,
+        "rms_history_sd": 0.01160753368276608,
+        "skill_against_source": -0.5621209441826367
+      },
+      "dense": {
+        "cos": {
+          "value": 0.015971539399916697,
+          "history95": [
+            -0.2535090735379881,
+            0.276431069490432
+          ],
+          "cases": 32
+        },
+        "finite_linear_median": 0.9997947158286382,
+        "rms_history_sd": 0.009710535849836225,
+        "skill_against_source": -0.8843401349624791
+      },
+      "other": {
+        "cos": {
+          "value": -0.18362405295918063,
+          "history95": [
+            -0.4372561177288499,
+            0.0813903191121277
+          ],
+          "cases": 32
+        },
+        "finite_linear_median": 0.999891214903879,
+        "rms_history_sd": 0.010539538237847212,
+        "skill_against_source": -1.9165657608662237
+      },
+      "paired_minus_other": {
+        "value": 0.49189023033882284,
+        "history95": [
+          0.1350856147252324,
+          0.8528170465172102
+        ],
+        "cases": 32
+      },
+      "paired_minus_dense": {
+        "value": 0.2922946379797255,
+        "history95": [
+          -0.07902725016055952,
+          0.6725069545649773
+        ],
+        "cases": 32
+      }
+    }
+  },
+  "native_replay_max": {
+    "source": 1.5497207641601562e-06,
+    "paired": 9.5367431640625e-07,
+    "dense": 1.430511474609375e-06,
+    "other": 9.5367431640625e-07
+  }
+}

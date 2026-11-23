@@ -1,0 +1,151 @@
+{
+  "seeds": {
+    "2301": {
+      "active_same": {
+        "early_dense": 0.4577983395751667,
+        "late_donor": -0.005787454016772786
+      },
+      "active_cap": {
+        "early_dense": 0.9861335593161957,
+        "late_donor": -0.19712754914650285
+      },
+      "rotated_same": {
+        "early_dense": 0.2979447738283516,
+        "late_donor": -0.020002210486280852,
+        "median_length_ratio": 1.0
+      },
+      "rotated_cap": {
+        "early_dense": 0.9970006763551645,
+        "late_donor": -0.44228560577983334,
+        "median_length_ratio": 5.908359451191283
+      },
+      "fixed_same": {
+        "early_dense": 0.28912421338152794,
+        "late_donor": -0.010613451655751293,
+        "median_length_ratio": 1.0
+      },
+      "fixed_cap": {
+        "early_dense": 0.9966483030589944,
+        "late_donor": -0.5327248863163145,
+        "median_length_ratio": 6.3052617429842694
+      }
+    },
+    "2302": {
+      "active_same": {
+        "early_dense": 0.4577983395751667,
+        "late_donor": -0.005787454016772786
+      },
+      "active_cap": {
+        "early_dense": 0.9861335593161957,
+        "late_donor": -0.19712754914650285
+      },
+      "rotated_same": {
+        "early_dense": 0.25083531696016503,
+        "late_donor": 0.01849421695798244,
+        "median_length_ratio": 1.0
+      },
+      "rotated_cap": {
+        "early_dense": 0.9949857322154582,
+        "late_donor": -0.28814783910567515,
+        "median_length_ratio": 7.410456550524519
+      },
+      "fixed_same": {
+        "early_dense": 0.24428961277552264,
+        "late_donor": -0.008397795764534728,
+        "median_length_ratio": 1.0
+      },
+      "fixed_cap": {
+        "early_dense": 0.9939157438336657,
+        "late_donor": -0.43710915251993515,
+        "median_length_ratio": 7.761583194425919
+      }
+    },
+    "2303": {
+      "active_same": {
+        "early_dense": 0.4577983395751667,
+        "late_donor": -0.005787454016772786
+      },
+      "active_cap": {
+        "early_dense": 0.9861335593161957,
+        "late_donor": -0.19712754914650285
+      },
+      "rotated_same": {
+        "early_dense": 0.24278068139393508,
+        "late_donor": 0.008611685105500633,
+        "median_length_ratio": 1.0
+      },
+      "rotated_cap": {
+        "early_dense": 0.9947528150913283,
+        "late_donor": -0.22332927607128036,
+        "median_length_ratio": 7.51767544396719
+      },
+      "fixed_same": {
+        "early_dense": 0.2581654615324438,
+        "late_donor": -0.016819095611872847,
+        "median_length_ratio": 1.0
+      },
+      "fixed_cap": {
+        "early_dense": 0.9963269657650672,
+        "late_donor": -0.6751060563269552,
+        "median_length_ratio": 7.275115568044925
+      }
+    },
+    "2304": {
+      "active_same": {
+        "early_dense": 0.4577983395751667,
+        "late_donor": -0.005787454016772786
+      },
+      "active_cap": {
+        "early_dense": 0.9861335593161957,
+        "late_donor": -0.19712754914650285
+      },
+      "rotated_same": {
+        "early_dense": 0.2623307191518958,
+        "late_donor": 0.013316871285786831,
+        "median_length_ratio": 1.0
+      },
+      "rotated_cap": {
+        "early_dense": 0.9941582176844815,
+        "late_donor": -0.23734063175357878,
+        "median_length_ratio": 7.301645730695897
+      },
+      "fixed_same": {
+        "early_dense": 0.2878315509560999,
+        "late_donor": -0.010029420813721839,
+        "median_length_ratio": 1.0
+      },
+      "fixed_cap": {
+        "early_dense": 0.997256458606162,
+        "late_donor": -0.3844690410894592,
+        "median_length_ratio": 6.310461749829109
+      }
+    }
+  },
+  "primary_active_minus_mean_control": {
+    "fixed": {
+      "value": 0.18794562991376812,
+      "ci95": [
+        0.1750272514838487,
+        0.21145044603639426
+      ],
+      "crossed95": [
+        0.15241787093379047,
+        0.23295333033277335
+      ]
+    },
+    "rotated": {
+      "value": 0.1943254667415798,
+      "ci95": [
+        0.18091624082654562,
+        0.2178498921722995
+      ],
+      "crossed95": [
+        0.15726872590177457,
+        0.2409206454892358
+      ]
+    }
+  },
+  "histories": 128,
+  "events": 360,
+  "features": 15
+}

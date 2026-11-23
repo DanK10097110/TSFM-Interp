@@ -1,0 +1,74 @@
+{
+  "pair_depth": {
+    "bolt_paired.npz": {
+      "identical_values": true,
+      "arrays": 21,
+      "max_numeric_discrepancy": 0.0,
+      "differences": {}
+    }
+  },
+  "self_timer": {
+    "bolt_to_timer.npz": {
+      "identical_values": true,
+      "arrays": 6,
+      "max_numeric_discrepancy": 0.0,
+      "differences": {}
+    },
+    "timesfm_to_timer.npz": {
+      "identical_values": true,
+      "arrays": 6,
+      "max_numeric_discrepancy": 0.0,
+      "differences": {}
+    },
+    "timer_to_timer.npz": {
+      "identical_values": true,
+      "arrays": 12,
+      "max_numeric_discrepancy": 0.0,
+      "differences": {}
+    }
+  },
+  "inner_dist": {
+    "bolt_interior.npz": {
+      "identical_values": true,
+      "arrays": 12,
+      "max_numeric_discrepancy": 0.0,
+      "differences": {}
+    }
+  },
+  "distribution": {
+    "timesfm_normal.npz": {
+      "identical_values": true,
+      "arrays": 14,
+      "max_numeric_discrepancy": 0.0,
+      "differences": {}
+    }
+  },
+  "rotated": {
+    "timesfm_seed1.npz": {
+      "identical_values": true,
+      "arrays": 23,
+      "max_numeric_discrepancy": 0.0,
+      "differences": {}
+    }
+  },
+  "factorial": {
+    "timesfm_native.npz": {
+      "identical_values": true,
+      "arrays": 11,
+      "max_numeric_discrepancy": 0.0,
+      "differences": {}
+    }
+  },
+  "feedback": {
+    "block10.npz": {
+      "identical_values": true,
+      "arrays": 19,
+      "max_numeric_discrepancy": 0.0,
+      "differences": {}
+    }
+  },
+  "copied_sources": {
+    "source_files": 265,
+    "sha256": "5eaff813205a9dd2dc904a416107807d71d74b47260e9bdb5c5039f3bac18332"
+  }
+}

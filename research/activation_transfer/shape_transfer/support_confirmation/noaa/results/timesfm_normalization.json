@@ -1,0 +1,33 @@
+{
+  "ids": [
+    "noaa/AR_Batesville_8_WNW/2026-01-10",
+    "noaa/NE_Lincoln_11_SW/2026-04-10",
+    "noaa/OR_Riley_10_WSW/2026-07-10",
+    "noaa/ND_Medora_7_E/2026-10-10",
+    "noaa/KS_Oakley_19_SSW/2026-01-10",
+    "noaa/CA_Fallbrook_5_NE/2026-04-10",
+    "noaa/FL_Titusville_7_E/2026-01-10",
+    "noaa/FL_Titusville_7_E/2026-10-10"
+  ],
+  "native_support_overlap": [
+    32,
+    32,
+    32,
+    32,
+    32,
+    32,
+    32,
+    32
+  ],
+  "ordinary_forecast_sup_error_in_sd": [
+    9.685891745325748e-07,
+    4.952476160835495e-07,
+    9.813396824043252e-07,
+    5.964137418379423e-07,
+    7.344293606603713e-07,
+    5.234592476976996e-07,
+    1.6746032267533906e-06,
+    3.434701204424462e-07
+  ],
+  "pooled_hidden_max_abs": 2.288818359375e-05
+}

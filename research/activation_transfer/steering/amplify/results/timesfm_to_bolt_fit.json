@@ -1,0 +1,70 @@
+{
+  "source": "timesfm",
+  "target": "bolt",
+  "checkpoints": {
+    "bolt": [
+      "amazon/chronos-bolt-small",
+      "772f3d25d38aec6d914c8949dab4462e2d46f5d8"
+    ],
+    "timesfm": [
+      "google/timesfm-2.5-200m-pytorch",
+      "1d952420fba87f3c6dee4f240de0f1a0fbc790e3"
+    ]
+  },
+  "sites": {
+    "timesfm": "stacked_xf.10",
+    "bolt": "encoder.block.3"
+  },
+  "source_checks": {
+    "recent_reversal": {
+      "score_max_abs": 2.3537433850862044e-06,
+      "amplify_max_abs": 1.1920928955078125e-06,
+      "add_max_abs": 9.5367431640625e-07
+    },
+    "period_8": {
+      "score_max_abs": 3.8898277715526675e-07,
+      "amplify_max_abs": 8.940696716308594e-07,
+      "add_max_abs": 1.3113021850585938e-06
+    }
+  },
+  "target_checks": {
+    "recent_reversal": {
+      "score_max_abs": 2.2825345826760213e-06,
+      "amplify_max_abs": 7.152557373046875e-07,
+      "add_max_abs": 5.960464477539062e-07
+    },
+    "period_8": {
+      "score_max_abs": 1.5169592058050796e-06,
+      "amplify_max_abs": 1.6689300537109375e-06,
+      "add_max_abs": 9.5367431640625e-07
+    }
+  },
+  "source_fingerprints": {
+    "recent_reversal": "69de44140a9132603957e5ec2b7c3e117dc58e4fde13271ff4029133a8813275",
+    "period_8": "69de44140a9132603957e5ec2b7c3e117dc58e4fde13271ff4029133a8813275"
+  },
+  "target_fingerprints": {
+    "recent_reversal": "3d709d142e4a3c895e859283a89addce1e575100128258cd57e39567ba1d013e",
+    "period_8": "3d709d142e4a3c895e859283a89addce1e575100128258cd57e39567ba1d013e"
+  },
+  "full_read_penalty": [
+    0.0001,
+    0.0001
+  ],
+  "shuffle_penalty": [
+    1.0,
+    1.0
+  ],
+  "projection_gain": [
+    0.19657343969077076,
+    -0.0019910727852251653
+  ],
+  "source_norm": [
+    6.513873609902932,
+    12.836000410596244
+  ],
+  "mapped_norm": [
+    0.8225008091778445,
+    0.9044944824109387
+  ]
+}

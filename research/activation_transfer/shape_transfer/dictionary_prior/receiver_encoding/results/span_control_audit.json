@@ -1,0 +1,314 @@
+{
+  "2301": {
+    "writes": 12,
+    "max_abs": 1.3113021850585938e-06,
+    "records": [
+      {
+        "id": "daily/3217",
+        "atom": 41,
+        "arm": "rotated_same",
+        "max_abs": 1.1920928955078125e-06
+      },
+      {
+        "id": "daily/3217",
+        "atom": 41,
+        "arm": "rotated_cap",
+        "max_abs": 9.5367431640625e-07
+      },
+      {
+        "id": "daily/3217",
+        "atom": 41,
+        "arm": "fixed_same",
+        "max_abs": 8.344650268554688e-07
+      },
+      {
+        "id": "daily/3217",
+        "atom": 41,
+        "arm": "fixed_cap",
+        "max_abs": 9.5367431640625e-07
+      },
+      {
+        "id": "daily/1088",
+        "atom": 41,
+        "arm": "rotated_same",
+        "max_abs": 9.5367431640625e-07
+      },
+      {
+        "id": "daily/1088",
+        "atom": 41,
+        "arm": "rotated_cap",
+        "max_abs": 8.344650268554688e-07
+      },
+      {
+        "id": "daily/1088",
+        "atom": 41,
+        "arm": "fixed_same",
+        "max_abs": 5.960464477539062e-07
+      },
+      {
+        "id": "daily/1088",
+        "atom": 41,
+        "arm": "fixed_cap",
+        "max_abs": 9.5367431640625e-07
+      },
+      {
+        "id": "daily/1631",
+        "atom": 1608,
+        "arm": "rotated_same",
+        "max_abs": 1.0728836059570312e-06
+      },
+      {
+        "id": "daily/1631",
+        "atom": 1608,
+        "arm": "rotated_cap",
+        "max_abs": 9.5367431640625e-07
+      },
+      {
+        "id": "daily/1631",
+        "atom": 1608,
+        "arm": "fixed_same",
+        "max_abs": 7.152557373046875e-07
+      },
+      {
+        "id": "daily/1631",
+        "atom": 1608,
+        "arm": "fixed_cap",
+        "max_abs": 1.3113021850585938e-06
+      }
+    ]
+  },
+  "2302": {
+    "writes": 12,
+    "max_abs": 1.1920928955078125e-06,
+    "records": [
+      {
+        "id": "daily/609",
+        "atom": 4869,
+        "arm": "rotated_same",
+        "max_abs": 5.960464477539062e-07
+      },
+      {
+        "id": "daily/609",
+        "atom": 4869,
+        "arm": "rotated_cap",
+        "max_abs": 3.5762786865234375e-07
+      },
+      {
+        "id": "daily/609",
+        "atom": 4869,
+        "arm": "fixed_same",
+        "max_abs": 4.172325134277344e-07
+      },
+      {
+        "id": "daily/609",
+        "atom": 4869,
+        "arm": "fixed_cap",
+        "max_abs": 4.76837158203125e-07
+      },
+      {
+        "id": "daily/3072",
+        "atom": 2186,
+        "arm": "rotated_same",
+        "max_abs": 5.364418029785156e-07
+      },
+      {
+        "id": "daily/3072",
+        "atom": 2186,
+        "arm": "rotated_cap",
+        "max_abs": 4.172325134277344e-07
+      },
+      {
+        "id": "daily/3072",
+        "atom": 2186,
+        "arm": "fixed_same",
+        "max_abs": 4.172325134277344e-07
+      },
+      {
+        "id": "daily/3072",
+        "atom": 2186,
+        "arm": "fixed_cap",
+        "max_abs": 5.364418029785156e-07
+      },
+      {
+        "id": "daily/816",
+        "atom": 6065,
+        "arm": "rotated_same",
+        "max_abs": 9.5367431640625e-07
+      },
+      {
+        "id": "daily/816",
+        "atom": 6065,
+        "arm": "rotated_cap",
+        "max_abs": 9.5367431640625e-07
+      },
+      {
+        "id": "daily/816",
+        "atom": 6065,
+        "arm": "fixed_same",
+        "max_abs": 9.5367431640625e-07
+      },
+      {
+        "id": "daily/816",
+        "atom": 6065,
+        "arm": "fixed_cap",
+        "max_abs": 1.1920928955078125e-06
+      }
+    ]
+  },
+  "2303": {
+    "writes": 12,
+    "max_abs": 2.384185791015625e-06,
+    "records": [
+      {
+        "id": "daily/2478",
+        "atom": 6065,
+        "arm": "rotated_same",
+        "max_abs": 5.960464477539062e-07
+      },
+      {
+        "id": "daily/2478",
+        "atom": 6065,
+        "arm": "rotated_cap",
+        "max_abs": 5.960464477539062e-07
+      },
+      {
+        "id": "daily/2478",
+        "atom": 6065,
+        "arm": "fixed_same",
+        "max_abs": 1.0728836059570312e-06
+      },
+      {
+        "id": "daily/2478",
+        "atom": 6065,
+        "arm": "fixed_cap",
+        "max_abs": 1.0728836059570312e-06
+      },
+      {
+        "id": "daily/876",
+        "atom": 6065,
+        "arm": "rotated_same",
+        "max_abs": 7.152557373046875e-07
+      },
+      {
+        "id": "daily/876",
+        "atom": 6065,
+        "arm": "rotated_cap",
+        "max_abs": 7.152557373046875e-07
+      },
+      {
+        "id": "daily/876",
+        "atom": 6065,
+        "arm": "fixed_same",
+        "max_abs": 9.5367431640625e-07
+      },
+      {
+        "id": "daily/876",
+        "atom": 6065,
+        "arm": "fixed_cap",
+        "max_abs": 4.76837158203125e-07
+      },
+      {
+        "id": "daily/20",
+        "atom": 4813,
+        "arm": "rotated_same",
+        "max_abs": 1.9073486328125e-06
+      },
+      {
+        "id": "daily/20",
+        "atom": 4813,
+        "arm": "rotated_cap",
+        "max_abs": 2.1457672119140625e-06
+      },
+      {
+        "id": "daily/20",
+        "atom": 4813,
+        "arm": "fixed_same",
+        "max_abs": 2.384185791015625e-06
+      },
+      {
+        "id": "daily/20",
+        "atom": 4813,
+        "arm": "fixed_cap",
+        "max_abs": 1.6689300537109375e-06
+      }
+    ]
+  },
+  "2304": {
+    "writes": 12,
+    "max_abs": 1.1920928955078125e-06,
+    "records": [
+      {
+        "id": "daily/2030",
+        "atom": 4813,
+        "arm": "rotated_same",
+        "max_abs": 1.1920928955078125e-06
+      },
+      {
+        "id": "daily/2030",
+        "atom": 4813,
+        "arm": "rotated_cap",
+        "max_abs": 8.344650268554688e-07
+      },
+      {
+        "id": "daily/2030",
+        "atom": 4813,
+        "arm": "fixed_same",
+        "max_abs": 1.0728836059570312e-06
+      },
+      {
+        "id": "daily/2030",
+        "atom": 4813,
+        "arm": "fixed_cap",
+        "max_abs": 8.344650268554688e-07
+      },
+      {
+        "id": "daily/915",
+        "atom": 4869,
+        "arm": "rotated_same",
+        "max_abs": 9.5367431640625e-07
+      },
+      {
+        "id": "daily/915",
+        "atom": 4869,
+        "arm": "rotated_cap",
+        "max_abs": 1.0728836059570312e-06
+      },
+      {
+        "id": "daily/915",
+        "atom": 4869,
+        "arm": "fixed_same",
+        "max_abs": 7.152557373046875e-07
+      },
+      {
+        "id": "daily/915",
+        "atom": 4869,
+        "arm": "fixed_cap",
+        "max_abs": 1.1920928955078125e-06
+      },
+      {
+        "id": "daily/878",
+        "atom": 6065,
+        "arm": "rotated_same",
+        "max_abs": 1.0728836059570312e-06
+      },
+      {
+        "id": "daily/878",
+        "atom": 6065,
+        "arm": "rotated_cap",
+        "max_abs": 8.344650268554688e-07
+      },
+      {
+        "id": "daily/878",
+        "atom": 6065,
+        "arm": "fixed_same",
+        "max_abs": 9.5367431640625e-07
+      },
+      {
+        "id": "daily/878",
+        "atom": 6065,
+        "arm": "fixed_cap",
+        "max_abs": 1.0728836059570312e-06
+      }
+    ]
+  }
+}

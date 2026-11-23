@@ -1,0 +1,6 @@
+{
+  "station": "NE_Harrison_20_SSE",
+  "first_forecast_date": "2026-04-10",
+  "selection": "median RMS shift, independent of observed future",
+  "rms_difference_C": 1.351479411125183
+}

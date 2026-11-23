@@ -1,0 +1,7 @@
+# Keep the compact, referenced verification records alongside the experiment reports.
+!/cohort_audit.json
+!/plant_results.json
+!/replay.json
+!/replay_20261121*.json
+!/validation_20261121.json
+!/method_review/checks.json

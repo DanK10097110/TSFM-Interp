@@ -1,0 +1,54 @@
+{
+  "input_paths": {
+    "bolt": {
+      "fields": 22,
+      "max_abs_difference": 0.0
+    },
+    "timesfm": {
+      "fields": 22,
+      "max_abs_difference": 0.0
+    },
+    "timer": {
+      "fields": 22,
+      "max_abs_difference": 0.0
+    }
+  },
+  "token_position": {
+    "bolt_1_patches": {
+      "fields": 16,
+      "max_abs_difference": 0.0
+    },
+    "bolt_2_patches": {
+      "fields": 16,
+      "max_abs_difference": 0.0
+    }
+  },
+  "local_requests": {
+    "bolt": {
+      "fields": 17,
+      "max_abs_difference": 0.0
+    },
+    "timesfm": {
+      "fields": 17,
+      "max_abs_difference": 0.0
+    }
+  },
+  "sparse_writes": {
+    "bolt": {
+      "fields": 21,
+      "max_abs_difference": 0.0
+    },
+    "bolt_identity": {
+      "fields": 12,
+      "max_abs_difference": 0.0
+    },
+    "timesfm": {
+      "fields": 21,
+      "max_abs_difference": 0.0
+    },
+    "timesfm_identity": {
+      "fields": 12,
+      "max_abs_difference": 0.0
+    }
+  }
+}

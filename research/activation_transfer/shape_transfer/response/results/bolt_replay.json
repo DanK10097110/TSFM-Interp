@@ -1,0 +1,16 @@
+{
+  "target": "bolt",
+  "ids": [
+    "daily/1812",
+    "daily/557",
+    "daily/2573",
+    "daily/1262",
+    "weekly/67",
+    "weekly/98",
+    "weekly/73",
+    "weekly/224"
+  ],
+  "n_forecast_vectors": 320,
+  "max_abs_error": 2.1457672119140625e-06,
+  "rms_error": 3.945762171429404e-07
+}

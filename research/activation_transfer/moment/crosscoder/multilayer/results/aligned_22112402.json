@@ -1,0 +1,97 @@
+{
+  "method": "aligned",
+  "seed": 22112402,
+  "view_order": [
+    "small_middle",
+    "large_middle",
+    "small_final",
+    "large_final"
+  ],
+  "params": 6295552,
+  "width": 1024,
+  "topk": 32,
+  "updates": 1000,
+  "small_middle_only_updates": 500,
+  "batch": 256,
+  "train_histories": 768,
+  "patches_per_history": 60,
+  "train_rows": 46080,
+  "nonidentity_final_history_pairs": 0,
+  "rms_scales": [
+    2.577864986247886,
+    2.331641968952654,
+    0.11695593637135437,
+    0.07289337348331067
+  ],
+  "validation_endpoint_r2": {
+    "small_middle_only": {
+      "small_middle": 0.9022112057887597,
+      "large_middle": 0.8093360698332658,
+      "small_final": 0.9132987010675253,
+      "large_final": 0.8515063094593822
+    },
+    "all_four": {
+      "small_middle": 0.8972161784606169,
+      "large_middle": 0.8534519682644318,
+      "small_final": 0.9135469552320861,
+      "large_final": 0.8837547922088822
+    },
+    "source_full_support_jaccard": 0.6346895694732666
+  },
+  "normalized_view_mse_every_250": [
+    [
+      0.24822614455223083,
+      0.384514245390892,
+      0.21710502472519874,
+      0.2566754384636879
+    ],
+    [
+      0.14014836639165879,
+      0.24807746374607087,
+      0.11010785266757012,
+      0.1676420380473137
+    ],
+    [
+      0.12457971432805061,
+      0.21759539234638214,
+      0.09764769658446312,
+      0.15082632517814637
+    ],
+    [
+      0.11534410169720649,
+      0.21155772972106934,
+      0.09081427690386772,
+      0.14703286507725716
+    ]
+  ],
+  "selected_input_checks": {
+    "final_middle_cleanup_at_endpoint": {
+      "small": 0.0,
+      "large": 5.364418029785156e-07
+    },
+    "train_history_sha": "61ac84def9149ec688d4a4b2bdf4b3544974e714c0ea106a81dd4bd5c6815be2",
+    "noaa_history_sha": "dae56b90fada336391aef9a4d27f7d8b100fbba13aa823e698543196ca37be45",
+    "ids_sha": "89d3883dc621ade1630973128be4f7462a0f250b1a0ef65926329caf1b57ab01",
+    "training_ids_sha": "89be3d816fbcf2cff239b96642d8b6de5857ea2e2b89a726973dbd5d9091aa66"
+  },
+  "firing_scopes": {
+    "m4_source": {
+      "rows": 1024,
+      "positive_min": 32,
+      "positive_max": 32,
+      "distinct": 497
+    },
+    "blind_source": {
+      "rows": 256,
+      "positive_min": 32,
+      "positive_max": 32,
+      "distinct": 396
+    },
+    "noaa_source": {
+      "rows": 385,
+      "positive_min": 32,
+      "positive_max": 32,
+      "distinct": 370
+    }
+  }
+}

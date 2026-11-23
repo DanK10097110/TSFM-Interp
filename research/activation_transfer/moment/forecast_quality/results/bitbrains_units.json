@@ -1,0 +1,81 @@
+{
+  "source": "https://atlarge-research.com/gwa-traces/gwa_t_12_fastStorage.zip",
+  "selection": "First, 32nd and 87th held-out Bitbrains items in preregistered order.",
+  "records": {
+    "580": {
+      "member": "fastStorage/2013-8/580.csv",
+      "member_sha256": "3abee404eeee4371aac2575dcc11a7af5bc751c8b6c666d5de0207a3a158e69c",
+      "gift_start": "2013-08-12 13:00:00",
+      "fields": {
+        "CPU usage [MHZ]": {
+          "n_hours": 721,
+          "n_above_one_mhz": 721,
+          "median_relative_abs_error_above_one_mhz": 2.3901065025043655e-08,
+          "median_abs_error": 1.8881835899264843e-06,
+          "max_abs_error": 7.326866324319781e-06,
+          "median_relative_abs_error": 2.3901065025043655e-08,
+          "pearson": 0.999999999999996
+        },
+        "CPU usage [%]": {
+          "n_hours": 721,
+          "n_above_one_mhz": 721,
+          "median_relative_abs_error_above_one_mhz": 0.9683770803119134,
+          "median_abs_error": 76.64164666069878,
+          "max_abs_error": 357.28323228624134,
+          "median_relative_abs_error": 0.9683770803119134,
+          "pearson": 0.9999999999999962
+        }
+      }
+    },
+    "631": {
+      "member": "fastStorage/2013-8/631.csv",
+      "member_sha256": "82e081cb5d151aa8bfc75d8e1ffe69f788ed5e137dff3a26d0a7880c2b07d53d",
+      "gift_start": "2013-08-12 13:00:00",
+      "fields": {
+        "CPU usage [MHZ]": {
+          "n_hours": 721,
+          "n_above_one_mhz": 356,
+          "median_relative_abs_error_above_one_mhz": 2.035448807855578e-08,
+          "median_abs_error": 0.0,
+          "max_abs_error": 1.833333124418946,
+          "median_relative_abs_error": 0.0,
+          "pearson": 0.9999999997531092
+        },
+        "CPU usage [%]": {
+          "n_hours": 721,
+          "n_above_one_mhz": 356,
+          "median_relative_abs_error_above_one_mhz": 0.9901158747918608,
+          "median_abs_error": 0.0,
+          "max_abs_error": 10712.854947916667,
+          "median_relative_abs_error": 0.0,
+          "pearson": 0.999999999753106
+        }
+      }
+    },
+    "764": {
+      "member": "fastStorage/2013-8/764.csv",
+      "member_sha256": "3a1dd3d59f68158f112e38f653e271dca1133aef36f6e12cd4aa2015f29c9237",
+      "gift_start": "2013-08-12 13:00:00",
+      "fields": {
+        "CPU usage [MHZ]": {
+          "n_hours": 721,
+          "n_above_one_mhz": 721,
+          "median_relative_abs_error_above_one_mhz": 1.7234220615056714e-08,
+          "median_abs_error": 1.0590898469331478e-06,
+          "max_abs_error": 3.75565494437069e-06,
+          "median_relative_abs_error": 1.7234220615056714e-08,
+          "pearson": 0.9999999999999698
+        },
+        "CPU usage [%]": {
+          "n_hours": 721,
+          "n_above_one_mhz": 721,
+          "median_relative_abs_error_above_one_mhz": 0.9450580696458567,
+          "median_abs_error": 55.138873460557726,
+          "max_abs_error": 81.66665242513021,
+          "median_relative_abs_error": 0.9450580696458567,
+          "pearson": 0.9999999999994541
+        }
+      }
+    }
+  }
+}

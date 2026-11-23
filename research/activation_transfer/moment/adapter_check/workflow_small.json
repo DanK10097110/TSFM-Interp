@@ -1,0 +1,139 @@
+{
+  "name": "MOMENT-1-small",
+  "site": "encoder.block.3",
+  "steering_recipe_and_data_match": true,
+  "SAE": {
+    "n_train_rows": 9240,
+    "n_benchmark_rows": 11520,
+    "dict_size": 384,
+    "k": 32,
+    "reconstruction_fidelity": 0.916118151138284,
+    "reconstruction_fidelity_heldout": 0.8854782708161826,
+    "dead_feature_rate": 0.0,
+    "dead_feature_rate_heldout": 0.0,
+    "admission": {
+      "passed": true,
+      "reason": "cleared every bar",
+      "checks": [
+        {
+          "check": "reconstruction fidelity",
+          "split": "heldout",
+          "value": 0.8854782708161826,
+          "threshold": 0.85,
+          "rule": "fidelity >= 0.85 on the heldout split",
+          "passed": true
+        },
+        {
+          "check": "forecast preservation",
+          "split": "heldout",
+          "value": -0.0019159317016601562,
+          "threshold": 0.25,
+          "rule": "|dMASE| <= 0.25 at TOKEN granularity (window is architecture-confounded)",
+          "passed": true
+        },
+        {
+          "check": "dead-feature rate",
+          "split": "train",
+          "value": null,
+          "threshold": null,
+          "rule": "the dead-rate gate recorded for this target",
+          "passed": true
+        }
+      ],
+      "failed_checks": [],
+      "unmeasured_checks": []
+    },
+    "heldout_token_preservation": {
+      "granularity": "token",
+      "split": "heldout",
+      "n_series": 8,
+      "n_requested": 8,
+      "n_realized": 8,
+      "limited_by": null,
+      "rows": [
+        1,
+        35,
+        36,
+        48,
+        116,
+        137,
+        153,
+        156
+      ],
+      "mase_clean": 3.624138593673706,
+      "mase_reconstructed": 3.622222661972046,
+      "mase_delta": -0.0019159317016601562
+    },
+    "feature_ablation_count": 2,
+    "feature_steering_count": 3,
+    "ground_truth_matched": 125
+  },
+  "ablation": {
+    "null": "profile_matched",
+    "candidate_count": 4,
+    "scorable_candidates": 3,
+    "n_null": 6,
+    "selected_feature": 117,
+    "replay_ids": [
+      "001115a9c567f964",
+      "7189c4c75f8b2258",
+      "9881961aba0807e4",
+      "c7c2f35cd9505889"
+    ],
+    "replay_error_in_history_sd": {
+      "with_feature": 3.558724771310415e-07,
+      "without_feature": 3.524914802809216e-07,
+      "unpatched": 3.558724771310415e-07
+    },
+    "max_ablation_effect_in_history_sd": 0.06980727785313048,
+    "peak_active_code": 67.77913665771484,
+    "reach": {
+      "reachable": true,
+      "reason": "encoder.block.3 reaches the forecast: cross-patch delta 0.0494425, relative reach 0.0793023 (measured) (self-patch control 0, exactly 0.0 as required)",
+      "target_layer": "encoder.block.3",
+      "other_layer": "encoder.block.0",
+      "self_patch_delta": 0.0,
+      "cross_patch_delta": 0.04944249242544174,
+      "forecast_scale": 0.6234686374664307,
+      "relative_reach": 0.07930229277668176,
+      "min_relative_reach": 0.001,
+      "reach_method": "measured",
+      "declared_reads_patched_positions": false,
+      "n_series": 8,
+      "n_requested": 8,
+      "n_realized": 8,
+      "limited_by": null
+    }
+  },
+  "steering": {
+    "kind": "level",
+    "verified": 4,
+    "total": 4,
+    "ci": [
+      0.5101091635454027,
+      1.0
+    ],
+    "improved": 4,
+    "median_relative_error": 0.06877332694104488,
+    "p90_relative_error": 0.08653955208650653,
+    "replay_matches": 4,
+    "completed": 4,
+    "zero_targets": 0,
+    "unavailable": 0,
+    "misses_at_radius": 0,
+    "median_seconds": 13.026740732952021,
+    "median_calls": 24.0,
+    "baseline_mae": 0.3416687533608638,
+    "steered_mae": 0.3465159118641168,
+    "mae_delta_ci": [
+      0.0002708936226554215,
+      0.01139383518602699
+    ],
+    "baseline_pinball": 0.1708343766804319,
+    "steered_pinball": 0.1732579559320584,
+    "pinball_delta_ci": [
+      0.00013544681132771075,
+      0.005696917593013495
+    ]
+  }
+}

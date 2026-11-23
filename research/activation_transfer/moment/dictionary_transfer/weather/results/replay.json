@@ -1,0 +1,134 @@
+{
+  "22112201": [
+    {
+      "id": "AR_Batesville_8_WNW/2026-01-10",
+      "atom": 3586,
+      "target": 3992,
+      "source_coefficient": 9.254105567932129,
+      "target_coefficient": 12.671088218688965,
+      "gap_celsius": {
+        "donor": 2.86102294921875e-06,
+        "corr_own": 3.814697265625e-06,
+        "group16": 2.86102294921875e-06,
+        "corr_forced": 3.814697265625e-06,
+        "random": 2.86102294921875e-06,
+        "geom_forced": 1.9073486328125e-06
+      },
+      "ordinary_archive_max_celsius": 3.814697265625e-06
+    },
+    {
+      "id": "AR_Batesville_8_WNW/2026-01-10",
+      "atom": 187,
+      "target": 1602,
+      "source_coefficient": 8.508084297180176,
+      "target_coefficient": 0.0,
+      "gap_celsius": {
+        "donor": 2.86102294921875e-06,
+        "corr_own": 0.0,
+        "group16": 2.86102294921875e-06,
+        "corr_forced": 3.814697265625e-06,
+        "random": 2.86102294921875e-06,
+        "geom_forced": 3.814697265625e-06
+      },
+      "ordinary_archive_max_celsius": 3.814697265625e-06
+    },
+    {
+      "id": "MT_Wolf_Point_29_ENE/2026-04-10",
+      "atom": 187,
+      "target": 1602,
+      "source_coefficient": 10.84042739868164,
+      "target_coefficient": 0.0,
+      "gap_celsius": {
+        "donor": 2.1457672119140625e-06,
+        "corr_own": 0.0,
+        "group16": 5.4836273193359375e-06,
+        "corr_forced": 4.5299530029296875e-06,
+        "random": 3.0994415283203125e-06,
+        "geom_forced": 4.5299530029296875e-06
+      },
+      "ordinary_archive_max_celsius": 2.1457672119140625e-06
+    },
+    {
+      "id": "FL_Titusville_7_E/2026-10-10",
+      "atom": 1867,
+      "target": 1195,
+      "source_coefficient": 8.610624313354492,
+      "target_coefficient": 0.0,
+      "gap_celsius": {
+        "donor": 3.814697265625e-06,
+        "corr_own": 0.0,
+        "group16": 1.9073486328125e-06,
+        "corr_forced": 1.9073486328125e-06,
+        "random": 1.9073486328125e-06,
+        "geom_forced": 1.9073486328125e-06
+      },
+      "ordinary_archive_max_celsius": 0.0
+    }
+  ],
+  "22112202": [
+    {
+      "id": "AR_Batesville_8_WNW/2026-01-10",
+      "atom": 20,
+      "target": 1867,
+      "source_coefficient": 13.13046932220459,
+      "target_coefficient": 0.0,
+      "gap_celsius": {
+        "donor": 3.814697265625e-06,
+        "corr_own": 0.0,
+        "group16": 3.814697265625e-06,
+        "corr_forced": 1.9073486328125e-06,
+        "random": 3.814697265625e-06,
+        "geom_forced": 2.86102294921875e-06
+      },
+      "ordinary_archive_max_celsius": 3.814697265625e-06
+    },
+    {
+      "id": "AR_Batesville_8_WNW/2026-01-10",
+      "atom": 423,
+      "target": 3017,
+      "source_coefficient": 9.502486228942871,
+      "target_coefficient": 48.03029251098633,
+      "gap_celsius": {
+        "donor": 3.814697265625e-06,
+        "corr_own": 3.814697265625e-06,
+        "group16": 2.86102294921875e-06,
+        "corr_forced": 2.86102294921875e-06,
+        "random": 2.86102294921875e-06,
+        "geom_forced": 3.814697265625e-06
+      },
+      "ordinary_archive_max_celsius": 3.814697265625e-06
+    },
+    {
+      "id": "MT_Wolf_Point_29_ENE/2026-04-10",
+      "atom": 3216,
+      "target": 457,
+      "source_coefficient": 9.360758781433105,
+      "target_coefficient": 0.0,
+      "gap_celsius": {
+        "donor": 2.86102294921875e-06,
+        "corr_own": 0.0,
+        "group16": 4.291534423828125e-06,
+        "corr_forced": 3.814697265625e-06,
+        "random": 2.384185791015625e-06,
+        "geom_forced": 3.0994415283203125e-06
+      },
+      "ordinary_archive_max_celsius": 2.1457672119140625e-06
+    },
+    {
+      "id": "FL_Titusville_7_E/2026-10-10",
+      "atom": 2296,
+      "target": 1867,
+      "source_coefficient": 7.751068115234375,
+      "target_coefficient": 8.610624313354492,
+      "gap_celsius": {
+        "donor": 0.0,
+        "corr_own": 0.0,
+        "group16": 0.0,
+        "corr_forced": 0.0,
+        "random": 0.0,
+        "geom_forced": 0.0
+      },
+      "ordinary_archive_max_celsius": 0.0
+    }
+  ]
+}

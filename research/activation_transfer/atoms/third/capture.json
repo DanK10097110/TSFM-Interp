@@ -1,0 +1,26 @@
+{
+  "model": "chronos2",
+  "checkpoint_revision": "29ec3766d36d6f73f0696f85560a422f50e8498c",
+  "layer": "encoder.block.5",
+  "forecast_horizon": 64,
+  "score_horizon": 8,
+  "live_tokens": 35,
+  "n_context": 30,
+  "absolute_time_spans": [
+    [
+      448.0,
+      464.0
+    ],
+    [
+      464.0,
+      480.0
+    ]
+  ],
+  "live_selected": [
+    28,
+    30
+  ],
+  "max_live_state_error": 1.1920928955078125e-07,
+  "source_manifest": "../results/manifest.json",
+  "sae_sha256": "03092bf52eef3e46e35e9a62b6ca42b5643d26641f10f624d1535a414a0b3e35"
+}
